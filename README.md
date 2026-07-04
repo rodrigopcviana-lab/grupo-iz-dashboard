@@ -53,12 +53,18 @@ cp ~/Desktop/"Code 1"/dashboards/nip_dashboard.html        nip.html
 cp ~/Desktop/grupo-iz-dashboard-site/.staticrypt.json .    # reusa o salt
 export STATICRYPT_PASSWORD='<senha atual>'
 npx --yes staticrypt *.html -d encrypted --short --remember 90 \
+  --template ~/Desktop/"Code 1"/staticrypt_template_backbar.html \
   --template-title "Vendas | Grupo IZ" \
   --template-instructions "Área restrita da coordenação e chefes de bar. Digite a senha para ver o dashboard." \
   --template-button "Entrar" --template-placeholder "Senha" \
   --template-error "Senha incorreta — tente de novo" \
   --template-remember "Lembrar neste aparelho" \
-  --template-color-primary "#2a78d6" --template-color-secondary "#faf9f5"
+  --template-toggle-show "Mostrar senha" --template-toggle-hide "Ocultar senha"
+# --template aponta pro gate com o tema "Backbar" (dark+âmbar, mesmo visual do
+# resto do portal e do gate de curva-abc.html/contatos.html) — NÃO usar mais
+# --template-color-primary/--template-color-secondary sozinhos: o template
+# padrão do staticrypt só parametriza o fundo da página e o botão, o cartão
+# central continua branco (era a causa do gate "quebrado" antes de 2026-07-04).
 cp encrypted/*.html ~/Desktop/grupo-iz-dashboard-site/vendas/
 
 # 3b. Páginas restritas de senha dupla (chefes OU vendas)
