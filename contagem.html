@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16130f">
+<title>Contagem semanal · Portal dos Bares — Grupo IZ</title>
+<style>
+  :root {
+    --bg: #16130f; --card: #211c15; --border: #3a3428;
+    --text: #f3ede2; --text-2: #c3baa9; --text-3: #8f8672;
+    --acc: #d0a352; --acc-txt: #241a06; --verde: #9fe1cb; --amarelo: #e0b05c;
+    --serif: Georgia, "Times New Roman", serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 20px; max-width: 980px; margin: 0 auto;
+    -webkit-text-size-adjust: 100%;
+  }
+  header.topo { margin-bottom: 12px; }
+  header.topo .marca { font-family: var(--serif); font-size: 20px; color: var(--text); }
+  header.topo .kicker { font-size: 11px; letter-spacing: .18em; color: var(--acc); margin-top: 2px; }
+  nav { display: flex; gap: 8px; font-size: 13px; margin: 0 -20px 20px; padding: 2px 20px 8px;
+        overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  nav a { flex: none; color: var(--text-2); text-decoration: none; padding: 7px 14px;
+          border: 1px solid var(--border); border-radius: 999px; }
+  nav a.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  nav a:hover { border-color: var(--acc); color: var(--acc); }
+  nav a.on:hover { color: var(--acc-txt); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  a { color: var(--acc); }
+  h1 { font-family: var(--serif); font-size: 25px; font-weight: 500; margin-bottom: 6px;
+       letter-spacing: .01em; }
+  .sub { color: var(--text-2); font-size: 14px; margin-bottom: 22px; }
+  h2 { font-family: var(--serif); font-size: 19px; font-weight: 500; margin: 28px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+           padding: 14px; text-decoration: none; color: var(--text); }
+  a.card:hover { border-color: var(--acc); }
+  a.card .ico { font-size: 17px; margin-bottom: 8px; }
+  a.card .t { font-family: var(--serif); font-weight: 500; font-size: 15px; margin-bottom: 2px; }
+  a.card .d { font-size: 12px; color: var(--text-3); white-space: nowrap;
+              overflow: hidden; text-overflow: ellipsis; }
+  .lock { color: var(--amarelo); font-size: 12px; font-weight: 600; }
+  .wa { display: inline-block; background: #1e3a2c; color: #9fe1cb; font-weight: 600; font-size: 14px;
+        padding: 11px 18px; border-radius: 999px; text-decoration: none; margin-top: 8px; }
+  .nota { font-size: 12px; color: var(--text-3); margin-top: 28px; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  .ctrl input { font: inherit; font-size: 16px; padding: 9px 12px; flex: 1; min-width: 180px;
+                border: 1px solid var(--border); border-radius: 8px; background: var(--card);
+                color: var(--text); }
+  .ctrl input::placeholder { color: var(--text-3); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .chip { font: inherit; font-size: 13px; padding: 7px 13px; border: 1px solid var(--border);
+          border-radius: 999px; background: var(--card); color: var(--text-2); cursor: pointer; }
+  .chip.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  .ficha { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+           padding: 16px; margin-bottom: 12px; }
+  .ficha::after { content: ""; display: block; clear: both; }
+  .ficha a.foto { float: right; margin: 0 0 8px 12px; }
+  .ficha a.foto img { width: 88px; height: 88px; object-fit: cover; border-radius: 10px;
+                      border: 1px solid var(--border); display: block; background: var(--bg); }
+  .ficha header { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+                  justify-content: space-between; margin-bottom: 8px; }
+  .ficha h3 { font-family: var(--serif); font-size: 16px; font-weight: 500; }
+  .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+  .badge { font-size: 11px; font-weight: 600; color: #dfbf7e; background: #362a15;
+           border-radius: 999px; padding: 2px 8px; }
+  .ficha ul { padding-left: 18px; font-size: 14px; }
+  .ficha li { margin: 2px 0; }
+  .metas { margin-top: 8px; font-size: 13px; color: var(--text-2); }
+  .metas p { margin: 2px 0; }
+  .aviso { font-size: 13px; color: var(--amarelo); }
+  section.cat-ficha h2 { font-size: 19px; border-bottom: 1px solid var(--acc);
+                         padding-bottom: 6px; margin-top: 32px; }
+  section.cat-ficha h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px;
+                              font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  details.pendentes { background: var(--card); border: 1px dashed var(--border);
+                      border-radius: 10px; padding: 10px 16px; margin-bottom: 12px; }
+  details.pendentes summary { font-size: 13px; color: var(--amarelo); cursor: pointer; }
+  details.pendentes p { font-size: 13px; color: var(--text-2); margin-top: 6px; }
+  #vazio { display: none; color: var(--text-3); font-size: 14px; padding: 20px 0; }
+  table.regras { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--card);
+                 border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table.regras th, table.regras td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+  table.regras tr:last-child td { border-bottom: none; }
+  table.regras th { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+           padding: 18px; margin-bottom: 14px; font-size: 14px; }
+  .panel h2 { margin: 0 0 8px; }
+  .panel p, .panel li { color: var(--text-2); }
+  .panel ul { padding-left: 18px; margin-top: 6px; }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .panel .k, .hoje .k { font-size: 11px; letter-spacing: .16em; color: var(--acc);
+                        font-weight: 600; margin-bottom: 8px; }
+  .hoje p { color: var(--text); padding: 3px 0; font-size: 14px; }
+  .hoje a { color: var(--text); }
+  label.check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0;
+                border-bottom: 1px dashed var(--border); font-size: 14px; cursor: pointer; }
+  label.check:last-of-type { border-bottom: none; }
+  label.check input { width: 19px; height: 19px; margin-top: 1px; accent-color: var(--acc); flex: none; }
+  label.check input:checked + span { color: var(--text-3); text-decoration: line-through; }
+  .flag { color: #e88f8f; font-weight: 700; }
+  .freq { font-size: 11px; font-weight: 600; color: #cbb8f0; background: #302743;
+          border-radius: 999px; padding: 2px 8px; margin-right: 6px; }
+  .limpar { font: inherit; font-size: 12px; color: var(--text-3); background: none;
+            border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .htime { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .objetivo { font-size: 13px; color: var(--verde); margin: 6px 0 2px; }
+  .desc { font-size: 12px; color: var(--text-3); margin: 2px 0 0 28px; white-space: pre-line; }
+  details.roteiro { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+                    padding: 14px 18px; margin-bottom: 14px; }
+  details.roteiro summary { font-weight: 600; font-size: 15px; cursor: pointer; }
+  details.roteiro h3 { font-size: 14px; font-weight: 600; margin: 16px 0 2px; }
+  .prod { display: flex; align-items: center; gap: 8px; padding: 7px 0;
+          border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .prod:last-child { border-bottom: none; }
+  .pos { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px;
+         white-space: nowrap; flex: none; min-width: 68px; text-align: center; }
+  .abc-a { color: #9fe1cb; background: #163527; }
+  .abc-b { color: #efc98a; background: #3a2d12; }
+  .abc-c { color: #aaa294; background: #2b261d; }
+  .pos.rankn { min-width: 48px; color: #c3baa9; background: #2b261d; }
+  .pos.mini { min-width: 30px; }
+  .ctrl select { font: inherit; font-size: 16px; padding: 9px 12px; flex: 1; min-width: 180px;
+                 border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+  .equipe-casa { margin-bottom: 24px; }
+  .equipe-casa h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px;
+                         font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .pessoa { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 12px 16px; margin-bottom: 8px; }
+  .pessoa-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pessoa .nome { font-weight: 600; font-size: 14px; }
+  .badge-chefe { font-size: 11px; font-weight: 600; color: #e9c880; background: #3a2d12;
+                 border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .sub2 { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+  .ferias { font-size: 12px; color: var(--amarelo); margin-top: 4px; }
+  @media (max-width: 600px) {
+    body { padding: 14px; }
+    nav { margin: 0 -14px 16px; padding: 2px 14px 8px; }
+    h1 { font-size: 22px; }
+    .cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<header class="topo">
+<div class="marca">Portal dos Bares</div>
+<div class="kicker">GRUPO IZ</div>
+</header>
+<nav><a href="index.html" class="">Início</a><a href="eventos.html" class="">Eventos</a><a href="cocktails.html" class="">Fichas técnicas</a><a href="treinamentos.html" class="">Treinamentos</a><a href="calculadora.html" class="">Calculadora PB</a><a href="contagem.html" class="on">Contagem 🔒</a><a href="rotinas.html" class="">Rotinas</a><a href="equipe.html" class="">Equipe</a><a href="metas.html" class="">Metas & Desenv.</a><a href="contatos.html" class="">Contatos 🔒</a><a href="regras.html" class="">Escala & BH</a><a href="curva-abc.html" class="">Ranking 🔒</a></nav>
+
+<h1>📋 Contagem semanal</h1>
+<p class="sub">Contagem de produtos do bar, direto do celular. Escolha sua casa, digite a
+senha da contagem e preencha andando pelo estoque — cada número é salvo sozinho.</p>
+
+<style>
+  .ct-pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .ct-pill { padding:9px 16px; border:1px solid var(--border); border-radius:999px;
+             background:none; color:var(--text-2); font-size:14px; cursor:pointer; }
+  .ct-pill.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); font-weight:600; }
+  .ct-login input { width:100%; padding:12px; font-size:16px; border-radius:10px;
+                    border:1px solid var(--border); background:var(--card); color:var(--text); }
+  .ct-login button, .ct-sair { margin-top:10px; padding:12px 22px; font-size:15px; border-radius:10px;
+                    border:none; background:var(--acc); color:var(--acc-txt); font-weight:600; cursor:pointer; }
+  .ct-sair { background:none; border:1px solid var(--border); color:var(--text-3); padding:6px 14px; font-size:12px; }
+  .ct-topo { position:sticky; top:0; background:var(--bg); padding:10px 0; z-index:5;
+             border-bottom:1px solid var(--border); margin-bottom:10px; }
+  .ct-topo .linha { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .ct-status { font-size:12px; color:var(--verde); }
+  .ct-status.pend { color: var(--amarelo); }
+  .ct-status.erro { color: #e08585; }
+  .ct-busca { width:100%; margin-top:8px; padding:10px 12px; font-size:16px; border-radius:10px;
+              border:1px solid var(--border); background:var(--card); color:var(--text); }
+  .ct-cat { font-family:var(--serif); color:var(--acc); font-size:16px; margin:18px 0 6px; }
+  .ct-prod { background:var(--card); border:1px solid var(--border); border-radius:12px;
+             padding:10px 12px; margin-bottom:8px; }
+  .ct-prod .nome { font-size:14px; font-weight:600; margin-bottom:8px; }
+  .ct-campos { display:flex; gap:8px; flex-wrap:wrap; }
+  .ct-campo { flex:1; min-width:86px; }
+  .ct-campo label { display:block; font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+                    color:var(--text-3); margin-bottom:3px; white-space:nowrap; overflow:hidden; }
+  .ct-campo input { width:100%; padding:10px 6px; font-size:18px; text-align:center;
+                    border:1px solid var(--border); border-radius:10px;
+                    background:var(--bg); color:var(--text); }
+  .ct-campo input:focus { border-color:var(--acc); outline:none; }
+  .ct-campo input.salvo { border-color:var(--verde); }
+  .ct-campo input.pendente { border-color:var(--amarelo); }
+</style>
+
+<div id="ct-app">
+<div class="panel" id="ct-login">
+  <h2>Entrar</h2>
+  <div class="ct-pills" id="ct-casas"></div>
+  <input type="password" id="ct-senha" placeholder="Senha da contagem da sua casa" autocomplete="current-password">
+  <button id="ct-entrar">Entrar</button>
+  <p class="sub" id="ct-login-msg" style="margin:10px 0 0"></p>
+</div>
+<div id="ct-tela" style="display:none"></div>
+</div>
+
+<script>
+(function () {
+  var WORKER = "http://localhost:8787";
+  var CASAS = [{"slug": "iz", "nome": "IZ"}, {"slug": "1929", "nome": "1929"}, {"slug": "gra", "nome": "Grá"}, {"slug": "famu", "nome": "FAMU"}, {"slug": "fulles", "nome": "Fulles"}, {"slug": "nip", "nome": "NIP"}];
+  var LS_LOGIN = 'contagem_login', LS_FILA = 'contagem_fila';
+  var login = null, dados = null, fila = [], enviando = false, timers = {};
+
+  try { fila = JSON.parse(localStorage.getItem(LS_FILA) || '[]'); } catch (e) { fila = []; }
+
+  var elLogin = document.getElementById('ct-login');
+  var elTela = document.getElementById('ct-tela');
+  var elMsg = document.getElementById('ct-login-msg');
+  var casaSel = null;
+
+  if (!WORKER) {
+    elLogin.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">' +
+      'A contagem pelo site ainda não foi ativada (falta publicar o Worker). ' +
+      'Por enquanto, siga contando pelo Notion.</p>';
+    return;
+  }
+
+  // --- login -------------------------------------------------------------
+  var pills = document.getElementById('ct-casas');
+  CASAS.forEach(function (c) {
+    var b = document.createElement('button');
+    b.className = 'ct-pill'; b.textContent = c.nome; b.dataset.slug = c.slug;
+    b.onclick = function () {
+      casaSel = c.slug;
+      pills.querySelectorAll('.ct-pill').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+    };
+    pills.appendChild(b);
+  });
+
+  function api(metodo, rota, body) {
+    return fetch(WORKER + rota, {
+      method: metodo,
+      headers: { 'Content-Type': 'application/json',
+                 'X-Casa': login.casa, 'X-Senha': login.senha },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  }
+
+  document.getElementById('ct-entrar').onclick = function () {
+    var senha = document.getElementById('ct-senha').value.trim();
+    if (!casaSel || !senha) { elMsg.textContent = 'Escolha a casa e digite a senha.'; return; }
+    elMsg.textContent = 'Entrando…';
+    login = { casa: casaSel, senha: senha };
+    carrega(function (erro) {
+      if (erro) { login = null; elMsg.textContent = erro; }
+      else localStorage.setItem(LS_LOGIN, JSON.stringify(login));
+    });
+  };
+
+  function carrega(cb) {
+    api('GET', '/api/semana?casa=' + login.casa).then(function (r) {
+      if (r.status === 401) { cb && cb('Senha incorreta para essa casa.'); return; }
+      if (!r.ok) { cb && cb('Erro ao carregar (' + r.status + '). Tente de novo.'); return; }
+      r.json().then(function (d) { dados = d; desenha(); cb && cb(null); });
+    }).catch(function () { cb && cb('Sem conexão. Tente de novo perto do wi-fi.'); });
+  }
+
+  // --- tela da contagem ----------------------------------------------------
+  function desenha() {
+    elLogin.style.display = 'none';
+    elTela.style.display = '';
+    var campos = dados.campos_loc.concat(dados.campos_pedido);
+    var html = '<div class="ct-topo">' +
+      '<div class="linha"><strong>' + esc(dados.semana.titulo || 'Semana atual') + '</strong>' +
+      '<button class="ct-sair" id="ct-sair">sair</button></div>' +
+      '<div class="linha"><span class="sub" id="ct-prog" style="margin:0"></span>' +
+      '<span class="ct-status" id="ct-status"></span></div>' +
+      '<input class="ct-busca" id="ct-busca" placeholder="Buscar produto…"></div>';
+
+    var porCat = {};
+    dados.produtos.forEach(function (p) {
+      var c = p.categoria || 'Sem categoria';
+      (porCat[c] = porCat[c] || []).push(p);
+    });
+    Object.keys(porCat).sort().forEach(function (cat) {
+      html += '<div class="ct-cat">' + esc(cat) + '</div>';
+      porCat[cat].forEach(function (p) {
+        html += '<div class="ct-prod" data-nome="' + esc(p.nome.toLowerCase()) + '">' +
+          '<div class="nome">' + esc(p.nome) + '</div><div class="ct-campos">';
+        campos.forEach(function (campo) {
+          var v = p.valores[campo];
+          html += '<div class="ct-campo"><label>' + esc(campo) + '</label>' +
+            '<input type="number" inputmode="decimal" step="any" min="0"' +
+            ' data-page="' + p.page_id + '" data-campo="' + esc(campo) + '"' +
+            (v === null || v === undefined ? '' : ' value="' + v + '"') + '></div>';
+        });
+        html += '</div></div>';
+      });
+    });
+    elTela.innerHTML = html;
+
+    document.getElementById('ct-sair').onclick = function () {
+      localStorage.removeItem(LS_LOGIN);
+      location.reload();
+    };
+    document.getElementById('ct-busca').oninput = function () {
+      var q = this.value.trim().toLowerCase();
+      elTela.querySelectorAll('.ct-prod').forEach(function (el) {
+        el.style.display = !q || el.dataset.nome.indexOf(q) >= 0 ? '' : 'none';
+      });
+      elTela.querySelectorAll('.ct-cat').forEach(function (el) {
+        var vis = false, n = el.nextElementSibling;
+        while (n && n.classList.contains('ct-prod')) {
+          if (n.style.display !== 'none') vis = true;
+          n = n.nextElementSibling;
+        }
+        el.style.display = vis ? '' : 'none';
+      });
+    };
+    elTela.querySelectorAll('input[type=number]').forEach(function (inp) {
+      inp.oninput = function () { agenda(inp); };
+    });
+    progresso(); status_();
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function progresso() {
+    var tot = dados.produtos.length, feitos = 0;
+    var porPage = {};
+    elTela.querySelectorAll('input[type=number]').forEach(function (i) {
+      if (i.value !== '') porPage[i.dataset.page] = true;
+    });
+    feitos = Object.keys(porPage).length;
+    var el = document.getElementById('ct-prog');
+    if (el) el.textContent = feitos + ' de ' + tot + ' produtos preenchidos';
+  }
+
+  // --- salvamento incremental com fila offline -----------------------------
+  function agenda(inp) {
+    var chave = inp.dataset.page + '|' + inp.dataset.campo;
+    inp.classList.remove('salvo'); inp.classList.add('pendente');
+    clearTimeout(timers[chave]);
+    timers[chave] = setTimeout(function () {
+      var valor = inp.value === '' ? null : Number(inp.value);
+      fila = fila.filter(function (x) { return x.chave !== chave; });
+      fila.push({ chave: chave, db_id: dados.semana.db_id,
+                  page_id: inp.dataset.page, campo: inp.dataset.campo, valor: valor });
+      localStorage.setItem(LS_FILA, JSON.stringify(fila));
+      progresso(); envia();
+    }, 900);
+  }
+
+  function marca(chave, classe) {
+    var par = chave.split('|');
+    var inp = elTela.querySelector('input[data-page="' + par[0] + '"][data-campo="' + par[1] + '"]');
+    if (inp) { inp.classList.remove('salvo', 'pendente'); if (classe) inp.classList.add(classe); }
+  }
+
+  function envia() {
+    if (enviando || !fila.length || !login) { status_(); return; }
+    enviando = true; status_();
+    var item = fila[0];
+    api('POST', '/api/gravar', item).then(function (r) {
+      if (r.ok) {
+        fila.shift(); localStorage.setItem(LS_FILA, JSON.stringify(fila));
+        marca(item.chave, 'salvo');
+        enviando = false;
+        setTimeout(envia, 350);  // respeita o ritmo da API do Notion
+      } else if (r.status === 409) {
+        enviando = false; status_('A semana virou — recarregue a página.', true);
+      } else if (r.status === 401) {
+        enviando = false; status_('Senha expirada — saia e entre de novo.', true);
+      } else {
+        fila.shift(); localStorage.setItem(LS_FILA, JSON.stringify(fila));
+        enviando = false; status_('Um item falhou (' + r.status + ')', true);
+        setTimeout(envia, 350);
+      }
+    }).catch(function () {
+      enviando = false; status_();  // offline: fica na fila
+    });
+  }
+
+  function status_(msgErro, erro) {
+    var el = document.getElementById('ct-status');
+    if (!el) return;
+    el.className = 'ct-status';
+    if (msgErro) { el.classList.add('erro'); el.textContent = msgErro; return; }
+    if (enviando) { el.textContent = 'Salvando…'; }
+    else if (fila.length) { el.classList.add('pend'); el.textContent = fila.length + ' na fila (sem conexão?)'; }
+    else { el.textContent = 'Tudo salvo ✓'; }
+  }
+
+  window.addEventListener('online', envia);
+  setInterval(envia, 15000);
+
+  // sessão lembrada
+  try {
+    var lembrado = JSON.parse(localStorage.getItem(LS_LOGIN) || 'null');
+    if (lembrado && lembrado.casa && lembrado.senha) {
+      login = lembrado;
+      elMsg.textContent = 'Entrando…';
+      carrega(function (erro) { if (erro) { login = null; elMsg.textContent = erro; } });
+    }
+  } catch (e) {}
+})();
+</script>
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 04/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+</body>
+</html>
