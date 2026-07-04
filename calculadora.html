@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Calculadora PB · Portal dos Bares — Grupo IZ</title>
+<style>
+  :root {
+    --bg: #faf9f5; --card: #ffffff; --border: #e1e0d9;
+    --text: #0b0b0b; --text-2: #52514e; --text-3: #898781;
+    --azul: #2a78d6; --verde: #1f9d55; --amarelo: #b7791f;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 20px; max-width: 980px; margin: 0 auto;
+  }
+  nav { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; margin-bottom: 20px; }
+  nav a { color: var(--text-2); text-decoration: none; }
+  nav a.on { color: var(--azul); font-weight: 600; }
+  nav a:hover { color: var(--azul); }
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+  .sub { color: var(--text-2); font-size: 14px; margin-bottom: 22px; }
+  h2 { font-size: 17px; font-weight: 600; margin: 26px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+           padding: 18px; text-decoration: none; color: var(--text); }
+  a.card:hover { border-color: var(--azul); }
+  a.card .t { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+  a.card .d { font-size: 13px; color: var(--text-2); }
+  .lock { color: var(--amarelo); font-size: 12px; font-weight: 600; }
+  .wa { display: inline-block; background: #25d366; color: #fff; font-weight: 600; font-size: 14px;
+        padding: 10px 18px; border-radius: 999px; text-decoration: none; margin-top: 8px; }
+  .nota { font-size: 12px; color: var(--text-3); margin-top: 28px; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  .ctrl input { font: inherit; font-size: 14px; padding: 8px 12px; flex: 1; min-width: 180px;
+                border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .chip { font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid var(--border);
+          border-radius: 999px; background: var(--card); color: var(--text-2); cursor: pointer; }
+  .chip.on { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .ficha { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+           padding: 16px; margin-bottom: 12px; }
+  .ficha header { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+                  justify-content: space-between; margin-bottom: 8px; }
+  .ficha h3 { font-size: 15px; font-weight: 600; }
+  .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+  .badge { font-size: 11px; font-weight: 600; color: var(--azul); background: #eaf2fc;
+           border-radius: 999px; padding: 2px 8px; }
+  .ficha ul { padding-left: 18px; font-size: 14px; }
+  .ficha li { margin: 2px 0; }
+  .metas { margin-top: 8px; font-size: 13px; color: var(--text-2); }
+  .metas p { margin: 2px 0; }
+  .aviso { font-size: 13px; color: var(--amarelo); }
+  #vazio { display: none; color: var(--text-3); font-size: 14px; padding: 20px 0; }
+  table.regras { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--card);
+                 border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table.regras th, table.regras td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+  table.regras tr:last-child td { border-bottom: none; }
+  table.regras th { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+           padding: 18px; margin-bottom: 14px; font-size: 14px; }
+  .panel h2 { margin: 0 0 8px; }
+  .panel p, .panel li { color: var(--text-2); }
+  .panel ul { padding-left: 18px; margin-top: 6px; }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  label.check { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0;
+                border-bottom: 1px dashed var(--border); font-size: 14px; cursor: pointer; }
+  label.check:last-of-type { border-bottom: none; }
+  label.check input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--azul); flex: none; }
+  label.check input:checked + span { color: var(--text-3); text-decoration: line-through; }
+  .flag { color: #c53030; font-weight: 700; }
+  .freq { font-size: 11px; font-weight: 600; color: #6b46c1; background: #f0eafc;
+          border-radius: 999px; padding: 2px 8px; margin-right: 6px; }
+  .limpar { font: inherit; font-size: 12px; color: var(--text-3); background: none;
+            border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .htime { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .objetivo { font-size: 13px; color: var(--verde); margin: 6px 0 2px; }
+  .desc { font-size: 12px; color: var(--text-3); margin: 2px 0 0 28px; white-space: pre-line; }
+  details.roteiro { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+                    padding: 14px 18px; margin-bottom: 14px; }
+  details.roteiro summary { font-weight: 600; font-size: 15px; cursor: pointer; }
+  details.roteiro h3 { font-size: 14px; font-weight: 600; margin: 16px 0 2px; }
+  details.vendas-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+                       padding: 4px 18px; margin-bottom: 14px; }
+  details.vendas-box summary { font-weight: 600; font-size: 15px; cursor: pointer; padding: 12px 0;
+                               list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.vendas-box summary::-webkit-details-marker { display: none; }
+  details.vendas-box summary .seta { margin-left: auto; color: var(--text-3); transition: transform .15s; }
+  details.vendas-box[open] summary .seta { transform: rotate(180deg); }
+  a.vlink { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0;
+            border-top: 1px dashed var(--border); text-decoration: none; color: var(--text); font-size: 14px; }
+  a.vlink:hover { color: var(--azul); }
+  a.vlink .lock { flex: none; }
+  .prod { display: flex; align-items: center; gap: 8px; padding: 6px 0;
+          border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .prod:last-child { border-bottom: none; }
+  .pos { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px;
+         white-space: nowrap; flex: none; min-width: 68px; text-align: center; }
+  .abc-a { color: #1f7a3f; background: #e3f4e8; }
+  .abc-b { color: #9c6b12; background: #fbf0d9; }
+  .abc-c { color: #6b6a64; background: #efeee8; }
+  .pos.rankn { min-width: 48px; color: #52514e; background: #eceae2; }
+  .pos.mini { min-width: 30px; }
+  .ctrl select { font: inherit; font-size: 14px; padding: 8px 12px; flex: 1; min-width: 180px;
+                 border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+  .equipe-casa { margin-bottom: 24px; }
+  .equipe-casa h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px; }
+  .pessoa { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px 16px; margin-bottom: 8px; }
+  .pessoa-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pessoa .nome { font-weight: 600; font-size: 14px; }
+  .badge-chefe { font-size: 11px; font-weight: 600; color: #7a4b00; background: #fbf0d9;
+                 border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .sub2 { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+  .ferias { font-size: 12px; color: var(--amarelo); margin-top: 4px; }
+</style>
+</head>
+<body>
+<nav><a href="index.html" class="">Início</a><a href="eventos.html" class="">Eventos</a><a href="cocktails.html" class="">Fichas técnicas</a><a href="calculadora.html" class="on">Calculadora PB</a><a href="rotinas.html" class="">Rotinas</a><a href="equipe.html" class="">Equipe</a><a href="contatos.html" class="">Contatos 🔒</a><a href="regras.html" class="">Escala & BH</a><a href="curva-abc.html" class="">Ranking 🔒</a><a href="vendas/index.html" class="">Vendas 🔒</a></nav>
+
+<style>
+  .ctrl select { font: inherit; font-size: 14px; padding: 8px 12px; flex: 1; min-width: 200px;
+                 border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+  .calc-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                 gap: 10px; margin: 14px 0; }
+  .calc-inputs label { font-size: 12px; color: var(--text-3); display: block; }
+  .calc-inputs input { width: 100%; font: inherit; font-size: 15px; padding: 8px 10px; margin-top: 3px;
+                       border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+  .resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px; margin: 12px 0 16px; }
+  .rcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .rcard .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
+  .rcard .v { font-size: 18px; font-weight: 600; margin-top: 2px; }
+  .rcard small { font-size: 11px; color: var(--text-3); font-weight: 400; }
+  .tabwrap { overflow-x: auto; }
+  table.calc { border-collapse: collapse; width: 100%; min-width: 580px; font-size: 14px;
+               background: var(--card); border: 1px solid var(--border); border-radius: 10px; }
+  table.calc th, table.calc td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  table.calc tr:last-child td { border-bottom: none; }
+  table.calc th { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
+  table.calc td.num, table.calc th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.calc td.c, table.calc th.c { text-align: center; }
+  table.calc input.qtd { width: 72px; font: inherit; font-size: 14px; padding: 5px 7px; text-align: right;
+                         border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+  table.calc input.inc { width: 17px; height: 17px; accent-color: var(--azul); }
+  tr.fora td { opacity: .45; }
+  .per { cursor: help; }
+</style>
+<h1>🧮 Calculadora de pre-batched</h1>
+<p class="sub">Escolha a receita, diga quantos drinks vai produzir e a calculadora devolve
+quanto separar de cada insumo, quantas garrafas, o custo do batch e o custo por drink.
+50 receitas do Banco de Cocktails. Ajuste as quantidades se a sua casa usar
+outra spec — o cálculo atualiza na hora.</p>
+
+<div class="ctrl"><select id="receita"><option value="0">14 | Bicicletta</option><option value="1">Abacaxi na Pizza</option><option value="2">Amarguerita</option><option value="3">Aperol Spritz</option><option value="4">Asian Sour</option><option value="5">Bitter Giuseppe</option><option value="6">Blood and Sand - OFF</option><option value="7">Bloody Mary</option><option value="8">Bonaventura</option><option value="9">Caipirinha</option><option value="10">Cardinale</option><option value="11">Cerrado Aberto</option><option value="12">Del Sur</option><option value="13">Deus Ex Machina</option><option value="14">Dry Martini</option><option value="15">Enleio</option><option value="16">Escarlate</option><option value="17">Ferniee</option><option value="18">Fitzgerald</option><option value="19">G&amp;T</option><option value="20">Grá vita</option><option value="21">Hemmingway Daiquiri</option><option value="22">Hugo Spritz</option><option value="23">Jungle Bird</option><option value="24">Ladyberries</option><option value="25">Macunaíma</option><option value="26">Macunaíma | Grupo IZ</option><option value="27">Mark Twain II</option><option value="28">Melba Bellini</option><option value="29">Mezcla y Matices</option><option value="30">Mimosa G.iz</option><option value="31">Muito abacaxi na pizza</option><option value="32">Negroni</option><option value="33">Paloma</option><option value="34">Penicillin</option><option value="35">Pesto &amp; punch</option><option value="36">Petricor</option><option value="37">Pindorama</option><option value="38">Raspberry Mocktail</option><option value="39">Sangre al punto</option><option value="40">Solstício</option><option value="41">Tapanhumas</option><option value="42">Thalamus Killer</option><option value="43">The last word</option><option value="44">Unomás</option><option value="45">Velvet Berries</option><option value="46">Verano 2</option><option value="47">Yellow Sip</option><option value="48">Yugure</option><option value="49">Âmbar (sem pre batched)</option></select></div>
+
+<div class="calc-inputs">
+<label>Nº de drinks<input id="nq" type="number" min="1" step="1" value="20"></label>
+<label>Diluição / água %<input id="dil" type="number" min="0" step="5" value="0"></label>
+<label>Garrafa de envase (ml)<input id="env" type="number" min="100" step="50" value="750"></label>
+</div>
+
+<div id="resumo" class="resumo"></div>
+
+<div class="tabwrap">
+<table class="calc">
+<thead><tr><th>Ingrediente</th><th class="num">Qtd/drink (ml ou un)</th><th class="c">No batch?</th>
+<th class="num">Total</th><th class="num">Garrafas</th><th class="num">Custo</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+<p id="avisos" class="aviso" style="margin-top:10px"></p>
+
+<div class="panel" style="margin-top:16px">
+<h2>Como usar</h2>
+<ul>
+<li>Itens com ⚠️ são perecíveis (cítricos, frutas, claras): por padrão ficam <strong>fora do batch</strong>
+— entram na hora do serviço. Marque "No batch?" se a sua produção for de consumo rápido.</li>
+<li><strong>Diluição</strong>: batch de drinks mexidos (Negroni, Boulevardier) costuma levar
+15–20% de água para já sair na diluição de serviço. Shaken em geral vai sem água no batch.</li>
+<li><strong>Garrafas</strong> = quantas garrafas do insumo separar do estoque para essa produção.</li>
+<li>Custo usa o R$/mL dos insumos do Notion — itens sem custo cadastrado aparecem com "—".</li>
+</ul>
+</div>
+
+<p class="nota">Baseada na <a href="https://app.notion.com/p/38789fb1716f80ac9b6fea0e8e5b24cd">Calculadora PB do Notion</a> (Adeilson · Grá).
+Dados: Banco de Cocktails + B.D.1/B.D.2, sincronizados do Notion.
+Achou receita errada ou insumo sem preço?
+<a href="https://wa.me/556281483511?text=Ol%C3%A1%20Rodrigo!%20Vi%20um%20problema%20na%20calculadora%20de%20pre-batched%3A%20">avise o Rodrigo</a>.</p>
+
+<script>const RECEITAS = [{"nome": "14 | Bicicletta", "ing": [{"n": "Meia lua de laranja Bahia", "q": 1.0, "p": 2.0, "v": 15, "per": true}, {"n": "Campari 998ml", "q": 45.0, "p": 0.048, "v": 998, "per": false}, {"n": "água com gás", "q": 60.0, "p": 0.004, "v": 500, "per": false}, {"n": "Vinho Branco Seco", "q": 90.0, "p": 0.0133, "v": 750, "per": false}]}, {"nome": "Abacaxi na Pizza", "ing": [{"n": "Solução salina", "q": 2.0, "p": 0.0, "v": null, "per": false}, {"n": "Aperol 750ml", "q": 20.0, "p": 0.0634, "v": 750, "per": false}, {"n": "Campari 998ml", "q": 20.0, "p": 0.048, "v": 998, "per": false}]}, {"nome": "Amarguerita", "ing": [{"n": "Amaro montenegro", "q": 10.0, "p": 0.4667, "v": 750, "per": false}, {"n": "Cointreau 700ml", "q": 10.0, "p": 0.1757, "v": 700, "per": false}, {"n": "Amaro Averna 700ml", "q": 2.5, "p": 0.1575, "v": 700, "per": false}]}, {"nome": "Aperol Spritz", "ing": [{"n": "Gás Preshh", "q": 25.0, "p": 0.0, "v": null, "per": false}, {"n": "Aperol 750ml", "q": 75.0, "p": 0.0634, "v": 750, "per": false}, {"n": "Espumante Aurora Brut", "q": 150.0, "p": 0.048, "v": 750, "per": true}, {"n": "Aperol 750ml", "q": 75.0, "p": 0.0634, "v": 750, "per": false}, {"n": "Espumante Aurora Prosecco 750ml", "q": 150.0, "p": 0.0416, "v": 750, "per": true}]}, {"nome": "Asian Sour", "ing": [{"n": "Suco de Limão, Hortelã e Anis estrelado", "q": 20.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Sake em Shissô", "q": 30.0, "p": 0.0683, "v": 600, "per": false}, {"n": "Gin Beg refil 500ml", "q": 30.0, "p": 0.0778, "v": 500, "per": false}, {"n": "Licor Dom Benedictine 1Lt", "q": 10.0, "p": 0.35, "v": 1000, "per": false}, {"n": "Monin de Pistache", "q": 20.0, "p": 0.0533, "v": 750, "per": false}, {"n": "Shissô", "q": 5.0, "p": 0.2, "v": 50, "per": false}]}, {"nome": "Bitter Giuseppe", "ing": [{"n": "Angostura Orange", "q": 4.0, "p": 1.0576, "v": 100, "per": false}, {"n": "Sumo de Limão Siciliano", "q": 7.5, "p": 0.012, "v": 750, "per": true}, {"n": "Vermute Martini Rosso", "q": 20.0, "p": 0.0547, "v": 750, "per": false}, {"n": "Cynar Regular 900ml", "q": 60.0, "p": 0.0375, "v": 900, "per": false}, {"n": "vermute martini extra dry", "q": 10.0, "p": 0.0, "v": null, "per": false}]}, {"nome": "Blood and Sand - OFF", "ing": [{"n": "Sumo de laranja", "q": 30.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Vermute Rosso San Basile", "q": 22.5, "p": 0.1063, "v": 750, "per": false}, {"n": "Licor Luxardo Maraschino 750ml", "q": 22.5, "p": 0.3271, "v": 750, "per": false}, {"n": "Bulleit Bourbon", "q": 30.0, "p": 0.3158, "v": 750, "per": false}]}, {"nome": "Bloody Mary", "ing": [{"n": "Solução salina", "q": 5.0, "p": 0.0, "v": null, "per": false}, {"n": "Molho de Pimenta Vermelho Tabasco 60ml", "q": 1.0, "p": 0.2025, "v": 60, "per": false}, {"n": "molho inglês 1lt", "q": 15.0, "p": 0.0, "v": null, "per": false}, {"n": "Sumo de Limão taiti", "q": 10.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Suco de Tomate 300ml", "q": 120.0, "p": 0.0292, "v": 300, "per": true}, {"n": "Vodka Hype 1lt", "q": 60.0, "p": 0.0385, "v": 1000, "per": false}, {"n": "Sumo de Limão Taiti", "q": 10.0, "p": 0.02, "v": 1000, "per": true}, {"n": "Suco de Tomate 300ml", "q": 120.0, "p": 0.0292, "v": 300, "per": true}, {"n": "Molho de Pimenta Vermelho Tabasco 60ml", "q": 2.0, "p": 0.2025, "v": 60, "per": false}, {"n": "Vodka Hype 1lt", "q": 60.0, "p": 0.0385, "v": 1000, "per": false}]}, {"nome": "Bonaventura", "ing": [{"n": "água com gás", "q": 90.0, "p": 0.004, "v": 500, "per": false}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Licor 43 700ml", "q": 20.0, "p": 0.1784, "v": 700, "per": false}, {"n": "Rum Bacardi Carta Blanca 700ml", "q": 30.0, "p": 0.0427, "v": 700, "per": false}]}, {"nome": "Caipirinha", "ing": [{"n": "Xarope Simples", "q": 30.0, "p": 0.0028, "v": 2500, "per": false}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Cachaça Capueira Prata 700ml", "q": 60.0, "p": 0.0393, "v": 700, "per": false}]}, {"nome": "Cardinale", "ing": [{"n": "Campari 998ml", "q": 30.0, "p": 0.048, "v": 998, "per": false}, {"n": "Gin Gordon`s", "q": 30.0, "p": 0.0766, "v": 750, "per": false}]}, {"nome": "Cerrado Aberto", "ing": [{"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Licor 43 700ml", "q": 15.0, "p": 0.1784, "v": 700, "per": false}, {"n": "Xarope Simples", "q": 15.0, "p": 0.0028, "v": 2500, "per": false}, {"n": "Cachaça Capueira infusionada em Baru", "q": 30.0, "p": 0.0533, "v": 750, "per": false}, {"n": "Clara de ovo pasteurizada", "q": 10.0, "p": 0.0259, "v": 1000, "per": true}]}, {"nome": "Del Sur", "ing": [{"n": "Gelo 50x65 (atual)", "q": 1.0, "p": 2.0, "v": 1, "per": false}, {"n": "Tintura de Sal", "q": 2.0, "p": 0.0, "v": 100, "per": false}, {"n": "Xarope de acerola e physalis", "q": 25.0, "p": 0.03, "v": 1000, "per": false}, {"n": "Rum Bacardi Carta Blanca 700ml", "q": 60.0, "p": 0.0427, "v": 700, "per": false}, {"n": "Xarope Simples", "q": 20.0, "p": 0.0028, "v": 2500, "per": false}]}, {"nome": "Deus Ex Machina", "ing": [{"n": "Leite Integral", "q": 120.0, "p": 0.005, "v": 1000, "per": true}, {"n": "Água de Mel (1:1)", "q": 48.0, "p": 0.036, "v": 1000, "per": true}, {"n": "Sumo de Limão taiti", "q": 60.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Voglio APTK", "q": 36.0, "p": 0.1467, "v": 750, "per": false}, {"n": "Vermute Bianco APTK", "q": 60.0, "p": 0.0, "v": null, "per": false}, {"n": "Ketel One Grapefruit", "q": 120.0, "p": 0.0933, "v": 750, "per": false}]}, {"nome": "Dry Martini", "ing": [{"n": "Tanqueray Ten 750ml", "q": 75.0, "p": 0.2493, "v": 750, "per": false}, {"n": "Vermute Noilly Prat Dry", "q": 15.0, "p": 0.0, "v": null, "per": false}]}, {"nome": "Enleio", "ing": [{"n": "Angostura Orange", "q": 3.0, "p": 1.0576, "v": 100, "per": false}, {"n": "Angostura bitters", "q": 3.0, "p": 0.6023, "v": 473, "per": false}, {"n": "Rum Angostura White Oak", "q": 30.0, "p": 0.12, "v": 1000, "per": false}, {"n": "Calda de Agave", "q": 1.0, "p": 0.1067, "v": 300, "per": false}, {"n": "Jerez Tio Pepe 750ml", "q": 10.0, "p": 0.2398, "v": 750, "per": false}, {"n": "Vermute Carpano Clasc.", "q": 10.0, "p": 0.0799, "v": 1000, "per": false}, {"n": "Cajuína Artesanal", "q": 50.0, "p": 0.02, "v": 500, "per": false}]}, {"nome": "Escarlate", "ing": [{"n": "Molho de Pimenta Vermelho Tabasco 60ml", "q": 1.0, "p": 0.2025, "v": 60, "per": false}, {"n": "Sumo de Limão taiti", "q": 30.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Xarope Simples", "q": 30.0, "p": 0.0028, "v": 2500, "per": false}, {"n": "Morango In Natura", "q": 4.0, "p": 0.035, "v": 1000, "per": true}, {"n": "Rum Bacardi Carta Blanca 700ml", "q": 60.0, "p": 0.0427, "v": 700, "per": false}]}, {"nome": "Ferniee", "ing": [{"n": "Clara de ovo pasteurizada", "q": 15.0, "p": 0.0259, "v": 1000, "per": true}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Calda de Agave", "q": 7.5, "p": 0.1067, "v": 300, "per": false}, {"n": "Xarope Simples", "q": 7.5, "p": 0.0028, "v": 2500, "per": false}, {"n": "Whisky Glenmorangie 10 anos 750ml", "q": 40.0, "p": 0.273, "v": 750, "per": false}]}, {"nome": "Fitzgerald", "ing": [{"n": "Angostura bitters", "q": 1.5, "p": 0.6023, "v": 473, "per": false}, {"n": "Xarope Simples", "q": 20.0, "p": 0.0028, "v": 2500, "per": false}, {"n": "Sumo de Limão taiti", "q": 25.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Gin Beg refil 500ml", "q": 60.0, "p": 0.0778, "v": 500, "per": false}]}, {"nome": "G&T", "ing": [{"n": "Gin", "q": 50.0, "p": null, "v": null, "per": false}, {"n": "Agua tonica", "q": 150.0, "p": null, "v": null, "per": false}]}, {"nome": "Grá vita", "ing": [{"n": "Gelo", "q": 300.0, "p": 0.0014, "v": 7000, "per": false}, {"n": "Água tônica preshh (Diluído)", "q": 150.0, "p": 0.0027, "v": 1100, "per": false}, {"n": "Xarope de Maracujá", "q": 25.0, "p": 0.0235, "v": 850, "per": true}, {"n": "Uyra infusionado em amora", "q": 45.0, "p": 0.0425, "v": 800, "per": false}, {"n": "Limão tahiti", "q": 15.0, "p": 0.025, "v": 1000, "per": true}, {"n": "Licor Limoncello San Basile 750ml", "q": 15.0, "p": 0.1063, "v": 750, "per": false}]}, {"nome": "Hemmingway Daiquiri", "ing": [{"n": "Licor Luxardo Maraschino 750ml", "q": 7.5, "p": 0.3271, "v": 750, "per": false}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Xarope Toranja Monin 700ml", "q": 10.0, "p": 0.0713, "v": 700, "per": false}, {"n": "Rum Spiced San Basile 950ml", "q": 40.0, "p": 0.1108, "v": 950, "per": false}]}, {"nome": "Hugo Spritz", "ing": [{"n": "água com gás", "q": 90.0, "p": 0.004, "v": 500, "per": false}, {"n": "Espumante Aurora Prosecco 750ml", "q": 90.0, "p": 0.0416, "v": 750, "per": true}, {"n": "Licor St. Germain", "q": 45.0, "p": 0.2833, "v": 750, "per": false}, {"n": "Licor St. Germain", "q": 50.0, "p": 0.2833, "v": 750, "per": false}, {"n": "água com gás", "q": 15.0, "p": 0.004, "v": 500, "per": false}, {"n": "Espumante Aurora Prosecco 750ml", "q": 20.0, "p": 0.0416, "v": 750, "per": true}, {"n": "Gelo", "q": 300.0, "p": 0.0014, "v": 7000, "per": false}]}, {"nome": "Jungle Bird", "ing": [{"n": "Xarope Simples", "q": 15.0, "p": 0.0028, "v": 2500, "per": false}, {"n": "Rum Spiced San Basile 950ml", "q": 45.0, "p": 0.1108, "v": 950, "per": false}, {"n": "Campari 998ml", "q": 15.0, "p": 0.048, "v": 998, "per": false}]}, {"nome": "Ladyberries", "ing": [{"n": "Xarope Grenadine Monin 700ml", "q": 15.0, "p": 0.0, "v": null, "per": false}, {"n": "Sumo de Limão taiti", "q": 10.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Asturia Frutas Vermelhas", "q": 30.0, "p": 0.0, "v": null, "per": true}]}, {"nome": "Macunaíma", "ing": [{"n": "Fernet Branca 750ml", "q": 7.5, "p": 0.1646, "v": 750, "per": false}, {"n": "Xarope Simples", "q": 15.0, "p": 0.0028, "v": 2500, "per": false}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Cachaça Capueira Prata 700ml", "q": 50.0, "p": 0.0393, "v": 700, "per": false}]}, {"nome": "Macunaíma | Grupo IZ", "ing": [{"n": "Cachaça Capueira 3 Madeiras 700ml", "q": 25.0, "p": 0.1773, "v": 700, "per": false}, {"n": "Cachaça Capueira Prata 700ml", "q": 30.0, "p": 0.0393, "v": 700, "per": false}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Xarope Simples", "q": 15.0, "p": 0.0028, "v": 2500, "per": false}, {"n": "Fernet Branca 750ml", "q": 7.5, "p": 0.1646, "v": 750, "per": false}]}, {"nome": "Mark Twain II", "ing": [{"n": "Angostura Orange", "q": 2.0, "p": 1.0576, "v": 100, "per": false}, {"n": "Xarope Simples", "q": 20.0, "p": 0.0028, "v": 2500, "per": false}, {"n": "Whiskey Jack Daniel’s N07 1lt", "q": 60.0, "p": 0.1165, "v": 1000, "per": false}]}, {"nome": "Melba Bellini", "ing": [{"n": "Sumo de laranja", "q": 30.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Vodka Absolut Vanilla", "q": 15.0, "p": 0.2, "v": 750, "per": false}, {"n": "Espumante Aurora Prosecco 750ml", "q": 600.0, "p": 0.0416, "v": 750, "per": true}, {"n": "Vermute Dolin Dry", "q": 45.0, "p": 0.2008, "v": 750, "per": false}, {"n": "Purê de framboesa", "q": 20.0, "p": 0.06, "v": 1000, "per": false}, {"n": "Monin pure pessego & damasco", "q": 30.0, "p": 0.0714, "v": 700, "per": true}]}, {"nome": "Mezcla y Matices", "ing": [{"n": "Sumo de Limão Taiti", "q": 7.5, "p": 0.02, "v": 1000, "per": true}, {"n": "Xarope de Kiwi e Jalapeño", "q": 25.0, "p": 0.03, "v": 1000, "per": false}, {"n": "Vinho Chardonnay", "q": 150.0, "p": 0.04, "v": 750, "per": false}, {"n": "Pisco Capel 700ml", "q": 25.0, "p": 0.112, "v": 700, "per": false}]}, {"nome": "Mimosa G.iz", "ing": [{"n": "Sumo de laranja", "q": 45.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Tropical seco", "q": 10.0, "p": 0.12, "v": 750, "per": false}, {"n": "Espumante Aurora Brut", "q": 120.0, "p": 0.048, "v": 750, "per": true}]}, {"nome": "Muito abacaxi na pizza", "ing": [{"n": "Espumante Aurora Brut", "q": 600.0, "p": 0.048, "v": 750, "per": true}, {"n": "Campari 998ml", "q": 60.0, "p": 0.048, "v": 998, "per": false}, {"n": "Solução salina", "q": 0.3, "p": 0.0, "v": null, "per": false}, {"n": "Vermute Bianco Carpano 950ml", "q": 45.0, "p": 0.0923, "v": 950, "per": false}, {"n": "Suco de Abacaxi clarificado", "q": 120.0, "p": 0.0233, "v": 300, "per": true}, {"n": "Aperol 750ml", "q": 60.0, "p": 0.0634, "v": 750, "per": false}]}, {"nome": "Negroni", "ing": [{"n": "Vermute Rosso Carpano 950ml", "q": 30.0, "p": 0.0841, "v": 950, "per": false}, {"n": "Gin Uyrá London Dry 5lt", "q": 30.0, "p": 0.0406, "v": 5000, "per": false}, {"n": "Campari 998ml", "q": 30.0, "p": 0.048, "v": 998, "per": false}]}, {"nome": "Paloma", "ing": [{"n": "Calda de Agave", "q": 10.0, "p": 0.1067, "v": 300, "per": false}]}, {"nome": "Penicillin", "ing": [{"n": "Whisky Talisker 10 anos 750ml", "q": 2.0, "p": 0.402, "v": 750, "per": false}, {"n": "Xarope de Gengibre", "q": 10.0, "p": 0.0, "v": null, "per": true}, {"n": "Água de Mel (1:1)", "q": 10.0, "p": 0.036, "v": 1000, "per": true}, {"n": "Licor Limoncello San Basile 750ml", "q": 15.0, "p": 0.1063, "v": 750, "per": false}, {"n": "Whisky Johnnie Walker Double Black 1lt", "q": 45.0, "p": 0.1898, "v": 1000, "per": false}, {"n": "Sumo de Limão taiti", "q": 25.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Whisky Talisker 10 anos 750ml", "q": 2.0, "p": 0.402, "v": 750, "per": false}, {"n": "Xarope de Gengibre", "q": 10.0, "p": 0.0, "v": null, "per": true}, {"n": "limoncello art.", "q": 15.0, "p": 0.0535, "v": 1600, "per": false}]}, {"nome": "Pesto & punch", "ing": [{"n": "Água tônica Antartica Lata", "q": 350.0, "p": 0.0095, "v": 350, "per": false}, {"n": "Espumante Aurora Brut", "q": 350.0, "p": 0.048, "v": 750, "per": true}, {"n": "Limão tahiti", "q": 45.0, "p": 0.025, "v": 1000, "per": true}, {"n": "Licor Frangélico", "q": 15.0, "p": 0.1646, "v": 700, "per": false}, {"n": "Cointreau 700ml", "q": 30.0, "p": 0.1757, "v": 700, "per": false}, {"n": "Licor Limoncello Villa Massa 700ml", "q": 30.0, "p": 0.1991, "v": 700, "per": false}, {"n": "xarope de manjericão", "q": 45.0, "p": 0.016, "v": 1000, "per": true}]}, {"nome": "Petricor", "ing": [{"n": "Água tônica preshh (Diluído)", "q": 90.0, "p": 0.0027, "v": 1100, "per": false}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Whisky Johnnie Walker Double Black 1lt", "q": 15.0, "p": 0.1898, "v": 1000, "per": false}, {"n": "Tequila Prata Jose Cuervo Silver 750ml", "q": 30.0, "p": 0.1333, "v": 750, "per": false}, {"n": "Xarope de Garum ?", "q": 22.5, "p": 0.0533, "v": 750, "per": false}]}, {"nome": "Pindorama", "ing": [{"n": "Vinho Chardonnay", "q": 40.0, "p": 0.04, "v": 750, "per": false}, {"n": "Xarope de Banana grelhada com Rum", "q": 15.0, "p": 0.0, "v": null, "per": false}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Licor St. Germain", "q": 15.0, "p": 0.2833, "v": 750, "per": false}, {"n": "Gin Beg refil 500ml", "q": 30.0, "p": 0.0778, "v": 500, "per": false}]}, {"nome": "Raspberry Mocktail", "ing": [{"n": "água com gás", "q": 90.0, "p": 0.004, "v": 500, "per": false}, {"n": "Menta/Hortelã", "q": 6.0, "p": 0.05, "v": 200, "per": true}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Asturia Frutas Vermelhas", "q": 30.0, "p": 0.0, "v": null, "per": true}]}, {"nome": "Sangre al punto", "ing": [{"n": "Xarope de canela", "q": 20.0, "p": 0.02, "v": 1000, "per": false}, {"n": "Sumo de Limão Taiti", "q": 25.0, "p": 0.02, "v": 1000, "per": true}, {"n": "Sumo de laranja", "q": 50.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Vinho tinto", "q": 600.0, "p": 0.0533, "v": 750, "per": false}, {"n": "Amaro Averna 700ml", "q": 30.0, "p": 0.1575, "v": 700, "per": false}, {"n": "Vermute Carpano Punt e Mes 750ml", "q": 60.0, "p": 0.1258, "v": 750, "per": false}, {"n": "Brandy Fundador", "q": 30.0, "p": 0.2, "v": 750, "per": false}]}, {"nome": "Solstício", "ing": [{"n": "Whisky Chivas Regal 12 anos 1Lt", "q": 50.0, "p": 0.1073, "v": 1000, "per": false}, {"n": "Suco de Abacaxi clarificado", "q": 30.0, "p": 0.0233, "v": 300, "per": true}, {"n": "Sumo de Limão taiti", "q": 10.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Xarope de Maracujá", "q": 50.0, "p": 0.0235, "v": 850, "per": true}]}, {"nome": "Tapanhumas", "ing": [{"n": "Licor Triple Sec San Basile 700ml", "q": 15.0, "p": 0.1191, "v": 700, "per": false}, {"n": "Xarope artesanal de Cumaru", "q": 15.0, "p": 0.03, "v": 1000, "per": false}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Brasilberg", "q": 15.0, "p": 0.0815, "v": 920, "per": false}, {"n": "Cachaça princesa Isabel Amburana", "q": 30.0, "p": 0.0, "v": null, "per": false}]}, {"nome": "Thalamus Killer", "ing": [{"n": "Tequila Don Julio Blanco 750ml", "q": 40.0, "p": 0.395, "v": 750, "per": false}, {"n": "Vermute Carpano Punt e Mes 750ml", "q": 10.0, "p": 0.1258, "v": 750, "per": false}, {"n": "Vermute Bianco Carpano 950ml", "q": 20.0, "p": 0.0923, "v": 950, "per": false}, {"n": "Licor de Café San Basile 700ml", "q": 10.0, "p": 0.1701, "v": 700, "per": false}, {"n": "Angostura Cacau", "q": 2.0, "p": 0.9, "v": 100, "per": false}]}, {"nome": "The last word", "ing": [{"n": "Tanqueray London dry", "q": 30.0, "p": 0.1332, "v": 750, "per": false}, {"n": "Sumo de Limão taiti", "q": 20.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Licor Luxardo Maraschino 750ml", "q": 20.0, "p": 0.3271, "v": 750, "per": false}, {"n": "Solução salina", "q": 2.0, "p": 0.0, "v": null, "per": false}, {"n": "Licor Green Chartreuse Fabriquee", "q": 20.0, "p": 3.3333, "v": 750, "per": false}]}, {"nome": "Unomás", "ing": [{"n": "Leite Integral", "q": 80.0, "p": 0.005, "v": 1000, "per": true}, {"n": "Molho de Pimenta Vermelho Tabasco 60ml", "q": 1.0, "p": 0.2025, "v": 60, "per": false}, {"n": "Suco de Tomate 300ml", "q": 120.0, "p": 0.0292, "v": 300, "per": true}, {"n": "Shoyu", "q": 15.0, "p": 0.0, "v": null, "per": false}, {"n": "Kimchi (preparo)", "q": 5.0, "p": 0.0, "v": null, "per": false}, {"n": "Sumo de Limão Taiti", "q": 40.0, "p": 0.02, "v": 1000, "per": true}, {"n": "Tequila 1800 Silver", "q": 60.0, "p": 0.5049, "v": 750, "per": false}]}, {"nome": "Velvet Berries", "ing": [{"n": "Ingrediente", "q": 0, "p": null, "v": null, "per": false}, {"n": "Ingrediente", "q": 0, "p": null, "v": null, "per": false}, {"n": "Amaro Averna 700ml", "q": 0, "p": 0.1575, "v": 700, "per": false}, {"n": "Gin Beg refil 500ml", "q": 0, "p": 0.0778, "v": 500, "per": false}]}, {"nome": "Verano 2", "ing": [{"n": "Paprica Picante", "q": 0.2, "p": 0.4, "v": 75, "per": false}, {"n": "água com gás", "q": 120.0, "p": 0.004, "v": 500, "per": false}, {"n": "Fake Lime", "q": 10.0, "p": 0.01, "v": 1000, "per": false}, {"n": "Vermute Bianco Carpano 950ml", "q": 10.0, "p": 0.0923, "v": 950, "per": false}, {"n": "Xarope de Maracujá", "q": 20.0, "p": 0.0235, "v": 850, "per": true}, {"n": "Vodka Hype 1lt", "q": 30.0, "p": 0.0385, "v": 1000, "per": false}, {"n": "Rum Spiced San Basile 950ml", "q": 15.0, "p": 0.1108, "v": 950, "per": false}]}, {"nome": "Yellow Sip", "ing": [{"n": "Tucupi", "q": 6.0, "p": 0.0123, "v": 1000, "per": false}, {"n": "Clara de ovo pasteurizada", "q": 15.0, "p": 0.0259, "v": 1000, "per": true}, {"n": "Calda de Agave", "q": 10.0, "p": 0.1067, "v": 300, "per": false}, {"n": "Sumo de Limão taiti", "q": 15.0, "p": 0.01, "v": 1000, "per": true}, {"n": "Xarope de Cenoura", "q": 15.0, "p": 0.02, "v": 1000, "per": false}, {"n": "Whisky Johnnie Walker Blonde 750ml", "q": 22.5, "p": 0.1271, "v": 750, "per": false}, {"n": "Jose Cuervo Tradicional 100% agave 750ml", "q": 22.5, "p": 0.1999, "v": 750, "per": false}]}, {"nome": "Yugure", "ing": [{"n": "Amaro Averna 700ml", "q": 10.0, "p": 0.1575, "v": 700, "per": false}, {"n": "Licor Amaretto Dell Orso", "q": 20.0, "p": 0.0856, "v": 700, "per": false}, {"n": "Calda de Agave", "q": 10.0, "p": 0.1067, "v": 300, "per": false}, {"n": "Clara de ovo pasteurizada", "q": 15.0, "p": 0.0259, "v": 1000, "per": true}, {"n": "Gin Roku", "q": 30.0, "p": 0.2307, "v": 700, "per": false}, {"n": "Sumo de Limão Taiti", "q": 22.5, "p": 0.02, "v": 1000, "per": true}]}, {"nome": "Âmbar (sem pre batched)", "ing": [{"n": "Tintura de Sal", "q": 2.0, "p": 0.0, "v": 100, "per": false}, {"n": "Salmoura de Alcaparrone", "q": 2.0, "p": 0.0, "v": null, "per": false}, {"n": "Vermute Rosso San Basile", "q": 15.0, "p": 0.1063, "v": 750, "per": false}, {"n": "Vermute Extra Dry San Basile", "q": 30.0, "p": 0.1063, "v": 750, "per": false}, {"n": "Licor 43 700ml", "q": 5.0, "p": 0.1784, "v": 700, "per": false}, {"n": "Bulleit Bourbon", "q": 30.0, "p": 0.3158, "v": 750, "per": false}]}];</script>
+
+<script>
+(function () {
+  var sel = document.getElementById('receita');
+  var nQ = document.getElementById('nq'), dil = document.getElementById('dil'), env = document.getElementById('env');
+  var tb = document.querySelector('table.calc tbody');
+  var resumo = document.getElementById('resumo'), avisos = document.getElementById('avisos');
+  var estado = [];
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function brl(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function fvol(ml) {
+    if (!ml) return '\u2014';
+    return ml >= 1000 ? (ml / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' L'
+                      : Math.round(ml * 10) / 10 + ' ml';
+  }
+  function card(k, v) { return '<div class="rcard"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
+
+  function carrega() {
+    var r = RECEITAS[sel.value];
+    estado = r.ing.map(function (i) {
+      return { n: i.n, q: i.q, p: i.p, v: i.v, per: i.per, inc: !i.per };
+    });
+    tb.innerHTML = '';
+    estado.forEach(function (l, ix) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + esc(l.n) + (l.per ? ' <span class="per" title="perec\u00edvel \u2014 normalmente entra na hora do servi\u00e7o, fora do batch">\u26a0\ufe0f</span>' : '') + '</td>' +
+        '<td class="num"><input type="number" class="qtd" step="0.5" min="0" value="' + l.q + '" data-ix="' + ix + '"></td>' +
+        '<td class="c"><input type="checkbox" class="inc" data-ix="' + ix + '"' + (l.inc ? ' checked' : '') + '></td>' +
+        '<td class="num tot"></td><td class="num gf"></td><td class="num cus"></td>';
+      tb.appendChild(tr);
+    });
+    calcula();
+  }
+
+  function calcula() {
+    var N = +nQ.value || 0, d = (+dil.value || 0) / 100, e = +env.value || 750;
+    var volB = 0, custoB = 0, custoDrink = 0, semCusto = 0;
+    tb.querySelectorAll('tr').forEach(function (tr, ix) {
+      var l = estado[ix], tot = l.q * N;
+      tr.querySelector('.tot').textContent = fvol(tot);
+      tr.querySelector('.gf').textContent = (l.v && tot) ? Math.ceil(tot / l.v) + ' \u00d7 ' + l.v + ' ml' : '\u2014';
+      var c = (l.p != null) ? tot * l.p : null;
+      tr.querySelector('.cus').textContent = (c != null) ? brl(c) : '\u2014';
+      tr.classList.toggle('fora', !l.inc);
+      if (l.p == null && l.q > 0) semCusto++;
+      if (l.p != null) custoDrink += l.q * l.p;
+      if (l.inc) { volB += tot; if (c != null) custoB += c; }
+    });
+    var volF = volB * (1 + d);
+    resumo.innerHTML =
+      card('Volume do batch', fvol(volF) + (d ? ' <small>c/ ' + dil.value + '% dilui\u00e7\u00e3o</small>' : '')) +
+      card('Envase', volF ? Math.ceil(volF / e) + ' gf de ' + e + ' ml' : '\u2014') +
+      card('Custo do batch', brl(custoB)) +
+      card('Custo por drink', brl(custoDrink) + ' <small>receita completa</small>');
+    avisos.textContent = semCusto
+      ? '\u26a0\ufe0f ' + semCusto + ' ingrediente(s) sem custo cadastrado no Notion \u2014 o custo real \u00e9 maior que o exibido.'
+      : '';
+  }
+
+  sel.addEventListener('change', carrega);
+  [nQ, dil, env].forEach(function (i) { i.addEventListener('input', calcula); });
+  tb.addEventListener('input', function (ev) {
+    var ix = ev.target.dataset.ix;
+    if (ix == null) return;
+    if (ev.target.classList.contains('qtd')) estado[ix].q = +ev.target.value || 0;
+    if (ev.target.classList.contains('inc')) estado[ix].inc = ev.target.checked;
+    calcula();
+  });
+  carrega();
+})();
+</script>
+
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 03/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+</body>
+</html>

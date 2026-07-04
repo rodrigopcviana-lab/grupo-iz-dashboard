@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Rotinas · Portal dos Bares — Grupo IZ</title>
+<style>
+  :root {
+    --bg: #faf9f5; --card: #ffffff; --border: #e1e0d9;
+    --text: #0b0b0b; --text-2: #52514e; --text-3: #898781;
+    --azul: #2a78d6; --verde: #1f9d55; --amarelo: #b7791f;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 20px; max-width: 980px; margin: 0 auto;
+  }
+  nav { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; margin-bottom: 20px; }
+  nav a { color: var(--text-2); text-decoration: none; }
+  nav a.on { color: var(--azul); font-weight: 600; }
+  nav a:hover { color: var(--azul); }
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+  .sub { color: var(--text-2); font-size: 14px; margin-bottom: 22px; }
+  h2 { font-size: 17px; font-weight: 600; margin: 26px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+           padding: 18px; text-decoration: none; color: var(--text); }
+  a.card:hover { border-color: var(--azul); }
+  a.card .t { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+  a.card .d { font-size: 13px; color: var(--text-2); }
+  .lock { color: var(--amarelo); font-size: 12px; font-weight: 600; }
+  .wa { display: inline-block; background: #25d366; color: #fff; font-weight: 600; font-size: 14px;
+        padding: 10px 18px; border-radius: 999px; text-decoration: none; margin-top: 8px; }
+  .nota { font-size: 12px; color: var(--text-3); margin-top: 28px; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  .ctrl input { font: inherit; font-size: 14px; padding: 8px 12px; flex: 1; min-width: 180px;
+                border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .chip { font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid var(--border);
+          border-radius: 999px; background: var(--card); color: var(--text-2); cursor: pointer; }
+  .chip.on { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .ficha { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+           padding: 16px; margin-bottom: 12px; }
+  .ficha header { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+                  justify-content: space-between; margin-bottom: 8px; }
+  .ficha h3 { font-size: 15px; font-weight: 600; }
+  .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+  .badge { font-size: 11px; font-weight: 600; color: var(--azul); background: #eaf2fc;
+           border-radius: 999px; padding: 2px 8px; }
+  .ficha ul { padding-left: 18px; font-size: 14px; }
+  .ficha li { margin: 2px 0; }
+  .metas { margin-top: 8px; font-size: 13px; color: var(--text-2); }
+  .metas p { margin: 2px 0; }
+  .aviso { font-size: 13px; color: var(--amarelo); }
+  #vazio { display: none; color: var(--text-3); font-size: 14px; padding: 20px 0; }
+  table.regras { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--card);
+                 border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table.regras th, table.regras td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+  table.regras tr:last-child td { border-bottom: none; }
+  table.regras th { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+           padding: 18px; margin-bottom: 14px; font-size: 14px; }
+  .panel h2 { margin: 0 0 8px; }
+  .panel p, .panel li { color: var(--text-2); }
+  .panel ul { padding-left: 18px; margin-top: 6px; }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  label.check { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0;
+                border-bottom: 1px dashed var(--border); font-size: 14px; cursor: pointer; }
+  label.check:last-of-type { border-bottom: none; }
+  label.check input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--azul); flex: none; }
+  label.check input:checked + span { color: var(--text-3); text-decoration: line-through; }
+  .flag { color: #c53030; font-weight: 700; }
+  .freq { font-size: 11px; font-weight: 600; color: #6b46c1; background: #f0eafc;
+          border-radius: 999px; padding: 2px 8px; margin-right: 6px; }
+  .limpar { font: inherit; font-size: 12px; color: var(--text-3); background: none;
+            border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .htime { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .objetivo { font-size: 13px; color: var(--verde); margin: 6px 0 2px; }
+  .desc { font-size: 12px; color: var(--text-3); margin: 2px 0 0 28px; white-space: pre-line; }
+  details.roteiro { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+                    padding: 14px 18px; margin-bottom: 14px; }
+  details.roteiro summary { font-weight: 600; font-size: 15px; cursor: pointer; }
+  details.roteiro h3 { font-size: 14px; font-weight: 600; margin: 16px 0 2px; }
+  details.vendas-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+                       padding: 4px 18px; margin-bottom: 14px; }
+  details.vendas-box summary { font-weight: 600; font-size: 15px; cursor: pointer; padding: 12px 0;
+                               list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.vendas-box summary::-webkit-details-marker { display: none; }
+  details.vendas-box summary .seta { margin-left: auto; color: var(--text-3); transition: transform .15s; }
+  details.vendas-box[open] summary .seta { transform: rotate(180deg); }
+  a.vlink { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0;
+            border-top: 1px dashed var(--border); text-decoration: none; color: var(--text); font-size: 14px; }
+  a.vlink:hover { color: var(--azul); }
+  a.vlink .lock { flex: none; }
+  .prod { display: flex; align-items: center; gap: 8px; padding: 6px 0;
+          border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .prod:last-child { border-bottom: none; }
+  .pos { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px;
+         white-space: nowrap; flex: none; min-width: 68px; text-align: center; }
+  .abc-a { color: #1f7a3f; background: #e3f4e8; }
+  .abc-b { color: #9c6b12; background: #fbf0d9; }
+  .abc-c { color: #6b6a64; background: #efeee8; }
+  .pos.rankn { min-width: 48px; color: #52514e; background: #eceae2; }
+  .pos.mini { min-width: 30px; }
+  .ctrl select { font: inherit; font-size: 14px; padding: 8px 12px; flex: 1; min-width: 180px;
+                 border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+  .equipe-casa { margin-bottom: 24px; }
+  .equipe-casa h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px; }
+  .pessoa { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px 16px; margin-bottom: 8px; }
+  .pessoa-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pessoa .nome { font-weight: 600; font-size: 14px; }
+  .badge-chefe { font-size: 11px; font-weight: 600; color: #7a4b00; background: #fbf0d9;
+                 border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .sub2 { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+  .ferias { font-size: 12px; color: var(--amarelo); margin-top: 4px; }
+</style>
+</head>
+<body>
+<nav><a href="index.html" class="">Início</a><a href="eventos.html" class="">Eventos</a><a href="cocktails.html" class="">Fichas técnicas</a><a href="calculadora.html" class="">Calculadora PB</a><a href="rotinas.html" class="on">Rotinas</a><a href="equipe.html" class="">Equipe</a><a href="contatos.html" class="">Contatos 🔒</a><a href="regras.html" class="">Escala & BH</a><a href="curva-abc.html" class="">Ranking 🔒</a><a href="vendas/index.html" class="">Vendas 🔒</a></nav>
+
+<h1>Rotinas dos bares</h1>
+<p class="sub">Aberturas, fechamentos, tarefas periódicas e pontuais — direto dos checklists
+oficiais (Notion/TickTick). Pode marcar os itens conforme executa: o check fica só no seu
+aparelho e zera automaticamente todo dia.</p>
+<h2>IZ Restaurante</h2><div class="panel"><div class="panel-head"><h2>🔁 Tarefas periódicas</h2><button class="limpar" data-alvo="iz_per">desmarcar tudo</button></div><label class="check"><input type="checkbox" data-key="iz_per_Diário_0"><span><span class="freq">Diário</span>Conferência padrão de produções</span></label><label class="check"><input type="checkbox" data-key="iz_per_Semanal_0"><span><span class="freq">Semanal</span>Precificação de cocktail</span></label><label class="check"><input type="checkbox" data-key="iz_per_Semanal_1"><span><span class="freq">Semanal</span>Treinamento de brigada</span></label><label class="check"><input type="checkbox" data-key="iz_per_Semanal_2"><span><span class="freq">Semanal</span>Teste de execução (Bartender)</span></label><p class="desc">Fazer relatório 
+
+Tempo 
+Padrão
+Organização</p><label class="check"><input type="checkbox" data-key="iz_per_Semanal_3"><span><span class="freq">Semanal</span>Conferência PE PS</span></label><label class="check"><input type="checkbox" data-key="iz_per_Semanal_4"><span><span class="freq">Semanal</span>Contagem de copos</span></label><label class="check"><input type="checkbox" data-key="iz_per_Mensal_0"><span><span class="freq">Mensal</span>Conferência banco de horas equipe</span></label><label class="check"><input type="checkbox" data-key="iz_per_Mensal_1"><span><span class="freq">Mensal</span>Envio da escala para Rh</span></label><label class="check"><input type="checkbox" data-key="iz_per_Trimestral_0"><span><span class="freq">Trimestral</span>Inventário utensílios e equipamentos</span></label></div><div class="panel"><div class="panel-head"><h2>📌 Tarefas pontuais</h2><button class="limpar" data-alvo="iz_pon">desmarcar tudo</button></div><label class="check"><input type="checkbox" data-key="iz_pon_0"><span>Conferir a compra das Gina basic black</span></label><label class="check"><input type="checkbox" data-key="iz_pon_1"><span>Contagem insumos</span></label></div><h2>Grá Bistrô</h2><div class="panel"><div class="panel-head"><h2>☀️ Abertura</h2><button class="limpar" data-alvo="gra_ab">desmarcar tudo</button></div><label class="check"><input type="checkbox" data-key="gra_ab_0"><span>Repor copos, shakers e utensílios</span></label><label class="check"><input type="checkbox" data-key="gra_ab_1"><span>Verificar estoque de bebidas e insumos <span class="flag" title="prioridade alta">!</span></span></label><label class="check"><input type="checkbox" data-key="gra_ab_2"><span>Conferir mise en place (frutas, ervas, garnishes) <span class="flag" title="prioridade alta">!</span></span></label><label class="check"><input type="checkbox" data-key="gra_ab_3"><span>Conferir limpeza geral do bar <span class="flag" title="prioridade alta">!</span></span></label><label class="check"><input type="checkbox" data-key="gra_ab_4"><span>Ligar equipamentos (geladeira, máquina de gelo, liquidificador) <span class="flag" title="prioridade alta">!</span></span></label><label class="check"><input type="checkbox" data-key="gra_ab_5"><span>Testar iluminação e som</span></label><label class="check"><input type="checkbox" data-key="gra_ab_6"><span>Verificar reservas e eventos do dia</span></label></div><div class="panel"><div class="panel-head"><h2>🌙 Fechamento</h2><button class="limpar" data-alvo="gra_fe">desmarcar tudo</button></div><label class="check"><input type="checkbox" data-key="gra_fe_0"><span>Fazer registro de vendas e consumo do dia</span></label><label class="check"><input type="checkbox" data-key="gra_fe_1"><span>Verificar estoque e anotar o que falta <span class="flag" title="prioridade alta">!</span></span></label><label class="check"><input type="checkbox" data-key="gra_fe_2"><span>Lavar e guardar utensílios (copos, shakers, colheres) <span class="flag" title="prioridade alta">!</span></span></label><label class="check"><input type="checkbox" data-key="gra_fe_3"><span>Desligar todos os equipamentos <span class="flag" title="prioridade alta">!</span></span></label><label class="check"><input type="checkbox" data-key="gra_fe_4"><span>Conferir lixo e organização geral</span></label><label class="check"><input type="checkbox" data-key="gra_fe_5"><span>Esvaziar e higienizar máquina de gelo</span></label><label class="check"><input type="checkbox" data-key="gra_fe_6"><span>Limpar bancada, equipamentos e dreno <span class="flag" title="prioridade alta">!</span></span></label><label class="check"><input type="checkbox" data-key="gra_fe_7"><span>Guardar insumos e ingredientes perecíveis <span class="flag" title="prioridade alta">!</span></span></label></div><div class="panel"><div class="panel-head"><h2>🔁 Tarefas periódicas</h2><button class="limpar" data-alvo="gra_per">desmarcar tudo</button></div><label class="check"><input type="checkbox" data-key="gra_per_Diário_0"><span><span class="freq">Diário</span>Conferência padrão de produções</span></label><label class="check"><input type="checkbox" data-key="gra_per_Semanal_0"><span><span class="freq">Semanal</span>Teste de execução (Bartender)</span></label><p class="desc">Fazer relatório 
+
+Tempo 
+Padrão
+Organização</p><label class="check"><input type="checkbox" data-key="gra_per_Semanal_1"><span><span class="freq">Semanal</span>Treinamento de brigada</span></label><label class="check"><input type="checkbox" data-key="gra_per_Semanal_2"><span><span class="freq">Semanal</span>Precificação de cocktail</span></label><label class="check"><input type="checkbox" data-key="gra_per_Semanal_3"><span><span class="freq">Semanal</span>Contagem de copos</span></label><label class="check"><input type="checkbox" data-key="gra_per_Semanal_4"><span><span class="freq">Semanal</span>Conferência PE PS</span></label><label class="check"><input type="checkbox" data-key="gra_per_Mensal_0"><span><span class="freq">Mensal</span>Conferência banco de horas equipe</span></label><label class="check"><input type="checkbox" data-key="gra_per_Mensal_1"><span><span class="freq">Mensal</span>Envio da escala para Rh</span></label><label class="check"><input type="checkbox" data-key="gra_per_Trimestral_0"><span><span class="freq">Trimestral</span>Inventário utensílios e equipamentos</span></label></div><div class="panel"><div class="panel-head"><h2>📌 Tarefas pontuais</h2><button class="limpar" data-alvo="gra_pon">desmarcar tudo</button></div><label class="check"><input type="checkbox" data-key="gra_pon_0"><span>organizar produções para rooftop</span></label><label class="check"><input type="checkbox" data-key="gra_pon_1"><span>Contagem insumos</span></label><label class="check"><input type="checkbox" data-key="gra_pon_2"><span>Xarope de gengibre e mel</span></label><label class="check"><input type="checkbox" data-key="gra_pon_3"><span>Espuma de gengibre</span></label></div><details class="roteiro"><summary>🏙️ Roteiro do dia — Bar Rooftop (H) · Grá <button class="limpar" data-alvo="roof" style="float:right">desmarcar tudo</button></summary><h3>ABERTURA TÉCNICA</h3><p class="htime">🕐 15:40 – 16:00 (20 min)</p><label class="check"><input type="checkbox" data-key="roof_0"><span>Chegar ao restaurante</span></label><label class="check"><input type="checkbox" data-key="roof_1"><span>Guardar material pessoal</span></label><label class="check"><input type="checkbox" data-key="roof_2"><span>Bater ponto</span></label><label class="check"><input type="checkbox" data-key="roof_3"><span>Abrir checklist do período (Notion)</span></label><label class="check"><input type="checkbox" data-key="roof_4"><span>Verificar quadro de operação do dia</span></label><label class="check"><input type="checkbox" data-key="roof_5"><span>Anotar itens faltantes para reposição</span></label><label class="check"><input type="checkbox" data-key="roof_6"><span>Organizar estoque</span></label><label class="check"><input type="checkbox" data-key="roof_7"><span>Verificar condições da copa/estoque (andar 41)</span></label><p class="objetivo">🎯 Objetivo: iniciar o turno com visão clara do que precisa subir para o rooftop.</p><h3>LOGÍSTICA &amp; ABASTECIMENTO (ANDARES 40 / 41)</h3><p class="htime">🕐 16:00 – 16:30 (30 min)</p><label class="check"><input type="checkbox" data-key="roof_8"><span>Carregar caixas com itens do andar 41 (copa/estoque/pulmão)</span></label><label class="check"><input type="checkbox" data-key="roof_9"><span>Carregar caixa de apoio do bistrô</span></label><label class="check"><input type="checkbox" data-key="roof_10"><span>Carregar gelo</span></label><label class="check"><input type="checkbox" data-key="roof_11"><span>Repor térmicas</span></label><label class="check"><input type="checkbox" data-key="roof_12"><span>Carregar gelo translúcido</span></label><label class="check"><input type="checkbox" data-key="roof_13"><span>Verificar térmicas e armários</span></label><p class="objetivo">🎯 Objetivo: garantir que todos os insumos estejam prontos para subida.</p><h3>MONTAGEM DO BAR – ROOFTOP (H)</h3><p class="htime">🕐 16:30 – 17:00 (30 min)</p><label class="check"><input type="checkbox" data-key="roof_14"><span>Montar estação (parte superior e inferior)</span></label><label class="check"><input type="checkbox" data-key="roof_15"><span>Dispor insumos de forma funcional</span></label><label class="check"><input type="checkbox" data-key="roof_16"><span>Dispor impressora, garrafas e balança</span></label><label class="check"><input type="checkbox" data-key="roof_17"><span>Ligar chaves de energia</span></label><label class="check"><input type="checkbox" data-key="roof_18"><span>Colocar sacos de lixo</span></label><label class="check"><input type="checkbox" data-key="roof_19"><span>Varrer assoalho</span></label><label class="check"><input type="checkbox" data-key="roof_20"><span>Checar se falta algum insumo na estação</span></label><label class="check"><input type="checkbox" data-key="roof_21"><span>Ajustar organização fina da estação</span></label><label class="check"><input type="checkbox" data-key="roof_22"><span>Validar funcionamento de equipamentos</span></label><label class="check"><input type="checkbox" data-key="roof_23"><span>Comunicar rupturas ou necessidades ao estoque (andar 41)</span></label><p class="objetivo">🎯 Objetivo: deixar o bar 100% operacional antes da abertura.</p><h3>INTERVALO</h3><p class="htime">🕐 17:00 – 17:30 (30 min)</p><label class="check"><input type="checkbox" data-key="roof_24"><span>Sair para intervalo / bater ponto</span></label><label class="check"><input type="checkbox" data-key="roof_25"><span>Retornar no horário / bater ponto</span></label><h3>ABERTURA / SERVIÇO – TURNO NOITE</h3><p class="htime">🕐 19:30 – 21:00 – 22:30 (3h)</p><label class="check"><input type="checkbox" data-key="roof_26"><span>Iniciar serviço</span></label><label class="check"><input type="checkbox" data-key="roof_27"><span>Manter estação organizada continuamente</span></label><label class="check"><input type="checkbox" data-key="roof_28"><span>Realizar atividades de limpeza/manutenção durante serviço</span></label><label class="check"><input type="checkbox" data-key="roof_29"><span>Checar etiquetas</span></label><label class="check"><input type="checkbox" data-key="roof_30"><span>Repor material para segundo horário de reservas - (21:00)</span></label><label class="check"><input type="checkbox" data-key="roof_31"><span>Repor insumos de forma preventiva (via andar 41 / 40)</span></label><label class="check"><input type="checkbox" data-key="roof_32"><span>Comunicar baixas críticas</span></label><label class="check"><input type="checkbox" data-key="roof_33"><span>Manter limpeza ativa da estação e entorno</span></label><p class="objetivo">🎯 Objetivo: garantir operação fluida desde a abertura oficial.</p><h3>ENCERRAMENTO BAR PRINCIPAL</h3><p class="htime">🕐 22:30 – 00:00 (1h30)</p><label class="check"><input type="checkbox" data-key="roof_34"><span>Encerrar atendimento</span></label><label class="check"><input type="checkbox" data-key="roof_35"><span>Fazer lista de reposição</span></label><label class="check"><input type="checkbox" data-key="roof_36"><span>Fazer reposição (se aplicável imediato)</span></label><label class="check"><input type="checkbox" data-key="roof_37"><span>Higienizar garrafas e bisnagas</span></label><label class="check"><input type="checkbox" data-key="roof_38"><span>Guardar garrafas limpas no armário</span></label><label class="check"><input type="checkbox" data-key="roof_39"><span>Desmontar e higienizar estação e bancada</span></label><label class="check"><input type="checkbox" data-key="roof_40"><span>Guardar impressora e router protegidos</span></label><label class="check"><input type="checkbox" data-key="roof_41"><span>Desligar som e chaves de energia</span></label><label class="check"><input type="checkbox" data-key="roof_42"><span>Recolher gelo translúcido</span></label><label class="check"><input type="checkbox" data-key="roof_43"><span>Montar caixas com itens do andar 41</span></label><label class="check"><input type="checkbox" data-key="roof_44"><span>Montar caixas de retorno do bistrô (andar 40)</span></label><label class="check"><input type="checkbox" data-key="roof_45"><span>Recolher lixo</span></label><label class="check"><input type="checkbox" data-key="roof_46"><span>Varrer assoalho</span></label><p class="objetivo">🎯 Objetivo: desmontar o rooftop e preparar retorno eficiente.</p><h3>PÓS-FECHAMENTO – COPA / ESTOQUE (41)</h3><p class="htime">🕐 00:00 – 00:30 (30 min)</p><label class="check"><input type="checkbox" data-key="roof_47"><span>Ajudar na organização e limpeza da copa</span></label><label class="check"><input type="checkbox" data-key="roof_48"><span>Retornar material para o pulmão/bistrô</span></label><label class="check"><input type="checkbox" data-key="roof_49"><span>Repor pulmão do andar 41</span></label><label class="check"><input type="checkbox" data-key="roof_50"><span>Recolher lixo final</span></label><p class="objetivo">🎯 Objetivo: deixar o suporte pronto para o próximo dia.</p><h3>SAÍDA</h3><p class="htime">🕐 00:30</p><label class="check"><input type="checkbox" data-key="roof_51"><span>Bater ponto</span></label><label class="check"><input type="checkbox" data-key="roof_52"><span>Encerrar turno</span></label></details>
+<div class="panel">
+<h2>1929 · FAMU · Fulles · NIP</h2>
+<p>As rotinas dessas casas ainda não estão cadastradas nos checklists do Notion.
+Enquanto isso, valem as rotinas gerais de abertura/fechamento da sua operação —
+e se quiser cadastrar a da sua casa,
+<a href="https://wa.me/556281483511?text=Ol%C3%A1%20Rodrigo!%20Quero%20cadastrar%20as%20rotinas%20do%20meu%20bar%20no%20portal.%20">fale com o Rodrigo</a>.</p>
+</div>
+
+<script>
+(function () {
+  // "dia de trabalho" local com corte às 6h — fechamento de madrugada conta como o mesmo dia
+  var d = new Date(Date.now() - 6 * 3600 * 1000);
+  var hoje = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  Object.keys(localStorage).forEach(function (k) {
+    if (k.indexOf('rot_') === 0 && k.indexOf('_' + hoje) === -1) localStorage.removeItem(k);
+  });
+  document.querySelectorAll('label.check input').forEach(function (cb) {
+    var k = 'rot_' + cb.dataset.key + '_' + hoje;
+    cb.checked = localStorage.getItem(k) === '1';
+    cb.addEventListener('change', function () {
+      if (cb.checked) localStorage.setItem(k, '1'); else localStorage.removeItem(k);
+    });
+  });
+  document.querySelectorAll('.limpar').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('label.check input[data-key^="' + b.dataset.alvo + '"]').forEach(function (cb) {
+        cb.checked = false;
+        localStorage.removeItem('rot_' + cb.dataset.key + '_' + hoje);
+      });
+    });
+  });
+})();
+</script>
+
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 03/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+</body>
+</html>

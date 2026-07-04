@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Fichas técnicas · Portal dos Bares — Grupo IZ</title>
+<style>
+  :root {
+    --bg: #faf9f5; --card: #ffffff; --border: #e1e0d9;
+    --text: #0b0b0b; --text-2: #52514e; --text-3: #898781;
+    --azul: #2a78d6; --verde: #1f9d55; --amarelo: #b7791f;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 20px; max-width: 980px; margin: 0 auto;
+  }
+  nav { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; margin-bottom: 20px; }
+  nav a { color: var(--text-2); text-decoration: none; }
+  nav a.on { color: var(--azul); font-weight: 600; }
+  nav a:hover { color: var(--azul); }
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+  .sub { color: var(--text-2); font-size: 14px; margin-bottom: 22px; }
+  h2 { font-size: 17px; font-weight: 600; margin: 26px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+           padding: 18px; text-decoration: none; color: var(--text); }
+  a.card:hover { border-color: var(--azul); }
+  a.card .t { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+  a.card .d { font-size: 13px; color: var(--text-2); }
+  .lock { color: var(--amarelo); font-size: 12px; font-weight: 600; }
+  .wa { display: inline-block; background: #25d366; color: #fff; font-weight: 600; font-size: 14px;
+        padding: 10px 18px; border-radius: 999px; text-decoration: none; margin-top: 8px; }
+  .nota { font-size: 12px; color: var(--text-3); margin-top: 28px; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  .ctrl input { font: inherit; font-size: 14px; padding: 8px 12px; flex: 1; min-width: 180px;
+                border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .chip { font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid var(--border);
+          border-radius: 999px; background: var(--card); color: var(--text-2); cursor: pointer; }
+  .chip.on { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .ficha { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+           padding: 16px; margin-bottom: 12px; }
+  .ficha header { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+                  justify-content: space-between; margin-bottom: 8px; }
+  .ficha h3 { font-size: 15px; font-weight: 600; }
+  .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+  .badge { font-size: 11px; font-weight: 600; color: var(--azul); background: #eaf2fc;
+           border-radius: 999px; padding: 2px 8px; }
+  .ficha ul { padding-left: 18px; font-size: 14px; }
+  .ficha li { margin: 2px 0; }
+  .metas { margin-top: 8px; font-size: 13px; color: var(--text-2); }
+  .metas p { margin: 2px 0; }
+  .aviso { font-size: 13px; color: var(--amarelo); }
+  #vazio { display: none; color: var(--text-3); font-size: 14px; padding: 20px 0; }
+  table.regras { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--card);
+                 border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table.regras th, table.regras td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+  table.regras tr:last-child td { border-bottom: none; }
+  table.regras th { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+           padding: 18px; margin-bottom: 14px; font-size: 14px; }
+  .panel h2 { margin: 0 0 8px; }
+  .panel p, .panel li { color: var(--text-2); }
+  .panel ul { padding-left: 18px; margin-top: 6px; }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  label.check { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0;
+                border-bottom: 1px dashed var(--border); font-size: 14px; cursor: pointer; }
+  label.check:last-of-type { border-bottom: none; }
+  label.check input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--azul); flex: none; }
+  label.check input:checked + span { color: var(--text-3); text-decoration: line-through; }
+  .flag { color: #c53030; font-weight: 700; }
+  .freq { font-size: 11px; font-weight: 600; color: #6b46c1; background: #f0eafc;
+          border-radius: 999px; padding: 2px 8px; margin-right: 6px; }
+  .limpar { font: inherit; font-size: 12px; color: var(--text-3); background: none;
+            border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .htime { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .objetivo { font-size: 13px; color: var(--verde); margin: 6px 0 2px; }
+  .desc { font-size: 12px; color: var(--text-3); margin: 2px 0 0 28px; white-space: pre-line; }
+  details.roteiro { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+                    padding: 14px 18px; margin-bottom: 14px; }
+  details.roteiro summary { font-weight: 600; font-size: 15px; cursor: pointer; }
+  details.roteiro h3 { font-size: 14px; font-weight: 600; margin: 16px 0 2px; }
+  details.vendas-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+                       padding: 4px 18px; margin-bottom: 14px; }
+  details.vendas-box summary { font-weight: 600; font-size: 15px; cursor: pointer; padding: 12px 0;
+                               list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.vendas-box summary::-webkit-details-marker { display: none; }
+  details.vendas-box summary .seta { margin-left: auto; color: var(--text-3); transition: transform .15s; }
+  details.vendas-box[open] summary .seta { transform: rotate(180deg); }
+  a.vlink { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0;
+            border-top: 1px dashed var(--border); text-decoration: none; color: var(--text); font-size: 14px; }
+  a.vlink:hover { color: var(--azul); }
+  a.vlink .lock { flex: none; }
+  .prod { display: flex; align-items: center; gap: 8px; padding: 6px 0;
+          border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .prod:last-child { border-bottom: none; }
+  .pos { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px;
+         white-space: nowrap; flex: none; min-width: 68px; text-align: center; }
+  .abc-a { color: #1f7a3f; background: #e3f4e8; }
+  .abc-b { color: #9c6b12; background: #fbf0d9; }
+  .abc-c { color: #6b6a64; background: #efeee8; }
+  .pos.rankn { min-width: 48px; color: #52514e; background: #eceae2; }
+  .pos.mini { min-width: 30px; }
+  .ctrl select { font: inherit; font-size: 14px; padding: 8px 12px; flex: 1; min-width: 180px;
+                 border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+  .equipe-casa { margin-bottom: 24px; }
+  .equipe-casa h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px; }
+  .pessoa { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px 16px; margin-bottom: 8px; }
+  .pessoa-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pessoa .nome { font-weight: 600; font-size: 14px; }
+  .badge-chefe { font-size: 11px; font-weight: 600; color: #7a4b00; background: #fbf0d9;
+                 border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .sub2 { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+  .ferias { font-size: 12px; color: var(--amarelo); margin-top: 4px; }
+</style>
+</head>
+<body>
+<nav><a href="index.html" class="">Início</a><a href="eventos.html" class="">Eventos</a><a href="cocktails.html" class="on">Fichas técnicas</a><a href="calculadora.html" class="">Calculadora PB</a><a href="rotinas.html" class="">Rotinas</a><a href="equipe.html" class="">Equipe</a><a href="contatos.html" class="">Contatos 🔒</a><a href="regras.html" class="">Escala & BH</a><a href="curva-abc.html" class="">Ranking 🔒</a><a href="vendas/index.html" class="">Vendas 🔒</a></nav>
+
+<h1>Fichas técnicas — cocktails</h1>
+<p class="sub">Os cocktails que fazem 2/3 da receita de coquetelaria de cada casa.
+Fonte: Banco de Cocktails do Notion. 3 itens ainda sem ficha cadastrada (marcados com ⚠️).</p>
+<div class="ctrl"><input id="busca" type="search" placeholder="Buscar cocktail ou ingrediente…"></div>
+<div class="chips"><button class="chip on" data-casa="todas">Todas as casas</button><button class="chip" data-casa="iz">IZ</button><button class="chip" data-casa="1929">1929</button><button class="chip" data-casa="gra">Grá</button><button class="chip" data-casa="famu">FAMU</button><button class="chip" data-casa="fulles">Fulles</button><button class="chip" data-casa="nip">NIP</button></div>
+<article class="ficha" data-casas="iz 1929 gra famu fulles nip"><header><h3>Fitzgerald</h3><div class="badges"><span class="badge">IZ</span><span class="badge">1929</span><span class="badge">Grá</span><span class="badge">FAMU</span><span class="badge">Fulles</span><span class="badge">NIP</span></div></header><ul><li>60ml Gin Beg</li><li>25ml Suco de limão taiti</li><li>20ml Xarope simples</li><li>2 dash Angostura</li></ul><div class="metas"><p>Método: Batido | Gelo: máquina | Copo: Soho Rocks/Lijita</p><p>Preparo: coqueteleira → gelo → bater com vigor → coar duplamente p/ copo com gelo novo</p><p>Guarnição: zest de limão siciliano (Grá usa siciliano desidratado)</p><p>Pré-batched 80ml preb + 25ml limão taiti</p></div></article><article class="ficha" data-casas="iz 1929 gra famu fulles nip"><header><h3>Negroni</h3><div class="badges"><span class="badge">IZ</span><span class="badge">1929</span><span class="badge">Grá</span><span class="badge">FAMU</span><span class="badge">Fulles</span><span class="badge">NIP</span></div></header><ul><li>30ml Gin Uyra London Dry</li><li>30ml Vermute Rosso</li><li>30ml Campari</li></ul><div class="metas"><p>Método: Mexido (mixing glass, gelo, coar) | Copo: Rocks | Pré-batch 25% diluição</p><p>Guarnição: moeda de laranja bahia</p></div></article><article class="ficha" data-casas="iz 1929 gra famu fulles nip"><header><h3>Aperol Spritz</h3><div class="badges"><span class="badge">IZ</span><span class="badge">1929</span><span class="badge">Grá</span><span class="badge">FAMU</span><span class="badge">Fulles</span><span class="badge">NIP</span></div></header><ul><li>150ml Espumante Aurora</li><li>75ml Aperol</li><li>25ml Água com gás Preshh</li></ul><div class="metas"><p>Método: Montado (espumante → Aperol → água com gás, mexer suave) | Copo: Taça Prestige</p><p>Guarnição: meia lua de laranja bahia</p><p>Pré-batch: 1000ml espumante + 500ml Aperol + 180ml água com gás</p></div></article><article class="ficha" data-casas="gra famu fulles"><header><h3>Moscow Mule</h3><div class="badges"><span class="badge">Grá</span><span class="badge">FAMU</span><span class="badge">Fulles</span></div></header><ul><li>60ml Vodka Hype</li><li>25ml Limão</li><li>20ml Xarope simples</li></ul><div class="metas"><p>Método: Batido (cheat shake) | Copo: caneca de cobre</p><p>Guarnição: espuma de gengibre</p></div></article><article class="ficha" data-casas="1929"><header><h3>Whisky Sour</h3><div class="badges"><span class="badge">1929</span></div></header><ul><li>60ml Gentleman Jack</li><li>25ml Limão taiti</li><li>20ml Xarope simples</li><li>20ml Clara de ovo pasteurizada</li></ul><div class="metas"><p>Método: Batido + dry shake | Copo: Soho</p><p>Guarnição: 2 gotas de Angostura, aromatizar com limão siciliano</p></div></article><article class="ficha" data-casas="iz 1929 gra"><header><h3>Bramble</h3><div class="badges"><span class="badge">IZ</span><span class="badge">1929</span><span class="badge">Grá</span></div></header><ul><li>60ml Infusão gin + amora</li><li>25ml Xarope de amora</li><li>25ml Caldo de limão</li></ul><div class="metas"><p>Método: Batido | Copo: Rocks</p><p>Guarnição: meia lua de limão siciliano</p></div></article><article class="ficha" data-casas="nip"><header><h3>Penicillin</h3><div class="badges"><span class="badge">NIP</span></div></header><ul><li>45ml Whisky Johnnie Walker Double Black</li><li>25ml Limão espremido</li><li>15ml Licor Limoncello</li><li>10ml Xarope de mel</li><li>10ml Xarope de gengibre</li></ul><div class="metas"><p>Método: Batido | Copo: Rocks</p><p>Guarnição: 2 borrifos de Talisker + gengibre cristalizado</p></div></article><article class="ficha" data-casas="nip"><header><h3>Mark Twain II</h3><div class="badges"><span class="badge">NIP</span></div></header><ul><li>60ml Jack Daniel&#x27;s n7</li><li>25ml Suco de limão</li><li>20ml Xarope de açúcar</li><li>2 dash Angostura</li></ul><div class="metas"><p>Método: Batido, coagem dupla | Copo: Vivant baixo</p><p>Guarnição: smile de limão siciliano</p></div></article><article class="ficha" data-casas="nip"><header><h3>Macunaíma</h3><div class="badges"><span class="badge">NIP</span></div></header><ul><li>50ml Cachaça Capueira prata</li><li>15ml Suco fresco de limão taiti</li><li>15ml Xarope simples</li><li>7,5ml Fernet Branca</li><li>2 gotas solução salina</li></ul><div class="metas"><p>Método: Batido, sem gelo no copo | Copo: Barriquinha</p><p>Guarnição: zest limão taiti</p></div></article><article class="ficha" data-casas="iz"><header><h3>V+ Viés (Vermelho)</h3><div class="badges"><span class="badge">IZ</span></div></header><ul><li>100ml Leite</li><li>60ml Gin</li><li>30ml Licor 43</li><li>30ml Amaro Di Angostura</li><li>90g Framboesa</li><li>90ml Abacaxi clarificado</li><li>30ml Limão</li><li>30g Açúcar (rende 300ml = 4 cocktails, 75ml/dose)</li></ul><div class="metas"><p>Método/Copo: Guarnição: círculo de limão siciliano + folha. Copo Bohemia ar</p></div></article><article class="ficha" data-casas="iz"><header><h3>Del Cerdo</h3><div class="badges"><span class="badge">IZ</span></div></header><ul><li>45ml Blend whisky + infusão jamon (250ml JW Double Black + 250ml JW Black + 25g jamon serrano)</li><li>15ml Aperol</li><li>15ml Xarope sweet chilli (1:1)</li><li>15ml Suco de toranja</li></ul><div class="metas"><p>Método/Copo: Batido · Copo Vision · Guarnição: borda sal defumado + fake taijin</p></div></article><article class="ficha" data-casas="iz"><header><h3>Cheiro Verde</h3><div class="badges"><span class="badge">IZ</span></div></header><ul><li>15ml Tequila infusionada em zimbro</li><li>60ml Vinho spritz infusionado em coentro</li><li>15ml Blend vermutes bianco+dry</li><li>5ml Jerez sherry</li><li>2,5ml Vermute rosso</li><li>10ml Xarope de lichia</li><li>5ml Licor Abadia 54</li></ul><div class="metas"><p>Método/Copo: Sem gelo, gaseificado em Presh · Copo Italesse GoGo · Guarnição: folha coentro na borda</p></div></article><article class="ficha" data-casas="iz"><header><h3>IZtorm</h3><div class="badges"><span class="badge">IZ</span></div></header><p class="aviso">⚠️ Sem ficha técnica cadastrada no Notion — este item só existe como linha de venda. Confirme o preparo com a coordenação antes de treinar.</p></article><article class="ficha" data-casas="1929"><header><h3>Little Italy</h3><div class="badges"><span class="badge">1929</span></div></header><ul><li>60ml Gin Beg + infusão ameixa (250g ameixa madura/1000ml gin)</li><li>25ml Xarope Monin lichia</li><li>30ml Caldo de limão</li><li>3 dash Peychaud&#x27;s Bitter</li></ul><div class="metas"><p>Método/Copo: Batido · Copo Levitas Short Footed · Guarnição: moeda de ameixa + folha manjericão</p></div></article><article class="ficha" data-casas="1929"><header><h3>Soda Framboesa | Siciliano</h3><div class="badges"><span class="badge">1929</span></div></header><p class="aviso">⚠️ Sem ficha técnica cadastrada no Notion — este item só existe como linha de venda. Confirme o preparo com a coordenação antes de treinar.</p></article><article class="ficha" data-casas="1929"><header><h3>Cosmopolitan</h3><div class="badges"><span class="badge">1929</span></div></header><ul><li>60ml Suco de cranberry (xarope Monin cranberry 1:7 água)</li><li>30ml Vodka</li><li>20ml Licor Triple Sec</li><li>15ml Limão espremido</li></ul><div class="metas"><p>Método/Copo: Batido, sem gelo no shake · Copo Coupé · Guarnição: moeda limão siciliano</p></div></article><article class="ficha" data-casas="1929"><header><h3>Soda Uva | Amora | Hortelã</h3><div class="badges"><span class="badge">1929</span></div></header><p class="aviso">⚠️ Sem ficha técnica cadastrada no Notion — este item só existe como linha de venda. Confirme o preparo com a coordenação antes de treinar.</p></article><article class="ficha" data-casas="gra"><header><h3>Grá Vita</h3><div class="badges"><span class="badge">Grá</span></div></header><ul><li>45ml Infusão gin+amora</li><li>15ml Limoncello</li><li>15ml Suco de limão</li><li>25ml Xarope de maracujá</li><li>completar 150ml Tônica Preshh</li></ul><div class="metas"><p>Método/Copo: Montado/servido da Preshh · Copo Taça Prestige Nadir · Guarnição: folha basílico + amarena no palito</p></div></article><article class="ficha" data-casas="gra"><header><h3>Citrus Highball (Blonde Citrus Highball)</h3><div class="badges"><span class="badge">Grá</span></div></header><ul><li>60ml Whisky J.W. Blonde</li><li>20ml Xarope de maracujá</li><li>20ml Xarope de gengibre</li><li>20ml Suco de limão</li><li>90ml Água com gás</li></ul><div class="metas"><p>Método/Copo: Montado no sistema Preshh · Copo Long drink · Guarnição: moeda laranja bahia</p></div></article><article class="ficha" data-casas="gra"><header><h3>Aurora (mocktail)</h3><div class="badges"><span class="badge">Grá</span></div></header><ul><li>20ml Xarope de maracujá</li><li>20ml Xarope de morango e cardamomo</li><li>20ml Suco de laranja</li><li>20ml Limão</li><li>125ml Água com gás</li></ul><div class="metas"><p>Método/Copo: Copo Brooklyn long · Guarnição: folha manjericão</p></div></article><article class="ficha" data-casas="gra"><header><h3>IZ Smoke</h3><div class="badges"><span class="badge">Grá</span></div></header><ul><li>60ml Vodka Hype</li><li>25ml Limão</li><li>20ml Xarope simples</li><li>2 borrifadas de fumaça líquida</li></ul><div class="metas"><p>Método/Copo: Batido · Caneca de cobre · Guarnição: espuma de gengibre</p></div></article><article class="ficha" data-casas="gra"><header><h3>Fleur de Vie</h3><div class="badges"><span class="badge">Grá</span></div></header><ul><li>40ml Gin</li><li>15ml Morango com cardamomo</li><li>10ml Xarope Monin de toranja</li><li>15ml Sumo de limão</li><li>10ml Lillet Blanc/Carpano Bianco</li><li>2 gotas solução salina</li><li>5ml Licor fino de laranja</li></ul><div class="metas"><p>Método/Copo: Batido · Taça Nick &amp; Nora · Guarnição: morango desidratado</p></div></article><article class="ficha" data-casas="famu"><header><h3>Omotenashi</h3><div class="badges"><span class="badge">FAMU</span></div></header><ul><li>30ml Sakê</li><li>30ml Vodka Hype</li><li>40ml Suco de limão</li><li>10ml Xarope Monin lichia</li><li>10ml Xarope simples</li><li>30ml Espuma de lichia</li></ul><div class="metas"><p>Método/Copo: Batido · Copo Boa Vista</p></div></article><article class="ficha" data-casas="famu"><header><h3>Otherside Cocktail</h3><div class="badges"><span class="badge">FAMU</span></div></header><ul><li>60ml Infusão de sakê com shissô</li><li>40ml Suco de limão</li><li>30ml Água de mel 1:1</li><li>20ml Clara pasteurizada</li></ul><div class="metas"><p>Método/Copo: Batido + reverse dry shake · Copo Bormioli Rocco Line · Guarnição: pó Otherside</p></div></article><article class="ficha" data-casas="famu"><header><h3>White Matcha</h3><div class="badges"><span class="badge">FAMU</span></div></header><ul><li>Produção (rende 5+ cocktails): 300ml Vodka Haku + 7,5g Matcha</li><li>150ml Conhaque Hennessy VS</li><li>150ml Purê de coco</li><li>150ml Xarope Monin abacaxi</li><li>150ml Abacaxi clarificado</li><li>225ml Limão taiti</li><li>150ml Leite</li><li>10% diluição (água)</li></ul><div class="metas"><p>Método/Copo: Milk Punch · Copo Stark on the rocks · Montado, diluir 90ml no mixing glass</p></div></article><article class="ficha" data-casas="famu"><header><h3>Nashi Massala</h3><div class="badges"><span class="badge">FAMU</span></div></header><ul><li>45ml Whisky Maker&#x27;s Mark</li><li>15ml Soju Plum</li><li>15ml Purê de pêra</li><li>5ml Monin Chai</li><li>22,5ml Limão</li></ul><div class="metas"><p>Método/Copo: Batido, coagem dupla · Copo metal, gelão · Guarnição: cajuzinho do cerrado fermentado + pó de beterraba</p></div></article><article class="ficha" data-casas="famu"><header><h3>Aya</h3><div class="badges"><span class="badge">FAMU</span></div></header><ul><li>45ml Gin Beg</li><li>22,5ml Xarope de manjericão com pitaya</li><li>15ml Limão</li><li>10ml Licor Sanbasile Elderflower</li><li>completar água com gás (~70ml)</li></ul><div class="metas"><p>Método/Copo: Copo Long liso, gelo Collins · Guarnição: folha de sálvia</p></div></article><article class="ficha" data-casas="fulles"><header><h3>Spring Sour</h3><div class="badges"><span class="badge">Fulles</span></div></header><ul><li>90ml Mixer Izpring Sour (produção: suco morango clarificado 350ml + xarope lichia 100ml + abacaxi clarificado 150ml + vodka hype 400ml + angostura orange 4ml)</li><li>20ml Suco de laranja fresco</li><li>5ml Clara</li></ul><div class="metas"><p>Método/Copo: Mix e batido · Copo Midi Sidra · Guarnição: pétala de flor (amaranto)</p></div></article><article class="ficha" data-casas="fulles"><header><h3>IZgroppino (mocktail)</h3><div class="badges"><span class="badge">Fulles</span></div></header><ul><li>20ml Purê Monin manga e maracujá</li><li>30ml Água tônica zero</li><li>20ml Espumante Freixenet 0%</li><li>10ml Limão taiti</li><li>1 scoop Sorbet manga/maracujá/gengibre</li><li>0,2g Pimenta do reino + &quot;falso caviar&quot; de toranja (xarope toranja 300ml + purê manga/maracujá 200ml + agar agar 2g)</li></ul><div class="metas"><p>Método/Copo: Montado · Taça Novecento</p></div></article><article class="ficha" data-casas="nip"><header><h3>The Last Word</h3><div class="badges"><span class="badge">NIP</span></div></header><ul><li>30ml Gin</li><li>20ml Chartreuse Green</li><li>20ml Luxardo Maraschino</li><li>20ml Suco fresco de limão</li><li>2 gotas solução salina</li></ul><div class="metas"><p>Método/Copo: Mexido · Taça Coupe · Guarnição: amarena + limão siciliano</p></div></article>
+<p id="vazio">Nenhum cocktail encontrado com esse filtro.</p>
+<p class="nota">Achou um erro ou uma ficha desatualizada?
+<a href="https://wa.me/556281483511?text=Ol%C3%A1%20Rodrigo!%20Vi%20um%20problema%20numa%20ficha%20t%C3%A9cnica%20no%20Portal%20dos%20Bares%3A%20">avise o Rodrigo no WhatsApp</a>.</p>
+
+<script>
+(function () {
+  var casa = 'todas';
+  var busca = document.getElementById('busca');
+  var chips = document.querySelectorAll('.chip');
+  var fichas = document.querySelectorAll('.ficha');
+  var vazio = document.getElementById('vazio');
+  function aplica() {
+    var q = busca.value.trim().toLowerCase();
+    var n = 0;
+    fichas.forEach(function (f) {
+      var okCasa = casa === 'todas' || f.dataset.casas.split(' ').indexOf(casa) >= 0;
+      var okQ = !q || f.textContent.toLowerCase().indexOf(q) >= 0;
+      var mostra = okCasa && okQ;
+      f.style.display = mostra ? '' : 'none';
+      if (mostra) n++;
+    });
+    vazio.style.display = n ? 'none' : 'block';
+  }
+  chips.forEach(function (c) {
+    c.addEventListener('click', function () {
+      chips.forEach(function (x) { x.classList.remove('on'); });
+      c.classList.add('on');
+      casa = c.dataset.casa;
+      aplica();
+    });
+  });
+  busca.addEventListener('input', aplica);
+})();
+</script>
+
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 03/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+</body>
+</html>
