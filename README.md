@@ -26,8 +26,10 @@ for s in iz 1929 gra-bistro famu fulles nip; do .venv/bin/python dashboard_gen.p
 .venv/bin/python dashboard_grupo.py
 .venv/bin/python portal_gen.py
 
-# 2. Copiar portal público
+# 2. Copiar portal público (+ fotos dos cocktails, se rodou o fotos_sync.py)
 cp dashboards/portal/*.html ~/Desktop/grupo-iz-dashboard-site/
+rsync -a --delete "dashboards/../data/fotos_cocktails/fotos/" ~/Desktop/grupo-iz-dashboard-site/fotos/
+# (fotos vêm dos cardápios Tagme via fotos_sync.py; mapa em data/fotos_cocktails/mapa.json)
 
 # 2b. Ranking de produtos (curva-abc.html) — RESTRITO, duas senhas
 # (sai em _restrito/ e NUNCA vai em claro para o site; o encrypt_dupla.js
