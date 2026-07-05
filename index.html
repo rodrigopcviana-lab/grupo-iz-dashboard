@@ -249,6 +249,10 @@
                            margin-bottom: 4px; }
   .explica-grid .col ul { margin: 0; padding-left: 16px; font-size: 12px; color: var(--text-2); line-height: 1.5; }
   @media (min-width: 640px) { .explica-grid { grid-template-columns: repeat(3, 1fr); } }
+  .continuar { display: block; width: 100%; text-align: center; font: inherit; font-size: 15px; font-weight: 600;
+               background: var(--acc); color: var(--acc-txt); border: none; border-radius: 999px; padding: 13px;
+               margin: 4px 0 20px; cursor: pointer; }
+  .continuar:disabled { opacity: .4; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -257,7 +261,7 @@
 <div class="kicker">GRUPO IZ</div>
 <a class="nivel-pill" id="nivel-pill" href="index.html#nivel">Nível: <b id="nivel-pill-txt">Equipe de Bar</b> · trocar</a>
 </header>
-<nav id="nav-principal"><a href="index.html" class="on" data-nivel="equipe">Início</a><a href="eventos.html" class="" data-nivel="equipe">Eventos</a><a href="cocktails.html" class="" data-nivel="equipe">Fichas técnicas</a><a href="treinamentos.html" class="" data-nivel="equipe">Treinamentos</a><a href="calculadora.html" class="" data-nivel="equipe">Calculadora PB</a><a href="producao.html" class="" data-nivel="equipe">Produção possível</a><a href="contagem.html" class="" data-nivel="equipe">Contagem <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="turno.html" class="" data-nivel="equipe">Relatório de turno</a><a href="rotinas.html" class="" data-nivel="equipe">Rotinas</a><a href="equipe.html" class="" data-nivel="chefe">Equipe</a><a href="metas.html" class="" data-nivel="equipe">Metas & Desenv.</a><a href="contatos.html" class="" data-nivel="equipe">Contatos</a><a href="regras.html" class="" data-nivel="chefe">Escala & BH</a><a href="curva-abc.html" class="" data-nivel="coord">Ranking <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="consumo.html" class="" data-nivel="chefe">Consumo <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a></nav>
+<nav id="nav-principal"><a href="index.html" class="on" data-nivel="equipe">Início</a><a href="eventos.html" class="" data-nivel="equipe">Eventos</a><a href="cocktails.html" class="" data-nivel="equipe">Fichas técnicas</a><a href="treinamentos.html" class="" data-nivel="equipe">Treinamentos</a><a href="calculadora.html" class="" data-nivel="equipe">Calculadora PB</a><a href="producao.html" class="" data-nivel="equipe">Produção possível</a><a href="contagem.html" class="" data-nivel="equipe">Contagem de insumos</a><a href="contagem-copos.html" class="" data-nivel="equipe">Contagem de copos</a><a href="turno.html" class="" data-nivel="equipe">Relatório de turno</a><a href="rotinas.html" class="" data-nivel="equipe">Rotinas</a><a href="equipe.html" class="" data-nivel="chefe">Equipe</a><a href="metas.html" class="" data-nivel="equipe">Metas & Desenv.</a><a href="contatos.html" class="" data-nivel="equipe">Contatos</a><a href="regras.html" class="" data-nivel="chefe">Escala & BH</a><a href="curva-abc.html" class="" data-nivel="coord">Ranking <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="consumo.html" class="" data-nivel="chefe">Consumo <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a></nav>
 
 <p class="sub" style="margin-bottom:14px">IZ · 1929 Trattoria · Grá Bistrô · FAMU · Fulles · NIP —
 informação útil para chefes de bar e equipes, num lugar só.</p>
@@ -312,23 +316,9 @@ Marcar "Coordenação" não destrava nada.</div>
 </div>
 </div>
 </details>
-<script>
-(function () {
-  // marcar qual botão está "on" é responsabilidade do aplica() compartilhado
-  // (JS_NIVEL, carregado depois) — aqui só o clique e o deep-link do "trocar".
-  document.querySelectorAll('#niveis .nivel-btn').forEach(function (b) {
-    b.addEventListener('click', function () { window.definirNivel(b.dataset.escolhe); });
-  });
-  // "trocar" no cabeçalho manda pra #nivel — força abrir a explicação e
-  // rolar até ela (nem todo navegador abre <details> sozinho via âncora).
-  if (location.hash === '#nivel') {
-    var det = document.getElementById('nivel');
-    det.open = true;
-    det.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-})();
-</script>
+<button class="continuar" id="continuar" disabled>Entrar no portal</button>
 
+<div id="home-conteudo">
 <div class="panel hoje">
 <div class="k">HOJE NO GRUPO</div>
 <p id="hoje-ev"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg> <a href="eventos.html">Mural de eventos</a></p>
@@ -385,6 +375,53 @@ Marcar "Coordenação" não destrava nada.</div>
 <a class="wa" href="https://wa.me/556281483511?text=Ol%C3%A1%20Rodrigo!%20Vim%20pelo%20Portal%20dos%20Bares.%20">
 WhatsApp — Rodrigo (Coordenação de Bares)</a>
 </div>
+</div>
+<script>
+(function () {
+  // Primeira visita (nunca escolheu nível): esconde nav + resto da home e
+  // trava atrás do seletor — só libera quando clicar "Entrar no portal".
+  // Quem já escolheu antes (ou chegou pelo link "trocar") não vê esse gate:
+  // segue direto pra home normal, só com a explicação disponível pra abrir.
+  // Este script fica DEPOIS de #home-conteudo no HTML de propósito — rodar
+  // antes faria getElementById voltar null (elemento ainda não parseado).
+  var jaEscolheu = false;
+  try { jaEscolheu = localStorage.getItem('portal_nivel') !== null; } catch (e) { jaEscolheu = true; }
+  var nav = document.getElementById('nav-principal');
+  var resto = document.getElementById('home-conteudo');
+  var continuar = document.getElementById('continuar');
+
+  // display:none via style (não o atributo hidden) — o CSS de autor que
+  // dá display:flex ao nav sempre vence o [hidden] do user-agent na
+  // cascata (é questão de origem, não de especificidade), então o
+  // atributo sozinho não escondia nada.
+  if (jaEscolheu) {
+    continuar.style.display = 'none';
+  } else {
+    nav.style.display = 'none';
+    resto.style.display = 'none';
+  }
+
+  document.querySelectorAll('#niveis .nivel-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      window.definirNivel(b.dataset.escolhe);
+      if (!jaEscolheu) continuar.disabled = false;
+    });
+  });
+  continuar.addEventListener('click', function () {
+    nav.style.display = '';
+    resto.style.display = '';
+    continuar.style.display = 'none';
+  });
+
+  // "trocar" no cabeçalho manda pra #nivel — força abrir a explicação e
+  // rolar até ela (nem todo navegador abre <details> sozinho via âncora).
+  if (location.hash === '#nivel') {
+    var det = document.getElementById('nivel');
+    det.open = true;
+    det.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+})();
+</script>
 
 <p class="nota">Portal dos Bares · Grupo IZ · atualizado em 05/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
