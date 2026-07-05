@@ -63,9 +63,11 @@
   .ficha { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
            padding: 16px; margin-bottom: 12px; }
   .ficha::after { content: ""; display: block; clear: both; }
-  .ficha a.foto { float: right; margin: 0 0 8px 12px; }
-  .ficha a.foto img { width: 88px; height: 88px; object-fit: cover; border-radius: 10px;
-                      border: 1px solid var(--border); display: block; background: var(--bg); }
+  .ficha[data-ficha] { cursor: pointer; }
+  .ficha[data-ficha]:hover { border-color: var(--acc); }
+  .ficha[data-ficha]:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .ficha img.foto { float: right; margin: 0 0 8px 12px; width: 88px; height: 88px; object-fit: cover;
+                    border-radius: 10px; border: 1px solid var(--border); display: block; background: var(--bg); }
   .ficha header { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
                   justify-content: space-between; margin-bottom: 8px; }
   .ficha h3 { font-family: var(--serif); font-size: 16px; font-weight: 500; }
@@ -73,6 +75,8 @@
   .badge { font-size: 11px; font-weight: 600; color: #dfbf7e; background: #362a15;
            border-radius: 999px; padding: 2px 8px; }
   .badge-tecnica { color: var(--verde); background: #17352b; }
+  .badge.preco { color: var(--acc); background: transparent; border: 1px solid var(--acc);
+                 font-variant-numeric: tabular-nums; }
   .ficha-foto { display: block; width: 100%; max-width: 360px; aspect-ratio: 1; object-fit: cover;
                 border-radius: 12px; border: 1px solid var(--border); margin: 4px 0 12px; }
   .ficha ul { padding-left: 18px; font-size: 14px; }
@@ -80,7 +84,20 @@
   .metas { margin-top: 8px; font-size: 13px; color: var(--text-2); }
   .metas p { margin: 2px 0; }
   .metas p.tecnica { color: var(--verde); font-weight: 600; }
+  .ic-copo { vertical-align: -2px; margin-right: 4px; opacity: .8; }
+  .sabor { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-3);
+           margin-top: 8px; }
+  .sabor-barra { position: relative; flex: 1; height: 4px; background: var(--border);
+                 border-radius: 999px; }
+  .sabor-barra i { position: absolute; top: -3px; width: 10px; height: 10px; margin-left: -5px;
+                   border-radius: 50%; background: var(--acc); display: block; }
   .aviso { font-size: 13px; color: var(--amarelo); }
+  section.gloss-sec { margin-top: 28px; }
+  section.gloss-sec h2 { font-size: 18px; border-bottom: 1px solid var(--acc); padding-bottom: 6px; }
+  .gloss-item { padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 14px;
+                color: var(--text-2); line-height: 1.5; }
+  .gloss-item:last-child { border-bottom: none; }
+  .gloss-item strong { color: var(--text); font-family: var(--serif); font-weight: 500; }
   section.cat-ficha h2 { font-size: 19px; border-bottom: 1px solid var(--acc);
                          padding-bottom: 6px; margin-top: 32px; }
   section.cat-ficha h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px;
@@ -206,6 +223,8 @@ de materiais de estudo. Ligada à trilha de <a href="metas.html">Metas & Desenvo
 <div class="d">receitas, serviço e agenda</div></a>
 <a class="card" href="biblioteca.html"><div class="ico">📖</div><div class="t">Biblioteca</div>
 <div class="d">apostilas, livros e cursos</div></a>
+<a class="card" href="glossario.html"><div class="ico">🔤</div><div class="t">Glossário do bar</div>
+<div class="d">termos de preparo, copos e gelo</div></a>
 </div>
 
 <h2>Ferramentas de estudo no portal</h2>
