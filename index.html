@@ -389,6 +389,8 @@ WhatsApp — Rodrigo (Coordenação de Bares)</a>
   var nav = document.getElementById('nav-principal');
   var resto = document.getElementById('home-conteudo');
   var continuar = document.getElementById('continuar');
+  var niveis = document.getElementById('niveis');
+  var explica = document.getElementById('nivel');
 
   // display:none via style (não o atributo hidden) — o CSS de autor que
   // dá display:flex ao nav sempre vence o [hidden] do user-agent na
@@ -396,6 +398,13 @@ WhatsApp — Rodrigo (Coordenação de Bares)</a>
   // atributo sozinho não escondia nada.
   if (jaEscolheu) {
     continuar.style.display = 'none';
+    // já escolheu antes: o bloco de seleção só reaparece se a pessoa chegou
+    // aqui pelo link "trocar" do cabeçalho (hash #nivel) — senão fica fora
+    // do caminho, a home normal já mostra tudo direto.
+    if (location.hash !== '#nivel') {
+      niveis.style.display = 'none';
+      explica.style.display = 'none';
+    }
   } else {
     nav.style.display = 'none';
     resto.style.display = 'none';
