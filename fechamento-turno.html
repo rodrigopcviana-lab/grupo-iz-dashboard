@@ -195,64 +195,39 @@
 <div class="marca">Portal dos Bares</div>
 <div class="kicker">GRUPO IZ</div>
 </header>
-<nav><a href="index.html" class="">Início</a><a href="eventos.html" class="">Eventos</a><a href="cocktails.html" class="">Fichas técnicas</a><a href="treinamentos.html" class="">Treinamentos</a><a href="calculadora.html" class="">Calculadora PB</a><a href="contagem.html" class="">Contagem <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="turno.html" class="">Relatório de turno <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="fechamento-turno.html" class="on">Fechamento de turno <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="rotinas.html" class="">Rotinas</a><a href="equipe.html" class="">Equipe</a><a href="metas.html" class="">Metas & Desenv.</a><a href="contatos.html" class="">Contatos</a><a href="regras.html" class="">Escala & BH</a><a href="curva-abc.html" class="">Ranking <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="consumo.html" class="">Consumo <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a></nav>
+<nav><a href="index.html" class="">Início</a><a href="eventos.html" class="">Eventos</a><a href="cocktails.html" class="">Fichas técnicas</a><a href="treinamentos.html" class="">Treinamentos</a><a href="calculadora.html" class="">Calculadora PB</a><a href="producao.html" class="">Produção possível</a><a href="contagem.html" class="">Contagem <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="turno.html" class="">Relatório de turno</a><a href="rotinas.html" class="">Rotinas</a><a href="equipe.html" class="">Equipe</a><a href="metas.html" class="">Metas & Desenv.</a><a href="contatos.html" class="">Contatos</a><a href="regras.html" class="">Escala & BH</a><a href="curva-abc.html" class="">Ranking <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="consumo.html" class="">Consumo <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a></nav>
 
 <h1>Fechamento de turno</h1>
 <p class="sub">Ranking de ruptura e problema de equipamento por casa, taxa de etiquetagem e
 pendências ainda abertas — calculado a partir dos relatórios de turno. Itens marcados como
 <strong>persistentes</strong> apareceram em 3 ou mais turnos dentro de 7 dias.</p>
 
-<div class="panel" id="fc-gate">
-  <h2>Entrar</h2>
-  <p class="sub" style="margin:4px 0 12px">Senha dos chefes de bar ou de vendas — qualquer uma abre.</p>
-  <input type="password" id="fc-senha" placeholder="Senha" autocomplete="current-password"
-    style="width:100%;padding:11px 12px;font-size:16px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;background:var(--card);color:var(--text)">
-  <button id="fc-entrar" style="width:100%;padding:10px;font-size:14px;font-weight:600;border:none;border-radius:8px;background:var(--acc);color:var(--acc-txt);cursor:pointer">Entrar</button>
-  <p class="sub" id="fc-msg" style="margin:10px 0 0"></p>
-</div>
-<div id="fc-corpo" style="display:none"></div>
+<p class="sub" id="fc-msg">Carregando…</p>
+<div id="fc-corpo"></div>
 
 <script>
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
-  var LS = 'ranking_senha';
   var msg = document.getElementById('fc-msg');
-  var gate = document.getElementById('fc-gate');
   var corpo = document.getElementById('fc-corpo');
 
   if (!WORKER) {
-    gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">O fechamento de turno ainda não foi ativado.</p>';
+    msg.textContent = 'O fechamento de turno ainda não foi ativado.';
     return;
   }
 
-  function entra(senha) {
-    msg.textContent = 'Carregando…';
-    return fetch(WORKER + '/api/turno_fechamento', { headers: { 'X-Senha': senha } })
-      .then(function (r) {
-        if (r.status === 401) { msg.textContent = 'Senha incorreta.'; return false; }
-        if (r.status === 404) { msg.textContent = 'Ainda não há fechamento calculado.'; return false; }
-        if (!r.ok) { msg.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return false; }
-        return r.json().then(function (d) {
-          corpo.innerHTML = d.html || '<p class="sub">Sem dado ainda.</p>';
-          gate.style.display = 'none';
-          corpo.style.display = '';
-          localStorage.setItem(LS, senha);
-          return true;
-        });
-      })
-      .catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; return false; });
-  }
-
-  document.getElementById('fc-entrar').onclick = function () {
-    var senha = document.getElementById('fc-senha').value.trim();
-    if (senha) entra(senha);
-  };
-  document.getElementById('fc-senha').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') document.getElementById('fc-entrar').click();
-  });
-
-  var lembrada = localStorage.getItem(LS);
-  if (lembrada) entra(lembrada);
+  fetch(WORKER + '/api/turno_fechamento')
+    .then(function (r) {
+      if (r.status === 404) { msg.textContent = 'Ainda não há fechamento calculado.'; return null; }
+      if (!r.ok) { msg.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return null; }
+      return r.json();
+    })
+    .then(function (d) {
+      if (!d) return;
+      corpo.innerHTML = d.html || '<p class="sub">Sem dado ainda.</p>';
+      msg.textContent = '';
+    })
+    .catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; });
 })();
 </script>
 

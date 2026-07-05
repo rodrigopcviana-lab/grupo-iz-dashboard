@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16130f">
+<title>Produção possível · Portal dos Bares — Grupo IZ</title>
+<style>
+  :root {
+    --bg: #16130f; --card: #211c15; --border: #3a3428;
+    --text: #f3ede2; --text-2: #c3baa9; --text-3: #8f8672;
+    --acc: #d0a352; --acc-txt: #241a06; --verde: #9fe1cb; --amarelo: #e0b05c;
+    --serif: Georgia, "Times New Roman", serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 20px; max-width: 980px; margin: 0 auto;
+    -webkit-text-size-adjust: 100%;
+  }
+  header.topo { margin-bottom: 12px; }
+  header.topo .marca { font-family: var(--serif); font-size: 20px; color: var(--text); }
+  header.topo .kicker { font-size: 11px; letter-spacing: .18em; color: var(--acc); margin-top: 2px; }
+  nav { display: flex; gap: 8px; font-size: 13px; margin: 0 -20px 20px; padding: 2px 20px 8px;
+        overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  nav a { flex: none; color: var(--text-2); text-decoration: none; padding: 12px 16px;
+          border: 1px solid var(--border); border-radius: 999px; display: inline-flex;
+          align-items: center; }
+  nav a.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  nav a:hover { border-color: var(--acc); color: var(--acc); }
+  nav a.on:hover { color: var(--acc-txt); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  a { color: var(--acc); }
+  h1 { font-family: var(--serif); font-size: 25px; font-weight: 500; margin-bottom: 6px;
+       letter-spacing: .01em; }
+  .sub { color: var(--text-2); font-size: 14px; margin-bottom: 22px; }
+  h2 { font-family: var(--serif); font-size: 19px; font-weight: 500; margin: 28px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+           padding: 14px; text-decoration: none; color: var(--text); }
+  a.card:hover { border-color: var(--acc); }
+  a.card .ico { font-size: 17px; margin-bottom: 8px; }
+  a.card .t { font-family: var(--serif); font-weight: 500; font-size: 15px; margin-bottom: 2px; }
+  a.card .d { font-size: 12px; color: var(--text-3); white-space: nowrap;
+              overflow: hidden; text-overflow: ellipsis; }
+  .lock { color: var(--amarelo); font-size: 12px; font-weight: 600; }
+  .wa { display: inline-block; background: #1e3a2c; color: #9fe1cb; font-weight: 600; font-size: 14px;
+        padding: 11px 18px; border-radius: 999px; text-decoration: none; margin-top: 8px; }
+  .nota { font-size: 12px; color: var(--text-3); margin-top: 28px; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  .ctrl input { font: inherit; font-size: 16px; padding: 9px 12px; flex: 1; min-width: 180px;
+                border: 1px solid var(--border); border-radius: 8px; background: var(--card);
+                color: var(--text); }
+  .ctrl input::placeholder { color: var(--text-3); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip { font: inherit; font-size: 13px; padding: 12px 16px; border: 1px solid var(--border);
+          border-radius: 999px; background: var(--card); color: var(--text-2); cursor: pointer; }
+  .chip.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  .ficha { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+           padding: 16px; margin-bottom: 12px; }
+  .ficha::after { content: ""; display: block; clear: both; }
+  .ficha a.foto { float: right; margin: 0 0 8px 12px; }
+  .ficha a.foto img { width: 88px; height: 88px; object-fit: cover; border-radius: 10px;
+                      border: 1px solid var(--border); display: block; background: var(--bg); }
+  .ficha header { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+                  justify-content: space-between; margin-bottom: 8px; }
+  .ficha h3 { font-family: var(--serif); font-size: 16px; font-weight: 500; }
+  .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+  .badge { font-size: 11px; font-weight: 600; color: #dfbf7e; background: #362a15;
+           border-radius: 999px; padding: 2px 8px; }
+  .badge-tecnica { color: var(--verde); background: #17352b; }
+  .ficha-foto { display: block; width: 100%; max-width: 360px; aspect-ratio: 1; object-fit: cover;
+                border-radius: 12px; border: 1px solid var(--border); margin: 4px 0 12px; }
+  .ficha ul { padding-left: 18px; font-size: 14px; }
+  .ficha li { margin: 2px 0; }
+  .metas { margin-top: 8px; font-size: 13px; color: var(--text-2); }
+  .metas p { margin: 2px 0; }
+  .metas p.tecnica { color: var(--verde); font-weight: 600; }
+  .aviso { font-size: 13px; color: var(--amarelo); }
+  section.cat-ficha h2 { font-size: 19px; border-bottom: 1px solid var(--acc);
+                         padding-bottom: 6px; margin-top: 32px; }
+  section.cat-ficha h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px;
+                              font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  details.pendentes { background: var(--card); border: 1px dashed var(--border);
+                      border-radius: 10px; padding: 10px 16px; margin-bottom: 12px; }
+  details.pendentes summary { font-size: 13px; color: var(--amarelo); cursor: pointer; }
+  details.pendentes p { font-size: 13px; color: var(--text-2); margin-top: 6px; }
+  #vazio { display: none; color: var(--text-3); font-size: 14px; padding: 20px 0; }
+  table.regras { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--card);
+                 border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table.regras th, table.regras td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+  table.regras tr:last-child td { border-bottom: none; }
+  table.regras th { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+           padding: 18px; margin-bottom: 14px; font-size: 14px; }
+  .panel h2 { margin: 0 0 8px; }
+  .panel p, .panel li { color: var(--text-2); }
+  .panel ul { padding-left: 18px; margin-top: 6px; }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .panel .k, .hoje .k { font-size: 11px; letter-spacing: .16em; color: var(--acc);
+                        font-weight: 600; margin-bottom: 8px; }
+  .hoje p { color: var(--text); padding: 3px 0; font-size: 14px; }
+  .hoje a { color: var(--text); }
+  label.check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0;
+                border-bottom: 1px dashed var(--border); font-size: 14px; cursor: pointer; }
+  label.check:last-of-type { border-bottom: none; }
+  label.check input { width: 19px; height: 19px; margin-top: 1px; accent-color: var(--acc); flex: none; }
+  label.check input:checked + span { color: var(--text-3); text-decoration: line-through; }
+  .flag { color: #e88f8f; font-weight: 700; }
+  .freq { font-size: 11px; font-weight: 600; color: #cbb8f0; background: #302743;
+          border-radius: 999px; padding: 2px 8px; margin-right: 6px; }
+  .limpar { font: inherit; font-size: 12px; color: var(--text-3); background: none;
+            border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .htime { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .objetivo { font-size: 13px; color: var(--verde); margin: 6px 0 2px; }
+  .desc { font-size: 12px; color: var(--text-3); margin: 2px 0 0 28px; white-space: pre-line; }
+  details.roteiro { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+                    padding: 14px 18px; margin-bottom: 14px; }
+  details.roteiro summary { font-weight: 600; font-size: 15px; cursor: pointer; }
+  details.roteiro h3 { font-size: 14px; font-weight: 600; margin: 16px 0 2px; }
+  .prod { display: flex; align-items: center; gap: 8px; padding: 7px 0;
+          border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .prod:last-child { border-bottom: none; }
+  .pos { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px;
+         white-space: nowrap; flex: none; min-width: 68px; text-align: center; }
+  .abc-a { color: #9fe1cb; background: #163527; }
+  .abc-b { color: #efc98a; background: #3a2d12; }
+  .abc-c { color: #aaa294; background: #2b261d; }
+  .pos.rankn { min-width: 48px; color: #c3baa9; background: #2b261d; }
+  .pos.mini { min-width: 30px; }
+  .ctrl select { font: inherit; font-size: 16px; padding: 9px 12px; flex: 1; min-width: 180px;
+                 border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+  .equipe-casa { margin-bottom: 24px; }
+  .equipe-casa h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px;
+                         font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .pessoa { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 12px 16px; margin-bottom: 8px; }
+  .pessoa-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pessoa .nome { font-weight: 600; font-size: 14px; }
+  .badge-chefe { font-size: 11px; font-weight: 600; color: #e9c880; background: #3a2d12;
+                 border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .sub2 { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+  .ferias { font-size: 12px; color: var(--amarelo); margin-top: 4px; }
+  @media (max-width: 600px) {
+    body { padding: 14px; }
+    nav { margin: 0 -14px 16px; padding: 2px 14px 8px; }
+    h1 { font-size: 22px; }
+    .cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+  }
+  .ic { display: inline-block; vertical-align: -3px; }
+
+  /* Montador de Drink (Lab de Drinks) — sessões sequenciais de escolha */
+  .sessao { border: 1px solid var(--border); border-radius: 14px; background: var(--card);
+            padding: 16px 16px 18px; margin-bottom: 12px;
+            display: none; opacity: 0; transform: translateY(-6px);
+            transition: opacity .3s ease, transform .3s ease; }
+  .sessao.ativa { display: block; }
+  .sessao.ativa.mostra { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) { .sessao { transition: none; transform: none; } }
+  .sessao-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 3px; }
+  .sessao-num { font-family: var(--serif); font-size: 12px; color: var(--acc); font-weight: 600;
+                border: 1px solid var(--acc); border-radius: 999px; width: 20px; height: 20px;
+                display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .sessao h2 { font-size: 16px; margin: 0; }
+  .sessao .opcional-tag { font-size: 10.5px; color: var(--text-3); text-transform: uppercase;
+                          letter-spacing: .06em; margin-left: auto; align-self: center; }
+  .sessao .ajuda { font-size: 12.5px; color: var(--text-3); margin: 4px 0 12px; }
+  .grupo-label { font-size: 11.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em;
+                 margin: 12px 0 8px; }
+  .grupo-label:first-of-type { margin-top: 0; }
+  .resumo-fita { display: none; font-size: 12.5px; color: var(--text-2); background: var(--card);
+                 border: 1px dashed var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+  .resumo-fita.on { display: block; }
+  .resumo-fita b { color: var(--acc); font-weight: 600; }
+  .cards-estrutura { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .card-estrutura { text-align: left; font: inherit; background: var(--bg); border: 1px solid var(--border);
+                     border-radius: 12px; padding: 12px 13px; cursor: pointer; color: var(--text);
+                     transition: border-color .15s, background .15s; }
+  .card-estrutura:hover { border-color: var(--acc); }
+  .card-estrutura.on { border-color: var(--acc); background: #2a2013; }
+  .card-estrutura .ico { color: var(--acc); margin-bottom: 6px; }
+  .card-estrutura .t { font-family: var(--serif); font-weight: 500; font-size: 14px; margin-bottom: 2px; }
+  .card-estrutura .d { font-size: 11.5px; color: var(--text-3); line-height: 1.4; }
+  .card-estrutura .ex { font-size: 10.5px; color: var(--text-3); margin-top: 5px; font-style: italic; }
+  .card-estrutura.on .d, .card-estrutura.on .ex { color: var(--text-2); }
+  @media (max-width: 600px) { .cards-estrutura { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topo">
+<div class="marca">Portal dos Bares</div>
+<div class="kicker">GRUPO IZ</div>
+</header>
+<nav><a href="index.html" class="">Início</a><a href="eventos.html" class="">Eventos</a><a href="cocktails.html" class="">Fichas técnicas</a><a href="treinamentos.html" class="">Treinamentos</a><a href="calculadora.html" class="">Calculadora PB</a><a href="producao.html" class="on">Produção possível</a><a href="contagem.html" class="">Contagem <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="turno.html" class="">Relatório de turno</a><a href="rotinas.html" class="">Rotinas</a><a href="equipe.html" class="">Equipe</a><a href="metas.html" class="">Metas & Desenv.</a><a href="contatos.html" class="">Contatos</a><a href="regras.html" class="">Escala & BH</a><a href="curva-abc.html" class="">Ranking <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="consumo.html" class="">Consumo <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a></nav>
+
+<style>
+  .prod-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+                gap: 12px; margin: 16px 0; }
+  .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .pcard h3 { margin: 0 0 6px; font-size: 15px; }
+  .pcard .num { font-size: 28px; font-weight: 700; }
+  .pcard .num small { font-size: 13px; font-weight: 400; color: var(--text-3); }
+  .pcard .cov { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .pcard .cov.baixa { color: #b45309; }
+  .pcard details { margin-top: 8px; font-size: 13px; }
+  .pcard ul { margin: 6px 0 0; padding-left: 18px; }
+  .pcard li.sem { color: var(--text-3); }
+  .pcard li.gargalo { font-weight: 600; }
+</style>
+<h1>🥃 Produção possível agora — Grá Bistrô</h1>
+<p class="sub">Quantos drinks de cada receita dá pra fazer com o estoque de hoje, calculado a
+partir da última contagem (28/06/2026) e da ficha técnica de cada cocktail.
+Piloto só do Grá Bistrô, só com as receitas que já têm quantidade por
+insumo cadastrada no Notion — mais casas e receitas entram conforme a ficha técnica for
+completada.</p>
+<p class="aviso">⚠️ Alguns insumos (limão, xarope simples, solução salina, molho inglês, xarope
+de gengibre, água de mel) ainda não entram na contagem semanal — o número mostrado considera
+só o que é rastreado hoje e pode cair quando esses itens passarem a ser contados.</p>
+
+<div class="prod-cards">
+
+<div class="pcard">
+<h3>Bloody Mary</h3>
+<div class="num">0 <small>drinks possíveis agora</small></div>
+<div class="cov baixa">3/7 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Molho de Pimenta Vermelho Tabasco 60ml: 0 doses (estoque 0.0 ÷ 2/drink)</li><li class="">Suco de Tomate 300ml: 47 doses (estoque 5700.0 ÷ 120/drink)</li><li class="">Vodka Hype 1lt: 88 doses (estoque 5300.0 ÷ 60/drink)</li><li class="sem">Solução salina: sem dado de estoque hoje</li><li class="sem">Sumo de Limão Taiti: sem dado de estoque hoje</li><li class="sem">Sumo de Limão taiti: sem dado de estoque hoje</li><li class="sem">molho inglês 1lt: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Penicillin</h3>
+<div class="num">0 <small>drinks possíveis agora</small></div>
+<div class="cov baixa">3/7 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Whisky Talisker 10 anos 750ml: 0 doses (estoque 0.0 ÷ 2/drink)</li><li class="">Whisky Johnnie Walker Double Black 1lt: 20 doses (estoque 900.0 ÷ 45/drink)</li><li class="">Licor Limoncello San Basile 750ml: 250 doses (estoque 3750.0 ÷ 15/drink)</li><li class="sem">Sumo de Limão taiti: sem dado de estoque hoje</li><li class="sem">Xarope de Gengibre: sem dado de estoque hoje</li><li class="sem">limoncello art.: sem dado de estoque hoje</li><li class="sem">Água de Mel (1:1): sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Blood and Sand - OFF</h3>
+<div class="num">20 <small>drinks possíveis agora</small></div>
+<div class="cov baixa">1/4 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Licor Luxardo Maraschino 750ml: 20 doses (estoque 450.0 ÷ 22.5/drink)</li><li class="sem">Bulleit Bourbon: sem dado de estoque hoje</li><li class="sem">Sumo de laranja: sem dado de estoque hoje</li><li class="sem">Vermute Rosso San Basile: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Caipirinha</h3>
+<div class="num">45 <small>drinks possíveis agora</small></div>
+<div class="cov baixa">1/3 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Cachaça Capueira Prata 700ml: 45 doses (estoque 2730.0 ÷ 60/drink)</li><li class="sem">Sumo de Limão taiti: sem dado de estoque hoje</li><li class="sem">Xarope Simples: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Jungle Bird</h3>
+<div class="num">48 <small>drinks possíveis agora</small></div>
+<div class="cov baixa">2/3 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Rum Spiced San Basile 950ml: 48 doses (estoque 2185.0 ÷ 45/drink)</li><li class="">Campari 998ml: 113 doses (estoque 1696.6 ÷ 15/drink)</li><li class="sem">Xarope Simples: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Hemmingway Daiquiri</h3>
+<div class="num">49 <small>drinks possíveis agora</small></div>
+<div class="cov baixa">3/4 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Xarope Toranja Monin 700ml: 49 doses (estoque 490.0 ÷ 10/drink)</li><li class="">Rum Spiced San Basile 950ml: 54 doses (estoque 2185.0 ÷ 40/drink)</li><li class="">Licor Luxardo Maraschino 750ml: 60 doses (estoque 450.0 ÷ 7.5/drink)</li><li class="sem">Sumo de Limão taiti: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Macunaíma</h3>
+<div class="num">54 <small>drinks possíveis agora</small></div>
+<div class="cov baixa">2/4 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Cachaça Capueira Prata 700ml: 54 doses (estoque 2730.0 ÷ 50/drink)</li><li class="">Fernet Branca 750ml: 100 doses (estoque 750.0 ÷ 7.5/drink)</li><li class="sem">Sumo de Limão taiti: sem dado de estoque hoje</li><li class="sem">Xarope Simples: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Cardinale</h3>
+<div class="num">56 <small>drinks possíveis agora</small></div>
+<div class="cov baixa">1/2 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Campari 998ml: 56 doses (estoque 1696.6 ÷ 30/drink)</li><li class="sem">Gin Gordon`s: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Negroni</h3>
+<div class="num">56 <small>drinks possíveis agora</small></div>
+<div class="cov">3/3 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Campari 998ml: 56 doses (estoque 1696.6 ÷ 30/drink)</li><li class="">Vermute Rosso Carpano 950ml: 57 doses (estoque 1710.0 ÷ 30/drink)</li><li class="">Gin Uyrá London Dry 5lt: 166 doses (estoque 5000.0 ÷ 30/drink)</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Fitzgerald</h3>
+<div class="num">75 <small>drinks possíveis agora</small></div>
+<div class="cov baixa">2/4 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="gargalo">Gin Beg refil 500ml: 75 doses (estoque 4500.0 ÷ 60/drink)</li><li class="">Angostura bitters: 788 doses (estoque 1182.5 ÷ 1.5/drink)</li><li class="sem">Sumo de Limão taiti: sem dado de estoque hoje</li><li class="sem">Xarope Simples: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Bitter Giuseppe</h3>
+<div class="num">— <small>drinks possíveis agora</small></div>
+<div class="cov baixa">0/5 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="sem">Angostura Orange: sem dado de estoque hoje</li><li class="sem">Cynar Regular 900ml: sem dado de estoque hoje</li><li class="sem">Sumo de Limão Siciliano: sem dado de estoque hoje</li><li class="sem">Vermute Martini Rosso: sem dado de estoque hoje</li><li class="sem">vermute martini extra dry: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Mark Twain II</h3>
+<div class="num">— <small>drinks possíveis agora</small></div>
+<div class="cov baixa">0/3 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="sem">Angostura Orange: sem dado de estoque hoje</li><li class="sem">Whiskey Jack Daniel’s N07 1lt: sem dado de estoque hoje</li><li class="sem">Xarope Simples: sem dado de estoque hoje</li></ul></details>
+</div>
+<div class="pcard">
+<h3>Paloma</h3>
+<div class="num">— <small>drinks possíveis agora</small></div>
+<div class="cov baixa">0/1 insumos rastreados no estoque</div>
+<details><summary>ver insumos</summary><ul><li class="sem">Calda de Agave: sem dado de estoque hoje</li></ul></details>
+</div>
+</div>
+
+<p class="nota">Dados: contagem semanal (Grá Bistrô) + Banco de Cocktails/B.D.1/B.D.2
+do Notion. Achou receita ou insumo errado?
+<a href="https://wa.me/556281483511?text=Ol%C3%A1%20Rodrigo!%20Vi%20um%20problema%20na%20p%C3%A1gina%20de%20produ%C3%A7%C3%A3o%20poss%C3%ADvel%3A%20">avise o Rodrigo</a>.</p>
+
+<script>const PRODUCAO = {"casa": "Grá Bistrô", "atualizado_em": "28/06/2026", "receitas": [{"nome": "Bloody Mary", "produzivel": 0, "rastreados": 3, "total": 7, "itens": [{"insumo": "Molho de Pimenta Vermelho Tabasco 60ml", "qtd_drink": 2.0, "produto": "Molho de Pimenta Vermelho Tabasco 60ml", "estoque": 0.0, "doses": 0}, {"insumo": "Suco de Tomate 300ml", "qtd_drink": 120.0, "produto": "Suco tomate 300ml", "estoque": 5700.0, "doses": 47}, {"insumo": "Vodka Hype 1lt", "qtd_drink": 60.0, "produto": "Vodka Hype 1lt", "estoque": 5300.0, "doses": 88}, {"insumo": "Solução salina", "qtd_drink": 5.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Sumo de Limão Taiti", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "molho inglês 1lt", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Penicillin", "produzivel": 0, "rastreados": 3, "total": 7, "itens": [{"insumo": "Whisky Talisker 10 anos 750ml", "qtd_drink": 2.0, "produto": "Whisky Talisker 10y 750ml", "estoque": 0.0, "doses": 0}, {"insumo": "Whisky Johnnie Walker Double Black 1lt", "qtd_drink": 45.0, "produto": "Whisky Johnnie Walker Double Black 1lt", "estoque": 900.0, "doses": 20}, {"insumo": "Licor Limoncello San Basile 750ml", "qtd_drink": 15.0, "produto": "Licor Limoncello San Basile 750ml", "estoque": 3750.0, "doses": 250}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 25.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope de Gengibre", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "limoncello art.", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Água de Mel (1:1)", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Blood and Sand - OFF", "produzivel": 20, "rastreados": 1, "total": 4, "itens": [{"insumo": "Licor Luxardo Maraschino 750ml", "qtd_drink": 22.5, "produto": "Licor Luxardo Maraschino 750ml", "estoque": 450.0, "doses": 20}, {"insumo": "Bulleit Bourbon", "qtd_drink": 30.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Sumo de laranja", "qtd_drink": 30.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Vermute Rosso San Basile", "qtd_drink": 22.5, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Caipirinha", "produzivel": 45, "rastreados": 1, "total": 3, "itens": [{"insumo": "Cachaça Capueira Prata 700ml", "qtd_drink": 60.0, "produto": "Cachaça Capueira Prata 700ml", "estoque": 2730.0, "doses": 45}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope Simples", "qtd_drink": 30.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Jungle Bird", "produzivel": 48, "rastreados": 2, "total": 3, "itens": [{"insumo": "Rum Spiced San Basile 950ml", "qtd_drink": 45.0, "produto": "Rum Spiced San Basile 950ml", "estoque": 2185.0, "doses": 48}, {"insumo": "Campari 998ml", "qtd_drink": 15.0, "produto": "Campari 998ml", "estoque": 1696.6, "doses": 113}, {"insumo": "Xarope Simples", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Hemmingway Daiquiri", "produzivel": 49, "rastreados": 3, "total": 4, "itens": [{"insumo": "Xarope Toranja Monin 700ml", "qtd_drink": 10.0, "produto": "Xarope Toranja Monin 700ml", "estoque": 490.0, "doses": 49}, {"insumo": "Rum Spiced San Basile 950ml", "qtd_drink": 40.0, "produto": "Rum Spiced San Basile 950ml", "estoque": 2185.0, "doses": 54}, {"insumo": "Licor Luxardo Maraschino 750ml", "qtd_drink": 7.5, "produto": "Licor Luxardo Maraschino 750ml", "estoque": 450.0, "doses": 60}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Macunaíma", "produzivel": 54, "rastreados": 2, "total": 4, "itens": [{"insumo": "Cachaça Capueira Prata 700ml", "qtd_drink": 50.0, "produto": "Cachaça Capueira Prata 700ml", "estoque": 2730.0, "doses": 54}, {"insumo": "Fernet Branca 750ml", "qtd_drink": 7.5, "produto": "Fernet Branca 750ml", "estoque": 750.0, "doses": 100}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope Simples", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Cardinale", "produzivel": 56, "rastreados": 1, "total": 2, "itens": [{"insumo": "Campari 998ml", "qtd_drink": 30.0, "produto": "Campari 998ml", "estoque": 1696.6, "doses": 56}, {"insumo": "Gin Gordon`s", "qtd_drink": 30.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Negroni", "produzivel": 56, "rastreados": 3, "total": 3, "itens": [{"insumo": "Campari 998ml", "qtd_drink": 30.0, "produto": "Campari 998ml", "estoque": 1696.6, "doses": 56}, {"insumo": "Vermute Rosso Carpano 950ml", "qtd_drink": 30.0, "produto": "Vermute Rosso Carpano 950ml", "estoque": 1710.0, "doses": 57}, {"insumo": "Gin Uyrá London Dry 5lt", "qtd_drink": 30.0, "produto": "Gin Uyrá London Dry 5lt", "estoque": 5000.0, "doses": 166}]}, {"nome": "Fitzgerald", "produzivel": 75, "rastreados": 2, "total": 4, "itens": [{"insumo": "Gin Beg refil 500ml", "qtd_drink": 60.0, "produto": "Gin Beg refil 500ml", "estoque": 4500.0, "doses": 75}, {"insumo": "Angostura bitters", "qtd_drink": 1.5, "produto": "Angostura Bitter 200ml", "estoque": 1182.5, "doses": 788}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 25.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope Simples", "qtd_drink": 20.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Bitter Giuseppe", "produzivel": null, "rastreados": 0, "total": 5, "itens": [{"insumo": "Angostura Orange", "qtd_drink": 4.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Cynar Regular 900ml", "qtd_drink": 60.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Sumo de Limão Siciliano", "qtd_drink": 7.5, "produto": null, "estoque": null, "doses": null}, {"insumo": "Vermute Martini Rosso", "qtd_drink": 20.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "vermute martini extra dry", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Mark Twain II", "produzivel": null, "rastreados": 0, "total": 3, "itens": [{"insumo": "Angostura Orange", "qtd_drink": 2.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Whiskey Jack Daniel’s N07 1lt", "qtd_drink": 60.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope Simples", "qtd_drink": 20.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Paloma", "produzivel": null, "rastreados": 0, "total": 1, "itens": [{"insumo": "Calda de Agave", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}]}]};</script>
+
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 05/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+</body>
+</html>
