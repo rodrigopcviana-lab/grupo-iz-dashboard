@@ -5,84 +5,75 @@ https://rodrigopcviana-lab.github.io/grupo-iz-dashboard/
 
 ## Estrutura
 
-- `index.html`, `cocktails.html`, `rotinas.html`, `regras.html` — portal
-  público, gerados por `portal_gen.py` (no projeto `~/Desktop/Code 1`).
-  **Não editar à mão.** As rotinas vêm de `data/rotinas/rotinas.json`
-  (refresh: `rotinas_sync.py`, requer a página "Gestão de Equipe - Grupo IZ"
-  compartilhada com a integração do Notion).
-- `vendas/*.html` — dashboards de vendas **criptografados com senha**
-  (staticrypt, AES-256). O conteúdo só é legível com a senha; o repo pode ser
-  público sem expor os dados.
-- `.staticrypt.json` — salt da criptografia (não é segredo; manter para que o
-  "lembrar neste aparelho" continue válido entre republicações).
+- `index.html`, `cocktails.html`, `rotinas.html`, `regras.html`, `contatos.html`,
+  `contagem.html`, `curva-abc.html` — portal público, gerados por
+  `portal_gen.py` (no projeto `~/Desktop/Code 1`). **Não editar à mão.**
+- `vendas/*.html` e `curva-abc.html` (Ranking) — desde 2026-07-04 são cascas
+  **sem dado nenhum embutido** (Regra Zero + segurança): o número real só
+  chega depois de uma senha validada pelo Cloudflare Worker
+  `contagem-bares` (mesmo Worker da Contagem), que lê o dado pré-computado de
+  um KV — nunca um arquivo cifrado publicado que dê pra baixar e atacar
+  offline (era assim com staticrypt/encrypt_dupla.js antes). Ver
+  `contagem-worker/README.md` no projeto.
+- `contatos.html` — pública desde 2026-07-04 (pedido do Rodrigo): telefone e
+  WhatsApp de cada chefe saíram da página pra isso ser possível (regra do
+  CLAUDE.md: sem telefone em página pública). Só nome+cargo por casa.
+- `consumo.html` — RESTRITA, senha dupla (chefes OU vendas) via
+  `encrypt_dupla.js`. Ainda é um arquivo cifrado publicado (não migrou pro
+  esquema do Worker) — não é o mesmo nível de proteção de vendas/ranking.
+- `.staticrypt.json` — não é mais usado (vendas não passa mais por
+  staticrypt). Mantido só por segurança histórica; pode ser removido.
 
 ## Como republicar
 
 ```bash
 cd ~/Desktop/"Code 1"
 
-# 1. Regenerar dashboards e portal
+# 1. Regenerar dashboards, portal, JSON de vendas/ranking
 for s in iz 1929 gra-bistro famu fulles nip; do .venv/bin/python dashboard_gen.py "$s"; done
 .venv/bin/python dashboard_grupo.py
 .venv/bin/python portal_gen.py
 
-# 2. Copiar portal público (+ fotos dos cocktails, se rodou o fotos_sync.py)
+# 2. Subir o dado (vendas + ranking) pro Cloudflare KV do Worker
+.venv/bin/python publicar_kv.py
+
+# 3. Copiar as páginas públicas (incluem contatos.html, curva-abc.html — sem
+#    dado nenhum, então não tem cifra nenhuma aqui)
 cp dashboards/portal/*.html ~/Desktop/grupo-iz-dashboard-site/
 rsync -a --delete "dashboards/../data/fotos_cocktails/fotos/" ~/Desktop/grupo-iz-dashboard-site/fotos/
 # (fotos vêm dos cardápios Tagme via fotos_sync.py; mapa em data/fotos_cocktails/mapa.json)
 
-# 2b. Ranking de produtos (curva-abc.html) — RESTRITO, duas senhas
-# (sai em _restrito/ e NUNCA vai em claro para o site; o encrypt_dupla.js
-#  cifra aceitando a senha dos chefes de bar OU a senha de vendas.
-#  Material de chave em config/curva_chaves.json — apagar = revogar
-#  todos os "lembrar neste aparelho")
-SENHAS='<senha chefes>,<senha vendas>' node encrypt_dupla.js \
-  dashboards/portal/_restrito/curva-abc.html \
-  ~/Desktop/grupo-iz-dashboard-site/curva-abc.html \
-  "Ranking de produtos | Grupo IZ"
+# 4. Copiar as cascas de vendas — mesmo URL de sempre, SEM staticrypt (o
+#    arquivo não carrega dado, então não há nada pra cifrar)
+mkdir -p ~/Desktop/grupo-iz-dashboard-site/vendas
+cp dashboards/grupo_dashboard.html      ~/Desktop/grupo-iz-dashboard-site/vendas/index.html
+cp dashboards/iz_dashboard.html         ~/Desktop/grupo-iz-dashboard-site/vendas/iz.html
+cp dashboards/1929_dashboard.html       ~/Desktop/grupo-iz-dashboard-site/vendas/1929.html
+cp dashboards/gra-bistro_dashboard.html ~/Desktop/grupo-iz-dashboard-site/vendas/gra.html
+cp dashboards/famu_dashboard.html       ~/Desktop/grupo-iz-dashboard-site/vendas/famu.html
+cp dashboards/fulles_dashboard.html     ~/Desktop/grupo-iz-dashboard-site/vendas/fulles.html
+cp dashboards/nip_dashboard.html        ~/Desktop/grupo-iz-dashboard-site/vendas/nip.html
 
-# 3. Criptografar vendas (staging com nomes finais; senha via env)
-STAGE=$(mktemp -d); cd "$STAGE"
-cp ~/Desktop/"Code 1"/dashboards/grupo_dashboard.html      index.html
-cp ~/Desktop/"Code 1"/dashboards/iz_dashboard.html         iz.html
-cp ~/Desktop/"Code 1"/dashboards/1929_dashboard.html       1929.html
-cp ~/Desktop/"Code 1"/dashboards/gra-bistro_dashboard.html gra.html
-cp ~/Desktop/"Code 1"/dashboards/famu_dashboard.html       famu.html
-cp ~/Desktop/"Code 1"/dashboards/fulles_dashboard.html     fulles.html
-cp ~/Desktop/"Code 1"/dashboards/nip_dashboard.html        nip.html
-cp ~/Desktop/grupo-iz-dashboard-site/.staticrypt.json .    # reusa o salt
-export STATICRYPT_PASSWORD='<senha atual>'
-npx --yes staticrypt *.html -d encrypted --short --remember 90 \
-  --template ~/Desktop/"Code 1"/staticrypt_template_backbar.html \
-  --template-title "Vendas | Grupo IZ" \
-  --template-instructions "Área restrita da coordenação e chefes de bar. Digite a senha para ver o dashboard." \
-  --template-button "Entrar" --template-placeholder "Senha" \
-  --template-error "Senha incorreta — tente de novo" \
-  --template-remember "Lembrar neste aparelho" \
-  --template-toggle-show "Mostrar senha" --template-toggle-hide "Ocultar senha"
-# --template aponta pro gate com o tema "Backbar" (dark+âmbar, mesmo visual do
-# resto do portal e do gate de curva-abc.html/contatos.html) — NÃO usar mais
-# --template-color-primary/--template-color-secondary sozinhos: o template
-# padrão do staticrypt só parametriza o fundo da página e o botão, o cartão
-# central continua branco (era a causa do gate "quebrado" antes de 2026-07-04).
-cp encrypted/*.html ~/Desktop/grupo-iz-dashboard-site/vendas/
-
-# 3b. Páginas restritas de senha dupla (chefes OU vendas)
-# curva-abc.html e contatos.html saem de portal_gen.py em dashboards/portal/_restrito/
-# (nunca em claro no site). Cifrar com encrypt_dupla.js — material de chave em
-# config/curva_chaves.json (mantê-lo preserva o "lembrar neste aparelho"):
-cd ~/Desktop/"Code 1"
+# 5. consumo.html continua com senha dupla (chefes OU vendas) via
+#    encrypt_dupla.js — sai em _restrito/ e NUNCA vai em claro pro site.
+#    Material de chave em config/curva_chaves.json (mantê-lo preserva o
+#    "lembrar neste aparelho").
 SENHAS='<senha chefes>,<senha vendas>' node encrypt_dupla.js \
-  dashboards/portal/_restrito/curva-abc.html ~/Desktop/grupo-iz-dashboard-site/curva-abc.html "Ranking de produtos | Grupo IZ"
-SENHAS='<senha chefes>,<senha vendas>' node encrypt_dupla.js \
-  dashboards/portal/_restrito/contatos.html ~/Desktop/grupo-iz-dashboard-site/contatos.html "Contatos | Grupo IZ"
+  dashboards/portal/_restrito/consumo.html ~/Desktop/grupo-iz-dashboard-site/consumo.html "Consumo semanal | Grupo IZ"
 
-# 4. Publicar
+# 6. Publicar
 cd ~/Desktop/grupo-iz-dashboard-site
-git add -A && git commit -m "Atualiza portal e vendas" && git push
+git add -A && git commit -m "Atualiza portal, vendas e ranking" && git push
 ```
 
-Para **trocar a senha**: rodar o passo 3 com outro `STATICRYPT_PASSWORD` e
-fazer push. Sessões "lembradas" com a senha antiga deixam de funcionar.
+## Trocar senha de vendas/ranking/contagem
+
+Não é mais aqui — as senhas ficam no Cloudflare Worker (`contagem-bares`),
+como secret `SENHAS` (`_vendas`, `_chefes`, e uma por casa da contagem). Ver
+`contagem-worker/README.md` no projeto: `wrangler secret put SENHAS` de novo,
+sem precisar reimplantar nem tocar neste repo.
+
+Só a senha de **consumo.html** ainda é trocada aqui (passo 5, `STATICRYPT`-like
+via `encrypt_dupla.js` — rodar de novo com a senha nova e publicar).
 
 O Bento tem site separado (bento-dashboard) — não entra aqui.
