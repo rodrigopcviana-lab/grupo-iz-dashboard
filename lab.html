@@ -72,10 +72,12 @@
   .badges { display: flex; flex-wrap: wrap; gap: 4px; }
   .badge { font-size: 11px; font-weight: 600; color: #dfbf7e; background: #362a15;
            border-radius: 999px; padding: 2px 8px; }
+  .badge-tecnica { color: var(--verde); background: #17352b; }
   .ficha ul { padding-left: 18px; font-size: 14px; }
   .ficha li { margin: 2px 0; }
   .metas { margin-top: 8px; font-size: 13px; color: var(--text-2); }
   .metas p { margin: 2px 0; }
+  .metas p.tecnica { color: var(--verde); font-weight: 600; }
   .aviso { font-size: 13px; color: var(--amarelo); }
   section.cat-ficha h2 { font-size: 19px; border-bottom: 1px solid var(--acc);
                          padding-bottom: 6px; margin-top: 32px; }
@@ -148,6 +150,42 @@
     .cards { grid-template-columns: 1fr 1fr; gap: 8px; }
   }
   .ic { display: inline-block; vertical-align: -3px; }
+
+  /* Montador de Drink (Lab de Drinks) — sessões sequenciais de escolha */
+  .sessao { border: 1px solid var(--border); border-radius: 14px; background: var(--card);
+            padding: 16px 16px 18px; margin-bottom: 12px;
+            display: none; opacity: 0; transform: translateY(-6px);
+            transition: opacity .3s ease, transform .3s ease; }
+  .sessao.ativa { display: block; }
+  .sessao.ativa.mostra { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) { .sessao { transition: none; transform: none; } }
+  .sessao-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 3px; }
+  .sessao-num { font-family: var(--serif); font-size: 12px; color: var(--acc); font-weight: 600;
+                border: 1px solid var(--acc); border-radius: 999px; width: 20px; height: 20px;
+                display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .sessao h2 { font-size: 16px; margin: 0; }
+  .sessao .opcional-tag { font-size: 10.5px; color: var(--text-3); text-transform: uppercase;
+                          letter-spacing: .06em; margin-left: auto; align-self: center; }
+  .sessao .ajuda { font-size: 12.5px; color: var(--text-3); margin: 4px 0 12px; }
+  .grupo-label { font-size: 11.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em;
+                 margin: 12px 0 8px; }
+  .grupo-label:first-of-type { margin-top: 0; }
+  .resumo-fita { display: none; font-size: 12.5px; color: var(--text-2); background: var(--card);
+                 border: 1px dashed var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+  .resumo-fita.on { display: block; }
+  .resumo-fita b { color: var(--acc); font-weight: 600; }
+  .cards-estrutura { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .card-estrutura { text-align: left; font: inherit; background: var(--bg); border: 1px solid var(--border);
+                     border-radius: 12px; padding: 12px 13px; cursor: pointer; color: var(--text);
+                     transition: border-color .15s, background .15s; }
+  .card-estrutura:hover { border-color: var(--acc); }
+  .card-estrutura.on { border-color: var(--acc); background: #2a2013; }
+  .card-estrutura .ico { color: var(--acc); margin-bottom: 6px; }
+  .card-estrutura .t { font-family: var(--serif); font-weight: 500; font-size: 14px; margin-bottom: 2px; }
+  .card-estrutura .d { font-size: 11.5px; color: var(--text-3); line-height: 1.4; }
+  .card-estrutura .ex { font-size: 10.5px; color: var(--text-3); margin-top: 5px; font-style: italic; }
+  .card-estrutura.on .d, .card-estrutura.on .ex { color: var(--text-2); }
+  @media (max-width: 600px) { .cards-estrutura { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -158,7 +196,7 @@
 <nav><a href="index.html" class="">Início</a><a href="eventos.html" class="">Eventos</a><a href="cocktails.html" class="">Fichas técnicas</a><a href="lab.html" class="on">Lab de Drinks <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="treinamentos.html" class="">Treinamentos</a><a href="calculadora.html" class="">Calculadora PB</a><a href="contagem.html" class="">Contagem <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="rotinas.html" class="">Rotinas</a><a href="equipe.html" class="">Equipe</a><a href="metas.html" class="">Metas & Desenv.</a><a href="contatos.html" class="">Contatos</a><a href="regras.html" class="">Escala & BH</a><a href="curva-abc.html" class="">Ranking <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a><a href="consumo.html" class="">Consumo <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></a></nav>
 
 <h1>Lab de Drinks</h1>
-<p class="sub">Crie um cocktail autoral com o que você tem no balcão agora — restrito à equipe de bar.</p>
+<p class="sub">Monte um cocktail autoral passo a passo com o que você tem no balcão agora — restrito à equipe de bar.</p>
 
 <div class="panel" id="lab-gate">
   <h2>Entrar</h2>
@@ -170,12 +208,44 @@
 </div>
 
 <div id="lab-corpo" style="display:none">
-  <div class="panel">
-    <div class="panel-head"><h2 style="margin:0">Balcão</h2><span class="nota" id="lab-doses" style="margin:0"></span></div>
-    <p class="sub" style="margin:8px 0">O que você tem agora? Digite um ingrediente e aperte enter.</p>
-    <div class="ctrl"><input type="text" id="lab-ingrediente" placeholder="ex: gin, limão, hortelã"></div>
-    <div class="chips" id="lab-chips-add"></div>
-    <p class="sub" style="margin:14px 0 6px">Restrições (opcional)</p>
+  <p class="sub" id="lab-doses" style="margin:0 0 14px"></p>
+
+  <section class="sessao ativa mostra" id="s1">
+    <div class="sessao-head"><span class="sessao-num">1</span><h2>Destilado base</h2></div>
+    <p class="ajuda">O que você tem no balcão agora — a base do drink.</p>
+    <div class="chips" id="chips-destilado"></div>
+  </section>
+
+  <div class="resumo-fita" id="fita1"></div>
+
+  <section class="sessao" id="s2">
+    <div class="sessao-head"><span class="sessao-num">2</span><h2>Estrutura do drink</h2></div>
+    <p class="ajuda">Que tipo de drink isso vai virar — define o resto das sessões.</p>
+    <div class="cards-estrutura" id="cards-estrutura"></div>
+  </section>
+
+  <section class="sessao" id="s3">
+    <div class="sessao-head"><span class="sessao-num">3</span><h2 id="titulo-modificadores">Modificadores</h2></div>
+    <div id="grupos-modificadores"></div>
+  </section>
+
+  <section class="sessao" id="s4">
+    <div class="sessao-head"><span class="sessao-num">4</span><h2>Acento</h2><span class="opcional-tag">opcional</span></div>
+    <p class="ajuda">Um toque a mais de tempero — pode pular.</p>
+    <div class="chips" id="chips-acento"></div>
+  </section>
+
+  <section class="sessao" id="s5">
+    <div class="sessao-head"><span class="sessao-num">5</span><h2>Serviço</h2><span class="opcional-tag">opcional</span></div>
+    <p class="ajuda">Copo e gelo — se pular, a IA sugere o clássico da estrutura escolhida.</p>
+    <div class="grupo-label">Copo</div>
+    <div class="chips" id="chips-copo"></div>
+    <div class="grupo-label">Gelo</div>
+    <div class="chips" id="chips-gelo"></div>
+  </section>
+
+  <section class="sessao" id="s6">
+    <div class="sessao-head"><span class="sessao-num">6</span><h2>Restrições</h2><span class="opcional-tag">opcional</span></div>
     <div class="chips" id="lab-chips-restricao">
       <button type="button" class="chip" data-r="refrescante">refrescante</button>
       <button type="button" class="chip" data-r="amargo">amargo</button>
@@ -183,7 +253,11 @@
       <button type="button" class="chip" data-r="sem álcool">sem álcool</button>
       <button type="button" class="chip" data-r="insumo parado">insumo parado</button>
     </div>
-    <button id="lab-criar" style="width:100%;padding:12px;font-size:15px;font-weight:600;border:none;border-radius:8px;background:var(--acc);color:var(--acc-txt);cursor:pointer;margin-top:10px">Criar drink</button>
+  </section>
+
+  <div class="panel" id="lab-acao" style="display:none">
+    <button id="lab-criar" disabled style="width:100%;padding:12px;font-size:15px;font-weight:600;border:none;border-radius:8px;background:var(--acc);color:var(--acc-txt);cursor:pointer">Criar drink</button>
+    <p class="sub" id="lab-aviso" style="margin:8px 0 0;text-align:center">Escolha destilado e estrutura pra liberar</p>
     <p class="sub" id="lab-criar-msg" style="margin:8px 0 0"></p>
   </div>
 
@@ -198,9 +272,9 @@
   var corpo = document.getElementById('lab-corpo');
   var msg = document.getElementById('lab-msg');
   var doses = document.getElementById('lab-doses');
-  var ingredientes = [];
   var restricoes = [];
   var ultimaFicha = null;
+  var estado = { destilado: null, estrutura: null, modificadores: [], acento: [], copo: null, gelo: null };
 
   if (!WORKER) {
     gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">O Lab de Drinks ainda não foi ativado.</p>';
@@ -254,24 +328,147 @@
     atualizaDoses(sessaoSalva);
   }
 
-  function redesenhaChips() {
-    var el = document.getElementById('lab-chips-add');
-    el.innerHTML = '';
-    ingredientes.forEach(function (ing, i) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'chip on'; b.textContent = ing + ' \u00d7';
-      b.onclick = function () { ingredientes.splice(i, 1); redesenhaChips(); };
-      el.appendChild(b);
+  // ---------- Montador de Drink ----------
+
+  function mostraSessao(id) {
+    var el = document.getElementById(id);
+    if (el.classList.contains('ativa')) return;
+    el.classList.add('ativa');
+    requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('mostra'); }); });
+  }
+
+  function atualizaBotao() {
+    var pronto = !!(estado.destilado && estado.estrutura);
+    document.getElementById('lab-criar').disabled = !pronto;
+    document.getElementById('lab-aviso').style.display = pronto ? 'none' : '';
+  }
+
+  var DESTILADOS = ['Cachaça', 'Gin', 'Vodka', 'Rum', 'Tequila', 'Whisky', 'Conhaque', 'Sakê', 'Pisco', 'Aperitivo amargo'];
+  var chipsDestilado = document.getElementById('chips-destilado');
+  DESTILADOS.forEach(function (v) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = v;
+    b.onclick = function () {
+      chipsDestilado.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); });
+      b.classList.add('on');
+      estado.destilado = v;
+      var fita = document.getElementById('fita1');
+      fita.innerHTML = 'Base escolhida: <b>' + v + '</b>';
+      fita.classList.add('on');
+      mostraSessao('s2');
+      atualizaBotao();
+    };
+    chipsDestilado.appendChild(b);
+  });
+
+  var ESTRUTURAS = [
+    { v: 'encorpado', t: 'Encorpado', d: 'Destilado quase puro, adoçado e temperado — o drink é a base.', ex: 'ex: Old Fashioned' },
+    { v: 'aromatico', t: 'Aromático', d: 'Destilado + vinho fortificado. O equilíbrio vem da proporção entre os dois.', ex: 'ex: Martini, Negroni' },
+    { v: 'citrico', t: 'Cítrico (Sour)', d: 'Destilado + suco cítrico + adoçante — a família mais versátil.', ex: 'ex: Daiquiri, Caipirinha' },
+    { v: 'luxe', t: 'Sour de luxe', d: 'O adoçante vira um licor de sabor — mais complexo que o sour simples.', ex: 'ex: Sidecar, Margarita' },
+    { v: 'esticado', t: 'Esticado (Highball)', d: 'Destilado + mixer gaseificado, montado longo no copo com gelo.', ex: 'ex: Gin-tônica' },
+    { v: 'cremoso', t: 'Cremoso', d: 'Destilado + creme, ovo ou espuma — corpo e textura em primeiro plano.', ex: 'ex: Flip, Piña Colada' }
+  ];
+  var ICONES_ESTRUTURA = {"encorpado": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"7\" y=\"10\" width=\"10\" height=\"9\" rx=\"1.5\"/><rect x=\"10\" y=\"13\" width=\"3.2\" height=\"3.2\"/><path d=\"M7 10h10\"/></svg>", "aromatico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 5h16l-8 9z\"/><path d=\"M12 14v6M8 20h8\"/></svg>", "citrico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 15a8 8 0 0 1 16 0z\"/><path d=\"M12 15V8M8.5 15c0-3 1-5.5 3.5-7M15.5 15c0-3-1-5.5-3.5-7\"/></svg>", "luxe": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 15a8 8 0 0 1 16 0z\"/><path d=\"M12 15V8\"/><path d=\"M18 6l1.3 1.3M19.3 4.7L18 6\"/></svg>", "esticado": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8 4h8l-1.3 16H9.3z\"/><circle cx=\"11\" cy=\"9\" r=\".6\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"13.3\" cy=\"12.5\" r=\".6\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"10.7\" cy=\"15.5\" r=\".6\" fill=\"currentColor\" stroke=\"none\"/></svg>", "cremoso": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 5h16l-8 9z\"/><path d=\"M12 14v6M8 20h8\"/><path d=\"M8.5 6.3c1 1 2 1 3 0s2-1 3 0 2 1 3 0\"/></svg>"};
+
+  var MODIFICADORES = {
+    encorpado: [
+      { label: 'Adoçante rico', opts: ['Xarope demerara', 'Mel', 'Açúcar'] },
+      { label: 'Tempero (bitters)', opts: ['Angostura', "Peychaud's", 'Bitters de laranja'] }
+    ],
+    aromatico: [
+      { label: 'Vinho fortificado', opts: ['Vermute seco', 'Vermute rosso', 'Lillet Blanc', 'Cynar'] },
+      { label: 'Amargo (opcional)', opts: ['Campari', 'Aperol', '(nenhum)'] }
+    ],
+    citrico: [
+      { label: 'Cítrico', opts: ['Limão-taiti', 'Limão-siciliano'] },
+      { label: 'Adoçante', opts: ['Xarope simples', 'Mel', 'Orgeat', 'Grenadine'] }
+    ],
+    luxe: [
+      { label: 'Licor de sabor', opts: ['Triple sec / Cointreau', 'Amaro', 'Licor herbal', 'Licor de fruta'] },
+      { label: 'Cítrico', opts: ['Limão-taiti', 'Limão-siciliano'] }
+    ],
+    esticado: [
+      { label: 'Mixer gaseificado', opts: ['Água com gás', 'Tônica', 'Ginger beer', 'Prosecco / espumante'] }
+    ],
+    cremoso: [
+      { label: 'Elemento cremoso', opts: ['Creme de leite', 'Leite de coco', 'Clara de ovo'] },
+      { label: 'Adoçante', opts: ['Xarope simples', 'Mel'] }
+    ]
+  };
+
+  function montaModificadores(slug, titulo) {
+    document.getElementById('titulo-modificadores').textContent = 'Modificadores · ' + titulo;
+    var grupos = MODIFICADORES[slug] || [];
+    var wrap = document.getElementById('grupos-modificadores');
+    wrap.innerHTML = '';
+    estado.modificadores = [];
+    grupos.forEach(function (g) {
+      var label = document.createElement('div');
+      label.className = 'grupo-label'; label.textContent = g.label;
+      wrap.appendChild(label);
+      var chipsDiv = document.createElement('div');
+      chipsDiv.className = 'chips'; chipsDiv.style.marginBottom = '4px';
+      wrap.appendChild(chipsDiv);
+      g.opts.forEach(function (v) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'chip'; b.textContent = v;
+        b.onclick = function () {
+          chipsDiv.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); });
+          b.classList.add('on');
+          estado.modificadores = estado.modificadores.filter(function (m) { return m.grupo !== g.label; });
+          estado.modificadores.push({ grupo: g.label, valor: v });
+        };
+        chipsDiv.appendChild(b);
+      });
     });
   }
 
-  document.getElementById('lab-ingrediente').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && e.target.value.trim()) {
-      ingredientes.push(e.target.value.trim());
-      e.target.value = '';
-      redesenhaChips();
-    }
+  var cardsWrap = document.getElementById('cards-estrutura');
+  ESTRUTURAS.forEach(function (e) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'card-estrutura';
+    b.innerHTML = '<div class="ico">' + (ICONES_ESTRUTURA[e.v] || '') + '</div>' +
+                  '<div class="t">' + e.t + '</div><div class="d">' + e.d + '</div>' +
+                  '<div class="ex">' + e.ex + '</div>';
+    b.onclick = function () {
+      cardsWrap.querySelectorAll('.card-estrutura').forEach(function (c) { c.classList.remove('on'); });
+      b.classList.add('on');
+      estado.estrutura = e.v;
+      montaModificadores(e.v, e.t);
+      mostraSessao('s3'); mostraSessao('s4'); mostraSessao('s5'); mostraSessao('s6');
+      document.getElementById('lab-acao').style.display = '';
+      atualizaBotao();
+    };
+    cardsWrap.appendChild(b);
   });
+
+  function montaChipsSimples(container, lista, aoMudar, multi) {
+    lista.forEach(function (v) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.textContent = v;
+      b.onclick = function () {
+        if (multi) {
+          b.classList.toggle('on');
+        } else {
+          container.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); });
+          b.classList.add('on');
+        }
+        aoMudar(Array.prototype.map.call(container.querySelectorAll('.chip.on'), function (c) { return c.textContent; }));
+      };
+      container.appendChild(b);
+    });
+  }
+
+  montaChipsSimples(document.getElementById('chips-acento'),
+    ['Hortelã fresca', 'Gengibre', 'Especiarias', 'Pimenta', 'Twist cítrico', 'Bitters extra', 'Sal / borda temperada'],
+    function (vals) { estado.acento = vals; }, true);
+  montaChipsSimples(document.getElementById('chips-copo'),
+    ['Rocks', 'Coupette', 'Nick & Nora', 'Collins', 'Copo alto', 'Taça'],
+    function (vals) { estado.copo = vals[0] || null; }, false);
+  montaChipsSimples(document.getElementById('chips-gelo'),
+    ['Cubo grande', 'Moído', 'Sem gelo'],
+    function (vals) { estado.gelo = vals[0] || null; }, false);
 
   document.querySelectorAll('#lab-chips-restricao .chip').forEach(function (c) {
     c.onclick = function () {
@@ -281,6 +478,8 @@
       if (i === -1) restricoes.push(r); else restricoes.splice(i, 1);
     };
   });
+
+  // ---------- resultado + riff ----------
 
   function renderFicha(f) {
     ultimaFicha = f;
@@ -332,7 +531,15 @@
   }
 
   document.getElementById('lab-criar').onclick = function () {
-    chamaWorker('/create', { ingredientes: ingredientes, restricoes: restricoes });
+    chamaWorker('/create', {
+      destilado: estado.destilado,
+      estrutura: estado.estrutura,
+      modificadores: estado.modificadores,
+      acento: estado.acento,
+      copo: estado.copo,
+      gelo: estado.gelo,
+      restricoes: restricoes
+    });
   };
 
   function pedeRiff(instrucao) {
@@ -342,7 +549,7 @@
 })();
 </script>
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 04/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 05/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 </body>
 </html>

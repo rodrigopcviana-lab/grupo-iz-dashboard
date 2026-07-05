@@ -72,10 +72,12 @@
   .badges { display: flex; flex-wrap: wrap; gap: 4px; }
   .badge { font-size: 11px; font-weight: 600; color: #dfbf7e; background: #362a15;
            border-radius: 999px; padding: 2px 8px; }
+  .badge-tecnica { color: var(--verde); background: #17352b; }
   .ficha ul { padding-left: 18px; font-size: 14px; }
   .ficha li { margin: 2px 0; }
   .metas { margin-top: 8px; font-size: 13px; color: var(--text-2); }
   .metas p { margin: 2px 0; }
+  .metas p.tecnica { color: var(--verde); font-weight: 600; }
   .aviso { font-size: 13px; color: var(--amarelo); }
   section.cat-ficha h2 { font-size: 19px; border-bottom: 1px solid var(--acc);
                          padding-bottom: 6px; margin-top: 32px; }
@@ -148,6 +150,42 @@
     .cards { grid-template-columns: 1fr 1fr; gap: 8px; }
   }
   .ic { display: inline-block; vertical-align: -3px; }
+
+  /* Montador de Drink (Lab de Drinks) — sessões sequenciais de escolha */
+  .sessao { border: 1px solid var(--border); border-radius: 14px; background: var(--card);
+            padding: 16px 16px 18px; margin-bottom: 12px;
+            display: none; opacity: 0; transform: translateY(-6px);
+            transition: opacity .3s ease, transform .3s ease; }
+  .sessao.ativa { display: block; }
+  .sessao.ativa.mostra { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) { .sessao { transition: none; transform: none; } }
+  .sessao-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 3px; }
+  .sessao-num { font-family: var(--serif); font-size: 12px; color: var(--acc); font-weight: 600;
+                border: 1px solid var(--acc); border-radius: 999px; width: 20px; height: 20px;
+                display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .sessao h2 { font-size: 16px; margin: 0; }
+  .sessao .opcional-tag { font-size: 10.5px; color: var(--text-3); text-transform: uppercase;
+                          letter-spacing: .06em; margin-left: auto; align-self: center; }
+  .sessao .ajuda { font-size: 12.5px; color: var(--text-3); margin: 4px 0 12px; }
+  .grupo-label { font-size: 11.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em;
+                 margin: 12px 0 8px; }
+  .grupo-label:first-of-type { margin-top: 0; }
+  .resumo-fita { display: none; font-size: 12.5px; color: var(--text-2); background: var(--card);
+                 border: 1px dashed var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+  .resumo-fita.on { display: block; }
+  .resumo-fita b { color: var(--acc); font-weight: 600; }
+  .cards-estrutura { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .card-estrutura { text-align: left; font: inherit; background: var(--bg); border: 1px solid var(--border);
+                     border-radius: 12px; padding: 12px 13px; cursor: pointer; color: var(--text);
+                     transition: border-color .15s, background .15s; }
+  .card-estrutura:hover { border-color: var(--acc); }
+  .card-estrutura.on { border-color: var(--acc); background: #2a2013; }
+  .card-estrutura .ico { color: var(--acc); margin-bottom: 6px; }
+  .card-estrutura .t { font-family: var(--serif); font-weight: 500; font-size: 14px; margin-bottom: 2px; }
+  .card-estrutura .d { font-size: 11.5px; color: var(--text-3); line-height: 1.4; }
+  .card-estrutura .ex { font-size: 10.5px; color: var(--text-3); margin-top: 5px; font-style: italic; }
+  .card-estrutura.on .d, .card-estrutura.on .ex { color: var(--text-2); }
+  @media (max-width: 600px) { .cards-estrutura { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -168,7 +206,7 @@ Chama a coordenação que repassa o contato.</p>
 WhatsApp — Rodrigo (Coordenação de Bares)</a>
 </div>
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 04/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 05/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 </body>
 </html>
