@@ -428,8 +428,12 @@ WhatsApp — Rodrigo (Coordenação de Bares)</a>
         return r.json().then(function (d) {
           window.definirNivel(d.nivel);
           try { localStorage.setItem(LS, senha); } catch (e) {}
+          // Login válido SEMPRE fecha o seletor e mostra o portal — mesmo
+          // vindo do "trocar" — e limpa o #nivel da URL, senão um F5 depois
+          // reabriria o modo troca de novo.
           mostraPortal();
-          if (location.hash !== '#nivel') escondeSeletor();
+          escondeSeletor();
+          if (history.replaceState) history.replaceState(null, '', location.pathname);
           msg.textContent = '';
           return true;
         });
@@ -445,29 +449,31 @@ WhatsApp — Rodrigo (Coordenação de Bares)</a>
     if (e.key === 'Enter') btnEntrar.click();
   });
 
-  // Primeira visita / senha esquecida: trava o resto da home atrás do
-  // seletor até validar. Senha lembrada: tenta revalidar em silêncio (se o
-  // Rodrigo trocar as senhas, a antiga some do localStorage e o gate volta).
-  var lembrada = null;
-  try { lembrada = localStorage.getItem(LS); } catch (e) {}
-  if (lembrada) {
+  // "trocar" no cabeçalho manda pra #nivel — isso força um login NOVO de
+  // verdade: não reaproveita a senha lembrada (senão o auto-login silencioso
+  // já reabria o portal por baixo do seletor, dando a impressão de "tudo
+  // junto" e de que nada tinha acontecido). Esconde o portal e espera a
+  // pessoa digitar a senha de novo, seja a mesma ou outra.
+  var viaTrocar = location.hash === '#nivel';
+  if (viaTrocar) {
     escondePortal();
-    entra(lembrada, true);
-  } else {
-    escondePortal();
-  }
-
-  // "trocar" no cabeçalho manda pra #nivel — força abrir a explicação e
-  // mostrar o gate de novo pra trocar de senha/nível, rolando até ele (nem
-  // todo navegador abre <details> sozinho via âncora).
-  if (location.hash === '#nivel') {
     explica.open = true;
-    document.getElementById('niveis').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    campoSenha.value = '';
+    campoSenha.focus();
+    niveis.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    // Visita normal: primeira vez trava atrás do seletor; senha lembrada
+    // tenta revalidar em silêncio (se o Rodrigo trocar as senhas, a antiga
+    // some do localStorage e o gate volta sozinho).
+    var lembrada = null;
+    try { lembrada = localStorage.getItem(LS); } catch (e) {}
+    escondePortal();
+    if (lembrada) entra(lembrada, true);
   }
 })();
 </script>
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 05/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 06/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
