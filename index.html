@@ -418,6 +418,39 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
 WhatsApp — Rodrigo (Coordenação de Bares)</a>
 </div>
 </div>
+
+<script>
+window.SESSAO_LS = 'portal_sessao';
+window.sessaoLer = function () {
+  try {
+    var raw = localStorage.getItem(window.SESSAO_LS);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    return s;
+  } catch (e) { return null; }
+};
+window.sessaoSalvar = function (nivel, token, exp) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp })); } catch (e) {}
+};
+window.sessaoLimpar = function () {
+  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
+};
+window.loginSenha = function (worker, senha) {
+  return fetch(worker + '/api/nivel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senha: senha }),
+  }).then(function (r) {
+    if (r.status === 401) return { ok: false, status: 401 };
+    if (!r.ok) return { ok: false, status: r.status };
+    return r.json().then(function (d) {
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp);
+      return { ok: true, nivel: d.nivel, token: d.token };
+    });
+  }).catch(function () { return { ok: false, status: 0 }; });
+};
+</script>
+
 <script>
 (function () {
   // Nível de consulta = senha de verdade, validada no Worker (POST /api/nivel,
@@ -425,7 +458,6 @@ WhatsApp — Rodrigo (Coordenação de Bares)</a>
   // Este script fica DEPOIS de #home-conteudo no HTML de propósito — rodar
   // antes faria getElementById voltar null (elemento ainda não parseado).
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
-  var LS = 'nivel_senha';
   var nav = document.getElementById('nav-principal');
   var resto = document.getElementById('home-conteudo');
   var niveis = document.getElementById('niveis');
@@ -460,48 +492,36 @@ WhatsApp — Rodrigo (Coordenação de Bares)</a>
     return;
   }
 
-  function entra(senha, lembrando) {
+  function entra(senha) {
     msg.textContent = 'Validando…';
-    return fetch(WORKER + '/api/nivel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ senha: senha }),
-    })
-      .then(function (r) {
-        if (r.status === 401) {
-          if (lembrando) { try { localStorage.removeItem(LS); } catch (e) {} }
-          msg.textContent = 'Senha incorreta.';
-          escondePortal();
-          return false;
-        }
-        if (!r.ok) { msg.textContent = 'Erro ao validar (' + r.status + '). Tente de novo.'; return false; }
-        return r.json().then(function (d) {
-          window.definirNivel(d.nivel);
-          try { localStorage.setItem(LS, senha); } catch (e) {}
-          // Login válido SEMPRE fecha o seletor e mostra o portal — mesmo
-          // vindo do "trocar" — e limpa o #nivel da URL, senão um F5 depois
-          // reabriria o modo troca de novo.
-          mostraPortal();
-          escondeSeletor();
-          if (history.replaceState) history.replaceState(null, '', location.pathname);
-          msg.textContent = '';
-          return true;
-        });
-      })
-      .catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; return false; });
+    window.loginSenha(WORKER, senha).then(function (r) {
+      if (!r.ok) {
+        msg.textContent = 'Senha incorreta.';
+        escondePortal();
+        return;
+      }
+      window.definirNivel(r.nivel);
+      // Login válido SEMPRE fecha o seletor e mostra o portal — mesmo
+      // vindo do "trocar" — e limpa o #nivel da URL, senão um F5 depois
+      // reabriria o modo troca de novo.
+      mostraPortal();
+      escondeSeletor();
+      if (history.replaceState) history.replaceState(null, '', location.pathname);
+      msg.textContent = '';
+    });
   }
 
   btnEntrar.addEventListener('click', function () {
     var senha = campoSenha.value.trim();
-    if (senha) entra(senha, false);
+    if (senha) entra(senha);
   });
   campoSenha.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') btnEntrar.click();
   });
 
   // "trocar" no cabeçalho manda pra #nivel — isso força um login NOVO de
-  // verdade: não reaproveita a senha lembrada (senão o auto-login silencioso
-  // já reabria o portal por baixo do seletor, dando a impressão de "tudo
+  // verdade: não reaproveita a sessão guardada (senão o auto-login já
+  // reabria o portal por baixo do seletor, dando a impressão de "tudo
   // junto" e de que nada tinha acontecido). Esconde o portal e espera a
   // pessoa digitar a senha de novo, seja a mesma ou outra.
   var viaTrocar = location.hash === '#nivel';
@@ -512,13 +532,17 @@ WhatsApp — Rodrigo (Coordenação de Bares)</a>
     campoSenha.focus();
     niveis.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } else {
-    // Visita normal: primeira vez trava atrás do seletor; senha lembrada
-    // tenta revalidar em silêncio (se o Rodrigo trocar as senhas, a antiga
-    // some do localStorage e o gate volta sozinho).
-    var lembrada = null;
-    try { lembrada = localStorage.getItem(LS); } catch (e) {}
+    // Visita normal: sessão válida (token não expirado) restaura o portal na
+    // hora, sem round-trip nenhum ao Worker — a prova de posse do token
+    // continua sendo checada pelo Worker sempre que uma página busca dado
+    // protegido de verdade (Ranking/Equipe/Vendas). Sessão vencida ou
+    // ausente = mostra o seletor, igual antes.
+    var s = window.sessaoLer();
     escondePortal();
-    if (lembrada) entra(lembrada, true);
+    if (s) {
+      window.definirNivel(s.nivel);
+      mostraPortal();
+    }
   }
 })();
 </script>

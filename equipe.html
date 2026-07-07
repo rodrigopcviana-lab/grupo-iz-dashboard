@@ -285,10 +285,43 @@ Fonte: Quadro de Equipes (Notion). Acesso restrito: chefes de bar, coordenação
 </div>
 <div id="equipe-corpo" style="display:none"></div>
 
+
+<script>
+window.SESSAO_LS = 'portal_sessao';
+window.sessaoLer = function () {
+  try {
+    var raw = localStorage.getItem(window.SESSAO_LS);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    return s;
+  } catch (e) { return null; }
+};
+window.sessaoSalvar = function (nivel, token, exp) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp })); } catch (e) {}
+};
+window.sessaoLimpar = function () {
+  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
+};
+window.loginSenha = function (worker, senha) {
+  return fetch(worker + '/api/nivel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senha: senha }),
+  }).then(function (r) {
+    if (r.status === 401) return { ok: false, status: 401 };
+    if (!r.ok) return { ok: false, status: r.status };
+    return r.json().then(function (d) {
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp);
+      return { ok: true, nivel: d.nivel, token: d.token };
+    });
+  }).catch(function () { return { ok: false, status: 0 }; });
+};
+</script>
+
 <script>
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
-  var LS = 'equipe_senha';
+  var NIVEIS_OK = ['chefe', 'coord', 'rh'];
   var msg = document.getElementById('equipe-msg');
   var gate = document.getElementById('equipe-gate');
   var corpo = document.getElementById('equipe-corpo');
@@ -313,38 +346,42 @@ Fonte: Quadro de Equipes (Notion). Acesso restrito: chefes de bar, coordenação
     });
   }
 
-  function entra(senha, silencioso) {
-    if (!silencioso) msg.textContent = 'Carregando…';
-    return fetch(WORKER + '/api/equipe', { headers: { 'X-Senha': senha } })
+  function buscaDados(token) {
+    msg.textContent = 'Carregando…';
+    return fetch(WORKER + '/api/equipe', { headers: { 'X-Token': token } })
       .then(function (r) {
-        if (r.status === 401) {
-          if (!silencioso) msg.textContent = 'Senha incorreta.';
-          return false;
-        }
-        if (!r.ok) { if (!silencioso) msg.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return false; }
+        if (r.status === 401) { window.sessaoLimpar(); msg.textContent = 'Sessão expirada — informe a senha de novo.'; return false; }
+        if (!r.ok) { msg.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return false; }
         return r.json().then(function (d) {
           corpo.innerHTML = d.html;
           gate.style.display = 'none';
           corpo.style.display = '';
           iniciaFiltros();
-          try { localStorage.setItem(LS, senha); } catch (e) {}
           return true;
         });
       })
-      .catch(function () { if (!silencioso) msg.textContent = 'Sem conexão. Tente de novo.'; return false; });
+      .catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; return false; });
+  }
+
+  function entra(senha) {
+    msg.textContent = 'Validando…';
+    window.loginSenha(WORKER, senha).then(function (r) {
+      if (!r.ok) { msg.textContent = 'Senha incorreta.'; return; }
+      if (NIVEIS_OK.indexOf(r.nivel) < 0) { msg.textContent = 'Essa senha não dá acesso ao Quadro de Equipes.'; return; }
+      buscaDados(r.token);
+    });
   }
 
   document.getElementById('equipe-entrar').onclick = function () {
     var senha = document.getElementById('equipe-senha').value.trim();
-    if (senha) entra(senha, false);
+    if (senha) entra(senha);
   };
   document.getElementById('equipe-senha').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') document.getElementById('equipe-entrar').click();
   });
 
-  var lembrada = null;
-  try { lembrada = localStorage.getItem(LS) || localStorage.getItem('nivel_senha'); } catch (e) {}
-  if (lembrada) entra(lembrada, true);
+  var s = window.sessaoLer();
+  if (s && NIVEIS_OK.indexOf(s.nivel) >= 0) buscaDados(s.token);
 })();
 </script>
 

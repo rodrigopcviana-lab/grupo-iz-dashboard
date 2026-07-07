@@ -48,7 +48,7 @@ Depois toque em “Copiar coordenada desta casa” e me mande — ou cole em
 
 <script>
 (function () {
-  var LOCAIS = [{"nome": "IZ Restaurante", "lat": -16.6905, "lon": -49.2685}, {"nome": "NIP", "lat": -16.6906, "lon": -49.2684}, {"nome": "1929 Trattoria", "lat": -16.6888, "lon": -49.2712}, {"nome": "Grá Bistrô", "lat": -16.6842, "lon": -49.2626}, {"nome": "FAMU", "lat": -16.7, "lon": -49.256}, {"nome": "Fulles", "lat": -16.7001, "lon": -49.2559}, {"nome": "Enttres", "lat": -16.687, "lon": -49.2648}];
+  var LOCAIS = [{"nome": "IZ Restaurante", "lat": -16.6905, "lon": -49.2685, "raio_m": 200}, {"nome": "NIP", "lat": -16.6906, "lon": -49.2684, "raio_m": 200}, {"nome": "1929 Trattoria", "lat": -16.6888, "lon": -49.2712, "raio_m": 200}, {"nome": "Grá Bistrô", "lat": -16.6842, "lon": -49.2626, "raio_m": 200}, {"nome": "FAMU", "lat": -16.7, "lon": -49.256, "raio_m": 200}, {"nome": "Fulles", "lat": -16.7001, "lon": -49.2559, "raio_m": 200}, {"nome": "Enttres", "lat": -16.687, "lon": -49.2648, "raio_m": 200}, {"nome": "DNA Smartstyle (Rodrigo)", "lat": -16.714, "lon": -49.271, "raio_m": 300}];
   var atual = null;
   function metros(a, b, c, d) {
     var R = 6371000, r = Math.PI / 180;
@@ -65,8 +65,8 @@ Depois toque em “Copiar coordenada desta casa” e me mande — ou cole em
     var html = '';
     LOCAIS.forEach(function (l) {
       var d = metros(atual.latitude, atual.longitude, l.lat, l.lon);
-      var cls = d <= 200 ? 'ok' : 'far';
-      html += '<div class="dist"><span>' + l.nome + '</span><span class="' + cls + '">'
+      var cls = d <= l.raio_m ? 'ok' : 'far';
+      html += '<div class="dist"><span>' + l.nome + ' <span style="color:#8f8672">(raio ' + l.raio_m + 'm)</span></span><span class="' + cls + '">'
         + (d < 1000 ? Math.round(d) + ' m' : (d/1000).toFixed(1) + ' km') + '</span></div>';
     });
     document.getElementById('dists').innerHTML = html || '—';
