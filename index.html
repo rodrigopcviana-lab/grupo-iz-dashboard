@@ -232,12 +232,23 @@
   .niveis { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 4px; }
   .nivel-btn { display: flex; align-items: center; gap: 14px; text-align: left; background: var(--card);
                border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
-               font: inherit; color: var(--text); width: 100%; }
+               font: inherit; color: var(--text); width: 100%; cursor: pointer;
+               transition: border-color .15s, background .15s, transform .05s; }
+  .nivel-btn:hover { border-color: var(--acc); background: #262019; }
+  .nivel-btn:active { transform: scale(.995); }
+  .nivel-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .nivel-btn.aberto { border-color: var(--acc); background: #262019; }
   .nivel-btn .ico { flex: none; width: 42px; height: 42px; border-radius: 11px; background: var(--bg);
                      border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
   .nivel-btn .ico svg { width: 20px; height: 20px; color: var(--acc); }
   .nivel-btn .txt .t { font-family: var(--serif); font-size: 16px; margin-bottom: 1px; }
   .nivel-btn .txt .d { font-size: 12px; color: var(--text-3); }
+  .nivel-btn .seta { margin-left: auto; flex: none; color: var(--text-3); font-size: 24px; line-height: 1;
+                     transition: transform .15s, color .15s; }
+  .nivel-btn:hover .seta { color: var(--acc); }
+  .nivel-btn.aberto .seta { color: var(--acc); transform: rotate(90deg); }
+  .nivel-gate { margin: 4px 0 8px; }
+  .nivel-gate b { color: var(--acc); }
   details.explica-niveis { margin: 8px 0 20px; background: var(--card); border: 1px solid var(--border);
                             border-radius: 12px; overflow: hidden; }
   details.explica-niveis summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex;
@@ -274,35 +285,42 @@
 <p class="sub" style="margin-bottom:14px">IZ · 1929 Trattoria · Grá Bistrô · FAMU · Fulles · NIP —
 informação útil para chefes de bar e equipes, num lugar só.</p>
 
+<p class="sub" id="niveis-ajuda" style="margin:2px 0 10px;font-size:13px">Toque no seu nível de acesso para digitar a senha.</p>
 <div class="niveis" id="niveis">
-<div class="nivel-btn info">
+<div class="nivel-btn" data-nivel="equipe" role="button" tabindex="0" aria-controls="nivel-gate">
 <div class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></div>
 <div class="txt"><div class="t">Equipe de Bar</div><div class="d">Fichas, produção, rotinas, treino</div></div>
+<div class="seta" aria-hidden="true">›</div>
 </div>
-<div class="nivel-btn info">
+<div class="nivel-btn" data-nivel="chefe" role="button" tabindex="0" aria-controls="nivel-gate">
 <div class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></div>
 <div class="txt"><div class="t">Chefe de Bar</div><div class="d">+ escala, quadro, consumo e ranking da casa</div></div>
+<div class="seta" aria-hidden="true">›</div>
 </div>
-<div class="nivel-btn info">
+<div class="nivel-btn" data-nivel="coord" role="button" tabindex="0" aria-controls="nivel-gate">
 <div class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></div>
 <div class="txt"><div class="t">Coordenação</div><div class="d">Tudo, incluindo ranking e vendas</div></div>
+<div class="seta" aria-hidden="true">›</div>
 </div>
-<div class="nivel-btn info">
+<div class="nivel-btn" data-nivel="rh" role="button" tabindex="0" aria-controls="nivel-gate">
 <div class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></div>
 <div class="txt"><div class="t">RH</div><div class="d">Rotinas, escala e quadro de equipes — só isso</div></div>
+<div class="seta" aria-hidden="true">›</div>
 </div>
-<div class="nivel-btn info">
+<div class="nivel-btn" data-nivel="controladoria" role="button" tabindex="0" aria-controls="nivel-gate">
 <div class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></div>
 <div class="txt"><div class="t">Controladoria & Administração</div><div class="d">Ranking, vendas e metas — só isso</div></div>
+<div class="seta" aria-hidden="true">›</div>
 </div>
-<div class="nivel-btn info">
+<div class="nivel-btn" data-nivel="dev_cocktails" role="button" tabindex="0" aria-controls="nivel-gate">
 <div class="ico"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></div>
 <div class="txt"><div class="t">Desenvolvimento de Cocktails</div><div class="d">Lab de Drinks — só isso</div></div>
+<div class="seta" aria-hidden="true">›</div>
 </div>
 </div>
 
-<div class="panel" id="nivel-gate">
-<p class="sub" style="margin:4px 0 12px">Digite a senha do seu nível de acesso.</p>
+<div class="panel nivel-gate" id="nivel-gate" style="display:none">
+<p class="sub" style="margin:0 0 10px">Senha de <b id="nivel-gate-nome">—</b></p>
 <input type="password" id="nivel-senha" placeholder="Senha" autocomplete="current-password"
   style="width:100%;padding:11px 12px;font-size:16px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;background:var(--card);color:var(--text)">
 <button id="nivel-entrar" style="width:100%;padding:13px;font-size:15px;font-weight:600;border:none;border-radius:999px;background:var(--acc);color:var(--acc-txt);cursor:pointer">Entrar no portal</button>
@@ -458,54 +476,107 @@ window.loginSenha = function (worker, senha) {
   // Este script fica DEPOIS de #home-conteudo no HTML de propósito — rodar
   // antes faria getElementById voltar null (elemento ainda não parseado).
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var LABEL = {"equipe": "Equipe de Bar", "chefe": "Chefe de Bar", "coord": "Coordenação", "rh": "RH", "controladoria": "Controladoria & Administração", "dev_cocktails": "Desenvolvimento de Cocktails"};
   var nav = document.getElementById('nav-principal');
   var resto = document.getElementById('home-conteudo');
   var niveis = document.getElementById('niveis');
+  var ajuda = document.getElementById('niveis-ajuda');
   var explica = document.getElementById('nivel');
   var gate = document.getElementById('nivel-gate');
+  var gateNome = document.getElementById('nivel-gate-nome');
   var msg = document.getElementById('nivel-msg');
   var campoSenha = document.getElementById('nivel-senha');
   var btnEntrar = document.getElementById('nivel-entrar');
+  var cards = Array.prototype.slice.call(niveis.querySelectorAll('.nivel-btn'));
+
+  // window.definirNivel é definido pelo JS_NIVEL, que no HTML vem DEPOIS deste
+  // script (é injetado por pagina() no fim do body). Então, quando o ramo
+  // logado abaixo roda em tempo de parse, definirNivel ainda não existe —
+  // chamá-lo direto lançava TypeError e abortava o abrePortal() logo em
+  // seguida (o portal do logado não abria). Gravar o nível no localStorage aqui
+  // já basta: o aplica() do JS_NIVEL, que roda logo depois, lê essa chave e
+  // ajusta a pill e o menu. Se definirNivel já existir (caso do login async),
+  // chamamos também pra refletir na hora.
+  function setNivel(v) {
+    try { localStorage.setItem('portal_nivel', v); } catch (e) {}
+    if (typeof window.definirNivel === 'function') window.definirNivel(v);
+  }
 
   // display:none via style (não o atributo hidden) — o CSS de autor que dá
   // display:flex ao nav sempre vence o [hidden] do user-agent na cascata (é
   // questão de origem, não de especificidade), então o atributo sozinho não
   // escondia nada.
-  function escondeSeletor() {
+  function mostraPortal() { nav.style.display = ''; resto.style.display = ''; }
+  function escondePortal() { nav.style.display = 'none'; resto.style.display = 'none'; }
+
+  // Portal aberto (logado): some com TODO o seletor e mostra o conteúdo.
+  function abrePortal() {
     niveis.style.display = 'none';
+    ajuda.style.display = 'none';
     explica.style.display = 'none';
     gate.style.display = 'none';
-  }
-  function mostraPortal() {
-    nav.style.display = '';
-    resto.style.display = '';
-  }
-  function escondePortal() {
-    nav.style.display = 'none';
-    resto.style.display = 'none';
+    mostraPortal();
   }
 
+  // Fecha só o campo de senha e tira o destaque dos cards — volta ao estado
+  // "só escolher o nível", sem senha à mostra (pedido: senha aparece apenas
+  // depois de tocar num nível).
+  function fechaGate() {
+    gate.style.display = 'none';
+    campoSenha.value = '';
+    msg.textContent = '';
+    cards.forEach(function (c) { c.classList.remove('aberto'); c.setAttribute('aria-expanded', 'false'); });
+  }
+
+  // Modo escolha (não logado OU "trocar acesso"): mostra os cards, esconde o
+  // portal e mantém a senha oculta até a pessoa escolher um nível.
+  function modoEscolha() {
+    escondePortal();
+    niveis.style.display = '';
+    ajuda.style.display = '';
+    explica.style.display = '';
+    fechaGate();
+  }
+
+  // Clique num card: revela a senha LOGO ABAIXO do nível escolhido, já
+  // rotulada com o nome dele. Trocar de card só reposiciona a mesma senha.
+  function escolhe(card) {
+    var nv = card.dataset.nivel;
+    cards.forEach(function (c) {
+      var sel = c === card;
+      c.classList.toggle('aberto', sel);
+      c.setAttribute('aria-expanded', sel ? 'true' : 'false');
+    });
+    if (gateNome) gateNome.textContent = LABEL[nv] || nv;
+    msg.textContent = '';
+    campoSenha.value = '';
+    card.insertAdjacentElement('afterend', gate);
+    gate.style.display = '';
+    campoSenha.focus();
+  }
+
+  cards.forEach(function (card) {
+    card.addEventListener('click', function () { escolhe(card); });
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); escolhe(card); }
+    });
+  });
+
   if (!WORKER) {
-    msg.textContent = 'Seletor de nível em configuração.';
-    btnEntrar.disabled = true;
-    mostraPortal();
+    // Sem Worker configurado não há como validar senha: cai no acesso básico
+    // (equipe, o padrão) e mostra o portal direto.
+    abrePortal();
     return;
   }
 
   function entra(senha) {
     msg.textContent = 'Validando…';
     window.loginSenha(WORKER, senha).then(function (r) {
-      if (!r.ok) {
-        msg.textContent = 'Senha incorreta.';
-        escondePortal();
-        return;
-      }
-      window.definirNivel(r.nivel);
-      // Login válido SEMPRE fecha o seletor e mostra o portal — mesmo
-      // vindo do "trocar" — e limpa o #nivel da URL, senão um F5 depois
-      // reabriria o modo troca de novo.
-      mostraPortal();
-      escondeSeletor();
+      if (!r.ok) { msg.textContent = 'Senha incorreta.'; return; }
+      // O Worker é quem diz o nível real da senha (independe do card clicado).
+      setNivel(r.nivel);
+      abrePortal();
+      // Limpa o #nivel da URL, senão um F5 reabriria o modo troca de novo.
       if (history.replaceState) history.replaceState(null, '', location.pathname);
       msg.textContent = '';
     });
@@ -519,30 +590,31 @@ window.loginSenha = function (worker, senha) {
     if (e.key === 'Enter') btnEntrar.click();
   });
 
-  // "trocar" no cabeçalho manda pra #nivel — isso força um login NOVO de
-  // verdade: não reaproveita a sessão guardada (senão o auto-login já
-  // reabria o portal por baixo do seletor, dando a impressão de "tudo
-  // junto" e de que nada tinha acontecido). Esconde o portal e espera a
-  // pessoa digitar a senha de novo, seja a mesma ou outra.
-  var viaTrocar = location.hash === '#nivel';
-  if (viaTrocar) {
-    escondePortal();
-    explica.open = true;
-    campoSenha.value = '';
-    campoSenha.focus();
+  // "Trocar acesso" (pill do cabeçalho) aponta pra index.html#nivel. Vindo de
+  // OUTRA página é um carregamento novo e cai no ramo #nivel abaixo. Mas JÁ na
+  // home o href só troca o hash SEM recarregar — o script de load não roda de
+  // novo, então antes o "trocar" não fazia nada aqui. Ouvir hashchange resolve.
+  function querTrocar() { return location.hash === '#nivel'; }
+  function entraModoTroca() {
+    modoEscolha();
+    if (explica) explica.open = true;
     niveis.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  window.addEventListener('hashchange', function () {
+    if (querTrocar()) entraModoTroca();
+  });
+
+  if (querTrocar()) {
+    entraModoTroca();
   } else {
     // Visita normal: sessão válida (token não expirado) restaura o portal na
     // hora, sem round-trip nenhum ao Worker — a prova de posse do token
     // continua sendo checada pelo Worker sempre que uma página busca dado
     // protegido de verdade (Ranking/Equipe/Vendas). Sessão vencida ou
-    // ausente = mostra o seletor, igual antes.
+    // ausente = mostra o seletor de escolha, com a senha ainda oculta.
     var s = window.sessaoLer();
-    escondePortal();
-    if (s) {
-      window.definirNivel(s.nivel);
-      mostraPortal();
-    }
+    if (s) { setNivel(s.nivel); abrePortal(); }
+    else { modoEscolha(); }
   }
 })();
 </script>
