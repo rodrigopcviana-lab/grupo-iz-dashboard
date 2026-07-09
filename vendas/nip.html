@@ -79,10 +79,8 @@ canvas { display: block; width: 100% !important; }
 <body>
 <div class="gate" id="gate">
   <h2>NIP - Not In Napoli</h2>
-  <p class="d">Área restrita — digite a senha de vendas para carregar o dashboard.</p>
-  <input type="password" id="gateSenha" placeholder="Senha" autocomplete="current-password">
-  <button id="gateEntrar">Entrar</button>
-  <p class="msg" id="gateMsg"></p>
+  <p class="d">Área restrita — o acesso vem do login do Portal dos Bares.</p>
+  <p class="msg" id="gateMsg">Verificando seu acesso…</p>
 </div>
 
 <div class="shell" id="app" style="display:none">
@@ -222,7 +220,6 @@ canvas { display: block; width: 100% !important; }
 // atacar offline.
 const WORKER_URL = "https://contagem-bares.rodrigopcviana.workers.dev";
 const CASA_SLUG = "nip";
-const LS_SENHA = "vendas_senha";
 
 let MESES, MESES_R, RECEITA_MES, QTDE_MES, CRESCIMENTO, PALETTE, CATS_TOP,
     CAT_REV, CAT_QTY_MES, CAT_TOTAL_ALL, ABC_BY_CAT, ALL_PRODS, TOTAL_RECEITA,
@@ -521,33 +518,52 @@ function aplicaDados(d){
   initOverview();
 }
 
-function tentaEntrar(senha){
+// Sessão do portal (2026-07-09): a senha é digitada só na home do Portal dos
+// Bares; este shell reusa o token de lá ('portal_sessao'). Sem sessão, manda
+// pra home logar com volta automática pra cá. O shell é publicado em
+// vendas/ (um nível abaixo do portal), por isso '../index.html'. Réplica
+// mínima do JS_SESSAO do portal_gen.py — mesmo formato {nivel, token, exp}.
+const SESSAO_LS = 'portal_sessao';
+const NIVEIS_OK = ['coord', 'controladoria'];
+try { localStorage.removeItem('vendas_senha'); } catch (e) {} // esquema antigo: senha em claro
+function sessaoLer(){
+  try {
+    const s = JSON.parse(localStorage.getItem(SESSAO_LS) || 'null');
+    return (s && s.token && s.exp && Date.now() <= s.exp) ? s : null;
+  } catch (e) { return null; }
+}
+function sessaoLimpar(){ try { localStorage.removeItem(SESSAO_LS); } catch (e) {} }
+function voltaSlug(){
+  const p = location.pathname.split('/');
+  const arq = p.pop() || 'index.html';
+  return (p.pop() || 'vendas') + '/' + arq;
+}
+function irParaLogin(){
+  location.replace('../index.html?volta=' + encodeURIComponent(voltaSlug()) + '#nivel');
+}
+
+function carrega(token){
   const msg = document.getElementById('gateMsg');
   msg.textContent = 'Carregando…';
   return fetch(`${WORKER_URL}/api/vendas?casa=${encodeURIComponent(CASA_SLUG)}`, {
-    headers: { 'X-Senha': senha }
+    headers: { 'X-Token': token }
   }).then(async r => {
-    if (r.status === 401) { msg.textContent = 'Senha incorreta.'; return false; }
+    if (r.status === 401) { sessaoLimpar(); irParaLogin(); return false; }
     if (!r.ok) { msg.textContent = `Erro ao carregar (${r.status}). Tente de novo.`; return false; }
     aplicaDados(await r.json());
-    localStorage.setItem(LS_SENHA, senha);
     return true;
   }).catch(() => { msg.textContent = 'Sem conexão. Tente de novo.'; return false; });
 }
 
-document.getElementById('gateEntrar').onclick = () => {
-  const senha = document.getElementById('gateSenha').value.trim();
-  if (senha) tentaEntrar(senha);
-};
-document.getElementById('gateSenha').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('gateEntrar').click();
-});
-
 if (!WORKER_URL) {
   document.getElementById('gateMsg').textContent = 'Worker ainda não configurado.';
 } else {
-  const lembrada = localStorage.getItem(LS_SENHA);
-  if (lembrada) tentaEntrar(lembrada);
+  const s = sessaoLer();
+  if (!s) irParaLogin();
+  else if (NIVEIS_OK.indexOf(s.nivel) < 0) {
+    document.getElementById('gateMsg').innerHTML = 'Seu acesso atual não abre os dashboards de vendas. '
+      + 'Toque em <a href="../index.html#nivel">Trocar acesso</a> para entrar com outra senha.';
+  } else carrega(s.token);
 }
 </script>
 </body>
