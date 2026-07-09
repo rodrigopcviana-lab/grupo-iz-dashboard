@@ -337,6 +337,54 @@
 <a class="nivel-pill" id="nivel-pill" href="index.html#nivel">Nível: <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-tr">Trocar</span></a>
 </header>
 
+<script>
+window.SESSAO_LS = 'portal_sessao';
+window.sessaoLer = function () {
+  try {
+    var raw = localStorage.getItem(window.SESSAO_LS);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    return s;
+  } catch (e) { return null; }
+};
+window.sessaoSalvar = function (nivel, token, exp) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp })); } catch (e) {}
+};
+window.sessaoLimpar = function () {
+  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
+};
+window.loginSenha = function (worker, senha) {
+  return fetch(worker + '/api/nivel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senha: senha }),
+  }).then(function (r) {
+    if (r.status === 401) return { ok: false, status: 401 };
+    if (!r.ok) return { ok: false, status: r.status };
+    return r.json().then(function (d) {
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp);
+      return { ok: true, nivel: d.nivel, token: d.token };
+    });
+  }).catch(function () { return { ok: false, status: 0 }; });
+};
+// Gate padrão das páginas protegidas (2026-07-09): a senha é digitada SÓ na
+// home. Sem sessão -> manda pra home logar, com volta automática pra cá.
+// Sessão de nível insuficiente -> NÃO redireciona (senão a home logada
+// devolveria pra cá e viraria loop); a página mostra a mensagem e o caminho
+// é a pill "Trocar acesso". Só para páginas na raiz do portal — as cascas
+// de /vendas/ (repo do site) replicam a própria versão com '../'.
+window.irParaLogin = function (slug) {
+  location.replace('index.html?volta=' + encodeURIComponent(slug) + '#nivel');
+};
+window.exigirNivel = function (niveisOk, slug) {
+  var s = window.sessaoLer();
+  if (s && niveisOk.indexOf(s.nivel) >= 0) return { ok: true, sessao: s };
+  if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
+  return { ok: false, nivelAtual: s.nivel };
+};
+</script>
+
+
 
 <p class="sub" id="niveis-ajuda" style="margin:2px 0 10px;font-size:13px">Toque no seu nível de acesso para digitar a senha.</p>
 <div class="niveis" id="niveis">
@@ -464,39 +512,6 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
 <span class="casas">IZ · 1929 Trattoria · Grá Bistrô · FAMU · Fulles · NIP</span>
 </div>
 </div>
-
-<script>
-window.SESSAO_LS = 'portal_sessao';
-window.sessaoLer = function () {
-  try {
-    var raw = localStorage.getItem(window.SESSAO_LS);
-    if (!raw) return null;
-    var s = JSON.parse(raw);
-    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
-    return s;
-  } catch (e) { return null; }
-};
-window.sessaoSalvar = function (nivel, token, exp) {
-  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp })); } catch (e) {}
-};
-window.sessaoLimpar = function () {
-  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
-};
-window.loginSenha = function (worker, senha) {
-  return fetch(worker + '/api/nivel', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ senha: senha }),
-  }).then(function (r) {
-    if (r.status === 401) return { ok: false, status: 401 };
-    if (!r.ok) return { ok: false, status: r.status };
-    return r.json().then(function (d) {
-      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp);
-      return { ok: true, nivel: d.nivel, token: d.token };
-    });
-  }).catch(function () { return { ok: false, status: 0 }; });
-};
-</script>
-
 <script>
 (function () {
   // Nível de consulta = senha de verdade, validada no Worker (POST /api/nivel,
@@ -527,6 +542,21 @@ window.loginSenha = function (worker, senha) {
   function setNivel(v) {
     try { localStorage.setItem('portal_nivel', v); } catch (e) {}
     if (typeof window.definirNivel === 'function') window.definirNivel(v);
+  }
+
+  // Volta automática (2026-07-09): páginas protegidas mandam quem está sem
+  // sessão pra cá com ?volta=<slug>. Após o login (ou se a sessão já vale),
+  // devolvemos a pessoa pra onde ela estava. Só destinos internos passam:
+  // regex fechada anti open-redirect ('//evil.com' e 'https:...' não casam),
+  // e 'index.html' é rejeitado pra não redirecionar a home pra ela mesma.
+  function voltaDestino() {
+    try {
+      var v = new URLSearchParams(location.search).get('volta') || '';
+      if (v === 'index.html') return '';
+      if (/^[a-z0-9-]+\.html$/.test(v)) return v;
+      if (/^vendas\/[a-z0-9-]+\.html$/.test(v)) return v;
+    } catch (e) {}
+    return '';
   }
 
   // display:none via style (não o atributo hidden) — o CSS de autor que dá
@@ -604,8 +634,10 @@ window.loginSenha = function (worker, senha) {
       if (!r.ok) { msg.textContent = 'Senha incorreta.'; return; }
       // O Worker é quem diz o nível real da senha (independe do card clicado).
       setNivel(r.nivel);
+      var volta = voltaDestino();
+      if (volta) { location.replace(volta); return; }
       abrePortal();
-      // Limpa o #nivel da URL, senão um F5 reabriria o modo troca de novo.
+      // Limpa o #nivel (e o ?volta) da URL, senão um F5 reabriria o modo troca.
       if (history.replaceState) history.replaceState(null, '', location.pathname);
       msg.textContent = '';
     });
@@ -632,6 +664,17 @@ window.loginSenha = function (worker, senha) {
   window.addEventListener('hashchange', function () {
     if (querTrocar()) entraModoTroca();
   });
+
+  // Quem chega redirecionado (?volta=) JÁ com sessão válida não precisa ver
+  // seletor nenhum: devolve direto. (Acontece quando a página protegida
+  // redireciona por 401 do Worker — a sessão local foi limpa — ou quando
+  // alguém guarda a URL com ?volta; sessão boa = volta na hora.)
+  var sVolta = window.sessaoLer();
+  if (sVolta && voltaDestino()) {
+    setNivel(sVolta.nivel);
+    location.replace(voltaDestino());
+    return;
+  }
 
   if (querTrocar()) {
     entraModoTroca();
