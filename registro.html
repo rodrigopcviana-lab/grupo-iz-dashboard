@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16130f">
+<title>Registro Rápido · Portal dos Bares — Grupo IZ</title>
+<style>
+  :root {
+    --bg: #16130f; --card: #211c15; --border: #3a3428;
+    --text: #f3ede2; --text-2: #c3baa9; --text-3: #8f8672;
+    --acc: #d0a352; --acc-txt: #241a06; --verde: #9fe1cb; --amarelo: #e0b05c;
+    --lilas: #cbb8f0;
+    --serif: Georgia, "Times New Roman", serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 20px; max-width: 980px; margin: 0 auto;
+    -webkit-text-size-adjust: 100%;
+  }
+  header.topo { margin-bottom: 12px; }
+  header.topo .marca { font-family: var(--serif); font-size: 20px; color: var(--text); }
+  header.topo .kicker { font-size: 11px; letter-spacing: .18em; color: var(--acc); margin-top: 2px; }
+  /* Navegação seccionada (4 grupos <details>) — ver _nav_secionada() */
+  nav#nav-principal { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; padding: 0;
+        position: relative; z-index: 20; }
+  .nav-sec .grp { flex: 1 1 46%; min-width: 0; position: relative; }
+  @media (min-width: 560px) { .nav-sec .grp { flex: 0 1 auto; } }
+  .nav-sec summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+        padding: 12px 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--text-2);
+        font-size: 13px; white-space: nowrap; overflow: hidden; }
+  .nav-sec summary::-webkit-details-marker { display: none; }
+  .nav-sec summary > span { overflow: hidden; text-overflow: ellipsis; }
+  .nav-sec summary .cv { margin-left: auto; font-size: 11px; color: var(--text-3); font-style: normal;
+        transition: transform .18s; }
+  .nav-sec .grp[open] summary { border-color: var(--acc); color: var(--acc); }
+  .nav-sec .grp[open] summary .cv { transform: rotate(180deg); color: var(--acc); }
+  .nav-sec .grp.on summary { border-color: var(--acc); color: var(--acc); }
+  .nav-sec .grp-menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 210px;
+        max-width: min(280px, calc(100vw - 28px)); background: var(--card); border: 1px solid var(--border);
+        border-radius: 14px; padding: 6px; box-shadow: 0 12px 30px rgba(0,0,0,.5); display: flex;
+        flex-direction: column; gap: 2px; z-index: 30; }
+  .nav-sec .grp-link { display: flex; align-items: center; gap: 10px; padding: 11px 12px;
+        border-radius: 10px; color: var(--text-2); text-decoration: none; font-size: 13.5px; }
+  .nav-sec .grp-link .ic { flex: none; color: var(--text-3); }
+  .nav-sec .grp-link:hover { background: var(--bg); color: var(--acc); }
+  .nav-sec .grp-link:hover .ic { color: var(--acc); }
+  .nav-sec .grp-link.on { background: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  .nav-sec .grp-link.on .ic { color: var(--acc-txt); }
+  .nav-sec .grp-link .lk { margin-left: auto; display: inline-flex; flex: none; }
+  .nav-sec .grp-link .lk .ic { color: var(--amarelo); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  a { color: var(--acc); }
+  h1 { font-family: var(--serif); font-size: 25px; font-weight: 500; margin-bottom: 6px;
+       letter-spacing: .01em; }
+  .sub { color: var(--text-2); font-size: 14px; margin-bottom: 22px; }
+  h2 { font-family: var(--serif); font-size: 19px; font-weight: 500; margin: 28px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+           padding: 14px; text-decoration: none; color: var(--text); }
+  a.card:hover { border-color: var(--acc); }
+  a.card .ico { font-size: 17px; margin-bottom: 8px; }
+  a.card .t { font-family: var(--serif); font-weight: 500; font-size: 15px; margin-bottom: 2px; }
+  a.card .d { font-size: 12px; color: var(--text-3); white-space: nowrap;
+              overflow: hidden; text-overflow: ellipsis; }
+  .lock { color: var(--amarelo); font-size: 12px; font-weight: 600; }
+  .wa { display: inline-block; background: #1e3a2c; color: #9fe1cb; font-weight: 600; font-size: 14px;
+        padding: 11px 18px; border-radius: 999px; text-decoration: none; margin-top: 8px; }
+  .nota { font-size: 12px; color: var(--text-3); margin-top: 28px; }
+  .ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  .ctrl input { font: inherit; font-size: 16px; padding: 12px; flex: 1; min-width: 180px;
+                border: 1px solid var(--border); border-radius: 8px; background: var(--card);
+                color: var(--text); }
+  .ctrl input::placeholder { color: var(--text-3); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip { font: inherit; font-size: 13px; padding: 12px 16px; border: 1px solid var(--border);
+          border-radius: 999px; background: var(--card); color: var(--text-2); cursor: pointer; }
+  .chip.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  .ficha { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+           padding: 16px; margin-bottom: 12px; }
+  .ficha::after { content: ""; display: block; clear: both; }
+  .ficha[data-ficha] { cursor: pointer; }
+  .ficha[data-ficha]:hover { border-color: var(--acc); }
+  .ficha[data-ficha]:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .ficha img.foto { float: right; margin: 0 0 8px 12px; width: 88px; height: 88px; object-fit: cover;
+                    border-radius: 10px; border: 1px solid var(--border); display: block; background: var(--bg); }
+  .ficha header { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+                  justify-content: space-between; margin-bottom: 8px; }
+  .ficha h3 { font-family: var(--serif); font-size: 16px; font-weight: 500; }
+  .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+  .badge { font-size: 11px; font-weight: 600; color: #dfbf7e; background: #362a15;
+           border-radius: 999px; padding: 2px 8px; }
+  .badge-tecnica { color: var(--verde); background: #17352b; }
+  .badge.preco { color: var(--acc); background: transparent; border: 1px solid var(--acc);
+                 font-variant-numeric: tabular-nums; }
+  .ficha-foto { display: block; width: 100%; max-width: 360px; aspect-ratio: 1; object-fit: cover;
+                border-radius: 12px; border: 1px solid var(--border); margin: 4px 0 12px; }
+  .ficha ul { padding-left: 18px; font-size: 14px; }
+  .ficha li { margin: 2px 0; }
+  .metas { margin-top: 8px; font-size: 13px; color: var(--text-2); }
+  .metas p { margin: 2px 0; }
+  .metas p.tecnica { color: var(--verde); font-weight: 600; }
+  .ic-copo { vertical-align: -2px; margin-right: 4px; opacity: .8; }
+  .sabor { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-3);
+           margin-top: 8px; }
+  .sabor-barra { position: relative; flex: 1; height: 4px; background: var(--border);
+                 border-radius: 999px; }
+  .sabor-barra i { position: absolute; top: -3px; width: 10px; height: 10px; margin-left: -5px;
+                   border-radius: 50%; background: var(--acc); display: block; }
+  .aviso { font-size: 13px; color: var(--amarelo); }
+  section.gloss-sec { margin-top: 28px; }
+  section.gloss-sec h2 { font-size: 18px; border-bottom: 1px solid var(--acc); padding-bottom: 6px; }
+  .gloss-item { padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 14px;
+                color: var(--text-2); line-height: 1.5; }
+  .gloss-item:last-child { border-bottom: none; }
+  .gloss-item strong { color: var(--text); font-family: var(--serif); font-weight: 500; }
+  section.cat-ficha h2 { font-size: 19px; border-bottom: 1px solid var(--acc);
+                         padding-bottom: 6px; margin-top: 32px; }
+  section.cat-ficha h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px;
+                              font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  details.pendentes { background: var(--card); border: 1px dashed var(--border);
+                      border-radius: 10px; padding: 10px 16px; margin-bottom: 12px; }
+  details.pendentes summary { font-size: 13px; color: var(--amarelo); cursor: pointer; }
+  details.pendentes p { font-size: 13px; color: var(--text-2); margin-top: 6px; }
+  #vazio { display: none; color: var(--text-3); font-size: 14px; padding: 20px 0; }
+  table.regras { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--card);
+                 border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table.regras th, table.regras td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+  table.regras tr:last-child td { border-bottom: none; }
+  table.regras th { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+           padding: 18px; margin-bottom: 14px; font-size: 14px; }
+  .panel h2 { margin: 0 0 8px; }
+  .panel p, .panel li { color: var(--text-2); }
+  .panel ul { padding-left: 18px; margin-top: 6px; }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .panel .k, .hoje .k { font-size: 11px; letter-spacing: .16em; color: var(--acc);
+                        font-weight: 600; margin-bottom: 8px; }
+  .hoje p { color: var(--text); padding: 3px 0; font-size: 14px; }
+  .hoje a { color: var(--text); }
+  /* Home redesenhada (2026-07-08): hero "Hoje" + atalhos agrupados por área.
+     Classes próprias (.qa/.area-*) para não colidir com a grade .cards/.card
+     usada em outras páginas. */
+  .hero-hoje { background: linear-gradient(135deg, #2a2117, #1c1710); border: 1px solid #4a3f2a;
+               border-radius: 18px; padding: 15px 18px; margin: 6px 0 24px; }
+  /* <details>: encolhe nativamente (sem JS) quando fechado — mesma técnica de
+     details.explica-niveis já usada em "Por que a senha existe". */
+  .hero-hoje summary.k { list-style: none; cursor: pointer; display: flex; align-items: center;
+                         justify-content: space-between; font-size: 11px; letter-spacing: .16em;
+                         color: var(--acc); font-weight: 700; }
+  .hero-hoje summary.k::-webkit-details-marker { display: none; }
+  .hero-hoje summary.k .seta { color: var(--acc); font-size: 13px; flex: none; transition: transform .2s; }
+  .hero-hoje[open] summary.k { margin-bottom: 8px; }
+  .hero-hoje[open] summary.k .seta { transform: rotate(180deg); }
+  .hero-hoje .row { display: flex; align-items: center; gap: 11px; padding: 10px 0; font-size: 14.5px;
+                    color: var(--text); border-top: 1px solid #3a301f; }
+  .hero-hoje .row:first-of-type { border-top: none; }
+  .hero-hoje .row > svg { color: var(--acc); flex: none; }
+  .hero-hoje .row a { color: inherit; }
+  .hero-hoje .row .go { margin-left: auto; color: var(--acc); font-size: 20px; line-height: 1; flex: none;
+                        text-decoration: none; }
+  .home-areas { display: flex; flex-direction: column; gap: 18px; }
+  .area-sec .area-h { display: flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: .1em;
+                      text-transform: uppercase; color: var(--text-3); font-weight: 600; margin-bottom: 10px; }
+  .area-sec .area-h .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  /* 2 colunas fixas em qualquer largura (pedido do Rodrigo, 2026-07-08) — antes
+     era auto-fill(228px), que dava 3-4 por linha no desktop e 1 por linha no
+     mobile; a grade de retângulos lado a lado fica igual em qualquer tela. */
+  .area-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  /* min-width:0: sem isso o item do grid crescia além da coluna (2 fixas) —
+     o white-space:nowrap da .d (descrição) dá um min-content grande que, por
+     padrão, um item de grid nunca encolhe abaixo dele; min-width:0 libera. */
+  a.qa { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border);
+         border-radius: 13px; padding: 11px 13px; text-decoration: none; color: var(--text);
+         transition: border-color .15s, background .15s; min-width: 0; }
+  a.qa:hover { border-color: var(--acc); background: #26201a; }
+  a.qa .chip { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center;
+               justify-content: center; flex: none; }
+  /* display:block + flex:none: o .ic global é inline-block e, dentro do chip
+     flex centralizado, a largura do svg colapsava (~4px) — isto trava em 18px. */
+  a.qa .chip svg { width: 18px; height: 18px; display: block; flex: none; }
+  a.qa .qtt { display: flex; flex-direction: column; min-width: 0; }
+  a.qa .t { font-family: var(--serif); font-size: 15px; color: var(--text); display: flex;
+            align-items: center; gap: 6px; }
+  a.qa .d { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  a.qa .lk { display: inline-flex; flex: none; }
+  a.qa .lk svg { width: 11px; height: 11px; color: var(--amarelo); }
+  .home-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between;
+               margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .home-foot .wa { display: inline-flex; align-items: center; gap: 8px; margin-top: 0; }
+  .home-foot .casas { font-size: 11.5px; color: var(--text-3); letter-spacing: .02em; }
+  label.check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0;
+                border-bottom: 1px dashed var(--border); font-size: 14px; cursor: pointer; }
+  label.check:last-of-type { border-bottom: none; }
+  label.check input { width: 19px; height: 19px; margin-top: 1px; accent-color: var(--acc); flex: none; }
+  label.check input:checked + span { color: var(--text-3); text-decoration: line-through; }
+  .flag { color: #e88f8f; font-weight: 700; }
+  .freq { font-size: 11px; font-weight: 600; color: #cbb8f0; background: #302743;
+          border-radius: 999px; padding: 2px 8px; margin-right: 6px; }
+  .limpar { font: inherit; font-size: 12px; color: var(--text-3); background: none;
+            border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .htime { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .objetivo { font-size: 13px; color: var(--verde); margin: 6px 0 2px; }
+  .desc { font-size: 12px; color: var(--text-3); margin: 2px 0 0 28px; white-space: pre-line; }
+  details.roteiro { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+                    padding: 14px 18px; margin-bottom: 14px; }
+  details.roteiro summary { font-weight: 600; font-size: 15px; cursor: pointer; }
+  details.roteiro h3 { font-size: 14px; font-weight: 600; margin: 16px 0 2px; }
+  .prod { display: flex; align-items: center; gap: 8px; padding: 7px 0;
+          border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .prod:last-child { border-bottom: none; }
+  .pos { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px;
+         white-space: nowrap; flex: none; min-width: 68px; text-align: center; }
+  .abc-a { color: #9fe1cb; background: #163527; }
+  .abc-b { color: #efc98a; background: #3a2d12; }
+  .abc-c { color: #aaa294; background: #2b261d; }
+  .pos.rankn { min-width: 48px; color: #c3baa9; background: #2b261d; }
+  .pos.mini { min-width: 30px; }
+  .ctrl select { font: inherit; font-size: 16px; padding: 9px 12px; flex: 1; min-width: 180px;
+                 border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+  .equipe-casa { margin-bottom: 24px; }
+  .equipe-casa h2 .qtd { font-weight: 400; color: var(--text-3); font-size: 14px;
+                         font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .pessoa { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 12px 16px; margin-bottom: 8px; }
+  .pessoa-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pessoa .nome { font-weight: 600; font-size: 14px; }
+  .badge-chefe { font-size: 11px; font-weight: 600; color: #e9c880; background: #3a2d12;
+                 border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .sub2 { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+  .ferias { font-size: 12px; color: var(--amarelo); margin-top: 4px; }
+  @media (max-width: 600px) {
+    body { padding: 14px; }
+    nav#nav-principal { margin: 0 0 16px; }
+    h1 { font-size: 22px; }
+    .cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+  }
+  .ic { display: inline-block; vertical-align: -3px; }
+
+  /* Montador de Drink (Lab de Drinks) — sessões sequenciais de escolha */
+  .sessao { border: 1px solid var(--border); border-radius: 14px; background: var(--card);
+            padding: 16px 16px 18px; margin-bottom: 12px;
+            display: none; opacity: 0; transform: translateY(-6px);
+            transition: opacity .3s ease, transform .3s ease; }
+  .sessao.ativa { display: block; }
+  .sessao.ativa.mostra { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) { .sessao { transition: none; transform: none; } }
+  .sessao-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 3px; }
+  .sessao-num { font-family: var(--serif); font-size: 12px; color: var(--acc); font-weight: 600;
+                border: 1px solid var(--acc); border-radius: 999px; width: 20px; height: 20px;
+                display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .sessao h2 { font-size: 16px; margin: 0; }
+  .sessao .opcional-tag { font-size: 10.5px; color: var(--text-3); text-transform: uppercase;
+                          letter-spacing: .06em; margin-left: auto; align-self: center; }
+  .sessao .ajuda { font-size: 12.5px; color: var(--text-3); margin: 4px 0 12px; }
+  .grupo-label { font-size: 11.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em;
+                 margin: 12px 0 8px; }
+  .grupo-label:first-of-type { margin-top: 0; }
+  .resumo-fita { display: none; font-size: 12.5px; color: var(--text-2); background: var(--card);
+                 border: 1px dashed var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+  .resumo-fita.on { display: block; }
+  .resumo-fita b { color: var(--acc); font-weight: 600; }
+  .cards-estrutura { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .card-estrutura { text-align: left; font: inherit; background: var(--bg); border: 1px solid var(--border);
+                     border-radius: 12px; padding: 12px 13px; cursor: pointer; color: var(--text);
+                     transition: border-color .15s, background .15s; }
+  .card-estrutura:hover { border-color: var(--acc); }
+  .card-estrutura.on { border-color: var(--acc); background: #2a2013; }
+  .card-estrutura .ico { color: var(--acc); margin-bottom: 6px; }
+  .card-estrutura .t { font-family: var(--serif); font-weight: 500; font-size: 14px; margin-bottom: 2px; }
+  .card-estrutura .d { font-size: 11.5px; color: var(--text-3); line-height: 1.4; }
+  .card-estrutura .ex { font-size: 10.5px; color: var(--text-3); margin-top: 5px; font-style: italic; }
+  .card-estrutura.on .d, .card-estrutura.on .ex { color: var(--text-2); }
+  @media (max-width: 600px) { .cards-estrutura { grid-template-columns: 1fr; } }
+
+  .nivel-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--card);
+                border: 1px solid var(--border); border-radius: 999px; padding: 6px 6px 6px 12px;
+                font-size: 12px; color: var(--text-2); text-decoration: none; margin-top: 8px; }
+  .nivel-pill b { color: var(--acc); font-weight: 600; }
+  .nivel-pill .np-tr { background: #2c2416; color: var(--acc); border-radius: 999px; padding: 4px 10px;
+                       font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+  .nivel-pill:hover { border-color: var(--acc); }
+  .nivel-pill:hover .np-tr { background: var(--acc); color: var(--acc-txt); }
+  .niveis { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 4px; }
+  .nivel-btn { display: flex; align-items: center; gap: 14px; text-align: left; background: var(--card);
+               border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+               font: inherit; color: var(--text); width: 100%; cursor: pointer;
+               transition: border-color .15s, background .15s, transform .05s; }
+  .nivel-btn:hover { border-color: var(--acc); background: #262019; }
+  .nivel-btn:active { transform: scale(.995); }
+  .nivel-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .nivel-btn.aberto { border-color: var(--acc); background: #262019; }
+  .nivel-btn .ico { flex: none; width: 42px; height: 42px; border-radius: 11px; background: var(--bg);
+                     border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+  .nivel-btn .ico svg { width: 20px; height: 20px; color: var(--acc); }
+  .nivel-btn .txt .t { font-family: var(--serif); font-size: 16px; margin-bottom: 1px; }
+  .nivel-btn .txt .d { font-size: 12px; color: var(--text-3); }
+  .nivel-btn .seta { margin-left: auto; flex: none; color: var(--text-3); font-size: 24px; line-height: 1;
+                     transition: transform .15s, color .15s; }
+  .nivel-btn:hover .seta { color: var(--acc); }
+  .nivel-btn.aberto .seta { color: var(--acc); transform: rotate(90deg); }
+  .nivel-gate { margin: 4px 0 8px; }
+  .nivel-gate b { color: var(--acc); }
+  details.explica-niveis { margin: 8px 0 20px; background: var(--card); border: 1px solid var(--border);
+                            border-radius: 12px; overflow: hidden; }
+  details.explica-niveis summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex;
+                                    align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); }
+  details.explica-niveis summary::-webkit-details-marker { display: none; }
+  details.explica-niveis summary .q { flex: none; width: 18px; height: 18px; border-radius: 50%;
+                                       border: 1px solid var(--text-3); display: flex; align-items: center;
+                                       justify-content: center; font-size: 11px; color: var(--text-3); }
+  details.explica-niveis summary .seta { margin-left: auto; color: var(--text-3); transition: transform .2s;
+                                          font-size: 11px; }
+  details.explica-niveis[open] summary .seta { transform: rotate(180deg); }
+  details.explica-niveis summary:hover { color: var(--text); }
+  .explica-corpo { padding: 2px 14px 15px; border-top: 1px solid var(--border); font-size: 13px;
+                   color: var(--text-2); line-height: 1.55; }
+  .explica-corpo p { margin: 10px 0 6px; }
+  .explica-corpo .aviso-nivel { background: #17352b; border-left: 2px solid var(--verde); border-radius: 6px;
+                                 padding: 9px 11px; font-size: 12.5px; color: #d7ede4; margin: 10px 0; }
+  .explica-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+  .explica-grid .col { background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; }
+  .explica-grid .col .h { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--acc);
+                           margin-bottom: 4px; }
+  .explica-grid .col ul { margin: 0; padding-left: 16px; font-size: 12px; color: var(--text-2); line-height: 1.5; }
+  @media (min-width: 640px) { .explica-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); } }
+</style>
+</head>
+<body>
+<header class="topo">
+<div class="marca">Portal dos Bares</div>
+<div class="kicker">GRUPO IZ</div>
+<a class="nivel-pill" id="nivel-pill" href="index.html#nivel">Nível: <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-tr">Trocar</span></a>
+</header>
+
+<script>
+window.SESSAO_LS = 'portal_sessao';
+window.sessaoLer = function () {
+  try {
+    var raw = localStorage.getItem(window.SESSAO_LS);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    return s;
+  } catch (e) { return null; }
+};
+window.sessaoSalvar = function (nivel, token, exp) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp })); } catch (e) {}
+};
+window.sessaoLimpar = function () {
+  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
+};
+window.loginSenha = function (worker, senha) {
+  return fetch(worker + '/api/nivel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senha: senha }),
+  }).then(function (r) {
+    if (r.status === 401) return { ok: false, status: 401 };
+    if (!r.ok) return { ok: false, status: r.status };
+    return r.json().then(function (d) {
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp);
+      return { ok: true, nivel: d.nivel, token: d.token };
+    });
+  }).catch(function () { return { ok: false, status: 0 }; });
+};
+// Gate padrão das páginas protegidas (2026-07-09): a senha é digitada SÓ na
+// home. Sem sessão -> manda pra home logar, com volta automática pra cá.
+// Sessão de nível insuficiente -> NÃO redireciona (senão a home logada
+// devolveria pra cá e viraria loop); a página mostra a mensagem e o caminho
+// é a pill "Trocar acesso". Só para páginas na raiz do portal — as cascas
+// de /vendas/ (repo do site) replicam a própria versão com '../'.
+window.irParaLogin = function (slug) {
+  location.replace('index.html?volta=' + encodeURIComponent(slug) + '#nivel');
+};
+window.exigirNivel = function (niveisOk, slug) {
+  var s = window.sessaoLer();
+  if (s && niveisOk.indexOf(s.nivel) >= 0) return { ok: true, sessao: s };
+  if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
+  return { ok: false, nivelAtual: s.nivel };
+};
+</script>
+
+<nav id="nav-principal" class="nav-sec"><details class="grp" data-niveis="chefe controladoria coord dev_cocktails equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Operação</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="index.html" class="grp-link" data-niveis="equipe chefe coord rh controladoria dev_cocktails"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a><a href="eventos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a><a href="contagem.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contagem de insumos</span></a><a href="contagem-copos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg><span>Contagem de copos</span></a><a href="turno.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>Relatório de turno</span></a><a href="rotinas.html" class="grp-link" data-niveis="equipe chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Rotinas</span></a><a href="producao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Produção possível</span></a></div></details><details class="grp" data-niveis="chefe coord dev_cocktails equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Bar</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="cocktails.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas técnicas</span></a><a href="treinamentos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Treinamentos</span></a><a href="calculadora.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Calculadora PB</span></a><a href="lab.html" class="grp-link" data-niveis="coord dev_cocktails"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Lab de Drinks</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="planejador-3d.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Planejador 3D</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Pessoas</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="equipe.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Equipe</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="metas.html" class="grp-link" data-niveis="equipe chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Metas &amp; Desenv.</span></a><a href="contatos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg><span>Contatos</span></a><a href="regras.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Escala &amp; BH</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Gestão</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="curva-abc.html" class="grp-link" data-niveis="chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Ranking</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="consumo.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Consumo</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="vendas/index.html" class="grp-link" data-niveis="controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg><span>Vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="rentabilidade.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Rentabilidade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></details></nav>
+
+<h1>Registro Rápido</h1>
+<p class="sub" id="rr-sub">Ocorrência ou solicitação — leva menos de 1 minuto. O registro vai
+direto para a coordenação.</p>
+
+<style>
+  body { --verm: #dc9a8e; }
+  .rr-bloco { margin-bottom: 16px; }
+  .rr-bloco.rr-pendente { outline: 2px solid var(--verm); outline-offset: 3px; border-radius: 14px; }
+  .rr-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
+              margin-bottom: 8px; display: block; }
+  .rr-tipos { display: flex; gap: 8px; }
+  .rr-tipo { flex: 1; padding: 16px 10px; font-size: 15px; font-weight: 600; text-align: center;
+             border-radius: 13px; border: 1px solid var(--border); background: var(--card);
+             color: var(--text-2); cursor: pointer; }
+  .rr-tipo.on.rr-tipo-ocorrencia { background: #3a2420; border-color: var(--verm); color: var(--verm); }
+  .rr-tipo.on.rr-tipo-solicitacao { background: #17352b; border-color: var(--verde); color: var(--verde); }
+  .rr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rr-cats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rr-cat { display: flex; align-items: center; gap: 8px; padding: 11px 10px; font-size: 13px;
+            text-align: left; border-radius: 12px; border: 1px solid var(--border);
+            background: var(--card); color: var(--text-2); cursor: pointer; min-width: 0; }
+  .rr-cat svg { flex: none; color: var(--acc); }
+  .rr-cat span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rr-cat.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  .rr-cat.on svg { color: var(--acc-txt); }
+  .rr-urgs { display: flex; flex-direction: column; gap: 8px; }
+  .rr-urg { padding: 13px 14px; border-radius: 12px; border: 1px solid var(--border);
+            background: var(--card); color: var(--text); font-size: 14px; text-align: left; cursor: pointer; }
+  .rr-urg b { display: block; font-size: 14.5px; }
+  .rr-urg span { font-size: 12px; color: var(--text-3); }
+  .rr-urg.on-urgente { border-color: var(--verm); background: #2c1c19; }
+  .rr-urg.on-hoje { border-color: var(--amarelo); background: #2c2314; }
+  .rr-urg.on-aguardar { border-color: var(--verde); background: #16281f; }
+  .rr-aviso-urgencia { font-size: 12.5px; color: var(--text-3); margin-top: 8px; display: none; }
+  .rr-aviso-urgencia.on { display: block; }
+  .rr-textarea { width: 100%; min-height: 96px; padding: 12px; font-size: 15px; font-family: inherit;
+                 border-radius: 12px; border: 1px solid var(--border); background: var(--card);
+                 color: var(--text); resize: vertical; }
+  .rr-nome-chip { display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+                   border-radius: 999px; border: 1px solid var(--border); background: var(--card);
+                   font-size: 14px; }
+  .rr-nome-chip b { flex: 1; }
+  .rr-nome-chip a { color: var(--acc); font-size: 13px; cursor: pointer; }
+  .rr-nome-input { width: 100%; padding: 11px 12px; font-size: 15px; border-radius: 10px;
+                    border: 1px solid var(--border); background: var(--card); color: var(--text); }
+  .rr-enviar { width: 100%; padding: 15px; font-size: 15px; font-weight: 600; border: none;
+               border-radius: 999px; background: var(--acc); color: var(--acc-txt); cursor: pointer; }
+  .rr-enviar:disabled { opacity: .5; }
+  .rr-msg { font-size: 13px; color: var(--verm); margin-top: 8px; min-height: 16px; }
+  .rr-banner { font-size: 13px; padding: 12px 14px; border-radius: 12px; margin-bottom: 14px; }
+  .rr-banner.pend { background: #2c2314; color: var(--amarelo); border: 1px solid #4a3f2a; }
+  .rr-banner.erro { background: #2c1c19; color: var(--verm); border: 1px solid #4a2a25; }
+  .rr-banner.rejeitado { background: var(--card); color: var(--text-2); border: 1px dashed var(--border);
+                          white-space: pre-line; }
+  .rr-sucesso { text-align: center; padding: 30px 10px; }
+  .rr-sucesso .ok { font-size: 40px; margin-bottom: 10px; }
+  .rr-sucesso .resumo { color: var(--text-2); margin: 10px 0 22px; }
+  .rr-sucesso .btns { display: flex; flex-direction: column; gap: 10px; }
+  .rr-btn2 { padding: 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--card);
+             color: var(--text); font-size: 14px; cursor: pointer; text-decoration: none; text-align: center; }
+  .rr-gate { padding: 30px 10px; text-align: center; color: var(--text-2); }
+</style>
+
+<div id="rr-gate" class="rr-gate" style="display:none"></div>
+<div id="rr-app" style="display:none">
+<div id="rr-banner-alerta"></div>
+<div id="rr-banner-pend"></div>
+<form id="rr-form">
+
+  <div class="rr-bloco" data-bloco="tipo">
+    <span class="rr-label">1 · Tipo</span>
+    <div class="rr-tipos">
+      <button type="button" class="rr-tipo rr-tipo-ocorrencia" data-tipo="ocorrencia">⚠ Ocorrência</button>
+      <button type="button" class="rr-tipo rr-tipo-solicitacao" data-tipo="solicitacao">✋ Solicitação</button>
+    </div>
+  </div>
+
+  <div class="rr-bloco" data-bloco="casa">
+    <span class="rr-label">2 · Casa</span>
+    <div class="rr-chips" id="rr-casas">
+      <button type="button" class="chip" data-casa="iz">IZ</button><button type="button" class="chip" data-casa="1929">1929</button><button type="button" class="chip" data-casa="gra">Grá</button><button type="button" class="chip" data-casa="famu">FAMU</button><button type="button" class="chip" data-casa="enttres">Enttres</button><button type="button" class="chip" data-casa="fulles">Fulles</button><button type="button" class="chip" data-casa="nip">NIP</button>
+    </div>
+  </div>
+
+  <div class="rr-bloco" data-bloco="categoria">
+    <span class="rr-label">3 · Categoria</span>
+    <div class="rr-cats" id="rr-cats"></div>
+  </div>
+
+  <div class="rr-bloco" data-bloco="urgencia">
+    <span class="rr-label">4 · Urgência</span>
+    <div class="rr-urgs" id="rr-urgs">
+      <button type="button" class="rr-urg" data-urg="urgente"><b>Urgente</b><span>precisa de ação agora</span></button><button type="button" class="rr-urg" data-urg="hoje"><b>Hoje</b><span>resolver ainda hoje</span></button><button type="button" class="rr-urg" data-urg="aguardar"><b>Pode aguardar</b><span>sem pressa</span></button>
+    </div>
+    <p class="rr-aviso-urgencia" id="rr-aviso-urgencia">
+      Urgência real? Além do registro,
+      <a class="wa" id="rr-wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">avise o coordenador</a>
+    </p>
+  </div>
+
+  <div class="rr-bloco" data-bloco="descricao">
+    <span class="rr-label">5 · Descrição</span>
+    <textarea class="rr-textarea" id="rr-descricao" placeholder="Escolha uma categoria acima"></textarea>
+  </div>
+
+  <div class="rr-bloco" data-bloco="nome">
+    <span class="rr-label">6 · Seu nome</span>
+    <div id="rr-nome-area"></div>
+  </div>
+
+  <div class="rr-bloco">
+    <button type="submit" class="rr-enviar" id="rr-enviar">Enviar</button>
+    <p class="rr-msg" id="rr-msg" role="status" aria-live="polite"></p>
+  </div>
+</form>
+
+<div id="rr-sucesso" class="rr-sucesso" style="display:none"></div>
+</div>
+
+<script>
+(function () {
+  var SLUG = 'registro.html';
+  var NIVEIS_OK = ['equipe', 'chefe', 'coord', 'rh', 'controladoria', 'dev_cocktails'];
+  var elGate = document.getElementById('rr-gate');
+  var elApp = document.getElementById('rr-app');
+
+  var r = window.exigirNivel(NIVEIS_OK, SLUG);
+  if (!r.ok) {
+    if (!r.redirecionou) {
+      elGate.style.display = '';
+      elGate.textContent = 'Seu acesso atual não abre esta página. Toque em '
+        + 'Trocar acesso na página inicial para entrar com outra senha.';
+    }
+    return;
+  }
+  var TOKEN = r.sessao.token;
+  elApp.style.display = '';
+
+  var CFG = {
+    categorias: {"ocorrencia": [{"slug": "equipamento", "label": "Equipamento com defeito", "placeholder": "Qual equipamento? O que está acontecendo? Desde quando? Dá pra operar sem ele?", "icone": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1\"/>"}, {"slug": "insumo", "label": "Falta de insumo", "placeholder": "O que faltou? Quanto ainda tem? Afeta o serviço de hoje?", "icone": "<path d=\"M4 8l8-4 8 4-8 4z\"/><path d=\"M4 8v8l8 4 8-4V8\"/><path d=\"M12 12v8\"/>"}, {"slug": "cliente", "label": "Cliente / atendimento", "placeholder": "O que houve? Mesa/comanda? Como foi contornado?", "icone": "<path d=\"M4 5h16v11H8l-4 4z\"/>"}, {"slug": "quebra", "label": "Quebra / avaria", "placeholder": "O que quebrou? Quantas unidades? Como aconteceu?", "icone": "<path d=\"M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z\"/>"}, {"slug": "conduta", "label": "Equipe / conduta", "placeholder": "O que aconteceu? Quem estava presente?", "icone": "<circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2\"/><circle cx=\"17.2\" cy=\"9\" r=\"2.2\"/><path d=\"M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2\"/>"}, {"slug": "fornecedor", "label": "Fornecedor / entrega", "placeholder": "Qual fornecedor? O que era esperado × o que chegou?", "icone": "<rect x=\"2\" y=\"8\" width=\"11\" height=\"8\" rx=\"1\"/><path d=\"M13 11h4l3 3v2h-7z\"/><circle cx=\"6\" cy=\"18\" r=\"1.6\"/><circle cx=\"16.5\" cy=\"18\" r=\"1.6\"/>"}, {"slug": "estrutura", "label": "Estrutura (água/luz/gás)", "placeholder": "Onde (bar, salão, estoque)? O que está acontecendo? Há risco imediato?", "icone": "<path d=\"M13 3L4 14h6l-1 7 9-11h-6z\"/>"}, {"slug": "seguranca", "label": "Segurança", "placeholder": "O que houve? Já foi acionado alguém?", "icone": "<path d=\"M12 3l7 3v6c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V6z\"/>"}, {"slug": "outro", "label": "Outro", "placeholder": "Descreva com o máximo de detalhes: o quê, onde, quando, quem.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}], "solicitacao": [{"slug": "compra", "label": "Compra de insumo", "placeholder": "O que comprar? Quantidade? Para quando? Motivo.", "icone": "<circle cx=\"9\" cy=\"20\" r=\"1.4\"/><circle cx=\"17\" cy=\"20\" r=\"1.4\"/><path d=\"M3 4h2l2.2 11.4a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L20.5 8H6.2\"/>"}, {"slug": "manutencao", "label": "Manutenção / reparo", "placeholder": "O que precisa de reparo? Onde? Atrapalha a operação?", "icone": "<path d=\"M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-1.4 1.4-2-2z\"/>"}, {"slug": "reposicao", "label": "Reposição de utensílios", "placeholder": "O que repor? Quantidade em uso × necessária?", "icone": "<path d=\"M12 3l9 5-9 5-9-5z\"/><path d=\"M3 13l9 5 9-5\"/>"}, {"slug": "escala", "label": "Escala / folga / troca", "placeholder": "Quem? Qual dia/turno? Já tem substituto em mente?", "icone": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M16 3v4M8 3v4M4 11h16\"/>"}, {"slug": "limpeza", "label": "Material de limpeza", "placeholder": "O que faltou/vai faltar? Para quando?", "icone": "<path d=\"M9 3l3 3-8 8-3-3z\"/><path d=\"M13 7l4-4M7 13l-4 8 8-4\"/>"}, {"slug": "treinamento", "label": "Treinamento", "placeholder": "Tema? Para quem (pessoa/equipe)? Qual a motivação?", "icone": "<path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"/><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/>"}, {"slug": "apoio_coordenador", "label": "Apoio do coordenador", "placeholder": "O que você precisa do Rodrigo? Qual o prazo?", "icone": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.3a2.5 2.5 0 0 1 4.6 1.3c0 1.7-2.3 1.7-2.3 3.4\"/><path d=\"M12 17.5h.01\"/>"}, {"slug": "melhoria", "label": "Melhoria / sugestão", "placeholder": "Qual a ideia? Que problema resolve?", "icone": "<path d=\"M9 18h6M10 21h4\"/><path d=\"M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2h5c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z\"/>"}, {"slug": "outro", "label": "Outro", "placeholder": "Descreva com o máximo de detalhes: o quê, onde, quando, quem.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}]},
+    worker: "https://registro-bares.rodrigopcviana.workers.dev"
+  };
+
+  var FILA_KEY = 'registro_fila';
+  var CASA_KEY = 'registro_casa';
+  var NOME_KEY = 'registro_nome';
+
+  var form = document.getElementById('rr-form');
+  var elMsg = document.getElementById('rr-msg');
+  var elBannerAlerta = document.getElementById('rr-banner-alerta');
+  var elBannerPend = document.getElementById('rr-banner-pend');
+  var elSucesso = document.getElementById('rr-sucesso');
+  var elEnviar = document.getElementById('rr-enviar');
+
+  var estado = { tipo: null, casa: null, categoria: null, urgencia: null };
+
+  // --- 1. Tipo -----------------------------------------------------------
+  function selecionaTipo(tipo) {
+    estado.tipo = tipo;
+    estado.categoria = null;
+    document.querySelectorAll('.rr-tipo').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.tipo === tipo);
+    });
+    desenhaCategorias();
+  }
+  document.querySelectorAll('.rr-tipo').forEach(function (b) {
+    b.onclick = function () { selecionaTipo(b.dataset.tipo); };
+  });
+
+  // --- 2. Casa -------------------------------------------------------------
+  document.querySelectorAll('#rr-casas .chip').forEach(function (b) {
+    b.onclick = function () {
+      estado.casa = b.dataset.casa;
+      document.querySelectorAll('#rr-casas .chip').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      localStorage.setItem(CASA_KEY, estado.casa);
+      atualizaTextoEnviar();
+    };
+  });
+  (function () {
+    var lembrada = localStorage.getItem(CASA_KEY);
+    if (lembrada) {
+      var btn = document.querySelector('#rr-casas .chip[data-casa="' + lembrada + '"]');
+      if (btn) btn.onclick();
+    }
+  })();
+
+  // --- 3. Categoria (grade muda com o tipo) --------------------------------
+  var elCats = document.getElementById('rr-cats');
+  var elDescricao = document.getElementById('rr-descricao');
+  function desenhaCategorias() {
+    var lista = CFG.categorias[estado.tipo] || [];
+    elCats.innerHTML = lista.map(function (c) {
+      return '<button type="button" class="rr-cat" data-cat="' + c.slug + '" data-ph="' +
+        c.placeholder.replace(/"/g, '&quot;') + '">' +
+        '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + c.icone + '</svg>' +
+        '<span>' + c.label + '</span></button>';
+    }).join('');
+    estado.categoria = null;
+    elDescricao.placeholder = 'Escolha uma categoria acima';
+    elCats.querySelectorAll('.rr-cat').forEach(function (b) {
+      b.onclick = function () {
+        estado.categoria = b.dataset.cat;
+        elCats.querySelectorAll('.rr-cat').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        elDescricao.placeholder = b.dataset.ph;
+      };
+    });
+  }
+
+  // --- 4. Urgência -----------------------------------------------------------
+  var elAvisoUrg = document.getElementById('rr-aviso-urgencia');
+  document.querySelectorAll('#rr-urgs .rr-urg').forEach(function (b) {
+    b.onclick = function () {
+      estado.urgencia = b.dataset.urg;
+      document.querySelectorAll('#rr-urgs .rr-urg').forEach(function (x) {
+        x.classList.remove('on-urgente', 'on-hoje', 'on-aguardar');
+      });
+      b.classList.add('on-' + estado.urgencia);
+      elAvisoUrg.classList.toggle('on', estado.urgencia === 'urgente');
+    };
+  });
+
+  // --- 6. Nome (chip "Sou eu / trocar") ------------------------------------
+  var elNomeArea = document.getElementById('rr-nome-area');
+  function desenhaNome() {
+    var nome = localStorage.getItem(NOME_KEY);
+    if (nome) {
+      elNomeArea.innerHTML = '<div class="rr-nome-chip"><b>' + esc(nome) +
+        '</b><a id="rr-nome-trocar">Sou eu · trocar</a></div>';
+      document.getElementById('rr-nome-trocar').onclick = function () {
+        localStorage.removeItem(NOME_KEY);
+        desenhaNome();
+      };
+    } else {
+      elNomeArea.innerHTML = '<input class="rr-nome-input" id="rr-nome-input" placeholder="Seu nome" autocomplete="name">';
+    }
+  }
+  desenhaNome();
+  function nomeAtual() {
+    var salvo = localStorage.getItem(NOME_KEY);
+    if (salvo) return salvo;
+    var inp = document.getElementById('rr-nome-input');
+    return inp ? inp.value.trim() : '';
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  (function () {
+    var m = /[?&]tipo=(ocorrencia|solicitacao)/.exec(location.search);
+    selecionaTipo(m ? m[1] : 'ocorrencia');
+  })();
+
+  // --- botão Enviar mostra a casa escolhida (D5.2) --------------------------
+  function nomeCasa(slug) {
+    var b = document.querySelector('#rr-casas .chip[data-casa="' + slug + '"]');
+    return b ? b.textContent : '';
+  }
+  function atualizaTextoEnviar() {
+    if (estado.casa) {
+      elEnviar.textContent = 'Enviar — ' + (estado.tipo === 'ocorrencia' ? 'Ocorrência' : 'Solicitação') +
+        ' · ' + nomeCasa(estado.casa);
+    } else {
+      elEnviar.textContent = 'Enviar';
+    }
+  }
+  document.querySelectorAll('.rr-tipo').forEach(function (b) { b.addEventListener('click', atualizaTextoEnviar); });
+
+  // --- fila offline (D5 — máquina de estados EXATA) -------------------------
+  function lerFila() {
+    try { return JSON.parse(localStorage.getItem(FILA_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function salvarFila(f) { localStorage.setItem(FILA_KEY, JSON.stringify(f)); }
+  function removeDaFila(chave) {
+    salvarFila(lerFila().filter(function (x) { return x.chave_registro !== chave; }));
+  }
+  function uuid() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  var enviando = false, backoffMs = 15000, chaveEmTela = null;
+
+  function bannerPendente(n) {
+    elBannerPend.innerHTML = n
+      ? '<div class="rr-banner pend">Guardado NESTE aparelho (' + n + ' na fila) — ' +
+        'reabra esta página quando a internet voltar.</div>'
+      : '';
+  }
+
+  function processaFila() {
+    var fila = lerFila();
+    if (!fila.length) { bannerPendente(0); return; }
+    if (enviando) return;
+    enviando = true;
+    var item = fila[0];
+    var body = {
+      tipo: item.tipo, casa: item.casa, categoria: item.categoria, urgencia: item.urgencia,
+      descricao: item.descricao, registrado_por: item.registrado_por,
+      criado_em: item.criado_em, chave_registro: item.chave_registro
+    };
+
+    if (!CFG.worker) {
+      enviando = false;
+      bannerPendente(fila.length);
+      setTimeout(processaFila, backoffMs);
+      return;
+    }
+
+    fetch(CFG.worker + '/api/registro', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN }, body: JSON.stringify(body)
+    }).then(function (r) {
+      enviando = false;
+      if (r.status === 201) {
+        removeDaFila(item.chave_registro);
+        backoffMs = 15000;
+        if (chaveEmTela === item.chave_registro) mostraSucesso(item);
+        bannerPendente(lerFila().length);
+        setTimeout(processaFila, 350);
+      } else if (r.status === 400) {
+        removeDaFila(item.chave_registro);
+        backoffMs = 15000;
+        if (chaveEmTela === item.chave_registro) mostraRejeitado(item);
+        else elBannerAlerta.innerHTML = '<div class="rr-banner rejeitado">Um registro anterior não foi ' +
+          'aceito — copie o texto e avise o coordenador:\n' + esc(item.descricao) + '</div>';
+        bannerPendente(lerFila().length);
+        setTimeout(processaFila, 350);
+      } else if (r.status === 401) {
+        window.sessaoLimpar();
+        elBannerAlerta.innerHTML = '<div class="rr-banner erro">Sessão expirou — entre de novo. ' +
+          'O registro continua guardado neste aparelho.</div>';
+        bannerPendente(fila.length);
+        window.irParaLogin(SLUG);
+      } else {
+        bannerPendente(fila.length);
+        if (item.urgencia === 'urgente') {
+          elBannerAlerta.innerHTML = '<div class="rr-banner erro">Urgente e sem envio — ' +
+            '<a class="wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">avise o coordenador agora</a></div>';
+        }
+        setTimeout(processaFila, backoffMs);
+        backoffMs = Math.min(backoffMs * 2, 60000);
+      }
+    }).catch(function () {
+      enviando = false;
+      bannerPendente(fila.length);
+      setTimeout(processaFila, backoffMs);
+      backoffMs = Math.min(backoffMs * 2, 60000);
+    });
+  }
+  window.addEventListener('online', processaFila);
+  window.addEventListener('load', processaFila);
+  processaFila();
+
+  // --- validação + scroll até o primeiro bloco pendente ---------------------
+  function primeiroPendente() {
+    if (!estado.tipo) return { bloco: 'tipo', msg: 'Falta escolher o tipo' };
+    if (!estado.casa) return { bloco: 'casa', msg: 'Falta escolher a casa' };
+    if (!estado.categoria) return { bloco: 'categoria', msg: 'Falta escolher a categoria' };
+    if (!estado.urgencia) return { bloco: 'urgencia', msg: 'Falta escolher a urgência' };
+    if (elDescricao.value.trim().length < 5) return { bloco: 'descricao', msg: 'Descreva com pelo menos 5 caracteres' };
+    if (nomeAtual().length < 2) return { bloco: 'nome', msg: 'Falta o seu nome' };
+    return null;
+  }
+
+  function mostraSucesso(item) {
+    form.style.display = 'none';
+    elSucesso.style.display = '';
+    var quando = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    elSucesso.innerHTML = '<div class="ok">✓</div><div class="resumo">' +
+      (item.tipo === 'ocorrencia' ? '⚠ Ocorrência' : '✋ Solicitação') + ' · ' + esc(nomeCasa(item.casa)) +
+      ' · ' + esc((CFG.categorias[item.tipo].filter(function (c) { return c.slug === item.categoria; })[0] || {}).label || '') +
+      '<br>registrado às ' + quando + '</div>' +
+      '<div class="btns"><button type="button" class="rr-btn2" id="rr-outro">Registrar outro</button>' +
+      '<a class="rr-btn2" href="index.html">Voltar à página inicial</a></div>';
+    document.getElementById('rr-outro').onclick = function () { location.reload(); };
+  }
+
+  function mostraRejeitado(item) {
+    elMsg.textContent = '';
+    elBannerAlerta.innerHTML = '<div class="rr-banner rejeitado">Não foi aceito pelo servidor — copie o ' +
+      'texto abaixo e avise o coordenador:\n\n' + esc(item.descricao) + '</div>';
+  }
+
+  form.onsubmit = function (ev) {
+    ev.preventDefault();
+    var falta = primeiroPendente();
+    document.querySelectorAll('.rr-bloco').forEach(function (b) { b.classList.remove('rr-pendente'); });
+    if (falta) {
+      var el = document.querySelector('.rr-bloco[data-bloco="' + falta.bloco + '"]');
+      el.classList.add('rr-pendente');
+      el.scrollIntoView({ behavior: 'auto', block: 'center' });
+      elMsg.textContent = falta.msg;
+      return;
+    }
+    elMsg.textContent = '';
+    if (!localStorage.getItem(NOME_KEY)) localStorage.setItem(NOME_KEY, nomeAtual());
+
+    var item = {
+      chave_registro: uuid(),
+      criado_em: new Date().toISOString(),
+      tipo: estado.tipo, casa: estado.casa, categoria: estado.categoria, urgencia: estado.urgencia,
+      descricao: elDescricao.value.trim(), registrado_por: nomeAtual()
+    };
+
+    var fila = lerFila();
+    fila.push(item);
+    salvarFila(fila);
+    chaveEmTela = item.chave_registro;
+    elEnviar.disabled = true;
+    elMsg.textContent = 'Enviando…';
+    elBannerAlerta.innerHTML = '';
+    processaFila();
+    setTimeout(function () { elEnviar.disabled = false; }, 600);
+  };
+})();
+</script>
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 09/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+
+<script>
+(function () {
+  var LABEL = {"equipe": "Equipe de Bar", "chefe": "Chefe de Bar", "coord": "Coordenação", "rh": "RH", "controladoria": "Controladoria & Administração", "dev_cocktails": "Desenvolvimento de Cocktails"};
+  function nivelAtual() {
+    try { return localStorage.getItem('portal_nivel') || 'equipe'; } catch (e) { return 'equipe'; }
+  }
+  function aplica() {
+    var atual = nivelAtual();
+    // data-niveis = lista de nomes de nível (separados por espaço) que podem
+    // ver aquele elemento — já vem pronta do Python (_niveis_permitidos),
+    // cobrindo tanto a escada (equipe/chefe/coord) quanto os acessos
+    // paralelos (rh/controladoria). Aqui é só checar se o nível atual está
+    // na lista — nada de comparação numérica.
+    document.querySelectorAll('[data-niveis]').forEach(function (el) {
+      var lista = el.dataset.niveis ? el.dataset.niveis.split(' ') : [];
+      el.style.display = lista.indexOf(atual) >= 0 ? '' : 'none';
+    });
+    var txt = document.getElementById('nivel-pill-txt');
+    if (txt) txt.textContent = LABEL[atual] || LABEL.equipe;
+  }
+  window.definirNivel = function (v) {
+    try { localStorage.setItem('portal_nivel', v); } catch (e) {}
+    aplica();
+    if (typeof window.onNivelDefinido === 'function') window.onNivelDefinido(v);
+  };
+  window.nivelAtual = nivelAtual;
+  aplica();
+})();
+</script>
+
+
+<script>
+(function () {
+  var grps = document.querySelectorAll('#nav-principal .grp');
+  grps.forEach(function (g) {
+    g.addEventListener('toggle', function () {
+      if (g.open) grps.forEach(function (o) { if (o !== g) o.open = false; });
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#nav-principal')) grps.forEach(function (g) { g.open = false; });
+  });
+})();
+</script>
+
+
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  if (!WORKER) return;
+  var CHAVE = 'geo_ok_ts', VALIDADE = 30 * 60 * 1000;
+  try {
+    var t = parseInt(sessionStorage.getItem(CHAVE) || '0', 10);
+    if (t && Date.now() - t < VALIDADE) return;
+  } catch (e) {}
+
+  function overlay(titulo, msg, mostrarBtn) {
+    var d = document.getElementById('geo-blk') || document.createElement('div');
+    d.id = 'geo-blk';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#16130f;color:#f3ede2;'
+      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+      + 'text-align:center;padding:32px;font-family:-apple-system,Segoe UI,Roboto,sans-serif';
+    d.innerHTML = '<div style="font-family:Georgia,serif;font-size:22px;margin-bottom:12px">'
+      + titulo + '</div><div style="max-width:420px;color:#c3baa9;line-height:1.5">' + msg + '</div>'
+      + (mostrarBtn ? '<button id="geo-retry" style="margin-top:22px;padding:12px 22px;border:none;'
+      + 'border-radius:999px;background:#d0a352;color:#241a06;font-weight:600;font-size:15px;'
+      + 'cursor:pointer">Tentar de novo</button>' : '');
+    if (!d.parentNode) document.body.appendChild(d);
+    var b = document.getElementById('geo-retry');
+    if (b) b.onclick = function () { verifica(); };
+  }
+  function libera() {
+    try { sessionStorage.setItem(CHAVE, String(Date.now())); } catch (e) {}
+    var d = document.getElementById('geo-blk');
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+
+  function checa(lat, lon) {
+    fetch(WORKER + '/api/geo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: lat, lon: lon }),
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.ok) libera();
+      else overlay('Fora de área',
+        'O Portal dos Bares só funciona dentro das casas do Grupo IZ. '
+        + 'Você precisa estar em uma delas para acessar.', true);
+    }).catch(function () { libera(); }); // rede falhou: não tranca
+  }
+
+  function verifica() {
+    overlay('Confirmando localização…', 'Só um instante.', false);
+    if (!navigator.geolocation) { libera(); return; }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { checa(pos.coords.latitude, pos.coords.longitude); },
+      function () {
+        overlay('Ative a localização',
+          'Para usar o portal no bar, permita o acesso à localização no seu '
+          + 'navegador e toque em “Tentar de novo”.', true);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }
+
+  // 1º toque no Worker SEM coordenadas: só pra saber se a cerca está ligada.
+  // Se desligada, para aqui — nenhum pedido de GPS aparece.
+  fetch(WORKER + '/api/geo', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.desativado) return;
+    verifica();
+  }).catch(function () {}); // rede falhou: não tranca
+})();
+</script>
+
+</body>
+</html>
