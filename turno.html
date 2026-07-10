@@ -90,6 +90,7 @@ problema recorrente antes que ele vire crônico.</p>
 </style>
 
 <div id="tn-app">
+<div id="tn-banner" style="margin:0 0 12px"></div>
 <div class="panel" id="tn-casa-escolha">
   <h2>Escolha a casa</h2>
   <div class="tn-pills" id="tn-casas"></div>
@@ -110,6 +111,71 @@ problema recorrente antes que ele vire crônico.</p>
     elEscolha.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">O relatório de turno pelo site ainda não foi ativado.</p>';
     return;
   }
+
+  // --- fila offline (PLANO_APP_PWA.md, Fase 3) -----------------------------
+  // O relatório de turno CRIA linha no Notion; se enviado sem sinal, antes se
+  // perdia. Agora vai pra uma fila durável (localStorage) com um _idemp uuid;
+  // o Worker deduplica por esse uuid (handleTurno), então reenviar não
+  // duplica. Turno NÃO usa token (só X-Casa) — sem caso de sessão expirada.
+  var LS_FILA_TN = 'turno_fila';
+  var enviandoTn = false;
+  function lerFilaTn() { try { return JSON.parse(localStorage.getItem(LS_FILA_TN) || '[]'); } catch (e) { return []; } }
+  function salvarFilaTn(f) { localStorage.setItem(LS_FILA_TN, JSON.stringify(f)); }
+  function removeFilaTn(id) { salvarFilaTn(lerFilaTn().filter(function (x) { return x.body._idemp !== id; })); }
+  function uuidTn() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+  function bannerTn() {
+    var el = document.getElementById('tn-banner');
+    if (!el) return;
+    var n = lerFilaTn().length;
+    if (!n) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div style="background:#3a2d12;border:1px solid var(--amarelo);border-radius:10px;' +
+      'padding:11px 13px;font-size:13.5px;color:var(--amarelo);display:flex;gap:10px;align-items:center;' +
+      'flex-wrap:wrap">Guardado neste aparelho (' + n + ' relatório' + (n > 1 ? 's' : '') + ' na fila) — ' +
+      'envia sozinho quando a conexão voltar. <button type="button" id="tn-reenviar" style="font:inherit;' +
+      'font-size:12.5px;padding:5px 12px;border:1px solid var(--amarelo);border-radius:999px;background:none;' +
+      'color:var(--amarelo);cursor:pointer">Reenviar agora</button></div>';
+    var rb = document.getElementById('tn-reenviar');
+    if (rb) rb.onclick = function () { processaFilaTn(); };
+  }
+  function processaFilaTn(onDone) {
+    var fila = lerFilaTn();
+    if (!fila.length || enviandoTn) { bannerTn(); if (onDone) onDone(); return; }
+    enviandoTn = true;
+    var item = fila[0];
+    fetch(WORKER + '/api/turno', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Casa': item.casa },
+      body: JSON.stringify(item.body)
+    }).then(function (r) {
+      enviandoTn = false;
+      if (r.ok) {
+        removeFilaTn(item.body._idemp); bannerTn();
+        if (lerFilaTn().length) setTimeout(processaFilaTn, 300);
+        else if (onDone) onDone();
+      } else if (r.status === 400) {
+        // dado rejeitado — remove pra não travar a fila; avisa no banner
+        removeFilaTn(item.body._idemp);
+        var el = document.getElementById('tn-banner');
+        if (el) el.innerHTML = '<div style="background:#3a1a1a;border:1px solid #e08585;border-radius:10px;' +
+          'padding:11px 13px;font-size:13px;color:#e08585">Um relatório não foi aceito (dado inválido) e ' +
+          'foi descartado da fila. Refaça se precisar.</div>';
+        if (onDone) onDone();
+      } else {
+        // 5xx/outro: mantém na fila pra tentar de novo depois
+        bannerTn(); if (onDone) onDone();
+      }
+    }).catch(function () {
+      enviandoTn = false; bannerTn();  // offline: fica na fila
+      if (onDone) onDone();
+    });
+  }
+  window.addEventListener('online', function () { processaFilaTn(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) processaFilaTn(); });
+  processaFilaTn();  // ao abrir a página: tenta esvaziar o que ficou pendente
 
   var pills = document.getElementById('tn-casas');
   CASAS.forEach(function (c) {
@@ -181,24 +247,26 @@ problema recorrente antes que ele vire crônico.</p>
         data: document.getElementById('tn-data').value,
         turno: turnoSel,
         etiquetagem_ok: document.getElementById('tn-etiquetagem-ok').checked,
+        _idemp: uuidTn(),
       };
       CAMPOS.forEach(function (c) { body[c.k] = document.getElementById('tn-' + c.k).value; });
       body.responsavel = document.getElementById('tn-responsavel').value;
 
+      // Enfileira primeiro (durável) e drena — se a rede falhar, o relatório
+      // NÃO se perde: fica na fila e sobe sozinho quando a conexão voltar.
+      var fila = lerFilaTn(); fila.push({ casa: casaSel, body: body }); salvarFilaTn(fila);
       var btn = document.getElementById('tn-enviar');
       var msg = document.getElementById('tn-envio-msg');
       btn.disabled = true; msg.textContent = 'Enviando…';
-      fetch(WORKER + '/api/turno', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Casa': casaSel },
-        body: JSON.stringify(body)
-      }).then(function (r) {
+      processaFilaTn(function () {
         btn.disabled = false;
-        if (!r.ok) { msg.textContent = 'Erro ao enviar (' + r.status + '). Tente de novo.'; return; }
-        msg.textContent = 'Relatório enviado ✓';
-        elForm.reset();
-        desenha();
-      }).catch(function () { btn.disabled = false; msg.textContent = 'Sem conexão. Tente de novo perto do wi-fi.'; });
+        if (lerFilaTn().some(function (x) { return x.body._idemp === body._idemp; })) {
+          msg.textContent = 'Guardado neste aparelho — envia sozinho quando a conexão voltar.';
+        } else {
+          msg.textContent = 'Relatório enviado ✓';
+          elForm.reset(); desenha();
+        }
+      });
     };
   }
 
