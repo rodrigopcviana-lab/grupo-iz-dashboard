@@ -68,6 +68,7 @@ window.exigirNivel = function (niveisOk, slug) {
 
 
 
+
 <p class="sub" id="niveis-ajuda" style="margin:2px 0 10px;font-size:13px">Toque no seu nível de acesso para digitar a senha.</p>
 <div class="niveis" id="niveis">
 <div class="nivel-btn" data-nivel="equipe" role="button" tabindex="0" aria-controls="nivel-gate">
@@ -162,31 +163,39 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
 <div id="home-conteudo">
 
 <style>
-  .painel-rapido { --verm: #dc9a8e; display: grid; grid-template-columns: repeat(2, 1fr);
-                    gap: 9px; margin-bottom: 14px; }
-  a.pr-card { display: flex; align-items: center; gap: 12px; background: var(--card);
-              border: 1px solid var(--border); border-radius: 13px; padding: 13px;
-              text-decoration: none; color: var(--text); min-height: 56px; min-width: 0;
-              transition: border-color .15s, background .15s; }
-  a.pr-card:hover { border-color: var(--acc); background: #26201a; }
-  a.pr-card .pr-chip { width: 38px; height: 38px; border-radius: 10px; display: flex;
+  .painel-rapido { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  a.pr-card { position: relative; display: flex; align-items: center; gap: 12px; border-radius: 15px;
+              padding: 15px 15px 15px 18px; text-decoration: none; color: var(--text); min-height: 66px;
+              min-width: 0; border: 1.5px solid; overflow: hidden; transition: filter .15s; }
+  a.pr-card:hover { filter: brightness(1.12); }
+  a.pr-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
+  .pr-card.pr-ocorrencia { background: linear-gradient(135deg,#3d2420,#241713); border-color: #e07a52; }
+  .pr-card.pr-ocorrencia::before { background: #f28a63; }
+  .pr-card.pr-solicitacao { background: linear-gradient(135deg,#173028,#131f19); border-color: #4fbf92; }
+  .pr-card.pr-solicitacao::before { background: #7fe6bd; }
+  a.pr-card .pr-chip { width: 42px; height: 42px; border-radius: 12px; display: flex;
                         align-items: center; justify-content: center; flex: none; }
-  a.pr-card .pr-chip svg { width: 19px; height: 19px; display: block; flex: none; }
-  .pr-card.pr-ocorrencia .pr-chip { background: #3a2420; color: var(--verm); }
-  .pr-card.pr-solicitacao .pr-chip { background: #17352b; color: var(--verde); }
+  a.pr-card .pr-chip svg { width: 22px; height: 22px; display: block; flex: none; }
+  .pr-card.pr-ocorrencia .pr-chip { background: rgba(220,154,142,.18); color: #f0a58f; }
+  .pr-card.pr-solicitacao .pr-chip { background: rgba(159,225,203,.16); color: #9fe1cb; }
   .pr-tt { display: flex; flex-direction: column; min-width: 0; }
-  .pr-tt .t { font-family: var(--serif); font-size: 15px; }
-  .pr-tt .d { font-size: 11.5px; color: var(--text-3); }
-  @media (max-width: 420px) { .painel-rapido { gap: 7px; } a.pr-card { padding: 11px; gap: 9px; } }
+  .pr-tt .t { font-family: var(--serif); font-size: 16.5px; }
+  .pr-tt .d { font-size: 12px; color: var(--text-2); margin-top: 1px; }
+  .pr-card .pr-go { margin-left: auto; font-size: 20px; line-height: 1; flex: none; }
+  .pr-card.pr-ocorrencia .pr-go { color: #f28a63; }
+  .pr-card.pr-solicitacao .pr-go { color: #7fe6bd; }
+  @media (max-width: 420px) { .painel-rapido { gap: 8px; } a.pr-card { padding: 13px 12px 13px 15px; gap: 10px; } }
 </style>
 <div class="painel-rapido">
   <a class="pr-card pr-ocorrencia" href="registro.html?tipo=ocorrencia">
-    <span class="pr-chip"><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg></span>
+    <span class="pr-chip"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg></span>
     <span class="pr-tt"><span class="t">Ocorrência</span><span class="d">Registrar um problema</span></span>
+    <span class="pr-go" aria-hidden="true">›</span>
   </a>
   <a class="pr-card pr-solicitacao" href="registro.html?tipo=solicitacao">
-    <span class="pr-chip"><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span>
+    <span class="pr-chip"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span>
     <span class="pr-tt"><span class="t">Solicitação</span><span class="d">Pedir algo ao coordenador</span></span>
+    <span class="pr-go" aria-hidden="true">›</span>
   </a>
 </div>
 
