@@ -27,8 +27,11 @@ window.sessaoLer = function () {
     return s;
   } catch (e) { return null; }
 };
-window.sessaoSalvar = function (nivel, token, exp) {
-  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp })); } catch (e) {}
+// casa (Missão 5, 2026-07-10): slug da casa do chefe logado, "*" pra
+// master/coord/boss, null pra níveis sem casa própria. Opcional na chamada
+// pra não quebrar quem ainda chama sessaoSalvar(nivel, token, exp) direto.
+window.sessaoSalvar = function (nivel, token, exp, casa) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null })); } catch (e) {}
 };
 window.sessaoLimpar = function () {
   try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
@@ -41,8 +44,8 @@ window.loginSenha = function (worker, senha) {
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
     return r.json().then(function (d) {
-      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp);
-      return { ok: true, nivel: d.nivel, token: d.token };
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa);
+      return { ok: true, nivel: d.nivel, casa: d.casa, token: d.token };
     });
   }).catch(function () { return { ok: false, status: 0 }; });
 };
@@ -76,7 +79,7 @@ Chama a coordenação que repassa o contato.</p>
 WhatsApp — Rodrigo (Coordenação de Bares)</a>
 </div>
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 09/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 10/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
