@@ -195,6 +195,13 @@ sugerido automaticamente. Chefe de bar vê a própria casa; coordenação vê to
   .dm-mais { width: 100%; padding: 12px; border-radius: 999px; border: 1px solid var(--border);
              background: var(--card); color: var(--text-2); font-size: 13.5px; cursor: pointer; margin-top: 4px; }
   .dm-mais:disabled { opacity: .5; }
+  .dm-envio { width: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);
+              display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .dm-envio-est { font-size: 12.5px; color: var(--text-2); display: inline-flex; align-items: center; gap: 6px; }
+  .dm-envio-est .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); flex: none; }
+  .dm-envio-est.ok .dot { background: var(--tipo-solicitacao); }
+  .dm-envio-est.wait .dot { background: var(--urg-hoje); }
+  .dm-envio-est.exp .dot { background: var(--urg-urgente); }
 </style>
 
 <div id="dm-gate" class="rr-gate" style="display:none"></div>
@@ -395,6 +402,27 @@ sugerido automaticamente. Chefe de bar vê a própria casa; coordenação vê to
     }).catch(onErro);
   }
 
+  // F6: aprova o ENVIO WhatsApp da demanda (POST /api/demanda/:chave/aviso).
+  // Só o Worker checa o nível (coord); o botão nem aparece pra chefe. O envio
+  // real é feito depois pelo vigia local (scripts/vigia_envios.py), sob o gate
+  // de aprovação por toque — esta chamada só grava "Aprovado" no Notion.
+  function aprovarEnvio(chave, onOk, onErro) {
+    fetch(WORKER + '/api/demanda/' + encodeURIComponent(chave) + '/aviso', {
+      method: 'POST', headers: { 'X-Token': TOKEN }
+    }).then(function (r) {
+      if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
+      if (!r.ok) { onErro(); return; }
+      onOk();
+    }).catch(onErro);
+  }
+
+  function horaCurta(iso) {
+    if (!iso) return '';
+    var dt = new Date(iso);
+    if (isNaN(dt.getTime())) return '';
+    return dt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
   function renderCard(d) {
     var card = document.createElement('div');
     card.className = 'dm-card';
@@ -482,6 +510,53 @@ sugerido automaticamente. Chefe de bar vê a própria casa; coordenação vê to
     acoes.appendChild(selStatus);
 
     corpoEl.appendChild(acoes);
+
+    // F6: aprovação de envio WhatsApp. Estado sempre visível; botão só pra
+    // coord (o Worker também recusa qualquer outro nível). O envio real é do
+    // vigia local — "Aprovado" aqui = aguardando o Mac disparar.
+    var envioEl = document.createElement('div'); envioEl.className = 'dm-envio';
+    function pintaEnvio() {
+      envioEl.innerHTML = '';
+      var est = d.aviso_whatsapp || '';
+      var cls = 'dm-envio-est', txt;
+      if (est === 'Enviado') {
+        cls += ' ok';
+        txt = 'WhatsApp enviado ao chefe da casa' + (d.enviado_em ? ' · ' + horaCurta(d.enviado_em) : '');
+      } else if (est === 'Aprovado') {
+        cls += ' wait';
+        txt = 'Envio aprovado — aguardando disparo (Mac offline?)';
+      } else if (est === 'Expirado') {
+        cls += ' exp';
+        txt = 'Envio expirou sem sair — re-aprovar para tentar de novo';
+      } else {
+        txt = 'Sem aviso de WhatsApp enviado';
+      }
+      var span = document.createElement('span'); span.className = cls;
+      span.innerHTML = '<span class="dot" aria-hidden="true"></span>' + esc(txt);
+      envioEl.appendChild(span);
+
+      if (NIVEL === 'coord') {
+        var enviadoOuExpirado = (est === 'Enviado' || est === 'Expirado');
+        var b = document.createElement('button');
+        b.className = 'dm-btn' + (est ? '' : ' pri');
+        // "Reenviar" força um novo ciclo. Gerar o id _v2 na rota é trabalho
+        // futuro (fora do escopo mínimo v1); por ora re-aprova o mesmo ciclo.
+        b.textContent = enviadoOuExpirado ? 'Reenviar' : 'Aprovar envio';
+        b.onclick = function () {
+          b.disabled = true;
+          aprovarEnvio(d.chave, function () {
+            d.aviso_whatsapp = 'Aprovado';
+            d.aprovado_em = new Date().toISOString();
+            toast('Envio aprovado — o disparo sai pelo vigia local.');
+            pintaEnvio();
+          }, function () { b.disabled = false; toast('Falha ao aprovar o envio — tenta de novo.', true); });
+        };
+        envioEl.appendChild(b);
+      }
+    }
+    pintaEnvio();
+    corpoEl.appendChild(envioEl);
+
     card.appendChild(corpoEl);
     return card;
   }

@@ -131,11 +131,16 @@ direto para a coordenação.</p>
   .rr-cat svg { width: 15px; height: 15px; flex: none; color: var(--acc); }
   .rr-cat.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
   .rr-cat.on svg { color: var(--acc-txt); }
-  .rr-urgs { display: flex; flex-direction: column; gap: 8px; }
-  .rr-urg { padding: 13px 14px; border-radius: 12px; border: 1px solid var(--border);
-            background: var(--card); color: var(--text); font-size: 14px; text-align: left; cursor: pointer; }
-  .rr-urg b { display: block; font-size: 14.5px; }
-  .rr-urg span { font-size: 12px; color: var(--text-3); }
+  .rr-urgs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .rr-urg { padding: 12px 6px; border-radius: 12px; border: 1px solid var(--border);
+            background: var(--card); color: var(--text); text-align: center; cursor: pointer; }
+  .rr-urg .rr-urg-dot { width: 10px; height: 10px; border-radius: 50%; margin: 0 auto 6px;
+            background: var(--text-3); }
+  .rr-urg b { display: block; font-size: 13px; }
+  .rr-urg span { font-size: 10.5px; color: var(--text-3); }
+  .rr-urg[data-urg="urgente"] .rr-urg-dot { background: var(--verm); }
+  .rr-urg[data-urg="hoje"] .rr-urg-dot { background: var(--amarelo); }
+  .rr-urg[data-urg="aguardar"] .rr-urg-dot { background: var(--verde); }
   .rr-urg.on-urgente { border-color: var(--verm); background: #2c1c19; }
   .rr-urg.on-hoje { border-color: var(--amarelo); background: #2c2314; }
   .rr-urg.on-aguardar { border-color: var(--verde); background: #16281f; }
@@ -169,15 +174,16 @@ direto para a coordenação.</p>
   .rr-gate { padding: 30px 10px; text-align: center; color: var(--text-2); }
   /* Foto e áudio — botões GRANDES com estado sempre visível (mockup E0 v2) */
   .rr-midia { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .rr-midia-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-                  min-height: 96px; padding: 14px 10px; font-family: inherit; text-align: center;
-                  border-radius: 14px; border: 1.5px dashed var(--border); background: var(--card);
+  .rr-midia-btn { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 9px;
+                  min-height: 0; padding: 11px 13px; font-family: inherit; text-align: left;
+                  border-radius: 12px; border: 1.5px dashed var(--border); background: var(--card);
                   color: var(--text-2); cursor: pointer; transition: border-color .15s, background .15s; }
   .rr-midia-btn:hover { border-color: var(--text-3); }
   .rr-midia-btn:disabled { opacity: .5; cursor: default; }
-  .rr-midia-btn .ic { width: 28px; height: 28px; }
-  .rr-midia-btn .mt { font-size: 14.5px; color: var(--text); }
-  .rr-midia-btn .md { font-size: 11.5px; color: var(--text-3); }
+  .rr-midia-btn .ic { width: 22px; height: 22px; flex: none; }
+  .rr-midia-btn .txt { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+  .rr-midia-btn .mt { font-size: 13.5px; color: var(--text); }
+  .rr-midia-btn .md { font-size: 11px; color: var(--text-3); }
   .rr-midia-btn.pronto { border-style: solid; border-color: var(--verde); }
   .rr-midia-btn.pronto .ic, .rr-midia-btn.pronto .mt { color: var(--verde); }
   .rr-midia-btn.rec { border-style: solid; border-color: var(--verm); background: #2c1c19;
@@ -238,21 +244,26 @@ direto para a coordenação.</p>
     </div>
   </div>
 
-  <div class="rr-bloco" data-bloco="categoria">
-    <span class="rr-label">3 · Categoria</span>
-    <p class="rr-cat-sel" id="rr-cat-sel" style="display:none">Selecionada: <b id="rr-cat-sel-nome"></b></p>
-    <div class="rr-grupos" id="rr-cats"></div>
+  <div class="rr-bloco" data-bloco="anexos">
+    <span class="rr-label">3 · Foto e áudio <span style="text-transform:none;letter-spacing:0;color:var(--text-3)">— opcional</span></span>
+    <div class="rr-midia">
+      <button type="button" class="rr-midia-btn" id="rr-foto-btn">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h2l2-2.5h6L17 7h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <span class="txt"><span class="mt">Foto</span><span class="md" id="rr-foto-hint">até 3 · toque para escolher</span></span>
+      </button>
+      <button type="button" class="rr-midia-btn" id="rr-audio-btn">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>
+        <span class="txt"><span class="mt" id="rr-audio-txt">Gravar áudio</span><span class="md" id="rr-audio-hint">toque para gravar · máx 3 min</span></span>
+      </button>
+    </div>
+    <input type="file" id="rr-foto-input" accept="image/*" capture="environment" multiple hidden>
+    <div class="rr-anx-lista" id="rr-anx-lista"></div>
   </div>
 
-  <div class="rr-bloco" data-bloco="urgencia">
-    <span class="rr-label">4 · Urgência</span>
-    <div class="rr-urgs" id="rr-urgs">
-      <button type="button" class="rr-urg" data-urg="urgente"><b>Urgente</b><span>precisa de ação agora</span></button><button type="button" class="rr-urg" data-urg="hoje"><b>Hoje</b><span>resolver ainda hoje</span></button><button type="button" class="rr-urg" data-urg="aguardar"><b>Pode aguardar</b><span>sem pressa</span></button>
-    </div>
-    <p class="rr-aviso-urgencia" id="rr-aviso-urgencia">
-      Urgência real? Além do registro,
-      <a class="wa" id="rr-wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">avise o coordenador</a>
-    </p>
+  <div class="rr-bloco" data-bloco="categoria">
+    <span class="rr-label">4 · Categoria</span>
+    <p class="rr-cat-sel" id="rr-cat-sel" style="display:none">Selecionada: <b id="rr-cat-sel-nome"></b></p>
+    <div class="rr-grupos" id="rr-cats"></div>
   </div>
 
   <div class="rr-bloco" data-bloco="descricao">
@@ -260,22 +271,15 @@ direto para a coordenação.</p>
     <textarea class="rr-textarea" id="rr-descricao" placeholder="Escolha uma categoria acima"></textarea>
   </div>
 
-  <div class="rr-bloco" data-bloco="anexos">
-    <span class="rr-label">6 · Foto e áudio <span style="text-transform:none;letter-spacing:0;color:var(--text-3)">— opcional</span></span>
-    <div class="rr-midia">
-      <button type="button" class="rr-midia-btn" id="rr-foto-btn">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h2l2-2.5h6L17 7h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/><circle cx="12" cy="13" r="3.5"/></svg>
-        <span class="mt">Foto</span>
-        <span class="md" id="rr-foto-hint">até 3 · toque para escolher</span>
-      </button>
-      <button type="button" class="rr-midia-btn" id="rr-audio-btn">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg>
-        <span class="mt" id="rr-audio-txt">Gravar áudio</span>
-        <span class="md" id="rr-audio-hint">toque para gravar · máx 3 min</span>
-      </button>
+  <div class="rr-bloco" data-bloco="urgencia">
+    <span class="rr-label">6 · Urgência</span>
+    <div class="rr-urgs" id="rr-urgs">
+      <button type="button" class="rr-urg" data-urg="urgente"><span class="rr-urg-dot"></span><b>Urgente</b><span>agora</span></button><button type="button" class="rr-urg" data-urg="hoje"><span class="rr-urg-dot"></span><b>Hoje</b><span>hoje</span></button><button type="button" class="rr-urg" data-urg="aguardar"><span class="rr-urg-dot"></span><b>Pode aguardar</b><span>sem pressa</span></button>
     </div>
-    <input type="file" id="rr-foto-input" accept="image/*" capture="environment" multiple hidden>
-    <div class="rr-anx-lista" id="rr-anx-lista"></div>
+    <p class="rr-aviso-urgencia" id="rr-aviso-urgencia">
+      Urgência real? Além do registro,
+      <a class="wa" id="rr-wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">avise o coordenador</a>
+    </p>
   </div>
 
   <div class="rr-bloco" data-bloco="nome">
