@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16130f">
+<title>Constelação de Sabores · Portal dos Bares — Grupo IZ</title>
+<link rel="stylesheet" href="portal.css">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bares IZ">
+</head>
+<body>
+<header class="topo">
+<div class="marca">Portal dos Bares</div>
+<div class="kicker">GRUPO IZ</div>
+<a class="nivel-pill" id="nivel-pill" href="index.html#nivel">Nível: <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-tr">Trocar</span></a>
+</header>
+
+<script>
+window.SESSAO_LS = 'portal_sessao';
+window.sessaoLer = function () {
+  try {
+    var raw = localStorage.getItem(window.SESSAO_LS);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    return s;
+  } catch (e) { return null; }
+};
+// casa (Missão 5, 2026-07-10): slug da casa do chefe logado, "*" pra
+// master/coord/boss, null pra níveis sem casa própria. Opcional na chamada
+// pra não quebrar quem ainda chama sessaoSalvar(nivel, token, exp) direto.
+window.sessaoSalvar = function (nivel, token, exp, casa) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null })); } catch (e) {}
+};
+window.sessaoLimpar = function () {
+  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
+};
+window.loginSenha = function (worker, senha) {
+  return fetch(worker + '/api/nivel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senha: senha }),
+  }).then(function (r) {
+    if (r.status === 401) return { ok: false, status: 401 };
+    if (!r.ok) return { ok: false, status: r.status };
+    return r.json().then(function (d) {
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa);
+      return { ok: true, nivel: d.nivel, casa: d.casa, token: d.token };
+    });
+  }).catch(function () { return { ok: false, status: 0 }; });
+};
+// Gate padrão das páginas protegidas (2026-07-09): a senha é digitada SÓ na
+// home. Sem sessão -> manda pra home logar, com volta automática pra cá.
+// Sessão de nível insuficiente -> NÃO redireciona (senão a home logada
+// devolveria pra cá e viraria loop); a página mostra a mensagem e o caminho
+// é a pill "Trocar acesso". Só para páginas na raiz do portal — as cascas
+// de /vendas/ (repo do site) replicam a própria versão com '../'.
+window.irParaLogin = function (slug) {
+  location.replace('index.html?volta=' + encodeURIComponent(slug) + '#nivel');
+};
+window.exigirNivel = function (niveisOk, slug) {
+  var s = window.sessaoLer();
+  // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz: passa em
+  // qualquer página que a equipe abre. Páginas de treino ainda listam
+  // 'bartender' explicitamente pra tratar o comportamento por pessoa.
+  var efet = (s && s.nivel === 'bartender' && niveisOk.indexOf('bartender') < 0 &&
+              niveisOk.indexOf('equipe') >= 0) ? 'equipe' : (s ? s.nivel : null);
+  if (s && (niveisOk.indexOf(s.nivel) >= 0 || niveisOk.indexOf(efet) >= 0)) return { ok: true, sessao: s };
+  if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
+  return { ok: false, nivelAtual: s.nivel };
+};
+</script>
+
+<nav id="nav-principal" class="nav-sec"><details class="grp" data-niveis="chefe controladoria coord dev_cocktails equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Operação</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="index.html" class="grp-link" data-niveis="equipe chefe coord rh controladoria dev_cocktails"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a><a href="eventos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a><a href="contagem.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contagem de insumos</span></a><a href="contagem-copos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg><span>Contagem de copos</span></a><a href="turno.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>Relatório de turno</span></a><a href="rotinas.html" class="grp-link" data-niveis="equipe chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Rotinas</span></a><a href="producao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Produção possível</span></a></div></details><details class="grp on" data-niveis="chefe coord dev_cocktails equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Bar</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="cocktails.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas técnicas</span></a><a href="treinamentos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Treinamentos</span></a><a href="plano.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Plano de treino</span></a><a href="calculadora.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Calculadora PB</span></a><a href="lab.html" class="grp-link" data-niveis="coord dev_cocktails"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Lab de Drinks</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="constelacao.html" class="grp-link on" data-niveis="equipe chefe coord dev_cocktails"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Constelação de Sabores</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="lab-proposta.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Lab 2.0 — proposta</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="planejador-3d.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Planejador 3D</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Pessoas</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="equipe.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Equipe</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="metas.html" class="grp-link" data-niveis="equipe chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Metas &amp; Desenv.</span></a><a href="contatos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg><span>Contatos</span></a><a href="regras.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Escala &amp; BH</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Gestão</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="curva-abc.html" class="grp-link" data-niveis="chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Ranking</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="consumo.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Consumo</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="vendas/index.html" class="grp-link" data-niveis="controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg><span>Vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="rentabilidade.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Rentabilidade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="evolucao.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Evolução do treino</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></details></nav>
+
+<style>
+  .pr-mini-wrap { display: none; }
+  .pr-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin: 0 0 16px; }
+  a.prm-card { position: relative; display: flex; align-items: center; gap: 8px; border-radius: 11px;
+               padding: 8px 10px 8px 11px; text-decoration: none; color: var(--text); min-height: 38px;
+               min-width: 0; border: 1.5px solid; overflow: hidden; transition: filter .15s; }
+  a.prm-card:hover { filter: brightness(1.12); }
+  a.prm-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .prm-card.prm-oc { background: linear-gradient(135deg,#33201d,#221512); border-color: #e07a52; }
+  .prm-card.prm-oc::before { background: #f28a63; }
+  .prm-card.prm-so { background: linear-gradient(135deg,#152a23,#121b17); border-color: #4fbf92; }
+  .prm-card.prm-so::before { background: #7fe6bd; }
+  a.prm-card .prm-chip { width: 26px; height: 26px; border-radius: 8px; display: flex;
+                          align-items: center; justify-content: center; flex: none; }
+  a.prm-card .prm-chip svg { width: 14px; height: 14px; display: block; flex: none; }
+  .prm-card.prm-oc .prm-chip { background: rgba(220,154,142,.16); color: #f0a58f; }
+  .prm-card.prm-so .prm-chip { background: rgba(159,225,203,.14); color: #9fe1cb; }
+  .prm-card .prm-t { font-size: 12.5px; font-weight: 600; }
+</style>
+<div class="pr-mini-wrap" id="pr-mini-wrap">
+  <div class="pr-mini">
+    <a class="prm-card prm-oc" href="registro.html?tipo=ocorrencia">
+      <span class="prm-chip"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg></span><span class="prm-t">Ocorrência</span></a>
+    <a class="prm-card prm-so" href="registro.html?tipo=solicitacao">
+      <span class="prm-chip"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><span class="prm-t">Solicitação</span></a>
+  </div>
+</div>
+<script>(function(){ try { if (window.sessaoLer && window.sessaoLer()) document.getElementById('pr-mini-wrap').style.display = 'block'; } catch (e) {} })();</script>
+
+
+<h1>Constelação de Sabores</h1>
+<p class="sub">Toque num sabor e veja o céu de combinações do Dicionário de Sabores — explorar é livre, não gasta dose.</p>
+
+<style>
+  .cs-fams{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+  .cs-fam{border:1px solid var(--borda);border-radius:99px;padding:4px 12px;font-size:12px;
+    cursor:pointer;background:transparent;color:var(--txt);display:flex;align-items:center;gap:6px}
+  .cs-fam .pt{width:9px;height:9px;border-radius:50%;flex:none}
+  .cs-fam.on{border-color:var(--acc);color:var(--acc)}
+  .cs-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .cs-chip{border:1px solid var(--borda);border-radius:99px;padding:5px 12px;font-size:13px;
+    cursor:pointer;background:transparent;color:var(--txt)}
+  .cs-chip.dim{opacity:.45}
+  .cs-svg{width:100%;max-width:520px;display:block;margin:0 auto}
+  .cs-svg .no{cursor:pointer}
+  .cs-svg text{fill:var(--txt);font-weight:600;pointer-events:none}
+  .cs-carta{border:1px solid var(--borda);border-radius:12px;padding:14px 16px;margin:12px 0;background:var(--painel)}
+  .cs-carta h3{margin:0 0 6px;display:flex;align-items:center;gap:8px;font-size:17px}
+  .cs-carta .pt{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .cs-nota{margin:0 0 8px;font-size:14.5px;line-height:1.5}
+  .cs-fonte{font-size:11px;color:var(--sub);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 0}
+  .cs-dupla{border:1px solid var(--acc);border-radius:12px;padding:12px 14px;margin:12px 0;cursor:pointer}
+  .cs-dupla .lbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);font-weight:700}
+  .cs-busca{position:relative;margin:12px 0}
+  .cs-busca input{width:100%;box-sizing:border-box}
+  .cs-sug{position:absolute;left:0;right:0;top:100%;z-index:30;background:var(--painel);
+    border:1px solid var(--borda);border-radius:0 0 10px 10px;max-height:220px;overflow-y:auto}
+  .cs-sug div{padding:8px 12px;cursor:pointer;font-size:14px}
+  .cs-sug div:hover{background:rgba(255,255,255,.06)}
+  .cs-volta{background:none;border:none;color:var(--acc);cursor:pointer;font-size:13px;padding:4px 0}
+</style>
+
+<div class="panel" id="cs-gate">
+  <h2>Entrar</h2>
+  <p class="sub" style="margin:4px 0 12px">Mesma senha do Lab de Drinks — a sessão vale pros dois.</p>
+  <div class="ctrl"><select id="cs-casa"><option value="iz">IZ Restaurante</option><option value="1929">1929 Trattoria</option><option value="gra">Grá Bistrô</option><option value="famu">FAMU</option><option value="enttres">Enttres</option><option value="fulles">Fulles</option><option value="nip">NIP</option></select></div>
+  <div class="ctrl"><input type="password" id="cs-senha" placeholder="Senha da casa" autocomplete="current-password"></div>
+  <button id="cs-entrar" style="width:100%;padding:10px;font-size:14px;font-weight:600;border:none;border-radius:8px;background:var(--acc);color:var(--acc-txt);cursor:pointer">Entrar</button>
+  <p class="sub" id="cs-msg" role="status" aria-live="polite" style="margin:10px 0 0"></p>
+</div>
+
+<div id="cs-corpo" style="display:none">
+  <div class="cs-busca">
+    <input type="search" id="cs-q" placeholder="Buscar um sabor — melancia, café, hortelã…" autocomplete="off">
+    <div class="cs-sug" id="cs-sug" style="display:none"></div>
+  </div>
+
+  <div class="cs-dupla" id="cs-dupla" style="display:none"></div>
+
+  <div id="cs-home">
+    <h2 style="font-size:17px;margin:14px 0 4px">A Roda das 16 famílias</h2>
+    <p class="sub" style="margin:0 0 6px">Toque numa família pra ver os sabores dela.</p>
+    <div class="cs-fams" id="cs-fams"></div>
+    <div class="cs-chips" id="cs-membros"></div>
+  </div>
+
+  <div id="cs-view" style="display:none">
+    <button class="cs-volta" id="cs-volta">← todas as famílias</button>
+    <svg class="cs-svg" id="cs-svg" viewBox="0 0 520 460" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="cs-chips" style="justify-content:center">
+      <button class="cs-chip on" id="cs-f-bar">só bar</button>
+      <button class="cs-chip" id="cs-f-tudo">tudo</button>
+    </div>
+    <div id="cs-carta"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var WORKER = "https://drinks-lab.rodrigopcviana.workers.dev";
+  var LS = 'lab_sessao';
+  var gate = document.getElementById('cs-gate');
+  var corpo = document.getElementById('cs-corpo');
+  var msg = document.getElementById('cs-msg');
+  var IDX = null, CACHE = {}, atual = null, soBar = true, trioDe = null;
+
+  // cores das 16 famílias da Roda (taxonomia do livro)
+  var COR = {
+    'torrados':'#a9714b','carnes':'#8a5a3c','queijos':'#c9b98a','terrosos':'#7d6a52',
+    'amostardados':'#97803f','sulfurosos':'#5c6e46','marinhos':'#5b7d9e',
+    'salmouras-e-sais':'#52a8a0','verdes-e-gramineos':'#7fb069','condimentos':'#c96f4a',
+    'amadeirados':'#b08a4f','frutas-frescas':'#e0719e','frutas-cremosas':'#e08a56',
+    'citricos':'#f2c94c','frutas-silvestres-e-arbustos':'#c23f6e','florais-frutados':'#e07ab0'
+  };
+
+  if (!WORKER) { gate.innerHTML = '<h2>Em configuração</h2>'; return; }
+
+  function sessaoAtual() {
+    try {
+      var p = window.sessaoLer ? window.sessaoLer() : null;
+      if (p && (p.nivel === 'dev_cocktails' || p.nivel === 'coord'))
+        return { token: p.token, casa: 'coordenacao', expira_em: p.exp };
+    } catch (e) {}
+    try { return JSON.parse(localStorage.getItem(LS) || 'null'); } catch (e) { return null; }
+  }
+  function token() { var s = sessaoAtual(); return s && s.token; }
+
+  function api(rota) {
+    return fetch(WORKER + rota, { headers: { Authorization: 'Bearer ' + token() } })
+      .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); });
+  }
+
+  function entra() {
+    gate.style.display = 'none';
+    corpo.style.display = '';
+    api('/sabores').then(function (idx) {
+      IDX = idx;
+      montaFams(); montaDupla(); montaBusca();
+    }).catch(function (e) {
+      corpo.innerHTML = '<p class="sub">O grafo de sabores ainda não foi publicado (' + e.message + '). Avise o Rodrigo.</p>';
+    });
+  }
+
+  // ---- gate ----
+  var s0 = sessaoAtual();
+  if (s0 && s0.token && (!s0.expira_em || Date.now() < s0.expira_em)) entra();
+  document.getElementById('cs-entrar').onclick = function () {
+    var casa = document.getElementById('cs-casa').value;
+    var senha = document.getElementById('cs-senha').value;
+    msg.textContent = 'Conferindo…';
+    fetch(WORKER + '/auth', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ casa: casa, senha: senha }) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (x) {
+        if (!x.ok) { msg.textContent = x.d.erro || 'senha não confere'; return; }
+        try { localStorage.setItem(LS, JSON.stringify(x.d)); } catch (e) {}
+        msg.textContent = ''; entra();
+      })
+      .catch(function () { msg.textContent = 'sem conexão com o Lab'; });
+  };
+
+  // ---- home: famílias e busca ----
+  function montaFams() {
+    var box = document.getElementById('cs-fams');
+    box.innerHTML = '';
+    IDX.familias.forEach(function (f) {
+      var b = document.createElement('button');
+      b.className = 'cs-fam';
+      b.innerHTML = '<span class="pt" style="background:' + (COR[f.id] || '#888') + '"></span>' + f.nome;
+      b.onclick = function () {
+        Array.prototype.forEach.call(box.children, function (c) { c.classList.remove('on'); });
+        b.classList.add('on');
+        var m = document.getElementById('cs-membros');
+        m.innerHTML = '';
+        f.sabores.forEach(function (sid) {
+          var s = IDX.sabores.find(function (x) { return x.id === sid; });
+          var c = document.createElement('button');
+          c.className = 'cs-chip' + (s.bar ? '' : ' dim');
+          c.textContent = s.nome;
+          c.onclick = function () { abre(sid); };
+          m.appendChild(c);
+        });
+      };
+      box.appendChild(b);
+    });
+  }
+
+  function montaBusca() {
+    var q = document.getElementById('cs-q'), sug = document.getElementById('cs-sug');
+    function norm(t) { return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+    q.oninput = function () {
+      var v = norm(q.value.trim());
+      if (v.length < 2) { sug.style.display = 'none'; return; }
+      var hits = IDX.sabores.filter(function (s) { return norm(s.nome).indexOf(v) >= 0; }).slice(0, 8);
+      sug.innerHTML = '';
+      hits.forEach(function (s) {
+        var d = document.createElement('div');
+        d.textContent = s.nome;
+        d.onclick = function () { sug.style.display = 'none'; q.value = ''; abre(s.id); };
+        sug.appendChild(d);
+      });
+      sug.style.display = hits.length ? '' : 'none';
+    };
+  }
+
+  // ---- dupla do dia: determinística pela data, igual pras 7 casas ----
+  function montaDupla() {
+    var hoje = new Date().toISOString().slice(0, 10);
+    var h = 0; for (var i = 0; i < hoje.length; i++) h = (h * 31 + hoje.charCodeAt(i)) >>> 0;
+    var doBar = IDX.sabores.filter(function (s) { return s.bar; });
+    var a = doBar[h % doBar.length];
+    carrega(a.id).then(function (sab) {
+      var pares = sab.pares.filter(function (p) { return p.bar; });
+      if (!pares.length) pares = sab.pares;
+      if (!pares.length) return;
+      var p = pares[(h >>> 8) % pares.length];
+      var el = document.getElementById('cs-dupla');
+      el.style.display = '';
+      el.innerHTML = '<div class="lbl">✦ Dupla do dia — igual pras 7 casas</div>' +
+        '<div style="font-size:17px;font-weight:600;margin:2px 0">' + sab.nome + ' + ' + p.nome + '</div>' +
+        '<p class="sub" style="margin:0;font-size:12.5px">Quem cria algo com ela hoje? Toque pra abrir.</p>';
+      el.onclick = function () { abre(a.id, p.com); };
+    }).catch(function () {});
+  }
+
+  // ---- constelação ----
+  function carrega(id) {
+    if (CACHE[id]) return Promise.resolve(CACHE[id]);
+    return api('/sabor/' + id).then(function (s) { CACHE[id] = s; return s; });
+  }
+
+  function abre(id, focoPar) {
+    carrega(id).then(function (sab) {
+      atual = sab; trioDe = null;
+      document.getElementById('cs-home').style.display = 'none';
+      document.getElementById('cs-view').style.display = '';
+      desenha(focoPar);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  document.getElementById('cs-volta').onclick = function () {
+    document.getElementById('cs-view').style.display = 'none';
+    document.getElementById('cs-home').style.display = '';
+    document.getElementById('cs-carta').innerHTML = '';
+  };
+  document.getElementById('cs-f-bar').onclick = function () { soBar = true; troca(this); };
+  document.getElementById('cs-f-tudo').onclick = function () { soBar = false; troca(this); };
+  function troca(b) {
+    document.getElementById('cs-f-bar').classList.remove('on');
+    document.getElementById('cs-f-tudo').classList.remove('on');
+    b.classList.add('on'); desenha();
+  }
+
+  function desenha(focoPar) {
+    var svg = document.getElementById('cs-svg');
+    var pares = atual.pares.filter(function (p) { return soBar ? p.bar : true; }).slice(0, 14);
+    var cx = 260, cy = 230;
+    var html = '';
+    pares.forEach(function (p, i) {
+      var ang = (2 * Math.PI * i) / pares.length - Math.PI / 2;
+      var raio = i % 2 ? 178 : 128;
+      var x = cx + raio * Math.cos(ang), y = cy + raio * Math.sin(ang);
+      html += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x + '" y2="' + y + '" stroke="rgba(128,128,160,.25)"/>';
+      p._x = x; p._y = y;
+    });
+    html += '<circle cx="' + cx + '" cy="' + cy + '" r="52" fill="' + (COR[atual.familia] || '#888') + '"/>' +
+      '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="13">' + esc(atual.nome) + '</text>';
+    pares.forEach(function (p, i) {
+      var r = 20 + Math.min(16, p.nota.length / 14);
+      html += '<g class="no" data-i="' + i + '"><circle cx="' + p._x + '" cy="' + p._y + '" r="' + r +
+        '" fill="' + (COR[p.familia] || '#888') + '" fill-opacity=".92"/>' +
+        '<text x="' + p._x + '" y="' + (p._y + 3) + '" text-anchor="middle" font-size="9.5">' +
+        esc(p.nome) + (p.drink ? ' 🍸' : '') + '</text></g>';
+    });
+    svg.innerHTML = html;
+    Array.prototype.forEach.call(svg.querySelectorAll('.no'), function (g) {
+      g.onclick = function () { carta(pares[+g.dataset.i]); };
+    });
+    if (focoPar) {
+      var alvo = atual.pares.find(function (p) { return p.com === focoPar; });
+      if (alvo) carta(alvo);
+    } else if (pares.length) carta(pares[0]);
+  }
+
+  function carta(p) {
+    var box = document.getElementById('cs-carta');
+    var tags = (p.tags || []).map(function (t) { return '<span class="cs-chip dim" style="cursor:default;font-size:11px;padding:2px 9px">' + esc(t) + '</span>'; }).join(' ');
+    var drink = p.drink ? '<span class="cs-chip" style="cursor:default;font-size:11px;padding:2px 9px">🍹 ' + esc(p.drink) + '</span>' : '';
+    var viz = (atual.vizinhos || []).slice(0, 4).map(function (v) {
+      var s = IDX.sabores.find(function (x) { return x.id === v; });
+      return s ? '<button class="cs-chip" data-v="' + v + '" style="font-size:11px;padding:2px 9px">' + esc(s.nome) + '</button>' : '';
+    }).join(' ');
+    box.innerHTML =
+      '<div class="cs-carta">' +
+      '<h3><span class="pt" style="background:' + (COR[atual.familia] || '#888') + '"></span>' +
+      '<span class="pt" style="background:' + (COR[p.familia] || '#888') + '"></span>' +
+      esc(atual.nome).toUpperCase() + ' + ' + esc(p.nome).toUpperCase() + '</h3>' +
+      '<p class="cs-nota">' + esc(p.nota) + '</p>' +
+      '<div class="cs-chips" style="margin:4px 0">' + drink + ' ' + tags + '</div>' +
+      '<div class="cs-chips"><button class="cs-chip" id="cs-abre-par">abrir a constelação de ' + esc(p.nome) + '</button>' +
+      '<button class="cs-chip" id="cs-trio">+ terceiro sabor</button></div>' +
+      '<div id="cs-trio-box"></div>' +
+      (viz ? '<p class="sub" style="margin:8px 0 4px;font-size:12px">não tem ' + esc(atual.nome.toLowerCase()) + '? vizinhos de família:</p><div class="cs-chips">' + viz + '</div>' : '') +
+      '<p class="cs-fonte">📖 destilado do Dicionário de Sabores (Niki Segnit)</p>' +
+      '</div>';
+    document.getElementById('cs-abre-par').onclick = function () { abre(p.com); };
+    document.getElementById('cs-trio').onclick = function () { trio(p); };
+    Array.prototype.forEach.call(box.querySelectorAll('[data-v]'), function (b) {
+      b.onclick = function () { abre(b.dataset.v); };
+    });
+  }
+
+  // interseção das duas constelações — quem combina com AMBOS
+  function trio(p) {
+    var box = document.getElementById('cs-trio-box');
+    box.innerHTML = '<p class="sub" style="font-size:12px">procurando quem combina com os dois…</p>';
+    carrega(p.com).then(function (outro) {
+      var meus = {}; atual.pares.forEach(function (x) { meus[x.com] = x; });
+      var comuns = outro.pares.filter(function (x) { return meus[x.com] && (soBar ? x.bar : true); });
+      if (!comuns.length) { box.innerHTML = '<p class="sub" style="font-size:12px">o livro não registra um terceiro em comum.</p>'; return; }
+      box.innerHTML = '<p class="sub" style="margin:8px 0 4px;font-size:12px">combinam com os dois (trio herói–par–ponte):</p>' +
+        '<div class="cs-chips">' + comuns.slice(0, 6).map(function (x) {
+          return '<button class="cs-chip" data-t="' + x.com + '">' + esc(x.nome) + '</button>';
+        }).join('') + '</div>';
+      Array.prototype.forEach.call(box.querySelectorAll('[data-t]'), function (b) {
+        b.onclick = function () { abre(b.dataset.t); };
+      });
+    });
+  }
+
+  function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+})();
+</script>
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 11/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+
+<script>
+(function () {
+  var LABEL = {"equipe": "Equipe de Bar", "chefe": "Chefe de Bar", "coord": "Coordenação", "rh": "RH", "controladoria": "Controladoria & Administração", "dev_cocktails": "Desenvolvimento de Cocktails"};
+  function nivelAtual() {
+    try { return localStorage.getItem('portal_nivel') || 'equipe'; } catch (e) { return 'equipe'; }
+  }
+  function aplica() {
+    var atual = nivelAtual();
+    // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz (equipe)
+    // no menu — o que muda pra ele é só o comportamento do Plano de treino.
+    if (atual === 'bartender') atual = 'equipe';
+    // data-niveis = lista de nomes de nível (separados por espaço) que podem
+    // ver aquele elemento — já vem pronta do Python (_niveis_permitidos),
+    // cobrindo tanto a escada (equipe/chefe/coord) quanto os acessos
+    // paralelos (rh/controladoria). Aqui é só checar se o nível atual está
+    // na lista — nada de comparação numérica.
+    document.querySelectorAll('[data-niveis]').forEach(function (el) {
+      var lista = el.dataset.niveis ? el.dataset.niveis.split(' ') : [];
+      el.style.display = lista.indexOf(atual) >= 0 ? '' : 'none';
+    });
+    var txt = document.getElementById('nivel-pill-txt');
+    if (txt) txt.textContent = LABEL[atual] || LABEL.equipe;
+  }
+  window.definirNivel = function (v) {
+    try { localStorage.setItem('portal_nivel', v); } catch (e) {}
+    aplica();
+    if (typeof window.onNivelDefinido === 'function') window.onNivelDefinido(v);
+  };
+  window.nivelAtual = nivelAtual;
+  aplica();
+})();
+</script>
+
+
+<script>
+(function () {
+  var grps = document.querySelectorAll('#nav-principal .grp');
+  grps.forEach(function (g) {
+    g.addEventListener('toggle', function () {
+      if (g.open) grps.forEach(function (o) { if (o !== g) o.open = false; });
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#nav-principal')) grps.forEach(function (g) { g.open = false; });
+  });
+})();
+</script>
+
+
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  if (!WORKER) return;
+  var CHAVE = 'geo_ok_ts', VALIDADE = 30 * 60 * 1000;
+  try {
+    var t = parseInt(sessionStorage.getItem(CHAVE) || '0', 10);
+    if (t && Date.now() - t < VALIDADE) return;
+  } catch (e) {}
+
+  function overlay(titulo, msg, mostrarBtn) {
+    var d = document.getElementById('geo-blk') || document.createElement('div');
+    d.id = 'geo-blk';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#16130f;color:#f3ede2;'
+      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+      + 'text-align:center;padding:32px;font-family:-apple-system,Segoe UI,Roboto,sans-serif';
+    d.innerHTML = '<div style="font-family:Georgia,serif;font-size:22px;margin-bottom:12px">'
+      + titulo + '</div><div style="max-width:420px;color:#c3baa9;line-height:1.5">' + msg + '</div>'
+      + (mostrarBtn ? '<button id="geo-retry" style="margin-top:22px;padding:12px 22px;border:none;'
+      + 'border-radius:999px;background:#d0a352;color:#241a06;font-weight:600;font-size:15px;'
+      + 'cursor:pointer">Tentar de novo</button>' : '');
+    if (!d.parentNode) document.body.appendChild(d);
+    var b = document.getElementById('geo-retry');
+    if (b) b.onclick = function () { verifica(); };
+  }
+  function libera() {
+    try { sessionStorage.setItem(CHAVE, String(Date.now())); } catch (e) {}
+    var d = document.getElementById('geo-blk');
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+
+  function checa(lat, lon) {
+    fetch(WORKER + '/api/geo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: lat, lon: lon }),
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.ok) libera();
+      else overlay('Fora de área',
+        'O Portal dos Bares só funciona dentro das casas do Grupo IZ. '
+        + 'Você precisa estar em uma delas para acessar.', true);
+    }).catch(function () { libera(); }); // rede falhou: não tranca
+  }
+
+  function verifica() {
+    overlay('Confirmando localização…', 'Só um instante.', false);
+    if (!navigator.geolocation) { libera(); return; }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { checa(pos.coords.latitude, pos.coords.longitude); },
+      function () {
+        overlay('Ative a localização',
+          'Para usar o portal no bar, permita o acesso à localização no seu '
+          + 'navegador e toque em “Tentar de novo”.', true);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }
+
+  // 1º toque no Worker SEM coordenadas: só pra saber se a cerca está ligada.
+  // Se desligada, para aqui — nenhum pedido de GPS aparece.
+  fetch(WORKER + '/api/geo', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.desativado) return;
+    verifica();
+  }).catch(function () {}); // rede falhou: não tranca
+})();
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+
+</body>
+</html>
