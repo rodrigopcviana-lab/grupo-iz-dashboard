@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
-<title>Plano de treino · Portal dos Bares — Grupo IZ</title>
+<title>Lição · Escola de Bar — Grupo IZ</title>
 <link rel="stylesheet" href="portal.css">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bares IZ">
 </head>
@@ -104,360 +104,185 @@ window.exigirNivel = function (niveisOk, slug) {
 
 
 <style>
-  .pt-prog { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-             padding: 14px 16px; margin: 0 0 16px; }
-  .pt-prog .k { font-size: 11px; letter-spacing: .16em; color: var(--acc); font-weight: 600; }
-  .pt-prog .num { font-family: var(--serif); font-size: 21px; margin-top: 3px; }
-  .pt-barra { height: 8px; background: var(--bg); border: 1px solid var(--border);
-              border-radius: 999px; overflow: hidden; margin-top: 9px; }
-  .pt-barra i { display: block; height: 100%; background: var(--acc); width: 0;
-               border-radius: 999px; transition: width .4s; }
-  .pt-etapa { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-              padding: 13px 15px; margin-bottom: 9px; display: flex; gap: 12px;
-              align-items: flex-start; }
-  .pt-etapa.feita { border-color: var(--verde); }
-  .pt-num { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center; font-size: 12px;
-            color: var(--text-3); font-variant-numeric: tabular-nums; }
-  .pt-etapa.feita .pt-num { border-color: var(--verde); color: var(--verde); }
-  .pt-txt { flex: 1; min-width: 0; }
-  .pt-txt .n { font-family: var(--serif); font-size: 15.5px; }
-  .pt-txt .d { font-size: 12.5px; color: var(--text-3); margin-top: 2px; line-height: 1.45; }
-  .pt-est { flex: none; align-self: center; display: flex; flex-direction: column;
-            gap: 6px; align-items: flex-end; }
-  .pt-feita { font-size: 12px; color: var(--verde); white-space: nowrap; }
-  .pt-estudou { font-size: 11.5px; color: var(--text-3); white-space: nowrap; }
-  .pt-btn { font: inherit; font-size: 12.5px; padding: 10px 14px; border-radius: 999px;
-            border: 1px solid var(--acc); background: none; color: var(--acc); cursor: pointer;
-            white-space: nowrap; }
-  .pt-btn.confirma { background: var(--acc); color: var(--acc-txt); font-weight: 600; }
-  .pt-btn:disabled { opacity: .5; }
-  .pt-aviso { background: #3a2d12; border: 1px solid var(--amarelo); border-radius: 10px;
-              padding: 11px 13px; font-size: 13px; color: var(--amarelo); margin-bottom: 14px; }
-  .pt-nota { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-             padding: 10px 13px; font-size: 12.5px; color: var(--text-3); margin-bottom: 14px; }
-  .pt-casas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-  /* QW2 — "continue daqui": destaca a 1ª etapa pendente no topo */
-  .pt-continue { background: linear-gradient(135deg, #2a2117, #1c1710); border: 1px solid var(--acc);
-                 border-radius: 16px; padding: 15px 17px; margin: 0 0 18px; }
-  .pt-continue .k { font-size: 10px; letter-spacing: .12em; color: var(--acc); font-weight: 700; }
-  .pt-continue .n { font-family: var(--serif); font-size: 17px; margin: 4px 0 3px; }
-  .pt-continue .d { font-size: 12.5px; color: var(--text-2); line-height: 1.45; }
-  .pt-continue .mod { font-size: 11px; color: var(--text-3); margin-top: 6px; }
-  /* Fase 2 — link para a lição/quiz de cada etapa */
-  .pt-estudar { display: inline-block; font-size: 12px; color: var(--acc); text-decoration: none;
-               border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; margin-top: 7px; }
-  .pt-estudar:hover { border-color: var(--acc); }
-  /* QW3 — contagem por módulo no cabeçalho */
-  .pt-modhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-                margin: 30px 0 10px; }
-  .pt-modhead h2 { margin: 0; }
-  .pt-modhead .cnt { font-size: 12.5px; color: var(--text-3); font-variant-numeric: tabular-nums;
-                     white-space: nowrap; }
-  .pt-modhead .cnt.full { color: var(--verde); }
-  /* QW3 — toast de micro-celebração ao registrar */
-  #pt-toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px);
-              background: var(--card-2, #29231a); border: 1px solid var(--acc); color: var(--text);
-              border-radius: 999px; padding: 11px 18px; font-size: 13.5px; z-index: 80;
-              opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none;
-              box-shadow: 0 10px 30px rgba(0,0,0,.5); max-width: calc(100vw - 32px); text-align: center; }
-  #pt-toast.on { opacity: 1; transform: translate(-50%, 0); }
-  #pt-toast b { color: var(--acc); }
+  .lc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .lc-back { font-size: 13px; color: var(--acc); text-decoration: none; white-space: nowrap; }
+  .lc-mod { font-size: 11px; letter-spacing: .14em; color: var(--text-3); text-transform: uppercase; }
+  .lc-obj { background: linear-gradient(135deg, #2a2117, #1c1710); border: 1px solid var(--acc);
+            border-radius: 14px; padding: 14px 16px; margin: 4px 0 20px; }
+  .lc-obj .k { font-size: 10px; letter-spacing: .12em; color: var(--acc); font-weight: 700; }
+  .lc-obj .t { font-size: 14.5px; line-height: 1.5; margin-top: 5px; color: var(--text-2); }
+  .lc-sec { font-family: var(--serif); font-size: 17px; margin: 22px 0 7px; }
+  .lc-p { font-size: 14.5px; line-height: 1.68; color: var(--text-2); margin: 0 0 12px; }
+  .lc-h2 { font-family: var(--serif); font-size: 15px; color: var(--acc); letter-spacing: .02em;
+           margin: 26px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .lc-li { font-size: 14px; line-height: 1.55; color: var(--text-2); margin: 0 0 8px 4px;
+           padding-left: 16px; position: relative; }
+  .lc-li::before { content: '—'; position: absolute; left: 0; color: var(--acc); }
+  .lc-q { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+          padding: 14px 15px; margin-bottom: 11px; }
+  .lc-q .p { font-size: 14.5px; line-height: 1.5; margin-bottom: 11px; }
+  .lc-opt { display: block; width: 100%; text-align: left; font: inherit; font-size: 13.5px;
+            line-height: 1.45; padding: 10px 13px; margin-bottom: 7px; border-radius: 10px;
+            border: 1px solid var(--border); background: var(--bg); color: var(--text);
+            cursor: pointer; transition: border-color .15s, background .15s; }
+  .lc-opt:hover:not(:disabled) { border-color: var(--acc); }
+  .lc-opt:disabled { cursor: default; }
+  .lc-opt.certa { border-color: var(--verde); background: #17251a; color: var(--verde); }
+  .lc-opt.errada { border-color: var(--vermelho, #b4544e); background: #2a1816; color: var(--vermelho, #e0908a); }
+  .lc-fb { font-size: 12.5px; margin-top: 3px; min-height: 1px; }
+  .lc-fb.ok { color: var(--verde); }
+  .lc-fb.no { color: var(--vermelho, #e0908a); }
+  .lc-score { background: var(--card); border: 1px solid var(--acc); border-radius: 12px;
+              padding: 13px 15px; margin: 14px 0 4px; font-size: 14px; display: none; }
+  .lc-score.on { display: block; }
+  .lc-score b { color: var(--acc); font-family: var(--serif); font-size: 18px; }
 </style>
-<h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg> Plano de treino</h1>
-<p class="sub">O plano de treinamento da sua casa, etapa por etapa — estude por aqui. O chefe
-de bar registra cada etapa concluída pela equipe; a coordenação acompanha em
-<a href="evolucao.html">Evolução do treino</a>. O plano é editado pela coordenação no Notion e
-aparece aqui em até 5 minutos.</p>
-
-<div class="panel" id="pt-gate">
-  <h2>Acesso restrito</h2>
-  <p class="sub" id="pt-msg" style="margin:4px 0 0" role="status" aria-live="polite">Verificando seu acesso…</p>
+<div id="lc-gate" class="panel">
+  <h2>Carregando a lição…</h2>
+  <p class="sub" id="lc-msg" style="margin:4px 0 0" role="status" aria-live="polite">Um instante.</p>
 </div>
-<div id="pt-corpo" style="display:none"></div>
+<div id="lc-corpo" style="display:none"></div>
 
 <script>
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
-  var SLUG = 'plano.html';
-  var msg = document.getElementById('pt-msg');
-  var gate = document.getElementById('pt-gate');
-  var corpo = document.getElementById('pt-corpo');
-  if (!WORKER) {
-    gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">O Plano de treino ainda não foi ativado.</p>';
-    return;
-  }
+  var SLUG = 'licao.html';
+  var gate = document.getElementById('lc-gate');
+  var msg = document.getElementById('lc-msg');
+  var corpo = document.getElementById('lc-corpo');
+  var etapaId = new URLSearchParams(location.search).get('etapa') || '';
+  var sessao = null;
 
-  var sessao = null, casaSel = null, pessoaSel = null;
-
-  // Todo dado do Notion entra por textContent (nunca innerHTML) — anti-XSS.
   function el(tag, cls, txt) {
     var e = document.createElement(tag);
     if (cls) e.className = cls;
     if (txt != null) e.textContent = txt;
     return e;
   }
-  function linkEstudar(e) {  // Fase 2: abre licao.html com a lição + quiz
-    var a = el('a', 'pt-estudar', 'Estudar a lição ›');
-    a.href = 'licao.html?etapa=' + encodeURIComponent(e.id);
+  function embaralha(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
     return a;
   }
-  function fmtData(iso) {
-    if (!iso) return '';
-    var d = new Date(iso);
-    return isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
-  }
-  function erroTopo(texto) {
-    var b = document.getElementById('pt-erro');
-    if (!b) {
-      b = el('div', 'pt-aviso');
-      b.id = 'pt-erro';
-      corpo.insertBefore(b, corpo.firstChild);
-    }
-    b.textContent = texto;
+
+  if (!WORKER || !etapaId) {
+    gate.innerHTML = '<h2>Lição indisponível</h2><p class="sub" style="margin:0">Abra a lição pelo '
+      + '<a href="plano.html">Plano de treino</a>.</p>';
+    return;
   }
 
   function carrega() {
-    msg.textContent = 'Carregando…';
-    gate.style.display = '';
-    var url = WORKER + '/api/plano' + (casaSel ? '?casa=' + encodeURIComponent(casaSel) : '');
-    fetch(url, { headers: { 'X-Token': sessao.token } }).then(function (r) {
+    fetch(WORKER + '/api/licao?etapa=' + encodeURIComponent(etapaId), {
+      headers: { 'X-Token': sessao.token }
+    }).then(function (r) {
       if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
+      if (r.status === 404) { msg.textContent = 'Esta etapa não está no plano ativo. Volte ao Plano de treino.'; return; }
       if (!r.ok) { msg.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return; }
       r.json().then(desenha);
     }).catch(function () { msg.textContent = 'Sem conexão. Tente de novo perto do wi-fi.'; });
   }
 
-  function toast(txt, forte) {
-    var t = document.getElementById('pt-toast');
-    if (!t) { t = el('div'); t.id = 'pt-toast'; document.body.appendChild(t); }
-    t.innerHTML = '';
-    if (forte) { var b = el('b'); b.textContent = forte + ' '; t.appendChild(b); }
-    t.appendChild(document.createTextNode(txt));
-    t.classList.add('on');
-    clearTimeout(t._tid);
-    t._tid = setTimeout(function () { t.classList.remove('on'); }, 3200);
-  }
-
-  function nomeCasa(d, slug) {
-    var c = (d.casas || []).filter(function (x) { return x.slug === slug; })[0];
-    return c ? c.nome : slug;
-  }
-
+  // Blocos do Worker: {t:'callout'|'h2'|'h3'|'p'|'li', txt}. 'Quiz' (h2)
+  // liga o modo quiz: cada 'p' é uma pergunta, os 'li' seguintes as opções
+  // (a certa vem marcada com ✅ no texto — escondida e embaralhada aqui).
   function desenha(d) {
     corpo.innerHTML = '';
-    var ehBartender = (sessao.nivel === 'bartender');
+    var top = el('div', 'lc-top');
+    var back = el('a', 'lc-back', '‹ Plano de treino');
+    back.href = 'plano.html';
+    top.appendChild(back);
+    top.appendChild(el('span', 'lc-mod', d.etapa.modulo || ''));
+    corpo.appendChild(top);
+    corpo.appendChild(el('h1', null, d.etapa.nome || 'Lição'));
 
-    // Seletor de casa: coord, master ("*") e equipe (o chefe e o bartender têm
-    // a casa no token).
-    var mostraSeletor = (sessao.casa === '*') || (sessao.nivel === 'coord') || (sessao.nivel === 'equipe');
-    if (mostraSeletor) {
-      var pills = el('div', 'pt-casas');
-      d.casas.forEach(function (c) {
-        var b = el('button', 'chip' + ((d.casa === c.slug) ? ' on' : ''), c.nome);
-        b.type = 'button';
-        b.onclick = function () {
-          casaSel = c.slug; pessoaSel = null;
-          try { localStorage.setItem('plano_casa', c.slug); } catch (e) {}
-          carrega();
-        };
-        pills.appendChild(b);
-      });
-      corpo.appendChild(pills);
-      if (!d.casa) corpo.appendChild(el('p', 'sub', 'Escolha a casa para ver o progresso do time.'));
-    }
-
-    // Bartender vê a si mesmo; chefe/coord/equipe escolhem a pessoa no elenco.
-    var pessoaAtual = ehBartender ? (d.pessoa || null) : pessoaSel;
-    if (!ehBartender && d.casa) {
-      if (d.roster && d.roster.length) {
-        var pp = el('div', 'pt-casas');
-        d.roster.forEach(function (nome) {
-          var b = el('button', 'chip' + ((pessoaAtual === nome) ? ' on' : ''), nome);
-          b.type = 'button';
-          b.onclick = function () { pessoaSel = nome; desenha(d); };
-          pp.appendChild(b);
-        });
-        corpo.appendChild(pp);
-        if (!pessoaAtual) corpo.appendChild(el('p', 'sub',
-          d.pode_aprovar ? 'Escolha o bartender para ver o progresso e aprovar etapas.'
-                         : 'Escolha o bartender para ver o progresso.'));
-      } else {
-        corpo.appendChild(el('div', 'pt-nota',
-          'Nenhum bartender com senha individual nesta casa ainda. Peça ao Rodrigo para gerar as senhas.'));
+    var emQuiz = false, quizWrap = null, perguntaAtual = null, quiz = [];
+    (d.blocos || []).forEach(function (b) {
+      if (b.t === 'callout') {
+        var o = el('div', 'lc-obj');
+        o.appendChild(el('div', 'k', 'OBJETIVO'));
+        o.appendChild(el('div', 't', b.txt));
+        corpo.appendChild(o);
+      } else if (b.t === 'h2') {
+        emQuiz = /^\s*Quiz/i.test(b.txt);
+        corpo.appendChild(el('div', 'lc-h2', b.txt));
+        if (emQuiz) { quizWrap = el('div'); corpo.appendChild(quizWrap); }
+      } else if (b.t === 'h3') {
+        corpo.appendChild(el('div', 'lc-sec', b.txt));
+      } else if (b.t === 'p') {
+        if (emQuiz) {
+          perguntaAtual = { pergunta: b.txt.replace(/^\s*\d+\.\s*/, ''), opcoes: [] };
+          quiz.push(perguntaAtual);
+        } else {
+          corpo.appendChild(el('div', 'lc-p', b.txt));
+        }
+      } else if (b.t === 'li') {
+        if (emQuiz && perguntaAtual) {
+          var certa = b.txt.indexOf('✅') >= 0;
+          var texto = b.txt.replace(/^\s*(✅|◦|✓)\s*/, '').trim();
+          perguntaAtual.opcoes.push({ texto: texto, certa: certa });
+        } else {
+          corpo.appendChild(el('div', 'lc-li', b.txt));
+        }
       }
-    }
-
-    if (ehBartender) {
-      corpo.appendChild(el('div', 'pt-nota',
-        'Marque "Estudei" quando ler a lição e passar no quiz. A aprovação final é do seu chefe de bar, ' +
-        'depois da prática no balcão.'));
-    }
-    if (sessao.nivel === 'chefe' && !sessao.casa) {
-      corpo.appendChild(el('div', 'pt-aviso',
-        'Sua senha de chefe é a compartilhada antiga e não identifica a casa — peça ao Rodrigo a senha ' +
-        'individual da sua casa para aprovar etapas.'));
-    }
-
-    var temPessoa = ehBartender ? !!d.casa : !!pessoaAtual;
-
-    // Estado (estudado/aprovado) da pessoa atual, por etapa.
-    var st = {};
-    (d.registros || []).forEach(function (r) {
-      if (!pessoaAtual || r.pessoa === pessoaAtual) st[r.etapa] = r;
     });
 
-    if (temPessoa) {
-      var aprov = d.etapas.filter(function (e) { return st[e.id] && st[e.id].aprovado; }).length;
-      var estud = d.etapas.filter(function (e) { return st[e.id] && st[e.id].estudado && !st[e.id].aprovado; }).length;
-      var quem = ehBartender ? '' : (pessoaAtual + ' · ');
-      var prog = el('div', 'pt-prog');
-      prog.appendChild(el('div', 'k', 'PROGRESSO — ' + (quem + nomeCasa(d, d.casa)).toUpperCase()));
-      prog.appendChild(el('div', 'num', aprov + ' de ' + d.etapas.length + ' aprovadas' +
-        (estud ? '  ·  ' + estud + ' estudadas, aguardando' : '')));
-      var barra = el('div', 'pt-barra');
-      var fill = el('i');
-      fill.style.width = (d.etapas.length ? Math.round(aprov / d.etapas.length * 100) : 0) + '%';
-      barra.appendChild(fill);
-      prog.appendChild(barra);
-      corpo.appendChild(prog);
-
-      var pend = d.etapas.filter(function (e) { return !(st[e.id] && st[e.id].aprovado); });
-      if (pend.length) {
-        var prox = pend[0];
-        var cont = el('div', 'pt-continue');
-        cont.appendChild(el('div', 'k', 'CONTINUE DAQUI'));
-        cont.appendChild(el('div', 'n', prox.nome));
-        if (prox.desc) cont.appendChild(el('div', 'd', prox.desc));
-        cont.appendChild(el('div', 'mod', prox.modulo));
-        cont.appendChild(linkEstudar(prox));
-        var wrapc = el('div'); wrapc.style.marginTop = '10px';
-        botoesEtapa(prox, st[prox.id], d, pessoaAtual, wrapc);
-        cont.appendChild(wrapc);
-        corpo.appendChild(cont);
-      } else if (d.etapas.length) {
-        var done = el('div', 'pt-continue');
-        done.appendChild(el('div', 'k', 'TUDO APROVADO'));
-        done.appendChild(el('div', 'n', (ehBartender ? 'Você' : pessoaAtual) + ' concluiu todas as etapas ativas ✓'));
-        corpo.appendChild(done);
-      }
-    }
-
-    var ordemModulos = [], porModulo = {};
-    d.etapas.forEach(function (e) {
-      if (!porModulo[e.modulo]) { porModulo[e.modulo] = []; ordemModulos.push(e.modulo); }
-      porModulo[e.modulo].push(e);
-    });
-    if (!d.etapas.length) corpo.appendChild(el('p', 'sub', 'O plano ainda não tem etapas ativas — a coordenação preenche no Notion.'));
-    ordemModulos.forEach(function (mod) {
-      var lista = porModulo[mod];
-      var head = el('div', 'pt-modhead');
-      head.appendChild(el('h2', null, mod));
-      if (temPessoa) {
-        var f = lista.filter(function (e) { return st[e.id] && st[e.id].aprovado; }).length;
-        head.appendChild(el('span', 'cnt' + (f === lista.length ? ' full' : ''), f + '/' + lista.length));
-      }
-      corpo.appendChild(head);
-      lista.forEach(function (e) {
-        var reg = st[e.id] || null;
-        var card = el('div', 'pt-etapa' + ((reg && reg.aprovado) ? ' feita' : ''));
-        card.appendChild(el('span', 'pt-num', String(e.ordem)));
-        var txt = el('div', 'pt-txt');
-        txt.appendChild(el('div', 'n', e.nome));
-        if (e.desc) txt.appendChild(el('div', 'd', e.desc));
-        txt.appendChild(linkEstudar(e));
-        card.appendChild(txt);
-        var est = el('div', 'pt-est');
-        botoesEtapa(e, reg, d, pessoaAtual, est);
-        card.appendChild(est);
-        corpo.appendChild(card);
-      });
-    });
+    if (quiz.length && quizWrap) montaQuiz(quizWrap, quiz);
 
     gate.style.display = 'none';
     corpo.style.display = '';
   }
 
-  // Estado + botões de ação de uma etapa, no lado direito do card.
-  function botoesEtapa(e, reg, d, pessoaAtual, est) {
-    if (reg && reg.aprovado) {
-      est.appendChild(el('span', 'pt-feita', '✓ aprovado ' + (fmtData(reg.aprovado) || '')));
-      return;
-    }
-    if (reg && reg.estudado) {
-      est.appendChild(el('span', 'pt-estudou', 'estudou ' + (fmtData(reg.estudado) || '')));
-    }
-    if (d.pode_estudar && !(reg && reg.estudado)) {
-      est.appendChild(botaoAcao('estudei', 'Marcar que estudei', e, d, pessoaAtual));
-    }
-    if (d.pode_aprovar && pessoaAtual) {
-      est.appendChild(botaoAcao('aprovado', 'Aprovar', e, d, pessoaAtual));
-    }
-  }
-
-  // Confirmação em 2 toques (sem popup): 1º toque arma ("Confirmar?"), 2º em
-  // até 4s executa; passou o tempo, desarma sozinho.
-  function botaoAcao(acao, label, e, d, pessoaAtual) {
-    var btn = el('button', 'pt-btn' + (acao === 'aprovado' ? ' confirma' : ''), label);
-    if (acao === 'aprovado') btn.classList.remove('confirma'); // 'confirma' só quando armado
-    btn.type = 'button';
-    btn.onclick = function () {
-      if (!btn.classList.contains('armado')) {
-        btn.classList.add('armado', 'confirma');
-        btn.dataset.lbl = label;
-        btn.textContent = 'Confirmar?';
-        setTimeout(function () {
-          if (btn.classList.contains('armado')) {
-            btn.classList.remove('armado', 'confirma');
-            btn.textContent = label;
+  function montaQuiz(wrap, quiz) {
+    var total = quiz.length, respondidas = 0, acertos = 0;
+    var placar = el('div', 'lc-score');
+    quiz.forEach(function (q, qi) {
+      var card = el('div', 'lc-q');
+      card.appendChild(el('div', 'p', (qi + 1) + '. ' + q.pergunta));
+      var fb = el('div', 'lc-fb');
+      var opts = embaralha(q.opcoes.slice());
+      opts.forEach(function (o) {
+        var btn = el('button', 'lc-opt', o.texto);
+        btn.type = 'button';
+        btn.onclick = function () {
+          var botoes = card.querySelectorAll('.lc-opt');
+          for (var i = 0; i < botoes.length; i++) botoes[i].disabled = true;
+          if (o.certa) {
+            btn.classList.add('certa');
+            fb.className = 'lc-fb ok'; fb.textContent = 'Certa!';
+            acertos++;
+          } else {
+            btn.classList.add('errada');
+            fb.className = 'lc-fb no'; fb.textContent = 'Não é essa.';
+            for (var j = 0; j < botoes.length; j++) {
+              if (opts[j].certa) botoes[j].classList.add('certa');
+            }
           }
-        }, 4000);
-        return;
-      }
-      btn.disabled = true;
-      btn.textContent = acao === 'aprovado' ? 'Aprovando…' : 'Salvando…';
-      var body = { etapa_id: e.id, acao: acao };
-      if (acao === 'aprovado') {
-        body.pessoa = pessoaAtual;
-        if (sessao.casa === '*') body.casa = d.casa; // só o master manda a casa
-      }
-      fetch(WORKER + '/api/plano_registro', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Token': sessao.token },
-        body: JSON.stringify(body)
-      }).then(function (r) {
-        if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
-        if (!r.ok) {
-          return r.json().then(function (j) {
-            btn.disabled = false; btn.classList.remove('armado', 'confirma');
-            btn.textContent = label;
-            erroTopo(j.erro || ('Erro ' + r.status + ' — tente de novo.'));
-          });
-        }
-        toast(acao === 'aprovado' ? ('aprovado: ' + e.nome) : ('estudo marcado: ' + e.nome),
-              acao === 'aprovado' ? '✓' : '');
-        carrega();
-      }).catch(function () {
-        btn.disabled = false; btn.classList.remove('armado', 'confirma');
-        btn.textContent = label;
-        erroTopo('Sem conexão — não salvou. Tente de novo com sinal.');
+          respondidas++;
+          if (respondidas === total) {
+            placar.classList.add('on');
+            placar.innerHTML = '';
+            placar.appendChild(document.createTextNode('Você acertou '));
+            var b = el('b', null, acertos + ' de ' + total);
+            placar.appendChild(b);
+            placar.appendChild(document.createTextNode(
+              acertos === total ? ' — gabaritou! Fala com o chefe de bar pra praticar no balcão.'
+                                : '. Revê as seções acima e tenta o que errou.'));
+          }
+        };
+        card.appendChild(btn);
       });
-    };
-    return btn;
+      card.appendChild(fb);
+      wrap.appendChild(card);
+    });
+    wrap.appendChild(placar);
   }
 
-  var r = window.exigirNivel(['equipe', 'chefe', 'coord', 'bartender'], SLUG);
-  if (r.ok) {
-    sessao = r.sessao;
-    // Só quem escolhe a casa (coord/equipe/master) começa na última escolhida;
-    // chefe e bartender têm a casa no token.
-    if (sessao.nivel === 'coord' || sessao.nivel === 'equipe' || sessao.casa === '*') {
-      try { casaSel = localStorage.getItem('plano_casa') || null; } catch (e) {}
-    }
-    carrega();
-  }
-  else if (!r.redirecionou) msg.innerHTML = 'Seu acesso atual não abre o Plano de treino. '
-    + 'Toque em <a href="index.html#nivel">Trocar acesso</a> para entrar com outra senha.';
+  var r = window.exigirNivel(['equipe', 'chefe', 'coord'], SLUG);
+  if (r.ok) { sessao = r.sessao; carrega(); }
+  else if (!r.redirecionou) msg.innerHTML = 'Seu acesso atual não abre as lições. '
+    + 'Toque em <a href="index.html#nivel">Trocar acesso</a> para entrar.';
 })();
 </script>
 

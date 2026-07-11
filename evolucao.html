@@ -60,7 +60,12 @@ window.irParaLogin = function (slug) {
 };
 window.exigirNivel = function (niveisOk, slug) {
   var s = window.sessaoLer();
-  if (s && niveisOk.indexOf(s.nivel) >= 0) return { ok: true, sessao: s };
+  // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz: passa em
+  // qualquer página que a equipe abre. Páginas de treino ainda listam
+  // 'bartender' explicitamente pra tratar o comportamento por pessoa.
+  var efet = (s && s.nivel === 'bartender' && niveisOk.indexOf('bartender') < 0 &&
+              niveisOk.indexOf('equipe') >= 0) ? 'equipe' : (s ? s.nivel : null);
+  if (s && (niveisOk.indexOf(s.nivel) >= 0 || niveisOk.indexOf(efet) >= 0)) return { ok: true, sessao: s };
   if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
   return { ok: false, nivelAtual: s.nivel };
 };
@@ -127,9 +132,9 @@ window.exigirNivel = function (niveisOk, slug) {
                border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
 </style>
 <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg> Evolução do treino</h1>
-<p class="sub">Progresso de cada casa no plano de treinamento — etapas concluídas, percentual e
-última atividade. Quem registra é o chefe de cada casa, em
-<a href="plano.html">Plano de treino</a>; esta é a visão da coordenação, casa a casa.</p>
+<p class="sub">Progresso por bartender em cada casa — etapas aprovadas, quem está estudando e
+última atividade. O aluno marca "Estudei"; o chefe aprova a etapa em
+<a href="plano.html">Plano de treino</a>. Esta é a visão da coordenação, casa a casa.</p>
 
 <div class="panel" id="ev-gate">
   <h2>Acesso restrito</h2>
@@ -170,21 +175,23 @@ window.exigirNivel = function (niveisOk, slug) {
 
   function desenha(d) {
     corpo.innerHTML = '';
-    var nomeEtapa = {};
-    d.etapas.forEach(function (e) { nomeEtapa[e.id] = e.nome; });
-    // Ordena por % desc — leitura de gestão: quem está na frente aparece primeiro.
-    var casas = d.casas.slice().sort(function (a, b) { return b.pct - a.pct; });
+    // Ordena por % da casa desc — quem está na frente aparece primeiro.
+    var casas = d.casas.slice().sort(function (a, b) { return b.pct_casa - a.pct_casa; });
 
-    // QW4 — resumo do grupo no topo (tudo derivado dos dados já carregados).
-    var media = casas.length ? Math.round(casas.reduce(function (s, c) { return s + c.pct; }, 0) / casas.length) : 0;
-    var completas = casas.filter(function (c) { return c.total && c.pct >= 100; }).length;
-    var seteDias = 0;
+    // Cada casa tem seu próprio tamanho de plano (o cardápio autoral varia), então
+    // o denominador de cada bartender é o total DA CASA dele (c.total).
+    var totalBart = 0, formados = 0, ativos7 = 0;
     casas.forEach(function (c) {
-      (c.registros || []).forEach(function (r) { var dd = diasDesde(r.em); if (dd !== null && dd <= 7) seteDias++; });
+      (c.pessoas || []).forEach(function (pp) {
+        totalBart++;
+        if (c.total && pp.aprovadas >= c.total) formados++;
+        var dd = diasDesde(pp.ultima); if (dd !== null && dd <= 7) ativos7++;
+      });
     });
+    var media = casas.length ? Math.round(casas.reduce(function (s, c) { return s + c.pct_casa; }, 0) / casas.length) : 0;
     var resumo = el('div', 'ev-resumo');
-    [[media + '%', 'média do grupo'], [completas + '/' + casas.length, 'casas em 100%'],
-     [String(seteDias), 'etapas nos últimos 7 dias']].forEach(function (par) {
+    [[media + '%', 'média das casas'], [formados + '/' + totalBart, 'bartenders formados'],
+     [String(ativos7), 'ativos (7 dias)']].forEach(function (par) {
       var c = el('div', 'c'); c.appendChild(el('div', 'v', par[0])); c.appendChild(el('div', 'l', par[1]));
       resumo.appendChild(c);
     });
@@ -194,35 +201,33 @@ window.exigirNivel = function (niveisOk, slug) {
       var card = el('div', 'ev-casa');
       var head = el('div', 'ev-head');
       head.appendChild(el('span', 'nome', c.nome));
-      var dd = diasDesde(c.ultima);
-      // QW4 — badge de casa parada: >14 dias sem atividade e ainda não 100%.
-      if (dd !== null && dd > 14 && c.pct < 100) {
-        head.appendChild(el('span', 'ev-parada', 'parada há ' + dd + ' dias'));
-      }
-      head.appendChild(el('span', 'pct', c.pct + '%'));
+      head.appendChild(el('span', 'pct', c.pct_casa + '%'));
       card.appendChild(head);
       var barra = el('div', 'ev-barra');
-      var fill = el('i');
-      fill.style.width = c.pct + '%';
-      barra.appendChild(fill);
-      card.appendChild(barra);
+      var fill = el('i'); fill.style.width = c.pct_casa + '%';
+      barra.appendChild(fill); card.appendChild(barra);
+      var pessoas = (c.pessoas || []).slice().sort(function (a, b) { return b.pct - a.pct; });
       card.appendChild(el('div', 'ev-meta',
-        c.concluidas + ' de ' + c.total + ' etapas' +
-        (c.ultima ? ' · última atividade ' + fmtData(c.ultima) : ' · nenhum registro ainda')));
-      if (c.registros.length) {
-        var tl = el('details', 'ev-tl');
-        tl.appendChild(el('summary', null, 'Ver etapas concluídas (' + c.registros.length + ')'));
-        var regs = c.registros.slice().sort(function (a, b) {
-          return (b.em || '') < (a.em || '') ? -1 : 1;
-        });
-        regs.forEach(function (r) {
+        pessoas.length + ' bartender' + (pessoas.length === 1 ? '' : 's') + ' · ' + c.total + ' etapas no plano'));
+      if (!pessoas.length) {
+        card.appendChild(el('div', 'ev-meta', 'Nenhum bartender com senha individual ainda.'));
+      } else {
+        pessoas.forEach(function (pp) {
           var linha = el('div', 'ev-reg');
-          linha.appendChild(el('span', null, nomeEtapa[r.etapa] || '(etapa removida do plano)'));
-          linha.appendChild(el('span', 'q', fmtData(r.em) +
-            (r.via === 'master' ? ' · registrado pela coordenação' : '')));
-          tl.appendChild(linha);
+          var esq = el('span', null, pp.pessoa);
+          var dd = diasDesde(pp.ultima);
+          if (dd !== null && dd > 14 && pp.aprovadas < c.total) {
+            var b = el('span', 'ev-parada', 'parada ' + dd + 'd'); b.style.marginLeft = '8px';
+            esq.appendChild(b);
+          }
+          linha.appendChild(esq);
+          var aguard = Math.max(0, pp.estudadas - pp.aprovadas);
+          var dir = pp.aprovadas + '/' + c.total + ' aprovadas' +
+            (aguard ? ' · ' + aguard + ' aguardando' : '') +
+            (pp.ultima ? ' · ' + fmtData(pp.ultima) : ' · sem atividade');
+          linha.appendChild(el('span', 'q', dir));
+          card.appendChild(linha);
         });
-        card.appendChild(tl);
       }
       corpo.appendChild(card);
     });
@@ -254,7 +259,7 @@ window.exigirNivel = function (niveisOk, slug) {
 })();
 </script>
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 10/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 11/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -265,6 +270,9 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   }
   function aplica() {
     var atual = nivelAtual();
+    // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz (equipe)
+    // no menu — o que muda pra ele é só o comportamento do Plano de treino.
+    if (atual === 'bartender') atual = 'equipe';
     // data-niveis = lista de nomes de nível (separados por espaço) que podem
     // ver aquele elemento — já vem pronta do Python (_niveis_permitidos),
     // cobrindo tanto a escada (equipe/chefe/coord) quanto os acessos

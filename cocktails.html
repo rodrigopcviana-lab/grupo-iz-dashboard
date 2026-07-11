@@ -60,7 +60,12 @@ window.irParaLogin = function (slug) {
 };
 window.exigirNivel = function (niveisOk, slug) {
   var s = window.sessaoLer();
-  if (s && niveisOk.indexOf(s.nivel) >= 0) return { ok: true, sessao: s };
+  // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz: passa em
+  // qualquer página que a equipe abre. Páginas de treino ainda listam
+  // 'bartender' explicitamente pra tratar o comportamento por pessoa.
+  var efet = (s && s.nivel === 'bartender' && niveisOk.indexOf('bartender') < 0 &&
+              niveisOk.indexOf('equipe') >= 0) ? 'equipe' : (s ? s.nivel : null);
+  if (s && (niveisOk.indexOf(s.nivel) >= 0 || niveisOk.indexOf(efet) >= 0)) return { ok: true, sessao: s };
   if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
   return { ok: false, nivelAtual: s.nivel };
 };
@@ -618,7 +623,7 @@ Agua com gás</li></ul><div class="metas"><p><svg class="ic-copo" viewBox="0 0 2
 </script>
 
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 10/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 11/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -629,6 +634,9 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   }
   function aplica() {
     var atual = nivelAtual();
+    // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz (equipe)
+    // no menu — o que muda pra ele é só o comportamento do Plano de treino.
+    if (atual === 'bartender') atual = 'equipe';
     // data-niveis = lista de nomes de nível (separados por espaço) que podem
     // ver aquele elemento — já vem pronta do Python (_niveis_permitidos),
     // cobrindo tanto a escada (equipe/chefe/coord) quanto os acessos
