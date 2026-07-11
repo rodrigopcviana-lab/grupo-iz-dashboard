@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bares IZ">
 </head>
 <body>
+
 <header class="topo">
 <h1 class="marca">Portal dos Bares</h1>
 <div class="kicker">GRUPO IZ</div>
@@ -442,6 +443,9 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     });
     var txt = document.getElementById('nivel-pill-txt');
     if (txt) txt.textContent = LABEL[atual] || LABEL.equipe;
+    // cor da pill acompanha o nível logado (CSS [data-nivel] em CSS_NIVEL)
+    var pill = document.getElementById('nivel-pill');
+    if (pill) pill.setAttribute('data-nivel', atual);
   }
   window.definirNivel = function (v) {
     try { localStorage.setItem('portal_nivel', v); } catch (e) {}

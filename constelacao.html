@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bares IZ">
 </head>
 <body>
+<a class="volta-mural" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
 <div class="marca">Portal dos Bares</div>
 <div class="kicker">GRUPO IZ</div>
@@ -145,6 +146,12 @@ window.exigirNivel = function (niveisOk, slug) {
 </div>
 
 <div id="cs-corpo" style="display:none">
+  <div class="cs-chips" style="margin:0 0 10px">
+    <button class="cs-chip on" id="cs-tab-explorar">🔭 Constelação</button>
+    <button class="cs-chip" id="cs-tab-bancada">🍸 Bancada</button>
+  </div>
+
+  <div id="cs-explorar">
   <div class="cs-busca">
     <input type="search" id="cs-q" placeholder="Buscar um sabor — melancia, café, hortelã…" autocomplete="off">
     <div class="cs-sug" id="cs-sug" style="display:none"></div>
@@ -167,6 +174,16 @@ window.exigirNivel = function (niveisOk, slug) {
       <button class="cs-chip" id="cs-f-tudo">tudo</button>
     </div>
     <div id="cs-carta"></div>
+  </div>
+  </div>
+
+  <div id="cs-bancada" style="display:none">
+    <p class="sub" style="margin:0 0 10px">Abra um autoral da casa ou um clássico e veja o que o livro diz sobre os ingredientes — sem gastar dose.</p>
+    <div id="cs-banc-lista"></div>
+    <div id="cs-banc-item" style="display:none">
+      <button class="cs-volta" id="cs-banc-volta">← voltar</button>
+      <div id="cs-banc-detalhe"></div>
+    </div>
   </div>
 </div>
 
@@ -210,11 +227,106 @@ window.exigirNivel = function (niveisOk, slug) {
     corpo.style.display = '';
     api('/sabores').then(function (idx) {
       IDX = idx;
-      montaFams(); montaDupla(); montaBusca();
+      montaFams(); montaDupla(); montaBusca(); montaAbas();
     }).catch(function (e) {
       corpo.innerHTML = '<p class="sub">O grafo de sabores ainda não foi publicado (' + e.message + '). Avise o Rodrigo.</p>';
     });
   }
+
+  // ---- Bancada (E4, sem IA): carta da casa + clássicos, "o livro diz" ----
+  function montaAbas() {
+    var tExplorar = document.getElementById('cs-tab-explorar');
+    var tBancada = document.getElementById('cs-tab-bancada');
+    var pExplorar = document.getElementById('cs-explorar');
+    var pBancada = document.getElementById('cs-bancada');
+    var bancadaCarregada = false;
+    tExplorar.onclick = function () {
+      tExplorar.classList.add('on'); tBancada.classList.remove('on');
+      pExplorar.style.display = ''; pBancada.style.display = 'none';
+    };
+    tBancada.onclick = function () {
+      tBancada.classList.add('on'); tExplorar.classList.remove('on');
+      pExplorar.style.display = 'none'; pBancada.style.display = '';
+      if (!bancadaCarregada) { bancadaCarregada = true; carregaBancada(); }
+    };
+  }
+
+  function carregaBancada() {
+    var lista = document.getElementById('cs-banc-lista');
+    lista.innerHTML = '<p class="sub">carregando…</p>';
+    var s = sessaoAtual();
+    var casa = (s && s.casa && s.casa !== 'coordenacao') ? s.casa : null;
+    var pedidos = [api('/classicos').catch(function () { return null; })];
+    if (casa) pedidos.push(api('/carta/' + casa).catch(function () { return null; }));
+    Promise.all(pedidos).then(function (r) {
+      var classicos = r[0], autorais = r[1] || [];
+      var html = '';
+      if (casa && autorais.length) {
+        html += '<h2 style="font-size:15px;margin:10px 0 6px">Autorais da casa</h2><div class="cs-chips">';
+        autorais.forEach(function (d, i) {
+          html += '<button class="cs-chip" data-au="' + i + '">' + esc(d.nome) + '</button>';
+        });
+        html += '</div>';
+      } else if (!casa) {
+        html += '<p class="sub" style="font-size:12.5px">sessão de coordenação: entre pela senha de uma casa pra ver os autorais dela.</p>';
+      }
+      if (classicos) {
+        classicos.raizes.forEach(function (raiz) {
+          html += '<h2 style="font-size:15px;margin:14px 0 4px">' + esc(raiz.nome) + '</h2>' +
+            '<p class="sub" style="margin:0 0 6px;font-size:12px">' + esc(raiz.esqueleto) + '</p><div class="cs-chips">';
+          raiz.membros.forEach(function (m, i) {
+            html += '<button class="cs-chip" data-cl="' + raiz.id + ':' + i + '">' + esc(m.nome) + '</button>';
+          });
+          html += '</div>';
+        });
+      }
+      lista.innerHTML = html || '<p class="sub">bancada ainda sem dado publicado.</p>';
+      Array.prototype.forEach.call(lista.querySelectorAll('[data-au]'), function (b) {
+        b.onclick = function () { abreBanc(autorais[+b.dataset.au].nome, autorais[+b.dataset.au].ingredientes, autorais[+b.dataset.au].sabores, autorais[+b.dataset.au].categoria); };
+      });
+      Array.prototype.forEach.call(lista.querySelectorAll('[data-cl]'), function (b) {
+        b.onclick = function () {
+          var p = b.dataset.cl.split(':'); var raiz = classicos.raizes.find(function (r) { return r.id === p[0]; });
+          var m = raiz.membros[+p[1]];
+          abreBanc(m.nome, m.spec.map(function (x) { return x[1] + 'ml ' + x[0]; }), m.sabores, raiz.nome);
+        };
+      });
+    });
+  }
+
+  function abreBanc(nome, ingredientes, saborIds, categoria) {
+    document.getElementById('cs-banc-lista').parentElement.querySelector('#cs-banc-lista').style.display = 'none';
+    document.getElementById('cs-banc-item').style.display = '';
+    var det = document.getElementById('cs-banc-detalhe');
+    det.innerHTML = '<h2 style="font-size:18px;margin:8px 0 2px">' + esc(nome) + '</h2>' +
+      '<p class="sub" style="margin:0 0 8px">' + esc(categoria || '') + '</p>' +
+      '<div class="cs-chips" style="margin-bottom:10px">' + ingredientes.map(function (i) {
+        return '<span class="cs-chip dim" style="cursor:default">' + esc(i) + '</span>';
+      }).join('') + '</div><div id="cs-banc-livro"><p class="sub" style="font-size:12px">consultando o livro…</p></div>';
+    var livro = document.getElementById('cs-banc-livro');
+    if (!saborIds || !saborIds.length) { livro.innerHTML = '<p class="sub" style="font-size:12.5px">nenhum ingrediente mapeado no grafo de sabores.</p>'; return; }
+    Promise.all(saborIds.map(function (id) { return carrega(id).catch(function () { return null; }); })).then(function (sabs) {
+      var html = '<h3 style="font-size:13px;margin:4px 0 6px;color:var(--sub);letter-spacing:.04em;text-transform:uppercase">📖 o livro diz</h3>';
+      sabs.filter(Boolean).forEach(function (sab) {
+        var pares = sab.pares.filter(function (p) { return p.bar; }).slice(0, 3);
+        if (!pares.length) return;
+        html += '<p style="font-size:13.5px;margin:6px 0"><b>' + esc(sab.nome) + '</b> combina com ' +
+          pares.map(function (p) { return '<a href="#" data-abre="' + p.com + '" style="color:var(--acc)">' + esc(p.nome) + '</a>'; }).join(', ') + '</p>';
+      });
+      livro.innerHTML = html || '<p class="sub" style="font-size:12.5px">sem pares de bar registrados pra esses ingredientes.</p>';
+      Array.prototype.forEach.call(livro.querySelectorAll('[data-abre]'), function (a) {
+        a.onclick = function (ev) {
+          ev.preventDefault();
+          document.getElementById('cs-tab-explorar').click();
+          abre(a.dataset.abre);
+        };
+      });
+    });
+  }
+  document.getElementById('cs-banc-volta').onclick = function () {
+    document.getElementById('cs-banc-item').style.display = 'none';
+    document.getElementById('cs-banc-lista').style.display = '';
+  };
 
   // ---- gate ----
   var s0 = sessaoAtual();
@@ -432,6 +544,9 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     });
     var txt = document.getElementById('nivel-pill-txt');
     if (txt) txt.textContent = LABEL[atual] || LABEL.equipe;
+    // cor da pill acompanha o nível logado (CSS [data-nivel] em CSS_NIVEL)
+    var pill = document.getElementById('nivel-pill');
+    if (pill) pill.setAttribute('data-nivel', atual);
   }
   window.definirNivel = function (v) {
     try { localStorage.setItem('portal_nivel', v); } catch (e) {}

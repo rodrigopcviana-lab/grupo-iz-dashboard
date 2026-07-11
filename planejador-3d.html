@@ -12,6 +12,12 @@
     --bg: #16130f; --card: #211c15; --border: #3a3428;
     --text: #f3ede2; --text-2: #c3baa9; --text-3: #8f8672;
     --acc: #d0a352; --acc-txt: #241a06; --verde: #9fe1cb; --amarelo: #e0b05c;
+    /* espelho dos tokens de casa/tipo/urgência do :root principal (CSS_NIVEL
+       referencia --casa-*) — manter em sincronia com o CSS lá de cima */
+    --casa-iz: #d0a352; --casa-1929: #c9705a; --casa-gra: #8fd0a5;
+    --casa-famu: #a58fd0; --casa-fulles: #6fa8dc; --casa-nip: #d98fb0;
+    --tipo-ocorrencia: #e07a52; --tipo-solicitacao: #4fbf92;
+    --urg-urgente: #e24b4a; --urg-hoje: var(--amarelo); --urg-aguardar: var(--verde);
     --serif: Georgia, "Times New Roman", serif;
     color-scheme: dark;
   }
@@ -57,10 +63,27 @@
   .nav-sec .grp-link .lk .ic { color: var(--amarelo); }
 
   
+  /* Chip "← Mural" no topo de toda página (menos a home, que É o mural) —
+     mora aqui (e não no CSS base) porque pagina_iframe() também o usa e só
+     interpola CSS_NAV + CSS_NIVEL. Mockup E0 v2 aprovado em 2026-07-11. */
+  .volta-mural { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
+                 color: var(--text-2); text-decoration: none; border: 1px solid var(--border);
+                 border-radius: 999px; padding: 4px 12px; margin-bottom: 8px; }
+  .volta-mural svg { width: 13px; height: 13px; }
+  .volta-mural:hover { border-color: var(--acc); color: var(--acc); }
+  /* Cor por nível (mockup E0 v2/Q13): fonte única é este CSS, chaveado pelo
+     data-nivel que o markup da home já tinha; a pill recebe data-nivel via
+     JS_NIVEL. --nivel-cor cai no dourado padrão quando não definida. */
+  [data-nivel="equipe"] { --nivel-cor: var(--casa-iz); }
+  [data-nivel="chefe"] { --nivel-cor: var(--casa-1929); }
+  [data-nivel="coord"] { --nivel-cor: var(--casa-fulles); }
+  [data-nivel="rh"] { --nivel-cor: var(--casa-famu); }
+  [data-nivel="controladoria"] { --nivel-cor: var(--casa-gra); }
+  [data-nivel="dev_cocktails"] { --nivel-cor: var(--casa-nip); }
   .nivel-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--card);
                 border: 1px solid var(--border); border-radius: 999px; padding: 6px 6px 6px 12px;
                 font-size: 12px; color: var(--text-2); text-decoration: none; margin-top: 8px; }
-  .nivel-pill b { color: var(--acc); font-weight: 600; }
+  .nivel-pill b { color: var(--nivel-cor, var(--acc)); font-weight: 600; }
   .nivel-pill .np-tr { background: #2c2416; color: var(--acc); border-radius: 999px; padding: 4px 10px;
                        font-size: 11.5px; font-weight: 600; white-space: nowrap; }
   .nivel-pill:hover { border-color: var(--acc); }
@@ -68,17 +91,21 @@
   .niveis { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 4px; }
   .nivel-btn { display: flex; align-items: center; gap: 14px; text-align: left; background: var(--card);
                border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+               border-left: 4px solid var(--nivel-cor, var(--border));
                font: inherit; color: var(--text); width: 100%; cursor: pointer;
                transition: border-color .15s, background .15s, transform .05s; }
-  .nivel-btn:hover { border-color: var(--acc); background: #262019; }
+  .nivel-btn:hover { border-color: var(--acc); background: #262019;
+                     border-left-color: var(--nivel-cor, var(--acc)); }
   .nivel-btn:active { transform: scale(.995); }
   .nivel-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
-  .nivel-btn.aberto { border-color: var(--acc); background: #262019; }
+  .nivel-btn.aberto { border-color: var(--acc); background: #262019;
+                      border-left-color: var(--nivel-cor, var(--acc)); }
   .nivel-btn .ico { flex: none; width: 42px; height: 42px; border-radius: 11px; background: var(--bg);
                      border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
-  .nivel-btn .ico svg { width: 20px; height: 20px; color: var(--acc); }
+  .nivel-btn .ico svg { width: 20px; height: 20px; color: var(--nivel-cor, var(--acc)); }
   .nivel-btn .txt .t { font-family: var(--serif); font-size: 16px; margin-bottom: 1px; }
-  .nivel-btn .txt .d { font-size: 12px; color: var(--text-3); }
+  /* contraste do subtítulo subiu (diretriz do Rodrigo no mockup E0 v2) */
+  .nivel-btn .txt .d { font-size: 12.5px; color: var(--text-2); }
   .nivel-btn .seta { margin-left: auto; flex: none; color: var(--text-3); font-size: 24px; line-height: 1;
                      transition: transform .15s, color .15s; }
   .nivel-btn:hover .seta { color: var(--acc); }
@@ -114,6 +141,7 @@
 </head>
 <body>
 <div class="topo-wrap">
+<a class="volta-mural" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
 <h1 class="marca">Portal dos Bares</h1>
 <div class="kicker">GRUPO IZ</div>
@@ -146,6 +174,9 @@
     });
     var txt = document.getElementById('nivel-pill-txt');
     if (txt) txt.textContent = LABEL[atual] || LABEL.equipe;
+    // cor da pill acompanha o nível logado (CSS [data-nivel] em CSS_NIVEL)
+    var pill = document.getElementById('nivel-pill');
+    if (pill) pill.setAttribute('data-nivel', atual);
   }
   window.definirNivel = function (v) {
     try { localStorage.setItem('portal_nivel', v); } catch (e) {}
