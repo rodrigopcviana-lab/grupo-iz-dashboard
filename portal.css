@@ -293,7 +293,6 @@
   [data-nivel="coord"] { --nivel-cor: var(--casa-fulles); }
   [data-nivel="rh"] { --nivel-cor: var(--casa-famu); }
   [data-nivel="controladoria"] { --nivel-cor: var(--casa-gra); }
-  [data-nivel="dev_cocktails"] { --nivel-cor: var(--casa-nip); }
   .nivel-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--card);
                 border: 1px solid var(--border); border-radius: 999px; padding: 6px 6px 6px 12px;
                 font-size: 12px; color: var(--text-2); text-decoration: none; margin-top: 8px; }
@@ -302,30 +301,41 @@
                        font-size: 11.5px; font-weight: 600; white-space: nowrap; }
   .nivel-pill:hover { border-color: var(--acc); }
   .nivel-pill:hover .np-tr { background: var(--acc); color: var(--acc-txt); }
-  .niveis { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 4px; }
-  .nivel-btn { display: flex; align-items: center; gap: 14px; text-align: left; background: var(--card);
-               border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
-               border-left: 4px solid var(--nivel-cor, var(--border));
+  /* Escolha de nível (redesenho 2026-07-11, mockup v3b aprovado pelo
+     Rodrigo): cards compactos com a cor do nível em gradiente BEM sutil
+     (7% de mistura) — o objetivo é que a cor identifique o nível sem os
+     5 cards empilhados formarem um "arco-íris" carregado. */
+  .niveis { display: flex; flex-direction: column; gap: 7px; margin: 10px 0 4px; }
+  .niveis-label { display: flex; align-items: center; gap: 10px; font-size: 10px; font-weight: 700;
+                  letter-spacing: .14em; color: var(--text-3); margin: 12px 2px 1px; }
+  .niveis-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .niveis-label:first-child { margin-top: 2px; }
+  .nivel-btn { display: flex; align-items: center; gap: 12px; text-align: left;
+               background: linear-gradient(135deg,
+                 color-mix(in srgb, var(--nivel-cor, var(--border)) 7%, var(--card)), var(--card) 72%);
+               border: 1px solid color-mix(in srgb, var(--nivel-cor, var(--border)) 22%, var(--border));
+               border-left: 3px solid var(--nivel-cor, var(--border)); border-radius: 12px; padding: 10px 13px;
                font: inherit; color: var(--text); width: 100%; cursor: pointer;
                transition: border-color .15s, background .15s, transform .05s; }
-  .nivel-btn:hover { border-color: var(--acc); background: #262019;
-                     border-left-color: var(--nivel-cor, var(--acc)); }
+  .nivel-btn:hover { border-color: var(--nivel-cor, var(--acc)); }
   .nivel-btn:active { transform: scale(.995); }
   .nivel-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
-  .nivel-btn.aberto { border-color: var(--acc); background: #262019;
-                      border-left-color: var(--nivel-cor, var(--acc)); }
-  .nivel-btn .ico { flex: none; width: 42px; height: 42px; border-radius: 11px; background: var(--bg);
-                     border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
-  .nivel-btn .ico svg { width: 20px; height: 20px; color: var(--nivel-cor, var(--acc)); }
-  .nivel-btn .txt .t { font-family: var(--serif); font-size: 16px; margin-bottom: 1px; }
+  .nivel-btn.aberto { border-color: var(--nivel-cor, var(--acc));
+                      border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .nivel-btn .ico { flex: none; width: 34px; height: 34px; border-radius: 9px;
+                     background: color-mix(in srgb, var(--nivel-cor, var(--acc)) 14%, var(--bg));
+                     display: flex; align-items: center; justify-content: center; }
+  .nivel-btn .ico svg { width: 17px; height: 17px; color: var(--nivel-cor, var(--acc)); }
+  .nivel-btn .txt .t { font-family: var(--serif); font-size: 14.5px; margin-bottom: 1px; }
   /* contraste do subtítulo subiu (diretriz do Rodrigo no mockup E0 v2) */
-  .nivel-btn .txt .d { font-size: 12.5px; color: var(--text-2); }
-  .nivel-btn .seta { margin-left: auto; flex: none; color: var(--text-3); font-size: 24px; line-height: 1;
-                     transition: transform .15s, color .15s; }
-  .nivel-btn:hover .seta { color: var(--acc); }
-  .nivel-btn.aberto .seta { color: var(--acc); transform: rotate(90deg); }
-  .nivel-gate { margin: 4px 0 8px; }
-  .nivel-gate b { color: var(--acc); }
+  .nivel-btn .txt .d { font-size: 11.5px; color: var(--text-2); }
+  .nivel-btn .seta { margin-left: auto; flex: none; color: var(--nivel-cor, var(--text-3)); font-size: 20px;
+                     line-height: 1; transition: transform .15s; }
+  .nivel-btn.aberto .seta { transform: rotate(90deg); }
+  .nivel-gate { margin: 0 0 7px; border: 1px solid color-mix(in srgb, var(--nivel-cor, var(--acc)) 35%, var(--border));
+                border-radius: 12px; padding: 11px 13px 13px; background: var(--card); }
+  .nivel-btn.aberto + .nivel-gate { border-top: none; border-top-left-radius: 0; border-top-right-radius: 0; }
+  .nivel-gate b { color: var(--nivel-cor, var(--acc)); }
   details.explica-niveis { margin: 8px 0 20px; background: var(--card); border: 1px solid var(--border);
                             border-radius: 12px; overflow: hidden; }
   details.explica-niveis summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex;
