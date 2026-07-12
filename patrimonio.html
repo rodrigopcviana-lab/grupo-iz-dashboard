@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16130f">
+<title>Controle de Patrimônio · Portal dos Bares — Grupo IZ</title>
+<link rel="stylesheet" href="portal.css">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bares IZ">
+</head>
+<body>
+<a class="volta-mural" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
+<header class="topo">
+<div class="marca">Portal dos Bares</div>
+<div class="kicker">GRUPO IZ</div>
+<div class="topo-linha">
+<a class="nivel-pill" id="nivel-pill" href="index.html#nivel">Nível: <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-tr">Trocar</span></a>
+
+<button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar receita" title="Buscar receita (/)">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4.5 4.5"/></svg>
+</button>
+<div id="busca-global-ov" role="dialog" aria-modal="true" aria-label="Buscar receita">
+<div class="bg-caixa">
+<div class="bg-topo">
+<input id="bg-input" type="search" placeholder="Nome do drink…" autocomplete="off">
+<button class="bg-fechar" id="bg-fechar" type="button" aria-label="Fechar busca">&times;</button>
+</div>
+<div class="bg-res" id="bg-res"><p class="bg-dica">Digite ao menos 2 letras.</p></div>
+</div>
+</div>
+
+</div>
+</header>
+
+<script>
+window.SESSAO_LS = 'portal_sessao';
+window.sessaoLer = function () {
+  try {
+    var raw = localStorage.getItem(window.SESSAO_LS);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    return s;
+  } catch (e) { return null; }
+};
+// casa (Missão 5, 2026-07-10): slug da casa do chefe logado, "*" pra
+// master/coord/boss, null pra níveis sem casa própria. Opcional na chamada
+// pra não quebrar quem ainda chama sessaoSalvar(nivel, token, exp) direto.
+window.sessaoSalvar = function (nivel, token, exp, casa) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null })); } catch (e) {}
+};
+window.sessaoLimpar = function () {
+  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
+};
+window.loginSenha = function (worker, senha) {
+  return fetch(worker + '/api/nivel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senha: senha }),
+  }).then(function (r) {
+    if (r.status === 401) return { ok: false, status: 401 };
+    if (!r.ok) return { ok: false, status: r.status };
+    return r.json().then(function (d) {
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa);
+      return { ok: true, nivel: d.nivel, casa: d.casa, token: d.token };
+    });
+  }).catch(function () { return { ok: false, status: 0 }; });
+};
+// Gate padrão das páginas protegidas (2026-07-09): a senha é digitada SÓ na
+// home. Sem sessão -> manda pra home logar, com volta automática pra cá.
+// Sessão de nível insuficiente -> NÃO redireciona (senão a home logada
+// devolveria pra cá e viraria loop); a página mostra a mensagem e o caminho
+// é a pill "Trocar acesso". Só para páginas na raiz do portal — as cascas
+// de /vendas/ (repo do site) replicam a própria versão com '../'.
+window.irParaLogin = function (slug) {
+  location.replace('index.html?volta=' + encodeURIComponent(slug) + '#nivel');
+};
+window.exigirNivel = function (niveisOk, slug) {
+  var s = window.sessaoLer();
+  // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz: passa em
+  // qualquer página que a equipe abre. Páginas de treino ainda listam
+  // 'bartender' explicitamente pra tratar o comportamento por pessoa.
+  var efet = (s && s.nivel === 'bartender' && niveisOk.indexOf('bartender') < 0 &&
+              niveisOk.indexOf('equipe') >= 0) ? 'equipe' : (s ? s.nivel : null);
+  if (s && (niveisOk.indexOf(s.nivel) >= 0 || niveisOk.indexOf(efet) >= 0)) return { ok: true, sessao: s };
+  if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
+  return { ok: false, nivelAtual: s.nivel };
+};
+</script>
+
+<nav id="nav-principal" class="nav-sec"><details class="grp" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Operação</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="index.html" class="grp-link" data-niveis="equipe chefe coord rh controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a><a href="eventos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a><a href="contagem.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contagem de insumos</span></a><a href="contagem-copos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg><span>Contagem de copos</span></a><a href="turno.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>Relatório de turno</span></a><a href="rotinas.html" class="grp-link" data-niveis="equipe chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Rotinas</span></a><a href="producao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Produção possível</span></a></div></details><details class="grp" data-niveis="chefe coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Bar</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="cocktails.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas técnicas</span></a><a href="treinamentos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Treinamentos</span></a><a href="calculadora.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Calculadora PB</span></a><a href="lab.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Lab de Drinks</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="constelacao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Constelação de Sabores</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="lab-proposta.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Lab 2.0 — proposta</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="planejador-3d.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Planejador 3D</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Pessoas</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="equipe.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Equipe</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="metas.html" class="grp-link" data-niveis="equipe chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Metas &amp; Desenv.</span></a><a href="contatos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg><span>Contatos</span></a><a href="regras.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Escala &amp; BH</span></a></div></details><details class="grp on" data-niveis="chefe controladoria coord"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Gestão</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="demandas.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central de Demandas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="curva-abc.html" class="grp-link" data-niveis="chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Ranking</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="consumo.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Consumo</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="vendas/index.html" class="grp-link" data-niveis="controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg><span>Vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="rentabilidade.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Rentabilidade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="contratos.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contratos On Trade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="patrimonio.html" class="grp-link on" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Controle de Patrimônio</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="evolucao.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Evolução do treino</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></details></nav>
+
+<style>
+  .pr-mini-wrap { display: none; }
+  .pr-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin: 0 0 16px; }
+  a.prm-card { position: relative; display: flex; align-items: center; gap: 8px; border-radius: 11px;
+               padding: 8px 10px 8px 11px; text-decoration: none; color: var(--text); min-height: 38px;
+               min-width: 0; border: 1.5px solid; overflow: hidden; transition: filter .15s; }
+  a.prm-card:hover { filter: brightness(1.12); }
+  a.prm-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .prm-card.prm-oc { background: linear-gradient(135deg,#33201d,#221512); border-color: #e07a52; }
+  .prm-card.prm-oc::before { background: #f28a63; }
+  .prm-card.prm-so { background: linear-gradient(135deg,#152a23,#121b17); border-color: #4fbf92; }
+  .prm-card.prm-so::before { background: #7fe6bd; }
+  .prm-card.prm-central { grid-column: 1 / -1; background: linear-gradient(135deg,#3d3320,#241f13); border-color: #d0a352; }
+  .prm-card.prm-central::before { background: #e0c088; }
+  a.prm-card .prm-chip { width: 26px; height: 26px; border-radius: 8px; display: flex;
+                          align-items: center; justify-content: center; flex: none; }
+  a.prm-card .prm-chip svg { width: 14px; height: 14px; display: block; flex: none; }
+  .prm-card.prm-oc .prm-chip { background: rgba(220,154,142,.16); color: #f0a58f; }
+  .prm-card.prm-so .prm-chip { background: rgba(159,225,203,.14); color: #9fe1cb; }
+  .prm-card.prm-central .prm-chip { background: rgba(208,163,82,.18); color: #e0c088; }
+  .prm-card .prm-t { font-size: 12.5px; font-weight: 600; }
+</style>
+<div class="pr-mini-wrap" id="pr-mini-wrap">
+  <div class="pr-mini">
+    <a class="prm-card prm-oc" href="registro.html?tipo=ocorrencia">
+      <span class="prm-chip"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg></span><span class="prm-t">Ocorrência</span></a>
+    <a class="prm-card prm-so" href="registro.html?tipo=solicitacao">
+      <span class="prm-chip"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><span class="prm-t">Solicitação</span></a>
+    <a class="prm-card prm-central" id="prm-central-card" href="demandas.html" style="display:none">
+      <span class="prm-chip"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><span class="prm-t">Central de Demandas</span></a>
+  </div>
+</div>
+<script>(function(){
+  try {
+    var s = window.sessaoLer && window.sessaoLer();
+    if (s) document.getElementById('pr-mini-wrap').style.display = 'block';
+    var okCentral = s && ['chefe', 'coord', 'controladoria'].indexOf(s.nivel) !== -1 && !false;
+    var elC = document.getElementById('prm-central-card');
+    if (okCentral && elC) elC.style.display = '';
+  } catch (e) {}
+})();</script>
+
+
+<h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg> Controle de Patrimônio</h1>
+<p class="sub">Contagens de copos e taças, utensílios e equipamentos por casa — snapshot atual e histórico mensal.</p>
+
+<div class="panel" id="pt-gate">
+  <h2>Acesso restrito</h2>
+  <p class="sub" id="pt-msg" style="margin:4px 0 0">Verificando seu acesso…</p>
+</div>
+
+<div id="pt-corpo" style="display:none">
+<style>
+  .pt-controles { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .pt-controles select { padding:11px 10px; font-size:14px; border-radius:10px;
+      border:1px solid var(--border); background:var(--card); color:var(--text); }
+  #pt-abas { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  #pt-abas .chip { padding:8px 14px; border-radius:999px; border:1px solid var(--border);
+      background:var(--card); color:var(--text-2); font-size:13px; cursor:pointer; }
+  #pt-abas .chip.on { background:var(--acc); color:var(--acc-txt); border-color:var(--acc); font-weight:600; }
+  .pt-tabela { width:100%; border-collapse:collapse; font-size:13.5px; }
+  .pt-tabela th, .pt-tabela td { padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
+  .pt-tabela th { color:var(--text-3); font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+  .pt-tabela td:first-child, .pt-tabela th:first-child { white-space:normal; }
+  #pt-tabela-wrap { overflow-x:auto; }
+  .pt-vazio { text-align:center; color:var(--text-3); padding:30px 10px; }
+</style>
+
+<div class="pt-controles">
+  <select id="pt-casa"><option value="">Escolha a casa…</option></select>
+  <select id="pt-mes" style="display:none"></select>
+</div>
+
+<div id="pt-abas"></div>
+<p class="pt-vazio" id="pt-vazio" style="display:none"></p>
+<div id="pt-tabela-wrap"><div id="pt-painel"></div></div>
+</div><!-- pt-corpo -->
+
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var CASAS = {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "enttres": "Enttres", "fulles": "Fulles", "nip": "NIP"};
+  var NIVEIS_OK = ['chefe', 'coord'];
+  var SLUG = 'patrimonio.html';
+  var msg = document.getElementById('pt-msg');
+  var gate = document.getElementById('pt-gate');
+  var wrap = document.getElementById('pt-corpo');
+
+  if (!WORKER) {
+    gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">Controle de Patrimônio ainda não foi ativado.</p>';
+    return;
+  }
+
+  var token = null;
+  var estado = { casa: '', categoria: null, mes: null };
+  var selCasa = document.getElementById('pt-casa');
+  var selMes = document.getElementById('pt-mes');
+  var abas = document.getElementById('pt-abas');
+  var painel = document.getElementById('pt-painel');
+  var vazio = document.getElementById('pt-vazio');
+
+  Object.keys(CASAS).forEach(function (slug) {
+    var o = document.createElement('option'); o.value = slug; o.textContent = CASAS[slug];
+    selCasa.appendChild(o);
+  });
+
+  function fmtData(iso) {
+    if (!iso) return '—';
+    var p = iso.split('T')[0].split('-');
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+
+  function api(rota) {
+    return fetch(WORKER + rota, { headers: { 'X-Token': token } }).then(function (r) {
+      if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
+      if (!r.ok) throw new Error('status ' + r.status);
+      return r.json();
+    });
+  }
+
+  function limpaPainel() {
+    abas.innerHTML = ''; painel.innerHTML = '';
+    selMes.style.display = 'none'; selMes.innerHTML = '';
+    vazio.style.display = 'none';
+  }
+
+  function carregaCasa(slug) {
+    estado.casa = slug; estado.categoria = null; estado.mes = null;
+    limpaPainel();
+    if (!slug) return;
+    painel.textContent = 'Carregando…';
+    api('/api/patrimonio?casa=' + encodeURIComponent(slug)).then(function (d) {
+      if (!d) return;
+      painel.textContent = '';
+      if (d.sem_dado || !d.categorias.length) {
+        vazio.textContent = 'Ainda sem inventário estruturado no Notion para ' + (CASAS[slug] || slug) + '.';
+        vazio.style.display = '';
+        return;
+      }
+      d.categorias.forEach(function (cat, i) {
+        var btn = document.createElement('button'); btn.type = 'button';
+        btn.className = 'chip' + (i === 0 ? ' on' : '');
+        btn.textContent = cat.nome;
+        btn.onclick = function () {
+          Array.prototype.forEach.call(abas.children, function (c) { c.classList.remove('on'); });
+          btn.classList.add('on');
+          carregaCategoria(cat.page_id, null);
+        };
+        abas.appendChild(btn);
+      });
+      carregaCategoria(d.categorias[0].page_id, null);
+    }).catch(function () { painel.textContent = 'Erro ao carregar. Tente de novo.'; });
+  }
+
+  function carregaCategoria(categoriaId, mesId) {
+    estado.categoria = categoriaId;
+    painel.textContent = 'Carregando…';
+    var rota = '/api/patrimonio/mes?casa=' + encodeURIComponent(estado.casa) + '&categoria=' + encodeURIComponent(categoriaId);
+    if (mesId) rota += '&mes=' + encodeURIComponent(mesId);
+    api(rota).then(function (d) {
+      if (!d) return;
+      estado.mes = d.mes ? d.mes.page_id : null;
+      desenhaMeses(d.meses || []);
+      desenhaTabela(d);
+    }).catch(function () { painel.textContent = 'Erro ao carregar. Tente de novo.'; });
+  }
+
+  function desenhaMeses(meses) {
+    selMes.innerHTML = '';
+    if (!meses.length) { selMes.style.display = 'none'; return; }
+    meses.forEach(function (m) {
+      var o = document.createElement('option'); o.value = m.page_id;
+      var rotulo = fmtData(m.data) + (m.status && m.status !== 'Concluído' ? ' (' + m.status + ')' : '');
+      o.textContent = rotulo;
+      if (m.page_id === estado.mes) o.selected = true;
+      selMes.appendChild(o);
+    });
+    selMes.style.display = '';
+    selMes.onchange = function () { carregaCategoria(estado.categoria, selMes.value); };
+  }
+
+  function desenhaTabela(d) {
+    painel.innerHTML = '';
+    if (!d.linhas || !d.linhas.length) {
+      var p = document.createElement('p'); p.className = 'sub'; p.textContent = 'Nenhum item nessa sessão.';
+      painel.appendChild(p);
+      return;
+    }
+    var tabela = document.createElement('table'); tabela.className = 'pt-tabela';
+    var thead = document.createElement('thead'); var trh = document.createElement('tr');
+    var thNome = document.createElement('th'); thNome.textContent = 'Item'; trh.appendChild(thNome);
+    d.colunas.forEach(function (c) { var th = document.createElement('th'); th.textContent = c.nome; trh.appendChild(th); });
+    thead.appendChild(trh); tabela.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    d.linhas.forEach(function (linha) {
+      var tr = document.createElement('tr');
+      var tdNome = document.createElement('td'); tdNome.textContent = linha.nome; tr.appendChild(tdNome);
+      d.colunas.forEach(function (c) {
+        var td = document.createElement('td');
+        var v = linha.valores[c.nome];
+        if (Array.isArray(v)) td.textContent = v.join(', ') || '—';
+        else if (typeof v === 'boolean') td.textContent = v ? '✓' : '—';
+        else if (v === null || v === undefined || v === '') td.textContent = '—';
+        else td.textContent = String(v);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    tabela.appendChild(tbody);
+    painel.appendChild(tabela);
+  }
+
+  selCasa.onchange = function () { carregaCasa(selCasa.value); };
+
+  var r = window.exigirNivel(NIVEIS_OK, SLUG);
+  if (r.ok) {
+    token = r.sessao.token;
+    gate.style.display = 'none';
+    wrap.style.display = '';
+  } else if (!r.redirecionou) {
+    msg.innerHTML = 'Seu acesso atual não abre o Controle de Patrimônio. '
+      + 'Toque em <a href="index.html#nivel">Trocar acesso</a> para entrar com outra senha.';
+  }
+})();
+</script>
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 11/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+
+<script>
+(function () {
+  var LABEL = {"equipe": "Equipe de Bar", "chefe": "Chefe de Bar", "coord": "Coordenação", "rh": "RH", "controladoria": "Controladoria & Administração"};
+  function nivelAtual() {
+    try { return localStorage.getItem('portal_nivel') || 'equipe'; } catch (e) { return 'equipe'; }
+  }
+  function aplica() {
+    var atual = nivelAtual();
+    // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz (equipe)
+    // no menu — o que muda pra ele é só o comportamento do Plano de treino.
+    if (atual === 'bartender') atual = 'equipe';
+    // data-niveis = lista de nomes de nível (separados por espaço) que podem
+    // ver aquele elemento — já vem pronta do Python (_niveis_permitidos),
+    // cobrindo tanto a escada (equipe/chefe/coord) quanto os acessos
+    // paralelos (rh/controladoria). Aqui é só checar se o nível atual está
+    // na lista — nada de comparação numérica.
+    document.querySelectorAll('[data-niveis]').forEach(function (el) {
+      var lista = el.dataset.niveis ? el.dataset.niveis.split(' ') : [];
+      el.style.display = lista.indexOf(atual) >= 0 ? '' : 'none';
+    });
+    var txt = document.getElementById('nivel-pill-txt');
+    if (txt) txt.textContent = LABEL[atual] || LABEL.equipe;
+    // cor da pill acompanha o nível logado (CSS [data-nivel] em CSS_NIVEL)
+    var pill = document.getElementById('nivel-pill');
+    if (pill) pill.setAttribute('data-nivel', atual);
+  }
+  window.definirNivel = function (v) {
+    try { localStorage.setItem('portal_nivel', v); } catch (e) {}
+    aplica();
+    if (typeof window.onNivelDefinido === 'function') window.onNivelDefinido(v);
+  };
+  window.nivelAtual = nivelAtual;
+  aplica();
+})();
+</script>
+
+
+<script>
+(function () {
+  var grps = document.querySelectorAll('#nav-principal .grp');
+  grps.forEach(function (g) {
+    g.addEventListener('toggle', function () {
+      if (g.open) grps.forEach(function (o) { if (o !== g) o.open = false; });
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#nav-principal')) grps.forEach(function (g) { g.open = false; });
+  });
+})();
+</script>
+
+
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  if (!WORKER) return;
+  var CHAVE = 'geo_ok_ts', VALIDADE = 30 * 60 * 1000;
+  try {
+    var t = parseInt(sessionStorage.getItem(CHAVE) || '0', 10);
+    if (t && Date.now() - t < VALIDADE) return;
+  } catch (e) {}
+
+  function overlay(titulo, msg, mostrarBtn) {
+    var d = document.getElementById('geo-blk') || document.createElement('div');
+    d.id = 'geo-blk';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#16130f;color:#f3ede2;'
+      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+      + 'text-align:center;padding:32px;font-family:-apple-system,Segoe UI,Roboto,sans-serif';
+    d.innerHTML = '<div style="font-family:Georgia,serif;font-size:22px;margin-bottom:12px">'
+      + titulo + '</div><div style="max-width:420px;color:#c3baa9;line-height:1.5">' + msg + '</div>'
+      + (mostrarBtn ? '<button id="geo-retry" style="margin-top:22px;padding:12px 22px;border:none;'
+      + 'border-radius:999px;background:#d0a352;color:#241a06;font-weight:600;font-size:15px;'
+      + 'cursor:pointer">Tentar de novo</button>' : '');
+    if (!d.parentNode) document.body.appendChild(d);
+    var b = document.getElementById('geo-retry');
+    if (b) b.onclick = function () { verifica(); };
+  }
+  function libera() {
+    try { sessionStorage.setItem(CHAVE, String(Date.now())); } catch (e) {}
+    var d = document.getElementById('geo-blk');
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+
+  function checa(lat, lon) {
+    fetch(WORKER + '/api/geo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: lat, lon: lon }),
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.ok) libera();
+      else overlay('Fora de área',
+        'O Portal dos Bares só funciona dentro das casas do Grupo IZ. '
+        + 'Você precisa estar em uma delas para acessar.', true);
+    }).catch(function () { libera(); }); // rede falhou: não tranca
+  }
+
+  function verifica() {
+    overlay('Confirmando localização…', 'Só um instante.', false);
+    if (!navigator.geolocation) { libera(); return; }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { checa(pos.coords.latitude, pos.coords.longitude); },
+      function () {
+        overlay('Ative a localização',
+          'Para usar o portal no bar, permita o acesso à localização no seu '
+          + 'navegador e toque em “Tentar de novo”.', true);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }
+
+  // 1º toque no Worker SEM coordenadas: só pra saber se a cerca está ligada.
+  // Se desligada, para aqui — nenhum pedido de GPS aparece.
+  fetch(WORKER + '/api/geo', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.desativado) return;
+    verifica();
+  }).catch(function () {}); // rede falhou: não tranca
+})();
+</script>
+
+
+<script>
+(function () {
+  var COR = { iz: '#d0a352', '1929': '#c9705a', gra: '#8fd0a5', famu: '#a58fd0', fulles: '#6fa8dc', nip: '#d98fb0' };
+  var btn = document.getElementById('lupa-busca');
+  var ov = document.getElementById('busca-global-ov');
+  var input = document.getElementById('bg-input');
+  var res = document.getElementById('bg-res');
+  var fechar = document.getElementById('bg-fechar');
+  if (!btn || !ov) return;
+  var idx = null, carregando = false;
+
+  function semAcento(s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+
+  function carrega() {
+    if (idx || carregando) return;
+    carregando = true;
+    fetch('receitas_idx.json').then(function (r) { return r.json(); })
+      .then(function (d) { idx = d; if (input.value.trim().length >= 2) aplica(); })
+      .catch(function () { idx = []; res.innerHTML = '<p class="bg-vazio">Índice indisponível — ' +
+        '<a href="cocktails.html">abrir fichas técnicas</a>.</p>'; });
+  }
+
+  function marca(nome, q) {
+    var i = semAcento(nome).indexOf(q);
+    if (i < 0) return nome;
+    return nome.slice(0, i) + '<mark>' + nome.slice(i, i + q.length) + '</mark>' + nome.slice(i + q.length);
+  }
+
+  function aplica() {
+    var q = semAcento(input.value.trim());
+    if (q.length < 2) { res.innerHTML = '<p class="bg-dica">Digite ao menos 2 letras.</p>'; return; }
+    if (!idx) { res.innerHTML = '<p class="bg-dica">Carregando…</p>'; return; }
+    var achados = idx.filter(function (it) { return semAcento(it.n).indexOf(q) >= 0; }).slice(0, 8);
+    if (!achados.length) {
+      res.innerHTML = '<p class="bg-vazio">Nada com "' + input.value.trim() +
+        '" — <a href="cocktails.html">ver todas as fichas &rarr;</a></p>';
+      return;
+    }
+    res.innerHTML = '';
+    achados.forEach(function (it) {
+      var a = document.createElement('a');
+      a.className = 'bg-item'; a.href = 'cocktails.html#r-' + it.s;
+      var casas = (it.c || []).map(function (c) {
+        return '<i style="background:' + (COR[c] || '#8f8672') + '"></i>';
+      }).join('');
+      a.innerHTML = '<span class="nome">' + marca(it.n, q) + '</span><span class="bg-casas">' + casas + '</span>';
+      res.appendChild(a);
+    });
+  }
+
+  function abre() {
+    ov.classList.add('aberto');
+    document.body.style.overflow = 'hidden';
+    carrega();
+    setTimeout(function () { input.focus(); }, 30);
+  }
+  function fecha() {
+    ov.classList.remove('aberto');
+    document.body.style.overflow = '';
+  }
+  btn.addEventListener('click', abre);
+  fechar.addEventListener('click', fecha);
+  ov.addEventListener('click', function (e) { if (e.target === ov) fecha(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && ov.style.display !== 'flex' && !ov.classList.contains('aberto') &&
+        document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault(); abre();
+    } else if (e.key === 'Escape' && ov.classList.contains('aberto')) {
+      fecha();
+    }
+  });
+  input.addEventListener('input', aplica);
+})();
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+
+</body>
+</html>
