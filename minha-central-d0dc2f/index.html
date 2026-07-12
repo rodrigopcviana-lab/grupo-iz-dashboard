@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Minha Central · IZ + Bento</title>
+<meta name="theme-color" content="#101114">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+:root{ --bg:#101114; --card:#1a1c21; --card2:#202228; --border:#2e3138; --text:#f3ede2;
+  --text-2:#c9cdd6; --text-3:#8b8f98; --acc:#8fb8de; --acc-txt:#0d1522; --serif:Georgia,serif;
+  --casa-iz:#d0a352; --casa-1929:#c9705a; --casa-gra:#8fd0a5; --casa-famu:#a58fd0;
+  --casa-fulles:#6fa8dc; --casa-nip:#d98fb0; --bento:#e0a33e;
+  --tipo-ocorrencia:#e07a52; --tipo-solicitacao:#4fbf92;
+  --urg-urgente:#e24b4a; --urg-hoje:#e0b05c; --urg-aguardar:#9fe1cb; --amarelo:#e0b05c; --verde:#9fe1cb; }
+*{ box-sizing:border-box; }
+body{ background:var(--bg); color:var(--text); margin:0; padding:16px 14px 40px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; max-width:1180px; margin-inline:auto; }
+h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px; }
+.mc-sub{ color:var(--text-3); font-size:12.5px; margin:0 0 14px; line-height:1.5; }
+.mc-gate{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; font-size:14px; color:var(--text-2); line-height:1.55; }
+.mc-gate a{ color:var(--acc); }
+.mc-topo{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+.mc-badges{ display:flex; gap:6px; margin-left:auto; align-items:center; }
+.mc-badge{ font-size:11px; padding:2px 9px; border-radius:12px; border:1px solid var(--border); color:var(--text-3); }
+.mc-badge.ok{ color:var(--tipo-solicitacao); border-color:var(--tipo-solicitacao); }
+.mc-badge.off{ color:var(--urg-urgente); border-color:var(--urg-urgente); }
+.mc-link{ background:none; border:none; color:var(--acc); font:inherit; font-size:11px; cursor:pointer; padding:0; text-decoration:underline; }
+.mc-fonte{ display:flex; gap:6px; margin-bottom:10px; }
+.mc-fonte button{ font:inherit; font-size:12.5px; font-weight:700; padding:5px 13px; border-radius:999px;
+  border:1.5px solid var(--border); background:var(--card); color:var(--text-3); cursor:pointer; }
+.mc-fonte button.on{ border-color:var(--acc); color:var(--acc); background:color-mix(in srgb,var(--acc) 14%,transparent); }
+.mc-busca{ width:100%; box-sizing:border-box; font:inherit; font-size:14px; background:var(--card);
+  color:var(--text); border:1px solid var(--border); border-radius:10px; padding:9px 12px; margin-bottom:10px; }
+.mc-filtros{ display:flex; gap:7px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px; }
+.mc-filtros select{ font:inherit; font-size:12.5px; background:var(--card); color:var(--text-2);
+  border:1px solid var(--border); border-radius:8px; padding:7px 9px; }
+.mc-conectar{ background:var(--card); border:1px solid var(--bento); border-radius:11px; padding:12px 14px; margin-bottom:12px; font-size:13px; color:var(--text-2); }
+.mc-conectar input{ width:100%; box-sizing:border-box; font:inherit; font-size:14px; background:var(--card2);
+  border:1px solid var(--border); border-radius:8px; padding:8px 11px; color:var(--text); margin:8px 0; }
+.mc-conectar button{ font:inherit; font-size:13px; font-weight:600; background:var(--bento); color:#241a06;
+  border:none; border-radius:8px; padding:8px 15px; cursor:pointer; }
+.mc-offline{ background:#2a2416; color:var(--urg-hoje); font-size:12.5px; padding:7px 12px; border-radius:9px; margin-bottom:12px; text-align:center; }
+.mc-abas{ display:flex; gap:8px; margin-bottom:14px; }
+.mc-abas button{ flex:1; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--border);
+  background:var(--card); color:var(--text-2); font-size:13.5px; cursor:pointer; }
+.mc-abas button.on{ background:var(--acc); border-color:var(--acc); color:var(--acc-txt); font-weight:600; }
+.mc-filas{ display:flex; flex-direction:column; gap:22px; }
+.mc-fila{ display:none; } .mc-fila.ativa{ display:block; }
+@media(min-width:640px){ .mc-abas{ display:none; } .mc-filas{ flex-direction:row; align-items:flex-start; gap:20px; } .mc-fila{ display:block; flex:1 1 0; min-width:0; } }
+.mc-fila h2{ font-size:13px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-3); margin:0 0 10px; font-weight:600; }
+.mc-fila h2 .n{ color:var(--text-2); font-weight:400; margin-left:5px; }
+.mc-vazio,.mc-erro{ padding:22px 10px; text-align:center; color:var(--text-3); font-size:13.5px; }
+.mc-erro a{ color:var(--acc); }
+.mc-skel{ height:80px; border-radius:12px; background:var(--card); border:1px solid var(--border); margin-bottom:10px;
+  background-image:linear-gradient(90deg,var(--card) 0%,#26282e 50%,var(--card) 100%); background-size:200% 100%; animation:mcp 1.4s ease-in-out infinite; }
+@keyframes mcp{ 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
+@media(prefers-reduced-motion:reduce){ .mc-skel{ animation:none; } }
+.mc-card{ border:1px solid var(--border); border-left:4px solid var(--sc,var(--text-3)); border-radius:12px;
+  background:var(--card); margin-bottom:10px; position:relative; }
+.mc-head{ display:block; width:100%; padding:15px 13px 11px; cursor:pointer; box-sizing:border-box; }
+.mc-l1{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:5px; }
+.mc-pos{ position:absolute; top:-8px; left:10px; background:var(--bg); border:1px solid var(--border); border-radius:999px;
+  font-size:10px; color:var(--text-3); padding:1px 7px; }
+.mc-chip{ font-size:11px; border-radius:999px; padding:2px 8px; border:1px solid; white-space:nowrap; }
+.mc-or{ font-size:10.5px; font-weight:800; border-radius:999px; padding:2px 8px; }
+.mc-or.iz{ background:var(--casa-iz); color:#241a06; }
+.mc-or.bento{ background:var(--bento); color:#241a06; }
+.mc-status{ font:inherit; font-size:11px; border-radius:999px; padding:2px 9px; border:1px solid var(--border);
+  background:none; color:var(--text-2); cursor:pointer; margin-left:auto; }
+.mc-status:disabled{ opacity:.6; cursor:default; }
+.mc-l2{ font-size:14px; margin-bottom:4px; color:var(--text); }
+.mc-l2 b{ font-family:var(--serif); font-weight:500; }
+.mc-l3{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--text-3); }
+.mc-seta{ float:right; color:var(--text-3); transition:transform .18s; }
+.mc-card.aberto .mc-seta{ transform:rotate(180deg); }
+.mc-corpo{ display:none; padding:0 13px 13px; border-top:1px solid var(--border); }
+.mc-card.aberto .mc-corpo{ display:block; }
+.mc-corpo p.d{ padding:11px 0 9px; color:var(--text-2); font-size:14px; white-space:pre-line; }
+.mc-fotos{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.mc-fotos img,.mc-ph{ width:72px; height:72px; border-radius:9px; border:1px solid var(--border); object-fit:cover; }
+.mc-ph{ display:flex; align-items:center; justify-content:center; color:var(--text-3); font-size:11px; }
+.mc-transc{ border-left:3px solid var(--sc,var(--acc)); background:rgba(255,255,255,.03); border-radius:0 9px 9px 0;
+  padding:9px 12px; font-size:13.5px; color:var(--text-2); font-style:italic; margin-bottom:12px; }
+.mc-acoes{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.mc-btn{ font:inherit; font-size:13px; border-radius:9px; padding:8px 12px; border:1px solid var(--border); background:var(--bg); color:var(--text); cursor:pointer; }
+.mc-btn.pri{ background:var(--tipo-solicitacao); color:#0b1f17; border-color:var(--tipo-solicitacao); font-weight:600; }
+.mc-acoes select{ font:inherit; font-size:13px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:9px; padding:8px 10px; }
+.mc-envio{ width:100%; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:12.5px; color:var(--text-2); }
+.mc-toast{ position:fixed; left:50%; bottom:18px; transform:translate(-50%,8px); z-index:80; background:var(--card);
+  border:1px solid var(--border); border-radius:999px; padding:9px 18px; font-size:13px; color:var(--text);
+  box-shadow:0 10px 26px rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .18s,transform .18s; }
+.mc-toast.on{ opacity:1; transform:translate(-50%,0); }
+.mc-toast.erro{ border-color:rgba(226,75,74,.5); color:#f0a5a4; }
+.mc-legenda{ display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; padding-top:12px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-3); }
+.mc-legenda .it{ display:inline-flex; align-items:center; gap:5px; }
+.mc-legenda .dot{ width:8px; height:8px; border-radius:50%; }
+</style>
+</head><body>
+<h1>Minha Central <span style="font-weight:400;color:var(--text-3);font-size:13px">IZ + Bento</span></h1>
+<p class="mc-sub">Todas as demandas dos dois portais num board só. Uso pessoal — link não listado, protegido pelo seu login de coordenação.</p>
+
+<div id="mc-gate" class="mc-gate" style="display:none"></div>
+<div id="mc-app" style="display:none">
+  <div id="mc-conectar" class="mc-conectar" style="display:none">
+    <b>Conectar o Bento</b> — cole a chave de acesso do portal do Bento (fica salva só neste aparelho).
+    <input type="password" id="mc-chave" placeholder="chave do Bento" autocomplete="off">
+    <button type="button" id="mc-chave-salvar">Salvar chave</button>
+  </div>
+  <div class="mc-topo">
+    <div class="mc-badges" id="mc-badges"></div>
+  </div>
+  <div class="mc-fonte" id="mc-fonte">
+    <button type="button" data-f="tudo" class="on">Tudo</button>
+    <button type="button" data-f="iz">Só IZ</button>
+    <button type="button" data-f="bento">Só Bento</button>
+  </div>
+  <input type="search" class="mc-busca" id="mc-busca" placeholder="Buscar por descrição, transcrição ou solicitante…" aria-label="Buscar">
+  <div class="mc-filtros">
+    <select id="mc-f-urgencia"><option value="">Urgência: Todas</option></select>
+    <select id="mc-f-setor"><option value="">Setor: Todos</option></select>
+  </div>
+  <div id="mc-offline" class="mc-offline" style="display:none"></div>
+  <div class="mc-abas" id="mc-abas">
+    <button type="button" class="on" data-tipo="ocorrencia">Ocorrências<span id="mc-aba-ocorrencia"></span></button>
+    <button type="button" data-tipo="solicitacao">Solicitações<span id="mc-aba-solicitacao"></span></button>
+  </div>
+  <div class="mc-filas">
+    <section class="mc-fila ativa" data-tipo="ocorrencia">
+      <h2>Ocorrências <span class="n" id="mc-n-ocorrencia"></span></h2>
+      <div id="mc-lista-ocorrencia"></div>
+    </section>
+    <section class="mc-fila" data-tipo="solicitacao">
+      <h2>Solicitações <span class="n" id="mc-n-solicitacao"></span></h2>
+      <div id="mc-lista-solicitacao"></div>
+    </section>
+  </div>
+  <div class="mc-legenda" id="mc-legenda"></div>
+</div>
+<div class="mc-toast" id="mc-toast"></div>
+<script>window.__MC = {"slug": "minha-central-d0dc2f", "izWorker": "https://registro-bares.rodrigopcviana.workers.dev", "bentoWorker": "https://bento-portal-contagem.rodrigopcviana.workers.dev", "setores": {"manutencao": "Manutenção", "compras_insumos": "Compras / Insumos", "rh_pessoas": "RH & Pessoas", "gerencia_casa": "Gerência da casa", "operacao_bar": "Operação de bar", "coordenacao": "Coordenação"}, "casas": {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "enttres": "Enttres", "fulles": "Fulles", "nip": "NIP"}, "urgencias": {"urgente": "Urgente", "hoje": "Hoje", "aguardar": "Pode aguardar"}, "status": ["Novo", "Visto", "Em andamento", "Resolvido"]};</script>
+<script>
+(function () {
+  var C = window.__MC;
+  var IZ = C.izWorker, BENTO = C.bentoWorker;
+  var SETORES = C.setores, URGENCIAS = C.urgencias, STATUS_OPCOES = C.status;
+  var CASA_SLUG = {}; Object.keys(C.casas).forEach(function (s) { CASA_SLUG[C.casas[s]] = s; });
+  var BENTO_KEY_LS = 'minha_central_bento_chave', SNAP_LS = 'minha_central_snap_';
+
+  function sessaoLer() {
+    try { var raw = localStorage.getItem('portal_sessao'); if (!raw) return null;
+      var s = JSON.parse(raw); if (!s || !s.token || !s.exp || Date.now() > s.exp) return null; return s;
+    } catch (e) { return null; }
+  }
+  var elGate = document.getElementById('mc-gate'), elApp = document.getElementById('mc-app');
+  var sess = sessaoLer();
+  if (!sess || sess.nivel !== 'coord') {
+    elGate.style.display = '';
+    elGate.innerHTML = 'Esta central é de uso pessoal e exige login de <b>coordenação</b>. '
+      + 'Abra o <a href="../index.html">portal principal</a>, entre com a senha de coord e volte a este link.';
+    return;
+  }
+  var TOKEN = sess.token;
+  elApp.style.display = '';
+  var bentoKey = ''; try { bentoKey = localStorage.getItem(BENTO_KEY_LS) || ''; } catch (e) {}
+
+  var elBadges = document.getElementById('mc-badges');
+  var elConectar = document.getElementById('mc-conectar');
+  var elBusca = document.getElementById('mc-busca');
+  var elToast = document.getElementById('mc-toast');
+  var fUrg = document.getElementById('mc-f-urgencia'), fSetor = document.getElementById('mc-f-setor');
+  var fonte = 'tudo', buscaTermo = '', gIzOk = true, gBentoOk = null;
+
+  Object.keys(URGENCIAS).forEach(function (s) { var o = document.createElement('option'); o.value = s; o.textContent = URGENCIAS[s]; fUrg.appendChild(o); });
+  Object.keys(SETORES).forEach(function (s) { var o = document.createElement('option'); o.value = s; o.textContent = SETORES[s]; fSetor.appendChild(o); });
+
+  var URG_RANK = {}; Object.keys(URGENCIAS).forEach(function (slug, i) { URG_RANK[URGENCIAS[slug]] = i; });
+  var SETOR_COR = { manutencao:'var(--casa-fulles)', compras_insumos:'var(--casa-gra)', rh_pessoas:'var(--casa-famu)', gerencia_casa:'var(--casa-nip)', operacao_bar:'var(--casa-iz)', coordenacao:'var(--casa-1929)' };
+  var SETOR_SLUG = {}; Object.keys(SETORES).forEach(function (s) { SETOR_SLUG[SETORES[s]] = s; });
+
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  function toast(m, e) { elToast.textContent = m; elToast.classList.toggle('erro', !!e); elToast.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { elToast.classList.remove('on'); }, 3200); }
+  function idade(iso) {
+    if (!iso) return { txt:'', cls:'' };
+    var ms = Date.now() - new Date(iso).getTime(), dias = ms / 86400000, txt;
+    if (dias < 1) { var h = Math.max(1, Math.round(ms/3600000)); txt = 'há ' + h + (h===1?' hora':' horas'); }
+    else { var d = Math.round(dias); txt = 'há ' + d + (d===1?' dia':' dias'); }
+    return { txt: txt, cls: dias>7 ? 'v' : (dias>3 ? 'a' : '') };
+  }
+  function corSetor(label) { var slug = SETOR_SLUG[label]; return (slug && SETOR_COR[slug]) || 'var(--text-3)'; }
+  function corUrg(u) { return u==='Urgente'?'var(--urg-urgente)':(u==='Hoje'?'var(--urg-hoje)':'var(--urg-aguardar)'); }
+  function chipUrg(u) { var c = corUrg(u); return '<span class="mc-chip" style="color:'+c+';border-color:'+c+'">&#9679; '+esc(u)+'</span>'; }
+  function chipCasa(c) { var cor = 'var(--casa-'+(CASA_SLUG[c]||'iz')+')'; return '<span class="mc-chip" style="color:'+cor+';border-color:'+cor+'">'+esc(c)+'</span>'; }
+  function chipOrigem(o) { return '<span class="mc-or '+o+'">'+(o==='bento'?'BENTO':'IZ')+'</span>'; }
+
+  function apiBase(o) { return o==='bento' ? BENTO : IZ; }
+  function apiHeaders(o) { return o==='bento' ? { 'X-Chave': bentoKey } : { 'X-Token': TOKEN }; }
+
+  function ordena(itens) {
+    itens.sort(function (a, b) {
+      var ra = URG_RANK.hasOwnProperty(a.urgencia)?URG_RANK[a.urgencia]:99;
+      var rb = URG_RANK.hasOwnProperty(b.urgencia)?URG_RANK[b.urgencia]:99;
+      if (ra !== rb) return ra - rb;
+      return new Date(a.recebido_em||a.data||0).getTime() - new Date(b.recebido_em||b.data||0).getTime();
+    });
+  }
+  function itemVisivel(d) {
+    if (fonte === 'iz' && d.origem !== 'iz') return false;
+    if (fonte === 'bento' && d.origem !== 'bento') return false;
+    if (buscaTermo) {
+      var alvo = normaliza((d.descricao||'')+' '+(d.transcricao||'')+' '+(d.registrado_por||d.solicitante||''));
+      if (alvo.indexOf(buscaTermo) === -1) return false;
+    }
+    return true;
+  }
+
+  function renderBadges() {
+    var html = '<span class="mc-badge '+(gIzOk?'ok':'off')+'">IZ '+(gIzOk?'●':'✕')+'</span>';
+    if (!bentoKey) {
+      html += '<span class="mc-badge">Bento —</span><button type="button" class="mc-link" id="mc-conectar-link">conectar</button>';
+    } else {
+      html += '<span class="mc-badge '+(gBentoOk?'ok':'off')+'">Bento '+(gBentoOk?'●':'✕')+'</span>'
+        + '<button type="button" class="mc-link" id="mc-trocar-chave">trocar chave</button>';
+    }
+    elBadges.innerHTML = html;
+    var cl = document.getElementById('mc-conectar-link');
+    if (cl) cl.onclick = function () { elConectar.style.display = ''; };
+    var tc = document.getElementById('mc-trocar-chave');
+    if (tc) tc.onclick = function () { elConectar.style.display = ''; };
+  }
+
+  function lerSnap(tipo) { try { var r = localStorage.getItem(SNAP_LS+tipo); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+  function salvaSnap(tipo, itens) { try { localStorage.setItem(SNAP_LS+tipo, JSON.stringify({ ts: Date.now(), itens: itens })); } catch (e) {} }
+
+  var TIPOS = [{ key:'ocorrencia', label:'Ocorrências' }, { key:'solicitacao', label:'Solicitações' }];
+  var STATE = {};
+  TIPOS.forEach(function (t) {
+    STATE[t.key] = { itens: [], offlineTs: null,
+      elLista: document.getElementById('mc-lista-'+t.key),
+      elN: document.getElementById('mc-n-'+t.key),
+      elAba: document.getElementById('mc-aba-'+t.key) };
+  });
+
+  function skeletons(el, n) { el.innerHTML=''; for (var i=0;i<n;i++){ var s=document.createElement('div'); s.className='mc-skel'; el.appendChild(s); } }
+
+  function patch(d, campos, onOk, onErro) {
+    fetch(apiBase(d.origem)+'/api/demanda/'+encodeURIComponent(d.chave), {
+      method:'PATCH', headers: Object.assign({ 'Content-Type':'application/json' }, apiHeaders(d.origem)),
+      body: JSON.stringify(campos)
+    }).then(function (r) {
+      if (d.origem==='iz' && r.status===401) { toast('Sessão expirada — recarregue e entre de novo.', true); onErro(); return; }
+      if (!r.ok) { onErro(); return; }
+      onOk();
+    }).catch(onErro);
+  }
+  function aprovarEnvio(d, onOk, onErro) {
+    fetch(IZ+'/api/demanda/'+encodeURIComponent(d.chave)+'/aviso', { method:'POST', headers:{ 'X-Token':TOKEN } })
+      .then(function (r) { if (!r.ok) { onErro(); return; } onOk(); }).catch(onErro);
+  }
+
+  function carregaMidia(container, d) {
+    var anexos = d.anexos || []; if (!anexos.length) return;
+    var fotos = anexos.filter(function (a) { return !/\.(m4a|webm|mp3|wav|ogg)$/i.test(a.nome); });
+    var audios = anexos.filter(function (a) { return /\.(m4a|webm|mp3|wav|ogg)$/i.test(a.nome); });
+    function url(i) { return apiBase(d.origem)+'/api/demanda/'+encodeURIComponent(d.chave)+'/anexo/'+i; }
+    if (fotos.length) {
+      var wrap = document.createElement('div'); wrap.className='mc-fotos';
+      fotos.forEach(function (f) {
+        var ph = document.createElement('div'); ph.className='mc-ph'; ph.textContent='…'; wrap.appendChild(ph);
+        fetch(url(f.i), { headers: apiHeaders(d.origem) }).then(function (r) { return r.ok?r.blob():null; })
+          .then(function (b) { if (!b) { ph.textContent='erro'; return; }
+            var img=document.createElement('img'); img.src=URL.createObjectURL(b); img.alt='foto';
+            img.onclick=function(){ window.open(img.src,'_blank'); }; ph.replaceWith(img);
+          }).catch(function () { ph.textContent='erro'; });
+      });
+      container.appendChild(wrap);
+    }
+    if (audios.length) {
+      var a = audios[0], aw = document.createElement('div'); aw.textContent='Carregando áudio…'; aw.style.marginBottom='10px'; container.appendChild(aw);
+      fetch(url(a.i), { headers: apiHeaders(d.origem) }).then(function (r) { return r.ok?r.blob():null; })
+        .then(function (b) { if (!b) { aw.textContent='Áudio indisponível.'; return; }
+          aw.innerHTML=''; var p=document.createElement('audio'); p.controls=true; p.preload='metadata'; p.style.width='100%'; p.src=URL.createObjectURL(b); aw.appendChild(p);
+        }).catch(function () { aw.textContent='Áudio indisponível.'; });
+    }
+  }
+
+  function renderCard(d, pos, t) {
+    var card = document.createElement('div'); card.className='mc-card';
+    var sc = corSetor(d.setor); card.style.setProperty('--sc', sc);
+    if (pos) { var pe=document.createElement('span'); pe.className='mc-pos'; pe.textContent=pos+'º'; card.appendChild(pe); }
+    var head = document.createElement('div'); head.className='mc-head'; head.tabIndex=0; head.setAttribute('role','button'); head.setAttribute('aria-expanded','false');
+    var l1 = document.createElement('div'); l1.className='mc-l1';
+    l1.innerHTML = chipOrigem(d.origem) + (d.origem==='iz' ? chipCasa(d.casa) : '') + chipUrg(d.urgencia);
+    head.appendChild(l1);
+    var stBtn = document.createElement('button'); stBtn.type='button'; stBtn.className='mc-status';
+    function pintaSt() {
+      var idx = STATUS_OPCOES.indexOf(d.status), ultimo = idx===-1 || idx===STATUS_OPCOES.length-1;
+      stBtn.textContent = (d.status||'Novo') + (ultimo?'':' →'); stBtn.disabled = ultimo;
+      stBtn.title = ultimo?'Resolvido':'Avançar para: '+STATUS_OPCOES[idx+1];
+    }
+    pintaSt(); l1.appendChild(stBtn);
+    var l2 = document.createElement('div'); l2.className='mc-l2';
+    l2.innerHTML = '<b>'+esc(d.categoria)+'</b> — '+esc((d.descricao||'').slice(0,90))+((d.descricao&&d.descricao.length>90)?'…':'');
+    head.appendChild(l2);
+    var l3 = document.createElement('div'); l3.className='mc-l3'; var ida = idade(d.recebido_em||d.data);
+    var idaCor = ida.cls==='v'?'#f0a5a4':(ida.cls==='a'?'var(--amarelo)':'var(--text-3)');
+    l3.innerHTML = 'por '+esc(d.registrado_por||d.solicitante||'anônimo')+' · <span style="color:'+idaCor+'">'+ida.txt+'</span>'
+      + (d.setor ? ' · <span style="color:'+sc+'">'+esc(d.setor)+(d.setor_confirmado?' ✓':'')+'</span>' : '');
+    head.appendChild(l3);
+    var seta = document.createElement('span'); seta.className='mc-seta'; seta.setAttribute('aria-hidden','true'); seta.innerHTML='&#9662;'; head.appendChild(seta);
+    card.appendChild(head);
+
+    var corpo = document.createElement('div'); corpo.className='mc-corpo'; var midia=false;
+    function abre() {
+      var a = !card.classList.contains('aberto'); card.classList.toggle('aberto'); head.setAttribute('aria-expanded', a?'true':'false');
+      if (a && !midia) { midia=true; carregaMidia(corpo, d); }
+    }
+    head.addEventListener('click', abre);
+    head.addEventListener('keydown', function (e) { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); abre(); } });
+
+    var pd = document.createElement('p'); pd.className='d'; pd.textContent=d.descricao||''; corpo.appendChild(pd);
+    if (d.transcricao) { var tv=document.createElement('div'); tv.className='mc-transc'; tv.style.setProperty('--sc',sc);
+      tv.innerHTML='<b style="font-style:normal;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:'+sc+'">Transcrição</b><br>'+esc(d.transcricao); corpo.appendChild(tv); }
+
+    var acoes = document.createElement('div'); acoes.className='mc-acoes';
+    if (!d.setor_confirmado && d.setor) {
+      var bc = document.createElement('button'); bc.className='mc-btn'; bc.textContent='Confirmar "'+d.setor+'"';
+      bc.onclick = function () { var slug=SETOR_SLUG[d.setor]; if (!slug) return; bc.disabled=true;
+        patch(d, { setor: slug }, function () { d.setor_confirmado=true; toast('Setor confirmado.'); redesenha(t); },
+          function () { bc.disabled=false; toast('Falha ao confirmar.', true); }); };
+      acoes.appendChild(bc);
+    }
+    var selSet = document.createElement('select');
+    selSet.innerHTML = '<option value="">Corrigir setor…</option>' + Object.keys(SETORES).map(function (s) { return '<option value="'+s+'">'+esc(SETORES[s])+'</option>'; }).join('');
+    selSet.onchange = function () { if (!selSet.value) return; var slug=selSet.value, lbl=SETORES[slug]; selSet.disabled=true;
+      patch(d, { setor: slug }, function () { d.setor=lbl; d.setor_confirmado=true; toast('Setor: '+lbl+'.'); redesenha(t); },
+        function () { selSet.disabled=false; selSet.value=''; toast('Falha ao mudar setor.', true); }); };
+    acoes.appendChild(selSet);
+    var selSt = document.createElement('select');
+    function preSt() { selSt.innerHTML = STATUS_OPCOES.map(function (s) { return '<option value="'+s+'"'+(s===d.status?' selected':'')+'>Status: '+s+'</option>'; }).join(''); }
+    preSt();
+    function aplicaSt(novo) {
+      if (novo===d.status) return; var antigo=d.status; stBtn.disabled=true; selSt.disabled=true; d.status=novo;
+      var saiu = novo==='Resolvido';
+      patch(d, { status: novo }, function () { toast('Status: '+novo+'.'); if (saiu) { removeDaFila(t, d); } else { pintaSt(); preSt(); stBtn.disabled=false; selSt.disabled=false; } },
+        function () { d.status=antigo; pintaSt(); preSt(); stBtn.disabled=false; selSt.disabled=false; toast('Falha ao mudar status — desfeito.', true); });
+    }
+    stBtn.onclick = function (e) { e.stopPropagation(); var idx=STATUS_OPCOES.indexOf(d.status); if (idx===-1||idx>=STATUS_OPCOES.length-1) return; aplicaSt(STATUS_OPCOES[idx+1]); };
+    selSt.onchange = function () { aplicaSt(selSt.value); };
+    acoes.appendChild(selSt);
+    corpo.appendChild(acoes);
+
+    if (d.origem === 'iz') {
+      var envio = document.createElement('div'); envio.className='mc-envio';
+      function pintaEnvio() {
+        envio.innerHTML=''; var est=d.aviso_whatsapp||'', txt;
+        if (est==='Enviado') txt='WhatsApp enviado ao chefe da casa'; else if (est==='Aprovado') txt='Envio aprovado — aguardando disparo';
+        else if (est==='Expirado') txt='Envio expirou — re-aprovar'; else txt='Sem aviso de WhatsApp';
+        var sp=document.createElement('span'); sp.textContent=txt; envio.appendChild(sp);
+        var b=document.createElement('button'); b.className='mc-btn'+(est?'':' pri'); b.textContent=(est==='Enviado'||est==='Expirado')?'Reenviar':'Aprovar envio';
+        b.onclick=function(){ b.disabled=true; aprovarEnvio(d, function () { d.aviso_whatsapp='Aprovado'; toast('Envio aprovado — sai pelo vigia local.'); pintaEnvio(); }, function () { b.disabled=false; toast('Falha ao aprovar.', true); }); };
+        envio.appendChild(b);
+      }
+      pintaEnvio(); corpo.appendChild(envio);
+    }
+    card.appendChild(corpo);
+    return card;
+  }
+
+  function removeDaFila(t, d) { var st=STATE[t.key], i=st.itens.indexOf(d); if (i!==-1) st.itens.splice(i,1); redesenha(t); }
+
+  function redesenha(t) {
+    var st = STATE[t.key]; st.elLista.innerHTML=''; var mostrados=0;
+    var vis = st.itens.filter(itemVisivel);
+    if (!st.itens.length) { st.elLista.innerHTML='<p class="mc-vazio">Nenhuma '+(t.key==='ocorrencia'?'ocorrência':'solicitação')+' aberta.</p>'; }
+    else if (!vis.length) { st.elLista.innerHTML='<p class="mc-vazio">Nada corresponde ao filtro/busca.</p>'; }
+    else { st.itens.forEach(function (d, i) { if (!itemVisivel(d)) return; mostrados++; st.elLista.appendChild(renderCard(d, i+1, t)); }); }
+    var rot = (mostrados!==st.itens.length ? mostrados+' de ' : '') + st.itens.length;
+    st.elN.textContent = rot; st.elAba.textContent = ' ' + st.itens.length;
+  }
+
+  function fetchFonte(tipo, origem) {
+    if (origem==='bento' && !bentoKey) return Promise.resolve({ skip:true, itens:[] });
+    var qs = 'tipo='+tipo;
+    if (fUrg.value) qs += '&urgencia='+encodeURIComponent(fUrg.value);
+    if (fSetor.value) qs += '&setor='+encodeURIComponent(fSetor.value);
+    return fetch(apiBase(origem)+'/api/demandas?'+qs, { headers: apiHeaders(origem) })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) { return { ok:true, itens:(d.demandas||[]).map(function (x) { x.origem=origem; if (origem==='bento') x.casa='Bento'; return x; }) }; })
+      .catch(function () { return { ok:false, itens:[] }; });
+  }
+
+  function carregaTipo(t) {
+    var st = STATE[t.key]; skeletons(st.elLista, 3);
+    Promise.all([fetchFonte(t.key,'iz'), fetchFonte(t.key,'bento')]).then(function (res) {
+      var iz=res[0], bt=res[1];
+      gIzOk = iz.ok===true; gBentoOk = bt.skip ? null : (bt.ok===true);
+      var anyOk = iz.ok===true || bt.ok===true;
+      if (!anyOk) {
+        var snap = lerSnap(t.key);
+        if (snap && snap.itens && snap.itens.length) { st.itens=snap.itens; st.offlineTs=snap.ts; atualizaOffline(); redesenha(t); renderBadges(); return; }
+        st.itens=[]; st.elLista.innerHTML='<p class="mc-erro">Não consegui carregar de nenhuma fonte. <a href="#" data-retry>Tentar de novo</a></p>';
+        var a=st.elLista.querySelector('[data-retry]'); if (a) a.onclick=function(){ carregaTipo(t); return false; };
+        renderBadges(); return;
+      }
+      var merged = (iz.itens||[]).concat(bt.itens||[]); ordena(merged);
+      st.itens=merged; st.offlineTs=null; salvaSnap(t.key, merged);
+      redesenha(t); renderBadges(); atualizaOffline();
+    });
+  }
+  function atualizaOffline() {
+    var el = document.getElementById('mc-offline');
+    var off = TIPOS.some(function (t) { return STATE[t.key].offlineTs; });
+    if (off) { var ts = STATE.ocorrencia.offlineTs || STATE.solicitacao.offlineTs;
+      var min = Math.round((Date.now()-ts)/60000);
+      el.textContent = 'Sem conexão com as fontes — mostrando o último snapshot salvo' + (min>0 ? ' (há ~'+min+' min)' : ''); el.style.display=''; }
+    else { el.style.display='none'; }
+  }
+
+  function carregaTudo() { TIPOS.forEach(carregaTipo); }
+
+  (function () {
+    function grupo(tit, itens) { return '<span><b>'+tit+':</b> '+itens.map(function (it) { return '<span class="it"><span class="dot" style="background:'+it.cor+'"></span>'+esc(it.label)+'</span>'; }).join(' ')+'</span>'; }
+    var setor = Object.keys(SETORES).map(function (s) { return { label:SETORES[s], cor:SETOR_COR[s]||'var(--text-3)' }; });
+    var urg = Object.keys(URGENCIAS).map(function (s) { return { label:URGENCIAS[s], cor:corUrg(URGENCIAS[s]) }; });
+    document.getElementById('mc-legenda').innerHTML = grupo('Origem', [{label:'IZ',cor:'var(--casa-iz)'},{label:'Bento',cor:'var(--bento)'}]) + grupo('Urgência', urg) + grupo('Setor', setor);
+  })();
+
+  if (!bentoKey) elConectar.style.display='';
+  document.getElementById('mc-chave-salvar').onclick = function () {
+    var v = document.getElementById('mc-chave').value.trim(); if (!v) return;
+    try { localStorage.setItem(BENTO_KEY_LS, v); } catch (e) {}
+    bentoKey = v; elConectar.style.display='none'; document.getElementById('mc-chave').value='';
+    toast('Chave do Bento salva neste aparelho.'); renderBadges(); carregaTudo();
+  };
+  document.getElementById('mc-fonte').querySelectorAll('button').forEach(function (b) {
+    b.onclick = function () { fonte=b.dataset.f; document.getElementById('mc-fonte').querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x===b); }); TIPOS.forEach(redesenha); };
+  });
+  document.getElementById('mc-abas').querySelectorAll('button').forEach(function (b) {
+    b.onclick = function () { var tp=b.dataset.tipo; document.getElementById('mc-abas').querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x===b); });
+      document.querySelectorAll('.mc-fila').forEach(function (s) { s.classList.toggle('ativa', s.dataset.tipo===tp); }); };
+  });
+  elBusca.addEventListener('input', function () { buscaTermo = normaliza(elBusca.value.trim()); TIPOS.forEach(redesenha); });
+  [fUrg, fSetor].forEach(function (el) { el.addEventListener('change', carregaTudo); });
+
+  renderBadges();
+  carregaTudo();
+
+  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
+})();
+</script>
+</body></html>
