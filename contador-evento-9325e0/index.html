@@ -7,6 +7,7 @@
 <title>Contador de Evento</title>
 <meta name="theme-color" content="#16130f">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{
   --bg:#16130f; --card:#211c15; --card2:#2a2419; --border:#3a3428;
@@ -91,6 +92,30 @@ body{
 .chip{font-size:12px;color:var(--text-2);background:var(--card);border:1px solid var(--border);border-radius:999px;padding:3px 10px;white-space:nowrap}
 .chip b{color:var(--text);font-variant-numeric:tabular-nums}
 .chip.vazio{color:var(--text-3);border-style:dashed}
+
+/* --- tela de criar/selecionar evento (sem ?evento= na URL) --- */
+.picker{flex:1 1 auto;overflow-y:auto;padding:22px 20px 40px;max-width:640px;margin:0 auto;width:100%}
+.picker h2{font-family:var(--serif);font-size:16px;margin:0 0 4px;color:var(--acc)}
+.picker-sub{font-size:12px;color:var(--text-3);margin:0 0 12px}
+.picker-sec{margin-bottom:30px}
+.picker-lista{display:flex;flex-direction:column;gap:8px}
+.picker-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);cursor:pointer;text-align:left;font:inherit;color:var(--text);width:100%}
+.picker-item:hover{border-color:var(--acc)}
+.picker-item .nome{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.picker-item .meta{font-size:11px;color:var(--text-3);flex:0 0 auto}
+.picker-badge{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--verde);color:var(--verde);flex:0 0 auto}
+.picker-vazio{color:var(--text-3);font-size:12.5px}
+.picker-form label{font-size:11px;color:var(--text-3);display:block;margin:8px 0 4px}
+.picker-form input, .picker-form select{font:inherit;font-size:14px;width:100%;background:var(--card);
+  border:1px solid var(--border);border-radius:10px;color:var(--text);padding:9px 12px}
+.picker-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:260px;
+  overflow-y:auto;padding:8px;border:1px solid var(--border);border-radius:12px;margin:8px 0}
+.picker-drink{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:9px;border:1px solid var(--border);
+  background:var(--card2);font-size:12.5px;cursor:pointer}
+.picker-drink.on{border-color:var(--acc);color:var(--acc)}
+.picker-btn{font:inherit;font-size:14px;font-weight:700;padding:11px 24px;border-radius:12px;border:none;
+  background:var(--acc);color:var(--acc-txt);cursor:pointer;margin-top:10px}
+.picker-erro{color:#e07a63;font-size:12.5px;min-height:16px;margin-top:6px}
 </style>
 </head>
 <body>
@@ -443,9 +468,134 @@ async function iniciaLado(slug){
   tentaEsvaziarFila(slug);
 }
 
+// --- tela de criar/selecionar evento (sem ?evento= na URL) ---------------
+// SEM X-Token de propósito (decisão do Rodrigo, 2026-07-12): "qualquer um
+// com o link" pode configurar o evento; só o USO do contador por bartender
+// exige senha (gate por lado, já existente). Ver worker.js.
+async function carregaMural(){
+  try {
+    var r = await fetchComTimeout(CFG.workerUrl + '/api/evento/mural', {});
+    if (!r.ok) return [];
+    var d = await r.json();
+    return d.eventos || [];
+  } catch(e){ return []; }
+}
+async function carregaCatalogo(){
+  try {
+    var r = await fetchComTimeout(CFG.workerUrl + '/api/evento/catalogo', {});
+    if (!r.ok) return [];
+    var d = await r.json();
+    return d.drinks || [];
+  } catch(e){ return []; }
+}
+
+function irParaEvento(id){
+  var url = new URL(location.href);
+  url.searchParams.set('evento', id);
+  location.href = url.toString();
+}
+
+async function montaPicker(){
+  var wrap = document.getElementById('arena');
+  wrap.className = 'arena';
+  wrap.innerHTML = '<div class="picker" id="picker"><p class="picker-vazio">Carregando…</p></div>';
+  var picker = document.getElementById('picker');
+
+  var mural = await carregaMural();
+  var catalogo = await carregaCatalogo();
+
+  picker.innerHTML =
+    '<div class="picker-sec">' +
+      '<h2>Eventos do Mural</h2>' +
+      '<p class="picker-sub">Eventos com drinks/cocktails no cardápio — clique pra abrir ou montar.</p>' +
+      '<div class="picker-lista" id="picker-mural"></div>' +
+    '</div>' +
+    '<div class="picker-sec">' +
+      '<h2>Ou criar evento novo</h2>' +
+      '<div class="picker-form">' +
+        '<label>Nome do evento</label><input id="pk-nome" placeholder="ex.: Casamento Marina & Téo">' +
+        '<label>Casa</label><select id="pk-casa">' +
+          ['iz','1929','gra','famu','enttres','fulles','nip'].map(function(c){ return '<option value="'+c+'">'+c.toUpperCase()+'</option>'; }).join('') +
+        '</select>' +
+        '<label>Data</label><input id="pk-data" type="date">' +
+        '<label>Drinks do evento</label>' +
+        '<div class="picker-grade" id="pk-grade"></div>' +
+        '<button class="picker-btn" id="pk-criar">Criar e abrir</button>' +
+        '<div class="picker-erro" id="pk-erro"></div>' +
+      '</div>' +
+    '</div>';
+
+  var listaMural = document.getElementById('picker-mural');
+  if (!mural.length) {
+    listaMural.innerHTML = '<p class="picker-vazio">Nenhum evento do Mural com drinks/cocktails no momento.</p>';
+  } else {
+    mural.forEach(function(e){
+      var btn = document.createElement('button');
+      btn.className = 'picker-item';
+      btn.innerHTML =
+        '<span class="nome">' + e.nome + '</span>' +
+        '<span class="meta">' + (e.casa||'').toUpperCase() + ' · ' + (e.data||'') + '</span>' +
+        (e.configurado ? '<span class="picker-badge">pronto</span>' : '');
+      btn.addEventListener('click', function(){
+        if (e.configurado) { irParaEvento(e.id); return; }
+        // pré-preenche o formulário de criação com os dados do Mural
+        document.getElementById('pk-nome').value = e.nome;
+        document.getElementById('pk-casa').value = e.casa || 'iz';
+        if (e.data) document.getElementById('pk-data').value = e.data;
+        picker.dataset.eventoId = e.id;
+        document.getElementById('pk-grade').scrollIntoView({behavior:'smooth', block:'center'});
+      });
+      listaMural.appendChild(btn);
+    });
+  }
+
+  var grade = document.getElementById('pk-grade');
+  var escolhidos = {};
+  if (!catalogo.length) {
+    grade.innerHTML = '<p class="picker-vazio">Catálogo de receitas indisponível.</p>';
+  } else {
+    catalogo.forEach(function(d){
+      var el = document.createElement('div');
+      el.className = 'picker-drink'; el.textContent = d.nome;
+      el.addEventListener('click', function(){
+        escolhidos[d.id] = !escolhidos[d.id];
+        el.classList.toggle('on', !!escolhidos[d.id]);
+      });
+      grade.appendChild(el);
+    });
+  }
+
+  document.getElementById('pk-criar').addEventListener('click', async function(){
+    var erro = document.getElementById('pk-erro');
+    erro.textContent = '';
+    var nome = document.getElementById('pk-nome').value.trim();
+    var casa = document.getElementById('pk-casa').value;
+    var data = document.getElementById('pk-data').value;
+    var drinkIds = Object.keys(escolhidos).filter(function(k){ return escolhidos[k]; });
+    if (!nome) { erro.textContent = 'dê um nome pro evento'; return; }
+    if (!drinkIds.length) { erro.textContent = 'escolha ao menos 1 drink'; return; }
+    var id = picker.dataset.eventoId || (nome.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '-' + (data || Date.now()));
+    this.disabled = true;
+    try {
+      var r = await fetchComTimeout(CFG.workerUrl + '/api/evento/criar', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ id: id, nome: nome, casa: casa, data: data, drinkIds: drinkIds }),
+      });
+      var d = await r.json();
+      if (!r.ok) { erro.textContent = d.erro || 'erro ao criar'; this.disabled = false; return; }
+      irParaEvento(d.id);
+    } catch(e) {
+      erro.textContent = 'sem conexão — tente de novo';
+      this.disabled = false;
+    }
+  });
+}
+
 async function init(){
   if (!EVENTO_ID) {
-    document.getElementById('arena').innerHTML = '<div class="msg-central" style="flex:1">Link sem evento. Use ?evento=&lt;id&gt; na URL.</div>';
+    await montaPicker();
     return;
   }
   for (var i = 0; i < LADOS.length; i++) {
