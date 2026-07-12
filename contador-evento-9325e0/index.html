@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Contador de Evento</title>
+<meta name="theme-color" content="#16130f">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{
+  --bg:#16130f; --card:#211c15; --card2:#2a2419; --border:#3a3428;
+  --text:#f3ede2; --text-2:#c3baa9; --text-3:#8f8672;
+  --acc:#d0a352; --acc-txt:#241a06; --verde:#9fe1cb; --amarelo:#e0b05c;
+  --a:#d0a352; --b:#8fd0a5;
+  --serif:Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+  background:radial-gradient(120% 80% at 50% -10%,#1d1811 0%,var(--bg) 60%);
+  color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  display:flex;flex-direction:column;user-select:none;
+}
+.topo{flex:0 0 auto;display:flex;align-items:center;gap:16px;padding:9px 18px;
+  border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(0,0,0,.25),transparent)}
+.marca{font-family:var(--serif);font-size:17px;letter-spacing:.3px}
+.marca b{color:var(--acc);font-weight:700}
+.evento{font-size:12px;color:var(--text-2);border:1px solid var(--border);padding:4px 11px;
+  border-radius:999px;background:var(--card)}
+.evento b{color:var(--text)}
+.topo-total{margin-left:auto;text-align:right;line-height:1}
+.topo-total .n{font-family:var(--serif);font-size:26px;color:var(--acc);font-weight:700}
+.topo-total .l{font-size:10px;letter-spacing:1.5px;color:var(--text-3);text-transform:uppercase}
+.lock{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--card);
+  color:var(--text-3);display:grid;place-items:center;flex:0 0 auto}
+.lock svg{width:18px;height:18px}
+.lock.on{color:var(--amarelo);border-color:var(--amarelo)}
+.arena{flex:1 1 auto;display:flex;min-height:0;position:relative}
+.arena.travado::after{content:"";position:absolute;inset:0;z-index:5}
+.lanc{flex:1 1 50%;display:flex;flex-direction:column;min-width:0;min-height:0}
+.lanc.a{--c:var(--a)} .lanc.b{--c:var(--b)}
+.divisor{width:1px;background:linear-gradient(180deg,transparent,var(--border) 15%,var(--border) 85%,transparent)}
+
+/* --- gate de login por lado --- */
+.gate{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px}
+.gate .rotulo{font-size:11px;letter-spacing:1.5px;color:var(--text-3);text-transform:uppercase}
+.gate input{font:inherit;font-size:20px;text-align:center;letter-spacing:4px;width:100%;max-width:240px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);padding:14px 10px}
+.gate button{font:inherit;font-size:15px;font-weight:700;padding:12px 28px;border-radius:12px;border:none;
+  background:var(--c,var(--acc));color:var(--acc-txt);cursor:pointer}
+.gate .erro{color:#e07a63;font-size:12.5px;min-height:16px}
+
+.bar-hd{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 12%,transparent),transparent)}
+.avatar{width:44px;height:44px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-family:var(--serif);
+  font-weight:700;font-size:18px;color:var(--acc-txt);background:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 30%,transparent)}
+.bar-id{min-width:0}
+.bar-id .nome{font-family:var(--serif);font-size:18px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-id .sub{font-size:11px;color:var(--text-3)}
+.bar-id .sub .trocar{color:var(--c);cursor:pointer;border-bottom:1px dotted}
+.bar-cont{margin-left:auto;text-align:right;line-height:1}
+.bar-cont .n{font-family:var(--serif);font-size:34px;color:var(--c);font-weight:700}
+.bar-cont .l{font-size:9px;letter-spacing:1.5px;color:var(--text-3);text-transform:uppercase}
+
+.grade{flex:1 1 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px;overflow-y:auto;align-content:start}
+.msg-central{flex:1 1 auto;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:13px;padding:20px;text-align:center}
+.drink{position:relative;border:1px solid var(--border);border-radius:16px;background:linear-gradient(180deg,var(--card2),var(--card));
+  padding:14px 12px 12px;min-height:96px;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;
+  transition:transform .08s ease,box-shadow .12s ease,border-color .12s ease}
+.drink:active{transform:scale(.955)}
+.drink.hit{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 45%,transparent),0 8px 22px -8px color-mix(in srgb,var(--c) 60%,transparent)}
+.drink .emoji{font-size:22px;position:absolute;top:10px;left:12px;opacity:.9}
+.drink .nome{font-family:var(--serif);font-size:15px;line-height:1.15}
+.drink .badge{position:absolute;top:9px;right:9px;min-width:26px;height:26px;padding:0 7px;border-radius:999px;
+  display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--c);color:var(--acc-txt);
+  opacity:0;transform:scale(.5);transition:transform .16s cubic-bezier(.2,1.6,.5,1),opacity .16s}
+.drink .badge.on{opacity:1;transform:scale(1)}
+.drink .undo{position:absolute;bottom:8px;right:8px;width:24px;height:24px;border-radius:7px;border:1px solid var(--border);
+  background:var(--bg);color:var(--text-3);display:none;place-items:center;font-size:15px;line-height:1}
+.drink.hit .undo{display:grid}
+.plus1{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--serif);font-weight:700;
+  font-size:34px;color:var(--c);pointer-events:none;opacity:0}
+@keyframes flyup{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-150%) scale(1.15)}}
+.plus1.go{animation:flyup .7s ease-out}
+
+.insumos{flex:0 0 auto;border-top:1px solid var(--border);padding:9px 14px;background:linear-gradient(0deg,rgba(0,0,0,.22),transparent)}
+.insumos .cab{font-size:10px;letter-spacing:1.5px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.insumos .fila-badge{color:var(--amarelo);font-size:10px;letter-spacing:.5px;text-transform:none}
+.insumos .chips{display:flex;flex-wrap:wrap;gap:6px 8px;max-height:52px;overflow:hidden}
+.chip{font-size:12px;color:var(--text-2);background:var(--card);border:1px solid var(--border);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.chip b{color:var(--text);font-variant-numeric:tabular-nums}
+.chip.vazio{color:var(--text-3);border-style:dashed}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="marca">Contador de <b>Evento</b></div>
+  <div class="evento" id="evTopo">Carregando evento…</div>
+  <div class="topo-total"><div class="n" id="totGeral">0</div><div class="l">drinks na festa</div></div>
+  <button class="lock" id="lockBtn" title="Travar toques (evita toque sem querer)" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+  </button>
+</header>
+
+<div class="arena" id="arena">
+  <div class="lanc a" id="lanc-a"></div>
+  <div class="divisor"></div>
+  <div class="lanc b" id="lanc-b"></div>
+</div>
+
+<script>
+var CFG = {"workerUrl": "https://contador-evento.rodrigopcviana.workers.dev", "loginWorkerUrl": "https://contagem-bares.rodrigopcviana.workers.dev"};
+var params = new URLSearchParams(location.search);
+var EVENTO_ID = params.get('evento') || '';
+
+var LADOS = [
+  { slug: 'a', ls: 'ce_tok_a' },
+  { slug: 'b', ls: 'ce_tok_b' },
+];
+// estado em memória de cada lado — nunca no localStorage compartilhado
+// (portal_sessao): os dois lados precisam de sessões independentes na MESMA
+// aba, e localStorage é por-origem, não por-lado.
+var sess = { a: null, b: null };      // {token, pessoa, nivel, casa, exp}
+var cardapio = null;                  // cardápio do evento (igual pros dois lados)
+var contagem = { a: {}, b: {} };      // drinkId -> qtd, por lado (visão local)
+var fila = { a: [], b: [] };          // toques ainda não confirmados pelo servidor
+
+function lsFila(slug){ return 'ce_fila_' + slug; }
+function carregaFila(slug){
+  try { fila[slug] = JSON.parse(localStorage.getItem(lsFila(slug)) || '[]'); } catch(e){ fila[slug] = []; }
+}
+function salvaFila(slug){
+  try { localStorage.setItem(lsFila(slug), JSON.stringify(fila[slug])); } catch(e){}
+}
+
+function sessaoLer(slug){
+  try {
+    var raw = localStorage.getItem('ce_tok_' + slug);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    return s;
+  } catch(e){ return null; }
+}
+function sessaoSalvar(slug, s){
+  try { localStorage.setItem('ce_tok_' + slug, JSON.stringify(s)); } catch(e){}
+}
+function sessaoLimpar(slug){
+  try { localStorage.removeItem('ce_tok_' + slug); } catch(e){}
+}
+
+// Timeout em toda chamada de rede: sem isso, uma conexão que aceita a
+// requisição mas nunca responde (wifi de bar em captive-portal, Worker
+// momentaneamente travado) prende o fetch pra sempre — o loop da fila só
+// reage a sucesso/erro, nunca a "não respondeu nada" (achado na revisão
+// adversarial da E5). 10s é generoso pra uma chamada que deveria levar
+// menos de 1s; se estourar, cai no catch como se fosse erro de rede normal.
+function fetchComTimeout(url, opts, ms){
+  var ctrl = new AbortController();
+  var t = setTimeout(function(){ ctrl.abort(); }, ms || 10000);
+  return fetch(url, Object.assign({}, opts, { signal: ctrl.signal })).finally(function(){ clearTimeout(t); });
+}
+
+function uuid(){
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
+    var r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8); return v.toString(16);
+  });
+}
+
+function fmtMl(ml){
+  return ml >= 1000 ? (ml/1000).toFixed(ml%1000===0?0:2).replace('.',',') + ' L' : Math.round(ml) + ' ml';
+}
+
+async function login(slug, senha){
+  var r;
+  try {
+    r = await fetchComTimeout(CFG.loginWorkerUrl + '/api/nivel', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({senha:senha}),
+    });
+  } catch(e){ return { erro: 'rede' }; } // sem rede/timeout — distinto de senha errada (login exige rede)
+  if (!r.ok) return { erro: 'senha' };
+  var d = await r.json();
+  if (!d.token || !['bartender','chefe','coord'].includes(d.nivel)) return { erro: 'senha' };
+  return { sessao: { token:d.token, pessoa:d.pessoa || d.nivel, nivel:d.nivel, casa:d.casa, exp:d.exp } };
+}
+
+async function carregaCardapio(token){
+  var r;
+  try {
+    r = await fetchComTimeout(CFG.workerUrl + '/api/evento/cardapio?eventoId=' + encodeURIComponent(EVENTO_ID), {
+      headers: { 'X-Token': token },
+    });
+  } catch(e){ return { erro: 'rede' }; }
+  if (r.status === 401) return { erro: 'sessao' };
+  if (!r.ok) return { erro: 'nao_encontrado' };
+  return { dado: await r.json() };
+}
+
+// Depois de buscar o placar do servidor, reaplica por cima os toques que
+// ainda estão na fila local (não confirmados) — sem isso, um reload da
+// página com toques pendentes fazia a contagem exibida VOLTAR pra trás (o
+// snapshot do servidor não inclui o que ainda não sincronizou) e nunca mais
+// se corrigia sozinha, mesmo depois da fila esvaziar (achado na revisão
+// adversarial da E5 — ver PLANO_CONTADOR_EVENTO.md).
+function aplicaFilaPendente(slug){
+  fila[slug].forEach(function(item){
+    var atual = contagem[slug][item.drinkId] || 0;
+    contagem[slug][item.drinkId] = Math.max(0, atual + item.delta);
+  });
+}
+
+async function carregaEstadoServidor(slug){
+  var s = sess[slug]; if (!s) return;
+  try {
+    var r = await fetchComTimeout(CFG.workerUrl + '/api/evento/estado?eventoId=' + encodeURIComponent(EVENTO_ID), {
+      headers: { 'X-Token': s.token },
+    });
+    if (!r.ok) return;
+    var estado = await r.json();
+    var meu = (estado.porPessoa || {})[s.pessoa];
+    if (meu) contagem[slug] = Object.assign({}, meu);
+  } catch(e){ /* offline — segue só com o que já está na tela */ }
+}
+
+async function enviaToque(slug, drinkId, delta){
+  var s = sess[slug]; if (!s) return;
+  var item = { eventoId: EVENTO_ID, drinkId: drinkId, delta: delta, toqueId: uuid() };
+  fila[slug].push(item); salvaFila(slug);
+  tentaEsvaziarFila(slug);
+}
+
+// Trava de reentrância: sem isso, toques rápidos (cada um chama
+// tentaEsvaziarFila) disparavam a MESMA fila em paralelo — a 2ª chamada lia
+// fila[0] antes da 1ª terminar seu await e reenviava o item ainda não
+// removido, duplicando requisição (achado testando com 3 toques em sequência
+// na E3). O toqueId protege o DADO final no Worker (idempotente), mas a
+// requisição redundante é desperdício evitável — uma corrida por lado basta.
+var filaRodando = { a: false, b: false };
+
+async function tentaEsvaziarFila(slug){
+  var s = sess[slug]; if (!s || !fila[slug].length || filaRodando[slug]) return;
+  filaRodando[slug] = true;
+  try {
+    while (fila[slug].length) {
+      var item = fila[slug][0];
+      try {
+        var r = await fetchComTimeout(CFG.workerUrl + '/api/evento/toque', {
+          method:'POST', headers:{'Content-Type':'application/json','X-Token':s.token}, body: JSON.stringify(item),
+        });
+        if (r.status === 401) {
+          // Token expirado no meio do evento (validade 12h) — SEM isto, a
+          // fila tentava pra sempre contra sessão morta, a cada 8s, sem
+          // nunca avisar o bartender (achado na revisão adversarial da E5).
+          // Os itens ficam na fila (persistidos) — ao logar de novo, o mesmo
+          // fluxo de iniciaLado() retoma o envio deles.
+          sessaoLimpar(slug); sess[slug] = null;
+          montaGate2(slug);
+          return;
+        }
+        if (!r.ok) break; // erro do servidor (5xx, etc.) — para e tenta de novo depois
+        fila[slug].shift(); salvaFila(slug);
+        render(slug); // atualiza o badge "aguardando rede" — sem isto ele ficava
+                       // preso mostrando a contagem de quando o toque foi feito,
+                       // mesmo depois de tudo já sincronizado (achado testando).
+      } catch(e){ break; } // sem rede/timeout — para, tenta de novo no próximo gatilho
+    }
+  } finally {
+    filaRodando[slug] = false;
+  }
+}
+window.addEventListener('online', function(){ tentaEsvaziarFila('a'); tentaEsvaziarFila('b'); });
+setInterval(function(){ tentaEsvaziarFila('a'); tentaEsvaziarFila('b'); }, 8000);
+
+function somaInsumosLocal(qtdPorDrink){
+  var porInsumo = {};
+  (cardapio.drinks || []).forEach(function(d){
+    var q = qtdPorDrink[d.id] || 0;
+    if (!q) return;
+    (d.ficha || []).forEach(function(it){
+      var chave = it.insumo + '|' + it.unid;
+      porInsumo[chave] = (porInsumo[chave] || 0) + it.qtd * q;
+    });
+  });
+  return Object.keys(porInsumo).sort(function(x,y){ return porInsumo[y]-porInsumo[x]; })
+    .map(function(k){ var p=k.split('|'); return {insumo:p[0], unid:p[1], total:porInsumo[k]}; });
+}
+
+function montaGate(slug){
+  var wrap = document.createElement('div');
+  wrap.className = 'gate';
+  wrap.innerHTML =
+    '<div class="rotulo">Login do bartender · lado ' + slug.toUpperCase() + '</div>' +
+    '<input type="password" inputmode="numeric" placeholder="senha" id="senha-' + slug + '">' +
+    '<button id="entrar-' + slug + '">Entrar</button>' +
+    '<div class="erro" id="erro-' + slug + '"></div>';
+  var btn = wrap.querySelector('#entrar-' + slug);
+  var input = wrap.querySelector('#senha-' + slug);
+  var erro = wrap.querySelector('#erro-' + slug);
+  async function tenta(){
+    var senha = input.value.trim(); if (!senha) return;
+    btn.disabled = true; erro.textContent = '';
+    var res = await login(slug, senha);
+    btn.disabled = false;
+    if (res.erro === 'rede') { erro.textContent = 'sem conexão — tente de novo'; return; } // mantém a senha digitada
+    if (res.erro) { erro.textContent = 'senha inválida'; input.value=''; input.focus(); return; }
+    sessaoSalvar(slug, res.sessao);
+    sess[slug] = res.sessao;
+    await iniciaLado(slug);
+  }
+  btn.addEventListener('click', tenta);
+  input.addEventListener('keydown', function(e){ if (e.key === 'Enter') tenta(); });
+  return wrap;
+}
+
+function montaLancador(slug){
+  var s = sess[slug];
+  var wrap = document.getElementById('lanc-' + slug);
+  wrap.innerHTML = '';
+  wrap.className = 'lanc ' + slug;
+  wrap.innerHTML =
+   '<div class="bar-hd">' +
+     '<div class="avatar">' + (s.pessoa || '?')[0] + '</div>' +
+     '<div class="bar-id"><div class="nome">' + s.pessoa + '</div>' +
+       '<div class="sub">' + (s.nivel === 'bartender' ? 'bartender' : s.nivel) + ' · <span class="trocar" id="trocar-' + slug + '">trocar</span></div></div>' +
+     '<div class="bar-cont"><div class="n" id="cont-' + slug + '">0</div><div class="l">drinks feitos</div></div>' +
+   '</div>' +
+   '<div class="grade" id="grade-' + slug + '"></div>' +
+   '<div class="insumos"><div class="cab">Insumos consumidos <span class="fila-badge" id="fila-' + slug + '"></span></div>' +
+     '<div class="chips" id="ins-' + slug + '"></div></div>';
+
+  document.getElementById('trocar-' + slug).addEventListener('click', async function(){
+    // Bloqueia troca com toques ainda não sincronizados: se A tem toques na
+    // fila e alguém troca pra B antes deles sincronizarem, esses toques
+    // (enviados com o token de QUEM estiver logado no momento do envio) iam
+    // parar no nome de B — atribuição errada de drink (achado na revisão
+    // adversarial da E5). Tenta esvaziar antes de bloquear, caso a rede
+    // volte bem na hora.
+    if (fila[slug].length) {
+      await tentaEsvaziarFila(slug);
+      if (fila[slug].length) {
+        alert('Ainda há ' + fila[slug].length + ' toque(s) não sincronizado(s) neste lado. Espere a conexão voltar antes de trocar de bartender.');
+        return;
+      }
+    }
+    sessaoLimpar(slug); sess[slug] = null; contagem[slug] = {};
+    montaGate2(slug);
+  });
+
+  var grade = document.getElementById('grade-' + slug);
+  (cardapio.drinks || []).forEach(function(d){
+    var b = document.createElement('button');
+    b.className = 'drink'; b.dataset.id = d.id;
+    b.innerHTML = '<span class="emoji">' + (d.emoji || '🍸') + '</span>' +
+      '<span class="badge" id="bd-' + slug + '-' + d.id + '">0</span>' +
+      '<span class="plus1">+1</span>' +
+      '<span class="nome">' + d.nome + '</span>' +
+      '<button class="undo" title="Corrigir −1">–</button>';
+    b.addEventListener('click', function(e){
+      if (e.target.classList.contains('undo')) { golpe(slug, d, b, -1); e.stopPropagation(); return; }
+      golpe(slug, d, b, 1);
+    });
+    grade.appendChild(b);
+  });
+  render(slug);
+}
+
+function golpe(slug, d, btn, delta){
+  var atual = contagem[slug][d.id] || 0;
+  contagem[slug][d.id] = Math.max(0, atual + delta);
+  if (delta > 0) {
+    var p = btn.querySelector('.plus1'); p.classList.remove('go'); void p.offsetWidth; p.classList.add('go');
+    if (navigator.vibrate) navigator.vibrate(18);
+  }
+  enviaToque(slug, d.id, delta);
+  render(slug);
+}
+
+function render(slug){
+  var totBar = 0;
+  (cardapio.drinks || []).forEach(function(d){
+    var q = contagem[slug][d.id] || 0;
+    var badge = document.getElementById('bd-' + slug + '-' + d.id);
+    if (!badge) return;
+    var card = badge.closest('.drink');
+    badge.textContent = q; badge.classList.toggle('on', q > 0); card.classList.toggle('hit', q > 0);
+    totBar += q;
+  });
+  var contEl = document.getElementById('cont-' + slug); if (contEl) contEl.textContent = totBar;
+  var box = document.getElementById('ins-' + slug);
+  if (box) {
+    var ins = somaInsumosLocal(contagem[slug]);
+    box.innerHTML = ins.length
+      ? ins.map(function(i){ return '<span class="chip">' + i.insumo + ' <b>' + fmtMl(i.total) + '</b></span>'; }).join('')
+      : '<span class="chip vazio">nada lançado ainda</span>';
+  }
+  var filaBadge = document.getElementById('fila-' + slug);
+  if (filaBadge) filaBadge.textContent = fila[slug].length ? ('⏳ ' + fila[slug].length + ' aguardando rede') : '';
+
+  var g = 0;
+  ['a','b'].forEach(function(sl){ Object.keys(contagem[sl]).forEach(function(k){ g += contagem[sl][k]; }); });
+  var totGeral = document.getElementById('totGeral'); if (totGeral) totGeral.textContent = g;
+}
+
+function montaGate2(slug){
+  var wrap = document.getElementById('lanc-' + slug);
+  wrap.innerHTML = '';
+  wrap.className = 'lanc ' + slug;
+  wrap.appendChild(montaGate(slug));
+}
+
+async function iniciaLado(slug){
+  var s = sess[slug];
+  if (!cardapio) {
+    var res = await carregaCardapio(s.token);
+    if (res.erro === 'sessao') {
+      // Token expirado/inválido — NÃO é "evento não encontrado", é sessão
+      // vencida deste lado. Limpa só este lado e volta pro login (achado
+      // testando: as duas mensagens eram iguais e confundiam o bartender).
+      sessaoLimpar(slug); sess[slug] = null;
+      montaGate2(slug);
+      return;
+    }
+    if (res.erro === 'rede') {
+      var wrapR = document.getElementById('lanc-' + slug);
+      wrapR.innerHTML = '<div class="msg-central">Sem conexão pra carregar o evento. Verifique o wifi e recarregue a página.</div>';
+      return;
+    }
+    if (res.erro) {
+      var wrap = document.getElementById('lanc-' + slug);
+      wrap.innerHTML = '<div class="msg-central">Evento não encontrado no cardápio (eventoId="' + EVENTO_ID + '"). Confira o link.</div>';
+      return;
+    }
+    cardapio = res.dado;
+    document.getElementById('evTopo').innerHTML = '📍 <b>' + cardapio.nome + '</b> · ' + (cardapio.casa || '').toUpperCase() + ' · ' + (cardapio.data || '');
+  }
+  carregaFila(slug);
+  await carregaEstadoServidor(slug);
+  aplicaFilaPendente(slug); // reconcilia o snapshot do servidor com toques ainda não sincronizados
+  montaLancador(slug);
+  tentaEsvaziarFila(slug);
+}
+
+async function init(){
+  if (!EVENTO_ID) {
+    document.getElementById('arena').innerHTML = '<div class="msg-central" style="flex:1">Link sem evento. Use ?evento=&lt;id&gt; na URL.</div>';
+    return;
+  }
+  for (var i = 0; i < LADOS.length; i++) {
+    var slug = LADOS[i].slug;
+    var restaurada = sessaoLer(slug);
+    if (restaurada) { sess[slug] = restaurada; await iniciaLado(slug); }
+    else montaGate2(slug);
+  }
+}
+
+document.getElementById('lockBtn').addEventListener('click', function(){
+  var arena = document.getElementById('arena');
+  var travado = arena.classList.toggle('travado');
+  this.classList.toggle('on', travado);
+});
+
+init();
+</script>
+</body>
+</html>
