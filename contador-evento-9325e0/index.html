@@ -116,6 +116,34 @@ body{
 .picker-btn{font:inherit;font-size:14px;font-weight:700;padding:11px 24px;border-radius:12px;border:none;
   background:var(--acc);color:var(--acc-txt);cursor:pointer;margin-top:10px}
 .picker-erro{color:#e07a63;font-size:12.5px;min-height:16px;margin-top:6px}
+
+/* --- modal de relatório / fechar evento (chefe/coord) --- */
+.modal{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.62);display:none;
+  align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}
+.modal.on{display:flex}
+.modal-card{background:var(--card);border:1px solid var(--border);border-radius:18px;
+  max-width:560px;width:100%;padding:20px 20px 26px;margin:auto}
+.modal-hd{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.modal-hd h2{font-family:var(--serif);font-size:18px;margin:0;color:var(--acc);flex:1}
+.modal-x{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);
+  background:var(--card2);color:var(--text-3);font-size:16px;cursor:pointer;flex:0 0 auto}
+.rel-login label{font-size:11px;color:var(--text-3);display:block;margin-bottom:6px}
+.rel-login input{font:inherit;font-size:18px;text-align:center;letter-spacing:4px;width:100%;
+  background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--text);padding:12px 10px}
+.rel-btn{font:inherit;font-size:14px;font-weight:700;padding:12px 22px;border-radius:12px;border:none;
+  background:var(--acc);color:var(--acc-txt);cursor:pointer;margin-top:14px;width:100%}
+.rel-btn:disabled{opacity:.55;cursor:default}
+.rel-erro{color:#e07a63;font-size:12.5px;min-height:16px;margin-top:8px}
+.rel-bt{border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:9px;background:var(--card2)}
+.rel-bt .top{display:flex;align-items:baseline;gap:8px;margin-bottom:5px}
+.rel-bt .nome{font-family:var(--serif);font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rel-bt .tot{font-family:var(--serif);font-size:22px;color:var(--acc);font-weight:700}
+.rel-bt .l{font-size:9px;letter-spacing:1.5px;color:var(--text-3);text-transform:uppercase}
+.rel-drinks{font-size:12px;color:var(--text-2);line-height:1.5}
+.rel-sec-tit{font-size:10px;letter-spacing:1.5px;color:var(--text-3);text-transform:uppercase;margin:18px 0 8px}
+.rel-ins{display:flex;flex-wrap:wrap;gap:6px 8px}
+.rel-vazio{color:var(--text-3);font-size:12.5px}
+.rel-ok{color:var(--verde);font-size:13px;margin-top:10px;line-height:1.5;min-height:16px}
 </style>
 </head>
 <body>
@@ -124,6 +152,9 @@ body{
   <div class="marca">Contador de <b>Evento</b></div>
   <div class="evento" id="evTopo">Carregando evento…</div>
   <div class="topo-total"><div class="n" id="totGeral">0</div><div class="l">drinks na festa</div></div>
+  <button class="lock" id="relBtn" title="Relatório / fechar evento (chefe ou coordenador)" type="button" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1V5a1 1 0 0 1 1-1z"/><path d="M9 12h6M9 16h4"/></svg>
+  </button>
   <button class="lock" id="lockBtn" title="Travar toques (evita toque sem querer)" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
   </button>
@@ -133,6 +164,13 @@ body{
   <div class="lanc a" id="lanc-a"></div>
   <div class="divisor"></div>
   <div class="lanc b" id="lanc-b"></div>
+</div>
+
+<div class="modal" id="relModal">
+  <div class="modal-card">
+    <div class="modal-hd"><h2>Relatório do evento</h2><button class="modal-x" id="relFechar" type="button">✕</button></div>
+    <div id="relBody"></div>
+  </div>
 </div>
 
 <script>
@@ -593,11 +631,138 @@ async function montaPicker(){
   });
 }
 
+// --- relatório / fechar evento (chefe/coord) -----------------------------
+// Sessão do chefe/coord fica SÓ em memória (não persiste): fechar evento é
+// uma ação pontual e o token some ao recarregar a página, de propósito.
+var admin = null;                     // {token, pessoa, nivel, casa, exp}
+
+function fmtQtdRel(i){
+  return i.unid === 'ml' ? fmtMl(i.total) : (Math.round(i.total*100)/100) + ' ' + (i.unid || '');
+}
+
+function abreRelatorio(){
+  document.getElementById('relModal').classList.add('on');
+  if (admin) carregaRelatorio(); else telaLoginAdmin();
+}
+function fechaModal(){ document.getElementById('relModal').classList.remove('on'); }
+
+function telaLoginAdmin(msg){
+  var body = document.getElementById('relBody');
+  body.innerHTML =
+    '<div class="rel-login">' +
+      '<label>Senha de chefe ou coordenador</label>' +
+      '<input type="password" inputmode="numeric" id="rel-senha" placeholder="senha">' +
+      '<button class="rel-btn" id="rel-entrar">Ver relatório</button>' +
+      '<div class="rel-erro" id="rel-erro">' + (msg || '') + '</div>' +
+    '</div>';
+  var inp = document.getElementById('rel-senha');
+  var btn = document.getElementById('rel-entrar');
+  var erro = document.getElementById('rel-erro');
+  async function tenta(){
+    var senha = inp.value.trim(); if (!senha) return;
+    btn.disabled = true; erro.textContent = '';
+    var res = await login('admin', senha); // reusa login(); 'admin' é só rótulo de slug
+    btn.disabled = false;
+    if (res.erro === 'rede') { erro.textContent = 'sem conexão — tente de novo'; return; }
+    if (res.erro) { erro.textContent = 'senha inválida'; inp.value = ''; inp.focus(); return; }
+    if (!['chefe','coord'].includes(res.sessao.nivel)) {
+      // senha de bartender é válida, mas não pode fechar evento
+      erro.textContent = 'essa senha não tem permissão de chefe/coordenador'; inp.value = ''; inp.focus(); return;
+    }
+    admin = res.sessao;
+    carregaRelatorio();
+  }
+  btn.addEventListener('click', tenta);
+  inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') tenta(); });
+  inp.focus();
+}
+
+async function carregaRelatorio(){
+  var body = document.getElementById('relBody');
+  body.innerHTML = '<p class="rel-vazio">Carregando…</p>';
+  // garante nomes dos drinks no relatório mesmo se nenhum lado estiver logado
+  if (!cardapio) {
+    var c = await carregaCardapio(admin.token);
+    if (c.dado) cardapio = c.dado;
+  }
+  var r;
+  try {
+    r = await fetchComTimeout(CFG.workerUrl + '/api/evento/relatorio?eventoId=' + encodeURIComponent(EVENTO_ID), {
+      headers: { 'X-Token': admin.token },
+    });
+  } catch(e){ body.innerHTML = '<p class="rel-erro">sem conexão — feche e abra de novo</p>'; return; }
+  if (r.status === 401) { admin = null; telaLoginAdmin('sessão expirada, entre de novo'); return; }
+  if (!r.ok) { body.innerHTML = '<p class="rel-erro">erro ao carregar o relatório</p>'; return; }
+  renderRelatorio(await r.json());
+}
+
+function renderRelatorio(d){
+  var body = document.getElementById('relBody');
+  var lista = d.porBartender || [];
+  var totalGeral = lista.reduce(function(a,b){ return a + b.total; }, 0);
+  var partes = [];
+  partes.push('<div class="rel-sec-tit">Por bartender · ' + totalGeral + ' drinks no total</div>');
+  if (!lista.length) {
+    partes.push('<p class="rel-vazio">Nenhum toque registrado ainda.</p>');
+  } else {
+    lista.forEach(function(b){
+      var drinksTxt = Object.keys(b.drinks).map(function(id){
+        var dr = ((cardapio && cardapio.drinks) || []).find(function(x){ return x.id === id; });
+        return (dr ? dr.nome : id) + ' ×' + b.drinks[id];
+      }).join(' · ');
+      partes.push(
+        '<div class="rel-bt"><div class="top"><span class="nome">' + b.pessoa + '</span>' +
+        '<span class="tot">' + b.total + '</span><span class="l">drinks</span></div>' +
+        '<div class="rel-drinks">' + (drinksTxt || '—') + '</div></div>');
+    });
+  }
+  partes.push('<div class="rel-sec-tit">Insumos totais do evento</div>');
+  var ins = d.insumosTotais || [];
+  partes.push(ins.length
+    ? '<div class="rel-ins">' + ins.map(function(i){ return '<span class="chip">' + i.insumo + ' <b>' + fmtQtdRel(i) + '</b></span>'; }).join('') + '</div>'
+    : '<p class="rel-vazio">nada lançado ainda</p>');
+  partes.push('<button class="rel-btn" id="rel-fechar-ev"' + (totalGeral ? '' : ' disabled') + '>Fechar evento e gravar no histórico</button>');
+  partes.push('<div class="rel-erro" id="rel-fechar-erro"></div>');
+  partes.push('<div class="rel-ok" id="rel-fechar-ok"></div>');
+  body.innerHTML = partes.join('');
+  var fb = document.getElementById('rel-fechar-ev');
+  if (fb) fb.addEventListener('click', fechaEvento);
+}
+
+async function fechaEvento(){
+  var btn = document.getElementById('rel-fechar-ev');
+  var erro = document.getElementById('rel-fechar-erro');
+  var ok = document.getElementById('rel-fechar-ok');
+  erro.textContent = ''; ok.textContent = '';
+  if (!confirm('Fechar o evento agora? Grava o resumo por bartender no histórico (Notion). Pode fechar de novo depois — atualiza os mesmos registros, não duplica.')) return;
+  btn.disabled = true; var rotulo = btn.textContent; btn.textContent = 'Gravando…';
+  var r;
+  try {
+    // Notion pode gravar várias páginas — timeout mais folgado que o padrão.
+    r = await fetchComTimeout(CFG.workerUrl + '/api/evento/fechar', {
+      method:'POST', headers:{'Content-Type':'application/json','X-Token':admin.token},
+      body: JSON.stringify({ eventoId: EVENTO_ID }),
+    }, 30000);
+  } catch(e){ erro.textContent = 'sem conexão — tente de novo'; btn.disabled = false; btn.textContent = rotulo; return; }
+  if (r.status === 401) { admin = null; telaLoginAdmin('sessão expirada, entre de novo'); return; }
+  var d = await r.json().catch(function(){ return {}; });
+  if (!r.ok) { erro.textContent = d.erro || 'erro ao fechar'; btn.disabled = false; btn.textContent = rotulo; return; }
+  var n = (d.gravados || []).length;
+  ok.textContent = '✅ Evento fechado — ' + n + ' linha(s) gravada(s) no histórico.';
+  btn.textContent = 'Fechar de novo (atualiza)'; btn.disabled = false;
+}
+
 async function init(){
   if (!EVENTO_ID) {
     await montaPicker();
     return;
   }
+  document.getElementById('relBtn').style.display = 'grid';
+  document.getElementById('relBtn').addEventListener('click', abreRelatorio);
+  document.getElementById('relFechar').addEventListener('click', fechaModal);
+  document.getElementById('relModal').addEventListener('click', function(e){
+    if (e.target === this) fechaModal(); // clicar no fundo escuro fecha
+  });
   for (var i = 0; i < LADOS.length; i++) {
     var slug = LADOS[i].slug;
     var restaurada = sessaoLer(slug);
