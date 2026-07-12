@@ -200,6 +200,10 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
   .pr-card .pr-go { margin-left: auto; font-size: 20px; line-height: 1; flex: none; }
   .pr-card.pr-ocorrencia .pr-go { color: #f28a63; }
   .pr-card.pr-solicitacao .pr-go { color: #7fe6bd; }
+  .pr-card.pr-central { grid-column: 1 / -1; background: linear-gradient(135deg,#3d3320,#241f13); border-color: #d0a352; }
+  .pr-card.pr-central::before { background: #e0c088; }
+  .pr-card.pr-central .pr-chip { background: rgba(208,163,82,.18); color: #e0c088; }
+  .pr-card.pr-central .pr-go { color: #e0c088; }
   @media (max-width: 420px) { .painel-rapido { gap: 8px; } a.pr-card { padding: 13px 12px 13px 15px; gap: 10px; } }
 </style>
 <div class="painel-rapido">
@@ -213,7 +217,20 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
     <span class="pr-tt"><span class="t">Solicitação</span><span class="d">Pedir algo ao coordenador</span></span>
     <span class="pr-go" aria-hidden="true">›</span>
   </a>
+  <a class="pr-card pr-central" id="pr-central-card" href="demandas.html" style="display:none">
+    <span class="pr-chip"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span>
+    <span class="pr-tt"><span class="t">Central de Demandas</span><span class="d">Acompanhar ocorrências e solicitações</span></span>
+    <span class="pr-go" aria-hidden="true">›</span>
+  </a>
 </div>
+<script>(function () {
+  try {
+    var s = window.sessaoLer && window.sessaoLer();
+    var ok = s && ['chefe', 'coord', 'controladoria'].indexOf(s.nivel) !== -1;
+    var el = document.getElementById('pr-central-card');
+    if (ok && el) el.style.display = '';
+  } catch (e) {}
+})();</script>
 
 <details class="hero-hoje" open>
 <summary class="k">HOJE NO GRUPO<span class="seta" aria-hidden="true">▾</span></summary>
