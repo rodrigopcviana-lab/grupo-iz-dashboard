@@ -93,39 +93,53 @@ window.exigirNivel = function (niveisOk, slug) {
 
 <style>
   .pr-mini-wrap { display: none; }
-  .pr-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin: 0 0 16px; }
-  a.prm-card { position: relative; display: flex; align-items: center; gap: 8px; border-radius: 11px;
-               padding: 8px 10px 8px 11px; text-decoration: none; color: var(--text); min-height: 38px;
-               min-width: 0; border: 1.5px solid; overflow: hidden; transition: filter .15s; }
+  .prm-toggle-btn { width: 100%; display: flex; align-items: center; justify-content: space-between;
+                     gap: 8px; padding: 9px 13px; border-radius: 11px; border: 1px solid var(--border);
+                     background: var(--card); color: var(--text); font-size: 13px; font-weight: 600;
+                     cursor: pointer; margin-bottom: 8px; }
+  .prm-toggle-btn .prm-toggle-ic { display: flex; align-items: center; color: var(--acc); transition: transform .18s; }
+  .prm-toggle-btn .prm-toggle-ic svg { width: 15px; height: 15px; display: block; }
+  .prm-toggle-btn.aberto .prm-toggle-ic { transform: rotate(180deg); }
+  .pr-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 0 0 16px; }
+  .pr-mini[hidden] { display: none; }
+  a.prm-card { position: relative; display: flex; flex-direction: column; align-items: center;
+               justify-content: center; text-align: center; gap: 5px; border-radius: 11px; padding: 8px 6px;
+               text-decoration: none; color: var(--text); min-height: 52px; min-width: 0; border: 1.5px solid;
+               overflow: hidden; transition: filter .15s; }
   a.prm-card:hover { filter: brightness(1.12); }
-  a.prm-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  a.prm-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; }
   .prm-card.prm-oc { background: linear-gradient(135deg,#33201d,#221512); border-color: #e07a52; }
   .prm-card.prm-oc::before { background: #f28a63; }
   .prm-card.prm-so { background: linear-gradient(135deg,#152a23,#121b17); border-color: #4fbf92; }
   .prm-card.prm-so::before { background: #7fe6bd; }
-  .prm-card.prm-dose { grid-column: 1 / -1; background: linear-gradient(135deg,#132434,#101820); border-color: #6fa8dc; }
+  .prm-card.prm-dose { background: linear-gradient(135deg,#132434,#101820); border-color: #6fa8dc; }
   .prm-card.prm-dose::before { background: #8ec0ea; }
-  .prm-card.prm-central { grid-column: 1 / -1; background: linear-gradient(135deg,#3d3320,#241f13); border-color: #d0a352; }
+  .prm-card.prm-central { grid-column: 1 / -1; flex-direction: row; text-align: left; padding: 8px 10px 8px 11px;
+                           min-height: 38px; background: linear-gradient(135deg,#3d3320,#241f13); border-color: #d0a352; }
   .prm-card.prm-central::before { background: #e0c088; }
-  a.prm-card .prm-chip { width: 26px; height: 26px; border-radius: 8px; display: flex;
+  a.prm-card .prm-chip { width: 24px; height: 24px; border-radius: 7px; display: flex;
                           align-items: center; justify-content: center; flex: none; }
-  a.prm-card .prm-chip svg { width: 14px; height: 14px; display: block; flex: none; }
+  a.prm-card .prm-chip svg { width: 13px; height: 13px; display: block; flex: none; }
   .prm-card.prm-oc .prm-chip { background: rgba(220,154,142,.16); color: #f0a58f; }
   .prm-card.prm-so .prm-chip { background: rgba(159,225,203,.14); color: #9fe1cb; }
   .prm-card.prm-dose .prm-chip { background: rgba(111,168,220,.18); color: #8ec0ea; }
   .prm-card.prm-central .prm-chip { background: rgba(208,163,82,.18); color: #e0c088; }
-  .prm-card .prm-t { font-size: 12.5px; font-weight: 600; }
+  .prm-card .prm-t { font-size: 11.5px; font-weight: 600; }
 </style>
 <div class="pr-mini-wrap" id="pr-mini-wrap">
-  <div class="pr-mini">
+  <button type="button" class="prm-toggle-btn" id="prm-toggle-btn" aria-expanded="false" aria-controls="pr-mini-conteudo">
+    <span>Painel Rápido</span>
+    <span class="prm-toggle-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+  </button>
+  <div class="pr-mini" id="pr-mini-conteudo" hidden>
     <a class="prm-card prm-oc" href="registro.html?tipo=ocorrencia">
-      <span class="prm-chip"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg></span><span class="prm-t">Ocorrência</span></a>
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg></span><span class="prm-t">Ocorrência</span></a>
     <a class="prm-card prm-so" href="registro.html?tipo=solicitacao">
-      <span class="prm-chip"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><span class="prm-t">Solicitação</span></a>
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><span class="prm-t">Solicitação</span></a>
     <a class="prm-card prm-dose" id="prm-dose-card" href="dose.html" style="display:none">
-      <span class="prm-chip"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span><span class="prm-t">Registro de Dose</span></a>
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span><span class="prm-t">Registro de Dose</span></a>
     <a class="prm-card prm-central" id="prm-central-card" href="demandas.html" style="display:none">
-      <span class="prm-chip"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><span class="prm-t">Central de Demandas</span></a>
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><span class="prm-t">Central de Demandas</span></a>
   </div>
 </div>
 <script>(function(){
@@ -139,6 +153,14 @@ window.exigirNivel = function (niveisOk, slug) {
     var elD = document.getElementById('prm-dose-card');
     if (okDose && elD) elD.style.display = '';
   } catch (e) {}
+  var btn = document.getElementById('prm-toggle-btn');
+  var conteudo = document.getElementById('pr-mini-conteudo');
+  btn.onclick = function () {
+    var abrir = conteudo.hidden;
+    conteudo.hidden = !abrir;
+    btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    btn.classList.toggle('aberto', abrir);
+  };
 })();</script>
 
 
