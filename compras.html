@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16130f">
+<title>Pedido de Compras · Portal dos Bares — Grupo IZ</title>
+<link rel="stylesheet" href="portal.css">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bares IZ">
+</head>
+<body>
+<a class="volta-mural" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
+<header class="topo">
+<div class="marca">Portal dos Bares</div>
+<div class="kicker">GRUPO IZ</div>
+<div class="topo-linha">
+<a class="nivel-pill" id="nivel-pill" href="index.html#nivel">Nível: <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-tr">Trocar</span></a>
+
+<button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar receita" title="Buscar receita (/)">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4.5 4.5"/></svg>
+</button>
+<div id="busca-global-ov" role="dialog" aria-modal="true" aria-label="Buscar receita">
+<div class="bg-caixa">
+<div class="bg-topo">
+<input id="bg-input" type="search" placeholder="Nome do drink…" autocomplete="off">
+<button class="bg-fechar" id="bg-fechar" type="button" aria-label="Fechar busca">&times;</button>
+</div>
+<div class="bg-res" id="bg-res"><p class="bg-dica">Digite ao menos 2 letras.</p></div>
+</div>
+</div>
+
+</div>
+</header>
+
+<script>
+window.SESSAO_LS = 'portal_sessao';
+window.sessaoLer = function () {
+  try {
+    var raw = localStorage.getItem(window.SESSAO_LS);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    return s;
+  } catch (e) { return null; }
+};
+// casa (Missão 5, 2026-07-10): slug da casa do chefe logado, "*" pra
+// master/coord/boss, null pra níveis sem casa própria. Opcional na chamada
+// pra não quebrar quem ainda chama sessaoSalvar(nivel, token, exp) direto.
+window.sessaoSalvar = function (nivel, token, exp, casa) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null })); } catch (e) {}
+};
+window.sessaoLimpar = function () {
+  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
+};
+window.loginSenha = function (worker, senha) {
+  return fetch(worker + '/api/nivel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senha: senha }),
+  }).then(function (r) {
+    if (r.status === 401) return { ok: false, status: 401 };
+    if (!r.ok) return { ok: false, status: r.status };
+    return r.json().then(function (d) {
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa);
+      return { ok: true, nivel: d.nivel, casa: d.casa, token: d.token };
+    });
+  }).catch(function () { return { ok: false, status: 0 }; });
+};
+// Gate padrão das páginas protegidas (2026-07-09): a senha é digitada SÓ na
+// home. Sem sessão -> manda pra home logar, com volta automática pra cá.
+// Sessão de nível insuficiente -> NÃO redireciona (senão a home logada
+// devolveria pra cá e viraria loop); a página mostra a mensagem e o caminho
+// é a pill "Trocar acesso". Só para páginas na raiz do portal — as cascas
+// de /vendas/ (repo do site) replicam a própria versão com '../'.
+window.irParaLogin = function (slug) {
+  location.replace('index.html?volta=' + encodeURIComponent(slug) + '#nivel');
+};
+window.exigirNivel = function (niveisOk, slug) {
+  var s = window.sessaoLer();
+  // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz: passa em
+  // qualquer página que a equipe abre. Páginas de treino ainda listam
+  // 'bartender' explicitamente pra tratar o comportamento por pessoa.
+  var efet = (s && s.nivel === 'bartender' && niveisOk.indexOf('bartender') < 0 &&
+              niveisOk.indexOf('equipe') >= 0) ? 'equipe' : (s ? s.nivel : null);
+  if (s && (niveisOk.indexOf(s.nivel) >= 0 || niveisOk.indexOf(efet) >= 0)) return { ok: true, sessao: s };
+  if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
+  return { ok: false, nivelAtual: s.nivel };
+};
+</script>
+
+<nav id="nav-principal" class="nav-sec"><details class="grp on" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Operação</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="index.html" class="grp-link" data-niveis="equipe chefe coord rh controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a><a href="eventos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a><a href="contagem.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contagem de insumos</span></a><a href="contagem-copos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg><span>Contagem de copos</span></a><a href="compras.html" class="grp-link on" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Pedido de Compras</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="turno.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>Relatório de turno</span></a><a href="rotinas.html" class="grp-link" data-niveis="equipe chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Rotinas</span></a><a href="producao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Produção possível</span></a></div></details><details class="grp" data-niveis="chefe coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Bar</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="cocktails.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas técnicas</span></a><a href="treinamentos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Treinamentos</span></a><a href="calculadora.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Calculadora PB</span></a><a href="lab.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Lab de Drinks</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="constelacao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Constelação de Sabores</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="lab-proposta.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Lab 2.0 — proposta</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="planejador-3d.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Planejador 3D</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Pessoas</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="equipe.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Equipe</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="metas.html" class="grp-link" data-niveis="equipe chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Metas &amp; Desenv.</span></a><a href="contatos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg><span>Contatos</span></a><a href="regras.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Escala &amp; BH</span></a><a href="minha-atividade.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Minha Atividade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></details><details class="grp" data-niveis="chefe controladoria coord"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Gestão</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="demandas.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central de Demandas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="curva-abc.html" class="grp-link" data-niveis="chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Ranking</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="consumo.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Consumo</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="vendas/index.html" class="grp-link" data-niveis="controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg><span>Vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="rentabilidade.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Rentabilidade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="contratos.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contratos On Trade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="patrimonio.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Controle de Patrimônio</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="doses-painel.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg><span>Controle de Doses</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="evolucao.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Evolução do treino</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="atividade.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Atividade por pessoa</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></details></nav>
+
+<style>
+  .pr-mini-wrap { display: none; }
+  .prm-toggle-btn { width: 100%; display: flex; align-items: center; justify-content: space-between;
+                     gap: 8px; padding: 9px 13px; border-radius: 11px; border: 1px solid var(--border);
+                     background: var(--card); color: var(--text); font-size: 13px; font-weight: 600;
+                     cursor: pointer; margin-bottom: 8px; }
+  .prm-toggle-btn .prm-toggle-ic { display: flex; align-items: center; color: var(--acc); transition: transform .18s; }
+  .prm-toggle-btn .prm-toggle-ic svg { width: 15px; height: 15px; display: block; }
+  .prm-toggle-btn.aberto .prm-toggle-ic { transform: rotate(180deg); }
+  .pr-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 0 0 16px; }
+  .pr-mini[hidden] { display: none; }
+  a.prm-card { position: relative; display: flex; flex-direction: column; align-items: center;
+               justify-content: center; text-align: center; gap: 5px; border-radius: 11px; padding: 8px 6px;
+               text-decoration: none; color: var(--text); min-height: 52px; min-width: 0; border: 1.5px solid;
+               overflow: hidden; transition: filter .15s; }
+  a.prm-card:hover { filter: brightness(1.12); }
+  a.prm-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; }
+  .prm-card.prm-oc { background: linear-gradient(135deg,#33201d,#221512); border-color: #e07a52; }
+  .prm-card.prm-oc::before { background: #f28a63; }
+  .prm-card.prm-so { background: linear-gradient(135deg,#152a23,#121b17); border-color: #4fbf92; }
+  .prm-card.prm-so::before { background: #7fe6bd; }
+  .prm-card.prm-dose { background: linear-gradient(135deg,#132434,#101820); border-color: #6fa8dc; }
+  .prm-card.prm-dose::before { background: #8ec0ea; }
+  .prm-card.prm-central { grid-column: 1 / -1; flex-direction: row; text-align: left; padding: 8px 10px 8px 11px;
+                           min-height: 38px; background: linear-gradient(135deg,#3d3320,#241f13); border-color: #d0a352; }
+  .prm-card.prm-central::before { background: #e0c088; }
+  a.prm-card .prm-chip { width: 24px; height: 24px; border-radius: 7px; display: flex;
+                          align-items: center; justify-content: center; flex: none; }
+  a.prm-card .prm-chip svg { width: 13px; height: 13px; display: block; flex: none; }
+  .prm-card.prm-oc .prm-chip { background: rgba(220,154,142,.16); color: #f0a58f; }
+  .prm-card.prm-so .prm-chip { background: rgba(159,225,203,.14); color: #9fe1cb; }
+  .prm-card.prm-dose .prm-chip { background: rgba(111,168,220,.18); color: #8ec0ea; }
+  .prm-card.prm-central .prm-chip { background: rgba(208,163,82,.18); color: #e0c088; }
+  .prm-card .prm-t { font-size: 11.5px; font-weight: 600; }
+</style>
+<div class="pr-mini-wrap" id="pr-mini-wrap">
+  <button type="button" class="prm-toggle-btn" id="prm-toggle-btn" aria-expanded="false" aria-controls="pr-mini-conteudo">
+    <span>Painel Rápido</span>
+    <span class="prm-toggle-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+  </button>
+  <div class="pr-mini" id="pr-mini-conteudo" hidden>
+    <a class="prm-card prm-oc" href="registro.html?tipo=ocorrencia">
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg></span><span class="prm-t">Ocorrência</span></a>
+    <a class="prm-card prm-so" href="registro.html?tipo=solicitacao">
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><span class="prm-t">Solicitação</span></a>
+    <a class="prm-card prm-dose" id="prm-dose-card" href="dose.html" style="display:none">
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span><span class="prm-t">Registro de Dose</span></a>
+    <a class="prm-card prm-central" id="prm-central-card" href="demandas.html" style="display:none">
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><span class="prm-t">Central de Demandas</span></a>
+  </div>
+</div>
+<script>(function(){
+  try {
+    var s = window.sessaoLer && window.sessaoLer();
+    if (s) document.getElementById('pr-mini-wrap').style.display = 'block';
+    var okCentral = s && ['chefe', 'coord', 'controladoria'].indexOf(s.nivel) !== -1 && !false;
+    var elC = document.getElementById('prm-central-card');
+    if (okCentral && elC) elC.style.display = '';
+    var okDose = s && ['bartender', 'chefe', 'coord'].indexOf(s.nivel) !== -1 && !false;
+    var elD = document.getElementById('prm-dose-card');
+    if (okDose && elD) elD.style.display = '';
+  } catch (e) {}
+  var btn = document.getElementById('prm-toggle-btn');
+  var conteudo = document.getElementById('pr-mini-conteudo');
+  btn.onclick = function () {
+    var abrir = conteudo.hidden;
+    conteudo.hidden = !abrir;
+    btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    btn.classList.toggle('aberto', abrir);
+  };
+})();</script>
+
+
+<h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg> Pedido de Compras — semana atual</h1>
+<p class="sub">Sugestão de compra a partir da contagem (mínimo − contado), com orçamento
+estimado, venda provável entre semanas e sobras candidatas a transferência. Ajuste e a
+gravação vai direto pra semana do Notion — nada é pedido sozinho, sempre um gesto seu.
+Veja também a <a href="contagem.html">contagem de insumos</a>.</p>
+
+<div class="panel" id="cp-gate">
+  <h2>Acesso restrito</h2>
+  <p class="sub" id="cp-msg" style="margin:4px 0 0">Verificando seu acesso…</p>
+</div>
+
+<div id="cp-app" style="display:none">
+<style>
+  #cp-app { --card2:#2a241b; --azul:#8ec0ea; --roxo:#c7a6e8; }
+  .cp-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; position:sticky; top:0;
+    background:var(--bg); padding:10px 0; z-index:15; border-bottom:1px solid var(--border); }
+  .cp-tabs button { background:none; border:1px solid var(--border); color:var(--text-2); font-size:12.5px;
+    padding:7px 12px; border-radius:999px; cursor:pointer; font:inherit; }
+  .cp-tabs button.on { border-color:var(--acc); color:var(--acc); background:color-mix(in srgb, var(--acc) 10%, transparent); }
+  .cp-painel { display:none; } .cp-painel.on { display:block; }
+
+  .cp-fluxo { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:14px 0 20px; }
+  .cp-passo { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; }
+  .cp-passo .num { width:26px; height:26px; border-radius:50%; background:var(--acc); color:var(--acc-txt);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; margin-bottom:8px; }
+  .cp-passo b { display:block; font-size:13.5px; margin-bottom:4px; }
+  .cp-passo span { font-size:12px; color:var(--text-3); line-height:1.45; }
+  @media (max-width:760px){ .cp-fluxo { grid-template-columns:repeat(2,1fr); } }
+  .cp-glossario { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:8px 0; }
+  .cp-glo { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:12.5px; color:var(--text-2); line-height:1.5; }
+  .cp-glo b { display:block; font-size:13px; margin-bottom:3px; }
+  .cp-glo.g-sug b { color:var(--azul); } .cp-glo.g-venda b { color:var(--roxo); } .cp-glo.g-sobra b { color:var(--verde); }
+  @media (max-width:760px){ .cp-glossario { grid-template-columns:1fr; } }
+
+  .cp-pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .cp-pill { padding:9px 16px; border:1px solid var(--border); border-radius:999px;
+    background:none; color:var(--text-2); font-size:14px; cursor:pointer; }
+  .cp-pill.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); font-weight:600; }
+
+  .cp-topo-casa { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .cp-chip-casa { display:inline-flex; align-items:center; gap:8px; padding:7px 14px; border-radius:999px;
+    border:1px solid var(--acc); color:var(--text); font-size:13px;
+    background:color-mix(in srgb, var(--acc) 14%, transparent); }
+  .cp-semana-info { font-size:12px; color:var(--text-3); }
+  .cp-status { font-size:11px; color:var(--verde); }
+  .cp-status.pend { color:var(--amarelo); } .cp-status.erro { color:#e08585; }
+
+  .cp-kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:12px 0 14px; }
+  .cp-kpi { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:9px 12px; }
+  .cp-kpi b { display:block; font-size:18px; font-family:var(--serif); font-weight:500; }
+  .cp-kpi span { font-size:10px; color:var(--text-3); letter-spacing:.04em; text-transform:uppercase; }
+  .cp-kpi small { display:block; font-size:10px; color:var(--text-3); margin-top:1px; }
+  .cp-kpi.alerta b { color:var(--amarelo); } .cp-kpi.ped b { color:var(--verde); }
+  .cp-kpi.sobra b { color:var(--verde); } .cp-kpi.orc b { color:var(--acc); font-size:16px; }
+  @media (max-width:900px){ .cp-kpis { grid-template-columns:repeat(3,1fr); } }
+
+  .cp-filtros { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; align-items:center; }
+  .cp-filtros button { background:none; border:1px solid var(--border); color:var(--text-2); font-size:12px;
+    padding:6px 12px; border-radius:999px; cursor:pointer; white-space:nowrap; font:inherit; }
+  .cp-filtros button.on { border-color:var(--acc); color:var(--acc); background:color-mix(in srgb, var(--acc) 10%, transparent); }
+  .cp-busca { width:100%; padding:9px 12px; font-size:15px; border-radius:10px; border:1px solid var(--border);
+    background:var(--card); color:var(--text); margin-bottom:10px; }
+  .cp-acoes-massa { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .cp-btn { border:none; border-radius:10px; padding:9px 15px; font-size:13px; cursor:pointer; font-weight:600; font:inherit; }
+  .cp-btn.oco { background:none; border:1px solid var(--border); color:var(--text-2); font-weight:400; }
+  .cp-btn.acc { background:var(--acc); color:var(--acc-txt); }
+
+  .cp-cat-titulo { font-family:var(--serif); color:var(--acc); font-size:15px; margin:16px 0 5px; }
+  .cp-cab-cols, .cp-prod { display:grid; align-items:center; gap:6px;
+    grid-template-columns:minmax(150px,1.7fr) 52px 64px 52px 56px 56px 64px 118px; }
+  .cp-cab-cols { position:sticky; top:52px; z-index:10; background:var(--bg); padding:4px 10px 5px;
+    border-bottom:1px solid var(--border); }
+  .cp-cab-cols span { font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); text-align:center; }
+  .cp-cab-cols span:first-child { text-align:left; }
+  .cp-prod { background:var(--card); border:1px solid var(--border); border-radius:9px;
+    padding:4px 10px; margin-bottom:4px; min-height:38px; font-size:13px; cursor:pointer; }
+  .cp-prod .nomecel { display:flex; align-items:center; gap:8px; min-width:0; }
+  .cp-prod .st { width:7px; height:7px; border-radius:50%; flex:none; }
+  .cp-prod .st.ok { background:var(--verde); } .cp-prod .st.baixo { background:var(--amarelo); }
+  .cp-prod .st.zero { background:var(--urg-urgente); } .cp-prod .st.semmin { background:var(--text-3); }
+  .cp-prod .nome { font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cp-prod .n { text-align:center; font-family:var(--serif); font-size:14px; }
+  .cp-prod .n small { font-size:10px; color:var(--text-3); font-family:-apple-system,sans-serif; }
+  .cp-prod .n.sug { color:var(--azul); } .cp-prod .n.venda { color:var(--roxo); }
+  .cp-prod .n.sobra { color:var(--verde); }
+  .cp-prod .n.sobra.zero-s, .cp-prod .n.venda.vazio, .cp-prod .n.preco.vazio { color:var(--text-3); font-size:11px; }
+  .cp-prod .n .lapis { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:10px; padding:0 1px; font:inherit; }
+  .cp-prod .n.preco { font-size:11.5px; color:var(--text-2); }
+  .cp-prod .n.preco.velho { color:var(--amarelo); }
+  .cp-pedcel { display:flex; align-items:center; gap:3px; justify-content:flex-end; }
+  .cp-pedcel button { width:24px; height:28px; border-radius:7px; border:1px solid var(--border); background:var(--card2);
+    color:var(--text-2); font-size:13px; cursor:pointer; font:inherit; }
+  .cp-pedcel input { width:52px; padding:5px 2px; font-size:14px; text-align:center; border:1px solid var(--border);
+    border-radius:7px; background:var(--bg); color:var(--text); }
+  .cp-pedcel input:focus { border-color:var(--acc); outline:none; }
+  .cp-pedcel input.mexido { border-color:var(--verde); }
+  .cp-detalhe { display:none; grid-column:1 / -1; padding:6px 2px 4px; border-top:1px dashed var(--border); margin-top:4px; }
+  .cp-prod.aberto .cp-detalhe { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .cp-det-info { font-size:11px; color:var(--text-3); }
+
+  @media (max-width:820px){
+    .cp-cab-cols { display:none; }
+    .cp-prod { display:block; padding:6px 10px; }
+    .cp-prod .m-l1 { display:flex; align-items:center; gap:8px; }
+    .cp-prod .m-l1 .nome { flex:1; }
+    .cp-prod .m-l2 { display:flex; align-items:center; gap:10px; margin-top:3px; flex-wrap:wrap;
+      font-size:11px; color:var(--text-3); }
+    .cp-prod .m-l2 .n { font-size:12.5px; }
+    .cp-prod .m-l2 label { font-size:9px; text-transform:uppercase; letter-spacing:.05em; display:block; text-align:center; }
+    .cp-prod .m-kv { text-align:center; }
+  }
+
+  .cp-rodape { position:fixed; left:0; right:0; bottom:0; background:color-mix(in srgb, var(--bg) 92%, black);
+    border-top:1px solid var(--border); padding:10px 16px; display:flex; align-items:center; gap:12px;
+    justify-content:space-between; z-index:60; backdrop-filter:blur(6px); flex-wrap:wrap; }
+  .cp-rodape .resumo { font-size:12.5px; color:var(--text-2); }
+  .cp-rodape .resumo b { color:var(--text); }
+  .cp-rodape .resumo .orcr { color:var(--acc); font-weight:600; }
+
+  .cp-orc-box { background:var(--card); border:1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+    border-radius:13px; padding:14px 16px; margin-bottom:14px; display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+  .cp-orc-box .tot { font-family:var(--serif); font-size:26px; color:var(--acc); }
+  .cp-orc-box .cob { font-size:12px; color:var(--text-2); line-height:1.5; }
+  .cp-forn-bloco { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:12px 14px; margin-bottom:10px; }
+  .cp-forn-bloco h4 { margin:0 0 8px; font-size:14px; font-family:var(--serif); font-weight:500; color:var(--acc);
+    display:flex; justify-content:space-between; }
+  .cp-forn-bloco h4 .sub-orc { font-size:12px; color:var(--text-2); font-family:-apple-system,sans-serif; }
+  .cp-rev-item { display:flex; justify-content:space-between; gap:8px; font-size:13px; padding:5px 0; border-bottom:1px dashed var(--border); flex-wrap:wrap; }
+  .cp-rev-item:last-child { border-bottom:none; }
+  .cp-rev-item .ctx { color:var(--text-3); font-size:11px; }
+  .cp-rev-item .dir { text-align:right; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+  .cp-rev-item b.q { font-family:var(--serif); font-size:15px; color:var(--verde); }
+  .cp-rev-item .rs { display:block; font-size:10.5px; color:var(--text-3); }
+  .cp-rev-item .rs.sem { color:var(--amarelo); }
+  .cp-caixa-texto { background:var(--bg); border:1px dashed var(--border); border-radius:10px; padding:12px;
+    font-family:ui-monospace, Menlo, monospace; font-size:12px; color:var(--text-2); white-space:pre-wrap; margin:10px 0; }
+  .cp-sobra-bloco { background:var(--card); border:1px solid color-mix(in srgb, var(--verde) 35%, transparent);
+    border-radius:13px; padding:12px 14px; margin-bottom:10px; }
+  .cp-sobra-bloco h4 { margin:0 0 8px; font-size:14px; font-family:var(--serif); font-weight:500; color:var(--verde); }
+  .cp-sobra-item { display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:13px;
+    padding:5px 0; border-bottom:1px dashed var(--border); }
+  .cp-sobra-item:last-child { border-bottom:none; }
+  .cp-sobra-item b.q { font-family:var(--serif); font-size:15px; color:var(--verde); }
+
+  .cp-hist-busca { width:100%; padding:9px 12px; font-size:15px; border-radius:10px; border:1px solid var(--border);
+    background:var(--card); color:var(--text); margin-bottom:10px; }
+  .cp-hist-sug { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .cp-hist-sug button { background:var(--card); border:1px solid var(--border); color:var(--text-2); font-size:12px;
+    padding:6px 12px; border-radius:999px; cursor:pointer; font:inherit; }
+  .cp-hist-card { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:16px; }
+  .cp-hist-card h4 { margin:0 0 4px; font-size:15px; }
+  table.cp-hist-tab { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:10px; }
+  table.cp-hist-tab th { text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3);
+    padding:6px 8px; border-bottom:1px solid var(--border); }
+  table.cp-hist-tab td { padding:6px 8px; border-bottom:1px solid color-mix(in srgb, var(--border) 50%, transparent); }
+  table.cp-hist-tab td.n { font-family:var(--serif); font-size:14px; }
+</style>
+
+<div class="cp-tabs" id="cp-tabs">
+  <button class="on" data-t="cp-t1">① Como funciona</button>
+  <button data-t="cp-t2">② Pedido da semana</button>
+  <button data-t="cp-t3">③ Revisão &amp; orçamento</button>
+  <button data-t="cp-t4">④ Histórico</button>
+</div>
+
+<div class="cp-painel on" id="cp-t1">
+  <div class="cp-fluxo">
+    <div class="cp-passo"><div class="num">1</div><b>Contar</b><span>A contagem continua na tela que a equipe já usa — salva direto no Notion.</span></div>
+    <div class="cp-passo"><div class="num">2</div><b>Conferir</b><span>Sugestão = mínimo − contado, com venda provável e sobras na mesma linha.</span></div>
+    <div class="cp-passo"><div class="num">3</div><b>Ajustar</b><span>Aceita a sugestão com um toque ou ajusta; o orçamento estimado atualiza junto.</span></div>
+    <div class="cp-passo"><div class="num">4</div><b>Enviar</b><span>Revisão por fornecedor com subtotal em R$, sobras pra transferir, texto pro WhatsApp e gravação no Notion.</span></div>
+  </div>
+  <h2 style="font-size:16px">As 3 colunas novas — de onde vem cada número</h2>
+  <div class="cp-glossario">
+    <div class="cp-glo g-sug"><b>Sugestão (azul)</b>máx(0, mínimo − contado). O que falta comprar pra voltar ao estoque mínimo.</div>
+    <div class="cp-glo g-venda"><b>Venda ~ (roxo)</b>contado da semana passada + o que foi pedido − contado de agora. É o consumo provável da semana. Sem contagem anterior fechada, mostra "—".</div>
+    <div class="cp-glo g-sobra"><b>Sobra (verde)</b>contado − mínimo, quando positivo. Produto parado acima do mínimo: candidato a transferência.</div>
+  </div>
+  <p class="sub">O preço unitário vem do catálogo B.D.1 (rollup da semana + mapa diário atualizado
+  pelo robô das 7h). Item sem preço não trava o pedido: entra normalmente, o orçamento mostra
+  "cobre X de Y itens" e o que falta precificar vira pendência pro B.D.1. Preço desatualizado no
+  B.D.1 aparece em amarelo. Sugestão nunca vira pedido sozinha — o número gravado no Notion é
+  sempre um toque seu (aceitar/ajustar).</p>
+</div>
+
+<div class="cp-painel" id="cp-t2">
+  <div id="cp-escolha" class="panel" style="display:none">
+    <h2>Escolha a casa</h2>
+    <div class="cp-pills" id="cp-casas"></div>
+  </div>
+  <div id="cp-tela"></div>
+</div>
+
+<div class="cp-painel" id="cp-t3">
+  <h2 id="cp-rev-titulo">Revisão do pedido</h2>
+  <div class="cp-orc-box">
+    <div><span class="tot" id="cp-rev-total">—</span></div>
+    <div class="cob" id="cp-rev-cob">Escolha uma casa na aba "Pedido da semana" primeiro.</div>
+  </div>
+  <div id="cp-rev"></div>
+  <h2 style="font-size:15px">Sobras — candidatas a transferência</h2>
+  <div class="cp-sobra-bloco">
+    <h4>Acima do mínimo nesta contagem</h4>
+    <div id="cp-rev-sobras"></div>
+  </div>
+  <h2 style="font-size:15px">Texto pronto (copiar e colar)</h2>
+  <div class="cp-caixa-texto" id="cp-rev-texto"></div>
+  <div class="cp-acoes-massa">
+    <button class="cp-btn oco" id="cp-rev-copiar" type="button">⧉ Copiar texto</button>
+    <button class="cp-btn acc" id="cp-rev-gravar" type="button">Confirmar pedido no Notion ✓</button>
+    <span class="cp-status" id="cp-rev-status"></span>
+  </div>
+</div>
+
+<div class="cp-painel" id="cp-t4">
+  <h2>Histórico por produto</h2>
+  <p class="sub">Busque um produto pra ver as últimas semanas: contado, pedido e venda provável.
+  Vem do consolidado de consumo, atualizado todo dia pelo robô das 7h. Disponível pra chefe de
+  bar e coordenação.</p>
+  <input class="cp-hist-busca" id="cp-hist-busca" placeholder="Buscar produto…">
+  <div class="cp-hist-sug" id="cp-hist-sug"></div>
+  <div id="cp-hist-corpo"></div>
+</div>
+
+</div><!-- cp-app -->
+
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var CASAS = [{"slug": "iz", "nome": "IZ"}, {"slug": "1929", "nome": "1929"}, {"slug": "gra-bistro", "nome": "Grá"}, {"slug": "famu", "nome": "FAMU"}, {"slug": "fulles", "nome": "Fulles"}, {"slug": "nip", "nome": "NIP"}];
+  var NIVEIS_OK = ['equipe', 'chefe', 'coord'];
+  var SLUG = 'compras';
+  var msg = document.getElementById('cp-msg');
+  var gate = document.getElementById('cp-gate');
+  var app = document.getElementById('cp-app');
+
+  if (!WORKER) {
+    gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">' +
+      'O Pedido de Compras pelo site ainda não foi ativado.</p>';
+    return;
+  }
+
+  var r = window.exigirNivel(NIVEIS_OK, SLUG);
+  if (!r.ok) {
+    if (!r.redirecionou) msg.innerHTML = 'Seu acesso atual não abre Compras. ' +
+      'Toque em <a href="index.html#nivel">Trocar acesso</a> para entrar com outra senha.';
+    return;
+  }
+  var SESSAO = r.sessao, TOKEN = SESSAO.token, NIVEL = SESSAO.nivel;
+  var PODE_MIN = NIVEL === 'chefe' || NIVEL === 'coord';
+  var PODE_APROVAR = NIVEL === 'coord';
+  gate.style.display = 'none';
+  app.style.display = '';
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function rs(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+  function nomeCasa(slug) {
+    var c = CASAS.filter(function (x) { return x.slug === slug; })[0];
+    return c ? c.nome : slug;
+  }
+  function portalSlug(workerSlug) { return workerSlug === 'gra-bistro' ? 'gra' : workerSlug; }
+
+  // --- abas -----------------------------------------------------------
+  document.querySelectorAll('#cp-tabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#cp-tabs button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      document.querySelectorAll('.cp-painel').forEach(function (p) { p.classList.toggle('on', p.id === b.dataset.t); });
+      window.scrollTo(0, 0);
+      if (b.dataset.t === 'cp-t4') carregaHistorico();
+    });
+  });
+
+  // --- estado -----------------------------------------------------------
+  var DADOS = null, PRODUTOS = [], casaSel = null, filtro = 'todos', termo = '';
+  var fila = [], enviando = false, timers = {};
+  var elEscolha = document.getElementById('cp-escolha');
+  var elTela = document.getElementById('cp-tela');
+  var casaFixa = (SESSAO.casa && SESSAO.casa !== '*') ? SESSAO.casa : null;
+
+  function api(metodo, rota, body) {
+    return fetch(WORKER + rota, {
+      method: metodo,
+      headers: { 'Content-Type': 'application/json', 'X-Casa': casaSel, 'X-Token': TOKEN },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  }
+
+  function entra(slug) {
+    casaSel = slug;
+    localStorage.setItem('cp_casa', slug);
+    carrega();
+  }
+
+  if (casaFixa) {
+    entra(casaFixa);
+  } else {
+    elEscolha.style.display = '';
+    var pills = document.getElementById('cp-casas');
+    CASAS.forEach(function (c) {
+      var b = document.createElement('button');
+      b.className = 'cp-pill'; b.type = 'button'; b.textContent = c.nome; b.dataset.slug = c.slug;
+      b.onclick = function () {
+        pills.querySelectorAll('.cp-pill').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        entra(c.slug);
+      };
+      pills.appendChild(b);
+    });
+    var lembrada = localStorage.getItem('cp_casa');
+    if (lembrada && CASAS.some(function (c) { return c.slug === lembrada; })) {
+      var alvo = pills.querySelector('[data-slug="' + lembrada + '"]');
+      if (alvo) alvo.click();
+    }
+  }
+
+  function carrega() {
+    elTela.innerHTML = '<p class="sub">Carregando…</p>';
+    document.getElementById('cp-rev-cob').textContent = 'Carregando…';
+    try { fila = JSON.parse(localStorage.getItem('cp_fila_' + casaSel) || '[]'); } catch (e) { fila = []; }
+    api('GET', '/api/compras?casa=' + encodeURIComponent(casaSel)).then(function (resp) {
+      if (resp.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
+      if (!resp.ok) { erroCarregar(resp.status); return; }
+      resp.json().then(function (d) {
+        DADOS = d;
+        PRODUTOS = d.produtos.map(prep);
+        desenha();
+      });
+    }).catch(function () { erroCarregar(null); });
+  }
+
+  function erroCarregar(status) {
+    var m = status ? 'Erro ao carregar (' + status + ').' : 'Sem conexão.';
+    elTela.innerHTML = '<p class="sub">' + m + ' <a href="#" id="cp-retry">Tente de novo</a>.</p>';
+    document.getElementById('cp-retry').onclick = function (ev) { ev.preventDefault(); carrega(); };
+  }
+
+  function prep(p) {
+    p.sug = p.min == null ? null : Math.max(0, p.min - p.contado);
+    p.venda = (p.ant_contado == null || p.ant_pedido == null) ? null
+      : Math.max(0, p.ant_contado + p.ant_pedido - p.contado);
+    p.sobra = (p.min != null && p.contado > p.min) ? p.contado - p.min : 0;
+    p.pedido = p.pedido1 != null ? p.pedido1 : (p.sug != null ? p.sug : 0);
+    p.mexido = false;
+    // reconcilia com a fila pendente — reload no meio de um pedido não perde o que já foi digitado
+    fila.forEach(function (item) {
+      if (item.page_id !== p.page_id) return;
+      if (DADOS && item.campo === DADOS.campo_pedido1) { p.pedido = item.valor; p.mexido = true; }
+      if (DADOS && item.campo === DADOS.campo_min) { p.min = item.valor; }
+    });
+    return p;
+  }
+
+  function statusDe(p) {
+    if (p.min == null) return 'semmin';
+    if (p.contado === 0) return 'zero';
+    if (p.contado < p.min) return 'baixo';
+    return 'ok';
+  }
+  function passa(p) {
+    if (termo && p.nome.toLowerCase().indexOf(termo) < 0) return false;
+    var st = statusDe(p);
+    if (filtro === 'pedir') return p.pedido > 0;
+    if (filtro === 'baixo') return st === 'baixo' || st === 'zero';
+    if (filtro === 'zero') return st === 'zero';
+    if (filtro === 'sobra') return p.sobra > 0;
+    if (filtro === 'semmin') return st === 'semmin';
+    if (filtro === 'sempreco') return p.preco_unit == null;
+    return true;
+  }
+  function orcamento() {
+    var tot = 0, com = 0, sem = 0;
+    PRODUTOS.forEach(function (p) {
+      if (!(p.pedido > 0)) return;
+      if (p.preco_unit != null) { tot += p.pedido * p.preco_unit; com++; } else sem++;
+    });
+    return { tot: tot, com: com, sem: sem, itens: com + sem };
+  }
+
+  // --- fila offline / gravação incremental ------------------------------
+  function agendaGrava(p, campo, valor) {
+    if (!campo) return;
+    var chave = p.page_id + '|' + campo;
+    clearTimeout(timers[chave]);
+    timers[chave] = setTimeout(function () {
+      fila = fila.filter(function (x) { return x.chave !== chave; });
+      fila.push({ chave: chave, db_id: DADOS.semana.db_id, page_id: p.page_id, campo: campo, valor: valor });
+      localStorage.setItem('cp_fila_' + casaSel, JSON.stringify(fila));
+      statusRodape(); envia();
+    }, 900);
+  }
+  function envia() {
+    if (enviando || !fila.length || !casaSel) { statusRodape(); return; }
+    enviando = true; statusRodape();
+    var item = fila[0];
+    api('POST', '/api/gravar', { db_id: item.db_id, page_id: item.page_id, campo: item.campo, valor: item.valor })
+      .then(function (resp) {
+        if (resp.ok) {
+          fila.shift(); localStorage.setItem('cp_fila_' + casaSel, JSON.stringify(fila));
+          enviando = false; setTimeout(envia, 350);
+        } else if (resp.status === 409) {
+          enviando = false; statusRodape('A semana virou — recarregue a página.', true);
+        } else if (resp.status === 401 || resp.status === 403) {
+          fila.shift(); localStorage.setItem('cp_fila_' + casaSel, JSON.stringify(fila));
+          enviando = false; statusRodape('Sem permissão pra esse campo (' + resp.status + ')', true);
+        } else {
+          fila.shift(); localStorage.setItem('cp_fila_' + casaSel, JSON.stringify(fila));
+          enviando = false; statusRodape('Um item falhou (' + resp.status + ')', true);
+          setTimeout(envia, 350);
+        }
+      }).catch(function () { enviando = false; statusRodape(); });
+  }
+  function statusRodape(msgErro, erro) {
+    var el = document.getElementById('cp-status');
+    var elRev = document.getElementById('cp-rev-status');
+    var texto, classe = 'cp-status';
+    if (msgErro) { classe += ' erro'; texto = msgErro; }
+    else if (enviando) { texto = 'Salvando…'; }
+    else if (fila.length) { classe += ' pend'; texto = fila.length + ' na fila (sem conexão?)'; }
+    else { texto = '✓ tudo salvo no Notion'; }
+    if (el) { el.className = classe; el.textContent = texto; }
+    if (elRev) { elRev.className = classe; elRev.textContent = texto; }
+  }
+  window.addEventListener('online', envia);
+  setInterval(envia, 15000);
+
+  // --- ações do pedido ---------------------------------------------------
+  function setPedido(i, v) {
+    var p = PRODUTOS[i];
+    p.pedido = Math.max(0, parseInt(v || '0', 10) || 0);
+    p.mexido = true;
+    agendaGrava(p, DADOS.campo_pedido1, p.pedido);
+    desenha();
+  }
+  function maisPedido(i, d) {
+    var p = PRODUTOS[i];
+    p.pedido = Math.max(0, (p.pedido || 0) + d);
+    p.mexido = true;
+    agendaGrava(p, DADOS.campo_pedido1, p.pedido);
+    desenha();
+  }
+  function aceitarTudo() {
+    PRODUTOS.forEach(function (p) {
+      if (p.sug != null && p.sug !== p.pedido) {
+        p.pedido = p.sug; p.mexido = true;
+        agendaGrava(p, DADOS.campo_pedido1, p.pedido);
+      }
+    });
+    desenha();
+  }
+  function zerarPedidos() {
+    PRODUTOS.forEach(function (p) {
+      if (p.pedido !== 0) {
+        p.pedido = 0; p.mexido = false;
+        agendaGrava(p, DADOS.campo_pedido1, 0);
+      }
+    });
+    desenha();
+  }
+  function editarMin(i) {
+    if (!PODE_MIN) return;
+    var p = PRODUTOS[i];
+    if (!DADOS.campo_min) { alert('Esta semana não tem coluna de mínimo cadastrada no Notion.'); return; }
+    var novo = prompt('Novo mínimo de "' + p.nome + '":', p.min != null ? p.min : '');
+    if (novo === null) return;
+    var val = parseInt(novo, 10);
+    if (isNaN(val) || val < 0) { alert('Valor inválido.'); return; }
+    p.min = val;
+    agendaGrava(p, DADOS.campo_min, val);
+    desenha();
+  }
+
+  // --- tela de pedido (② ) ------------------------------------------------
+  function celMobile(l, v, cls) {
+    return '<span class="m-kv"><label>' + l + '</label><span class="n ' + (cls || '') + '">' + v + '</span></span>';
+  }
+  function desenha() {
+    var mobile = window.innerWidth <= 820;
+    var html = '<div class="cp-topo-casa">' +
+      '<span class="cp-chip-casa"><b>' + esc(nomeCasa(casaSel)) + '</b></span>' +
+      '<span class="cp-semana-info">Semana: <b>' + esc(DADOS.semana.titulo || 'atual') + '</b></span>' +
+      (elEscolha.style.display !== 'none' || casaFixa ? '' :
+        '<button class="cp-btn oco" id="cp-trocar-casa" type="button">trocar de casa</button>') +
+      '<span class="cp-status" id="cp-status"></span></div>';
+
+    html += '<div class="cp-kpis">' +
+      '<div class="cp-kpi"><b id="cp-k-cont">—</b><span>contados</span></div>' +
+      '<div class="cp-kpi alerta"><b id="cp-k-baixo">—</b><span>abaixo do mín</span></div>' +
+      '<div class="cp-kpi ped"><b id="cp-k-ped">—</b><span>no pedido</span></div>' +
+      '<div class="cp-kpi sobra"><b id="cp-k-sobra">—</b><span>com sobra</span></div>' +
+      '<div class="cp-kpi"><b id="cp-k-semmin">—</b><span>sem mínimo</span></div>' +
+      '<div class="cp-kpi orc"><b id="cp-k-orc">—</b><span>orçamento</span><small id="cp-k-orc-cob"></small></div></div>';
+
+    html += '<input class="cp-busca" id="cp-busca" placeholder="Buscar produto…" value="' + esc(termo) + '">';
+    html += '<div class="cp-filtros">' + [
+      ['todos', 'Todos'], ['pedir', 'A pedir'], ['baixo', 'Abaixo do mínimo'], ['zero', 'Zerados'],
+      ['sobra', 'Com sobra'], ['semmin', 'Sem mínimo'], ['sempreco', 'Sem preço'],
+    ].map(function (f) { return '<button class="' + (filtro === f[0] ? 'on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</button>'; }).join('') + '</div>';
+
+    html += '<div class="cp-acoes-massa">' +
+      '<button class="cp-btn acc" id="cp-aceitar-tudo" type="button">✓ Aceitar todas as sugestões</button>' +
+      '<button class="cp-btn oco" id="cp-zerar" type="button">Limpar pedido</button></div>';
+
+    if (!mobile) {
+      html += '<div class="cp-cab-cols"><span>Produto</span><span>Contado</span><span>Mínimo</span><span>Sug.</span>' +
+        '<span>Venda ~</span><span>Sobra</span><span>R$ unit</span><span style="text-align:right">Pedido</span></div>';
+    }
+
+    var porCat = {};
+    PRODUTOS.forEach(function (p, i) { if (passa(p)) (porCat[p.categoria || 'Sem categoria'] = porCat[p.categoria || 'Sem categoria'] || []).push(i); });
+    var cats = Object.keys(porCat).sort();
+    if (!cats.length) {
+      html += '<p class="sub">Nenhum produto neste filtro.</p>';
+    }
+    cats.forEach(function (cat) {
+      html += '<div class="cp-cat-titulo">' + esc(cat) + '</div>';
+      porCat[cat].forEach(function (i) {
+        var p = PRODUTOS[i], st = statusDe(p);
+        var minTx = p.min == null ? '<small>definir</small>' : p.min;
+        var sugTx = p.sug == null ? '<small>—</small>' : p.sug;
+        var vendaTx = p.venda == null ? '—' : p.venda;
+        var sobraTx = p.sobra > 0 ? '+' + p.sobra : '—';
+        var precoTx = p.preco_unit == null ? 'sem preço' : Math.round(p.preco_unit * 100) / 100;
+        var lapis = PODE_MIN ? '<button class="lapis" title="Editar mínimo" onclick="event.stopPropagation();CP.editarMin(' + i + ')">✎</button>' : '';
+        var pedCel = '<span class="cp-pedcel" onclick="event.stopPropagation()">' +
+          '<button type="button" onclick="CP.mais(' + i + ',-1)">−</button>' +
+          '<input class="' + (p.mexido ? 'mexido' : '') + '" type="number" inputmode="numeric" min="0" value="' + p.pedido + '" onchange="CP.setPedido(' + i + ', this.value)">' +
+          '<button type="button" onclick="CP.mais(' + i + ',1)">+</button></span>';
+        var detalhe = '<div class="cp-detalhe"><span class="cp-det-info">' + esc(p.fornecedor || 'sem fornecedor') +
+          (p.min != null ? ' · mín ' + p.min : '') +
+          (p.preco_unit != null ? ' · ' + rs(p.preco_unit) + '/un' + (p.preco_desatualizado ? ' (desatualizado no B.D.1)' : '') : ' · sem preço no B.D.1') +
+          '</span></div>';
+        if (mobile) {
+          html += '<div class="cp-prod" onclick="this.classList.toggle(\'aberto\')">' +
+            '<div class="m-l1"><span class="st ' + st + '"></span><span class="nome">' + esc(p.nome) + '</span>' + pedCel + '</div>' +
+            '<div class="m-l2">' + celMobile('Cont', p.contado) + celMobile('Mín', minTx + lapis) +
+            celMobile('Sug', sugTx, 'sug') + celMobile('Venda~', vendaTx, 'venda' + (p.venda == null ? ' vazio' : '')) +
+            celMobile('Sobra', sobraTx, 'sobra' + (p.sobra > 0 ? '' : ' zero-s')) +
+            celMobile('R$', precoTx, 'preco' + (p.preco_unit == null ? ' vazio' : '') + (p.preco_desatualizado ? ' velho' : '')) +
+            '</div>' + detalhe + '</div>';
+        } else {
+          html += '<div class="cp-prod" onclick="this.classList.toggle(\'aberto\')">' +
+            '<span class="nomecel"><span class="st ' + st + '"></span><span class="nome">' + esc(p.nome) + '</span></span>' +
+            '<span class="n">' + p.contado + '</span>' +
+            '<span class="n">' + minTx + ' ' + lapis + '</span>' +
+            '<span class="n sug">' + sugTx + '</span>' +
+            '<span class="n venda' + (p.venda == null ? ' vazio' : '') + '">' + vendaTx + '</span>' +
+            '<span class="n sobra' + (p.sobra > 0 ? '' : ' zero-s') + '">' + sobraTx + '</span>' +
+            '<span class="n preco' + (p.preco_unit == null ? ' vazio' : '') + (p.preco_desatualizado ? ' velho' : '') + '">' + precoTx + '</span>' +
+            pedCel + detalhe + '</div>';
+        }
+      });
+    });
+
+    html += '<div style="height:56px"></div>'; // espaço pro rodapé fixo
+    elTela.innerHTML = html;
+
+    var trocar = document.getElementById('cp-trocar-casa');
+    if (trocar) trocar.onclick = function () {
+      localStorage.removeItem('cp_casa');
+      casaSel = null; DADOS = null; PRODUTOS = [];
+      elTela.innerHTML = '';
+      elEscolha.style.display = '';
+      elEscolha.querySelectorAll('.cp-pill').forEach(function (x) { x.classList.remove('on'); });
+    };
+    document.getElementById('cp-busca').oninput = function () { termo = this.value.trim().toLowerCase(); desenha(); };
+    document.querySelectorAll('.cp-filtros button').forEach(function (b) {
+      b.onclick = function () { filtro = b.dataset.f; desenha(); };
+    });
+    document.getElementById('cp-aceitar-tudo').onclick = aceitarTudo;
+    document.getElementById('cp-zerar').onclick = zerarPedidos;
+
+    kpis(); revisao(); statusRodape();
+    renderRodape();
+  }
+
+  function renderRodape() {
+    var o = orcamento();
+    var ped = PRODUTOS.filter(function (p) { return p.pedido > 0; }).length;
+    var rod = document.getElementById('cp-rodape-fixo');
+    if (!rod) {
+      rod = document.createElement('div'); rod.className = 'cp-rodape'; rod.id = 'cp-rodape-fixo';
+      document.body.appendChild(rod);
+    }
+    rod.innerHTML = '<span class="resumo"><b>' + ped + (ped === 1 ? ' item' : ' itens') + '</b> · ' +
+      '<span class="orcr">' + (o.itens ? rs(o.tot) : rs(0)) + '</span>' +
+      (o.sem ? ' <span style="color:var(--text-3);font-size:11px">(' + o.sem + ' sem preço)</span>' : '') +
+      '</span><button class="cp-btn acc" id="cp-ir-revisar" type="button">Revisar pedido →</button>';
+    document.getElementById('cp-ir-revisar').onclick = function () {
+      document.querySelector('#cp-tabs button[data-t="cp-t3"]').click();
+    };
+  }
+
+  function kpis() {
+    var contados = PRODUTOS.filter(function (p) { return p.contado > 0; }).length;
+    var baixo = PRODUTOS.filter(function (p) { var s = statusDe(p); return s === 'baixo' || s === 'zero'; }).length;
+    var ped = PRODUTOS.filter(function (p) { return p.pedido > 0; }).length;
+    var sobras = PRODUTOS.filter(function (p) { return p.sobra > 0; }).length;
+    var semmin = PRODUTOS.filter(function (p) { return p.min == null; }).length;
+    var o = orcamento();
+    var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
+    set('cp-k-cont', contados + '/' + PRODUTOS.length);
+    set('cp-k-baixo', baixo);
+    set('cp-k-ped', ped);
+    set('cp-k-sobra', sobras);
+    set('cp-k-semmin', semmin);
+    set('cp-k-orc', o.itens ? rs(o.tot) : '—');
+    set('cp-k-orc-cob', o.sem ? (o.com + ' de ' + o.itens + ' com preço') : (o.itens ? 'todos com preço' : ''));
+  }
+
+  // --- revisão (③) ---------------------------------------------------------
+  function revisao() {
+    if (!DADOS) return;
+    document.getElementById('cp-rev-titulo').textContent = 'Revisão do pedido — ' + nomeCasa(casaSel) + ' · ' + (DADOS.semana.titulo || '');
+    var porForn = {};
+    PRODUTOS.forEach(function (p) { if (p.pedido > 0) { var f = p.fornecedor || '(sem fornecedor)'; (porForn[f] = porForn[f] || []).push(p); } });
+    var h = '', txt = 'Pedido ' + nomeCasa(casaSel) + ' — semana ' + (DADOS.semana.titulo || '') + '\n';
+    Object.keys(porForn).sort().forEach(function (f) {
+      var sub = 0, semP = 0;
+      porForn[f].forEach(function (p) { if (p.preco_unit != null) sub += p.pedido * p.preco_unit; else semP++; });
+      h += '<div class="cp-forn-bloco"><h4>' + esc(f) + '<span class="sub-orc">' + (sub ? rs(sub) : '') +
+        (semP ? ' +' + semP + ' s/ preço' : '') + '</span></h4>';
+      txt += '\n*' + f + '*\n';
+      porForn[f].forEach(function (p) {
+        var idx = PRODUTOS.indexOf(p);
+        var aprovarBtn = PODE_APROVAR ? '<button class="cp-btn oco cp-aprovar" data-i="' + idx +
+          '" type="button" style="padding:3px 9px;font-size:11px">' +
+          (p.pd_aprovado != null ? 'Aprovado: ' + p.pd_aprovado : 'Aprovar') + '</button>' : '';
+        h += '<div class="cp-rev-item"><span>' + esc(p.nome) +
+          ' <span class="ctx">(contado ' + p.contado + (p.min != null ? ' · mín ' + p.min : '') + ')</span></span>' +
+          '<span class="dir"><b class="q">' + p.pedido + '</b>' +
+          (p.preco_unit != null ? '<span class="rs">' + rs(p.pedido * p.preco_unit) + '</span>' : '<span class="rs sem">sem preço no B.D.1</span>') +
+          aprovarBtn + '</span></div>';
+        txt += '• ' + p.nome + ' — ' + p.pedido + '\n';
+      });
+      h += '</div>';
+    });
+    document.getElementById('cp-rev').innerHTML = h || '<p class="sub">Nenhum item no pedido ainda.</p>';
+    document.querySelectorAll('.cp-aprovar').forEach(function (b) {
+      b.onclick = function () {
+        var p = PRODUTOS[Number(b.dataset.i)];
+        if (!DADOS.campo_pd_aprovado) { alert('Esta semana não tem coluna "Pd Aprovado" cadastrada.'); return; }
+        var novo = prompt('Aprovar pedido de "' + p.nome + '":', p.pedido);
+        if (novo === null) return;
+        var val = parseInt(novo, 10);
+        if (isNaN(val) || val < 0) { alert('Valor inválido.'); return; }
+        p.pd_aprovado = val;
+        agendaGrava(p, DADOS.campo_pd_aprovado, val);
+        revisao();
+      };
+    });
+
+    var o = orcamento();
+    document.getElementById('cp-rev-total').textContent = o.itens ? rs(o.tot) : rs(0);
+    document.getElementById('cp-rev-cob').innerHTML = o.itens
+      ? 'Estimativa cobre <b style="color:var(--verde)">' + o.com + ' de ' + o.itens + ' itens</b>.' +
+        (o.sem ? ' <b style="color:var(--amarelo)">' + o.sem + ' sem preço no B.D.1</b> — use o filtro "Sem preço" na aba anterior pra completar o catálogo.' : '')
+      : 'Nenhum item no pedido ainda.';
+
+    var sh = '';
+    PRODUTOS.filter(function (p) { return p.sobra > 0; }).forEach(function (p) {
+      sh += '<div class="cp-sobra-item"><span>' + esc(p.nome) +
+        ' <span class="ctx">(contado ' + p.contado + ' · mín ' + p.min + ')</span></span><b class="q">+' + p.sobra + '</b></div>';
+    });
+    document.getElementById('cp-rev-sobras').innerHTML = sh || '<p class="sub" style="margin:0">Nenhuma sobra nesta contagem.</p>';
+    document.getElementById('cp-rev-texto').textContent = txt;
+
+    var btnCopiar = document.getElementById('cp-rev-copiar');
+    btnCopiar.onclick = function () {
+      var txtEl = document.getElementById('cp-rev-texto');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txtEl.textContent).then(function () {
+          btnCopiar.textContent = 'Copiado ✓'; setTimeout(function () { btnCopiar.textContent = '⧉ Copiar texto'; }, 1800);
+        }).catch(function () {});
+      }
+    };
+    document.getElementById('cp-rev-gravar').onclick = function () { envia(); };
+  }
+
+  // --- histórico (④) --------------------------------------------------------
+  var HIST = null;
+  function carregaHistorico() {
+    var el = document.getElementById('cp-hist-corpo');
+    var sug = document.getElementById('cp-hist-sug');
+    if (!casaSel) { el.innerHTML = '<p class="sub">Escolha uma casa na aba "Pedido da semana" primeiro.</p>'; return; }
+    if (NIVEL !== 'chefe' && NIVEL !== 'coord') {
+      el.innerHTML = '<p class="sub">Histórico disponível pra chefe de bar e coordenação.</p>'; return;
+    }
+    if (HIST) { montaSugestoes(); return; }
+    el.innerHTML = '<p class="sub">Carregando…</p>';
+    fetch(WORKER + '/api/consumo', { headers: { 'X-Token': TOKEN } }).then(function (resp) {
+      if (resp.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
+      if (!resp.ok) { el.innerHTML = '<p class="sub">Não foi possível carregar o histórico (' + resp.status + ').</p>'; return; }
+      resp.json().then(function (d) { HIST = d; montaSugestoes(); });
+    }).catch(function () { el.innerHTML = '<p class="sub">Sem conexão.</p>'; });
+
+    function montaSugestoes() {
+      var casaHist = HIST[portalSlug(casaSel)];
+      el.innerHTML = casaHist ? '<p class="sub">Digite o nome do produto ou toque numa sugestão.</p>'
+        : '<p class="sub">Sem histórico de consumo pra esta casa ainda.</p>';
+      sug.innerHTML = '';
+      if (!casaHist) return;
+      var nomes = {};
+      casaHist.semanas.forEach(function (w) { w.rows.forEach(function (row) { nomes[row[0]] = true; }); });
+      var top = Object.keys(nomes).sort().slice(0, 12);
+      top.forEach(function (nome) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.textContent = nome;
+        b.onclick = function () { document.getElementById('cp-hist-busca').value = nome; mostraHistorico(nome); };
+        sug.appendChild(b);
+      });
+    }
+  }
+  function mostraHistorico(nome) {
+    var el = document.getElementById('cp-hist-corpo');
+    var casaHist = HIST && HIST[portalSlug(casaSel)];
+    if (!casaHist) return;
+    var alvo = nome.trim().toLowerCase();
+    if (!alvo) { el.innerHTML = '<p class="sub">Digite o nome do produto ou toque numa sugestão.</p>'; return; }
+    var linhas = [];
+    casaHist.semanas.forEach(function (w) {
+      w.rows.forEach(function (row) {
+        if (row[0].toLowerCase().indexOf(alvo) >= 0) linhas.push({ ini: w.ini, fim: w.fim, row: row });
+      });
+    });
+    if (!linhas.length) { el.innerHTML = '<p class="sub">Nada encontrado pra "' + esc(nome) + '".</p>'; return; }
+    var porNome = {};
+    linhas.forEach(function (l) { (porNome[l.row[0]] = porNome[l.row[0]] || []).push(l); });
+    var h = '';
+    Object.keys(porNome).sort().forEach(function (produto) {
+      var ls = porNome[produto];
+      h += '<div class="cp-hist-card" style="margin-bottom:12px"><h4>' + esc(produto) + '</h4>' +
+        '<span class="cp-semana-info">' + esc(ls[0].row[1]) + '</span>' +
+        '<table class="cp-hist-tab"><tr><th>Semana</th><th>Contado</th><th>Pedido</th><th>Venda ~</th></tr>' +
+        ls.map(function (l) {
+          var fmt = function (d) { var p = d.split('-'); return p[2] + '/' + p[1]; };
+          return '<tr><td>' + fmt(l.fim) + '</td><td class="n">' + l.row[2] + '</td><td class="n">' + l.row[3] +
+            '</td><td class="n">' + l.row[5] + '</td></tr>';
+        }).join('') + '</table></div>';
+    });
+    el.innerHTML = h;
+  }
+  document.getElementById('cp-hist-busca').oninput = function () { mostraHistorico(this.value); };
+
+  window.CP = { setPedido: setPedido, mais: maisPedido, editarMin: editarMin };
+})();
+</script>
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 13/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+
+<script>
+(function () {
+  var LABEL = {"equipe": "Equipe de Bar", "chefe": "Chefe de Bar", "coord": "Coordenação", "rh": "RH", "controladoria": "Controladoria & Administração"};
+  function nivelAtual() {
+    try { return localStorage.getItem('portal_nivel') || 'equipe'; } catch (e) { return 'equipe'; }
+  }
+  function aplica() {
+    var atual = nivelAtual();
+    // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz (equipe)
+    // no menu — o que muda pra ele é só o comportamento do Plano de treino.
+    if (atual === 'bartender') atual = 'equipe';
+    // data-niveis = lista de nomes de nível (separados por espaço) que podem
+    // ver aquele elemento — já vem pronta do Python (_niveis_permitidos),
+    // cobrindo tanto a escada (equipe/chefe/coord) quanto os acessos
+    // paralelos (rh/controladoria). Aqui é só checar se o nível atual está
+    // na lista — nada de comparação numérica.
+    document.querySelectorAll('[data-niveis]').forEach(function (el) {
+      var lista = el.dataset.niveis ? el.dataset.niveis.split(' ') : [];
+      el.style.display = lista.indexOf(atual) >= 0 ? '' : 'none';
+    });
+    var txt = document.getElementById('nivel-pill-txt');
+    if (txt) txt.textContent = LABEL[atual] || LABEL.equipe;
+    // cor da pill acompanha o nível logado (CSS [data-nivel] em CSS_NIVEL)
+    var pill = document.getElementById('nivel-pill');
+    if (pill) pill.setAttribute('data-nivel', atual);
+  }
+  window.definirNivel = function (v) {
+    try { localStorage.setItem('portal_nivel', v); } catch (e) {}
+    aplica();
+    if (typeof window.onNivelDefinido === 'function') window.onNivelDefinido(v);
+  };
+  window.nivelAtual = nivelAtual;
+  aplica();
+})();
+</script>
+
+
+<script>
+(function () {
+  var grps = document.querySelectorAll('#nav-principal .grp');
+  grps.forEach(function (g) {
+    g.addEventListener('toggle', function () {
+      if (g.open) grps.forEach(function (o) { if (o !== g) o.open = false; });
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#nav-principal')) grps.forEach(function (g) { g.open = false; });
+  });
+})();
+</script>
+
+
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  if (!WORKER) return;
+  var CHAVE = 'geo_ok_ts', VALIDADE = 30 * 60 * 1000;
+  try {
+    var t = parseInt(sessionStorage.getItem(CHAVE) || '0', 10);
+    if (t && Date.now() - t < VALIDADE) return;
+  } catch (e) {}
+
+  function overlay(titulo, msg, mostrarBtn) {
+    var d = document.getElementById('geo-blk') || document.createElement('div');
+    d.id = 'geo-blk';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#16130f;color:#f3ede2;'
+      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+      + 'text-align:center;padding:32px;font-family:-apple-system,Segoe UI,Roboto,sans-serif';
+    d.innerHTML = '<div style="font-family:Georgia,serif;font-size:22px;margin-bottom:12px">'
+      + titulo + '</div><div style="max-width:420px;color:#c3baa9;line-height:1.5">' + msg + '</div>'
+      + (mostrarBtn ? '<button id="geo-retry" style="margin-top:22px;padding:12px 22px;border:none;'
+      + 'border-radius:999px;background:#d0a352;color:#241a06;font-weight:600;font-size:15px;'
+      + 'cursor:pointer">Tentar de novo</button>' : '');
+    if (!d.parentNode) document.body.appendChild(d);
+    var b = document.getElementById('geo-retry');
+    if (b) b.onclick = function () { verifica(); };
+  }
+  function libera() {
+    try { sessionStorage.setItem(CHAVE, String(Date.now())); } catch (e) {}
+    var d = document.getElementById('geo-blk');
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+
+  function checa(lat, lon) {
+    fetch(WORKER + '/api/geo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: lat, lon: lon }),
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.ok) libera();
+      else overlay('Fora de área',
+        'O Portal dos Bares só funciona dentro das casas do Grupo IZ. '
+        + 'Você precisa estar em uma delas para acessar.', true);
+    }).catch(function () { libera(); }); // rede falhou: não tranca
+  }
+
+  function verifica() {
+    overlay('Confirmando localização…', 'Só um instante.', false);
+    if (!navigator.geolocation) { libera(); return; }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { checa(pos.coords.latitude, pos.coords.longitude); },
+      function () {
+        overlay('Ative a localização',
+          'Para usar o portal no bar, permita o acesso à localização no seu '
+          + 'navegador e toque em “Tentar de novo”.', true);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }
+
+  // 1º toque no Worker SEM coordenadas: só pra saber se a cerca está ligada.
+  // Se desligada, para aqui — nenhum pedido de GPS aparece.
+  fetch(WORKER + '/api/geo', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.desativado) return;
+    verifica();
+  }).catch(function () {}); // rede falhou: não tranca
+})();
+</script>
+
+
+<script>
+(function () {
+  var COR = { iz: '#d0a352', '1929': '#c9705a', gra: '#8fd0a5', famu: '#a58fd0', fulles: '#6fa8dc', nip: '#d98fb0' };
+  var btn = document.getElementById('lupa-busca');
+  var ov = document.getElementById('busca-global-ov');
+  var input = document.getElementById('bg-input');
+  var res = document.getElementById('bg-res');
+  var fechar = document.getElementById('bg-fechar');
+  if (!btn || !ov) return;
+  var idx = null, carregando = false;
+
+  function semAcento(s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+
+  function carrega() {
+    if (idx || carregando) return;
+    carregando = true;
+    fetch('receitas_idx.json').then(function (r) { return r.json(); })
+      .then(function (d) { idx = d; if (input.value.trim().length >= 2) aplica(); })
+      .catch(function () { idx = []; res.innerHTML = '<p class="bg-vazio">Índice indisponível — ' +
+        '<a href="cocktails.html">abrir fichas técnicas</a>.</p>'; });
+  }
+
+  function marca(nome, q) {
+    var i = semAcento(nome).indexOf(q);
+    if (i < 0) return nome;
+    return nome.slice(0, i) + '<mark>' + nome.slice(i, i + q.length) + '</mark>' + nome.slice(i + q.length);
+  }
+
+  function aplica() {
+    var q = semAcento(input.value.trim());
+    if (q.length < 2) { res.innerHTML = '<p class="bg-dica">Digite ao menos 2 letras.</p>'; return; }
+    if (!idx) { res.innerHTML = '<p class="bg-dica">Carregando…</p>'; return; }
+    var achados = idx.filter(function (it) { return semAcento(it.n).indexOf(q) >= 0; }).slice(0, 8);
+    if (!achados.length) {
+      res.innerHTML = '<p class="bg-vazio">Nada com "' + input.value.trim() +
+        '" — <a href="cocktails.html">ver todas as fichas &rarr;</a></p>';
+      return;
+    }
+    res.innerHTML = '';
+    achados.forEach(function (it) {
+      var a = document.createElement('a');
+      a.className = 'bg-item'; a.href = 'cocktails.html#r-' + it.s;
+      var casas = (it.c || []).map(function (c) {
+        return '<i style="background:' + (COR[c] || '#8f8672') + '"></i>';
+      }).join('');
+      a.innerHTML = '<span class="nome">' + marca(it.n, q) + '</span><span class="bg-casas">' + casas + '</span>';
+      res.appendChild(a);
+    });
+  }
+
+  function abre() {
+    ov.classList.add('aberto');
+    document.body.style.overflow = 'hidden';
+    carrega();
+    setTimeout(function () { input.focus(); }, 30);
+  }
+  function fecha() {
+    ov.classList.remove('aberto');
+    document.body.style.overflow = '';
+  }
+  btn.addEventListener('click', abre);
+  fechar.addEventListener('click', fecha);
+  ov.addEventListener('click', function (e) { if (e.target === ov) fecha(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && ov.style.display !== 'flex' && !ov.classList.contains('aberto') &&
+        document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault(); abre();
+    } else if (e.key === 'Escape' && ov.classList.contains('aberto')) {
+      fecha();
+    }
+  });
+  input.addEventListener('input', aplica);
+})();
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+
+</body>
+</html>
