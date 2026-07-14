@@ -420,6 +420,32 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
             background: var(--bg); color: var(--text); cursor: pointer; font-family: inherit; }
   .dm-btn.pri { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); font-weight: 600; }
   .dm-btn:disabled { opacity: .5; cursor: default; }
+  /* Resposta do recebedor (2026-07-14): texto + 3 botões de classificação —
+     visível pra chefe/coord em Recebidas, e pra quem enviou em Enviadas. */
+  .dm-resposta { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  .dm-resposta-tit { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3);
+                      margin-bottom: 8px; }
+  .dm-resposta-status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600;
+                         border-radius: 999px; padding: 3px 10px; margin-bottom: 8px; border: 1px solid; }
+  .dm-resposta-status.analise { color: var(--amarelo); border-color: var(--amarelo); background: rgba(224,176,92,.1); }
+  .dm-resposta-status.aprovado { color: var(--verde); border-color: var(--verde); background: rgba(159,225,203,.1); }
+  .dm-resposta-status.reprovado { color: var(--urg-urgente); border-color: var(--urg-urgente); background: rgba(226,75,74,.1); }
+  .dm-resposta-ta { width: 100%; box-sizing: border-box; min-height: 64px; padding: 9px 11px; font-size: 13.5px;
+                     font-family: inherit; border-radius: 10px; border: 1px solid var(--border); background: var(--bg);
+                     color: var(--text); resize: vertical; margin-bottom: 8px; }
+  .dm-resposta-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .dm-resposta-btn-analise { border-color: var(--amarelo); color: var(--amarelo); }
+  .dm-resposta-btn-aprovado { border-color: var(--verde); color: var(--verde); }
+  .dm-resposta-btn-reprovado { border-color: var(--urg-urgente); color: var(--urg-urgente); }
+  /* Bloco de resposta lido na timeline Enviadas — mesmas cores, sem botões. */
+  .dm-env-resposta { margin-top: 8px; padding: 9px 11px; border-radius: 10px; border: 1px solid; font-size: 13px; }
+  .dm-env-resposta.analise { border-color: var(--amarelo); background: rgba(224,176,92,.08); }
+  .dm-env-resposta.aprovado { border-color: var(--verde); background: rgba(159,225,203,.08); }
+  .dm-env-resposta.reprovado { border-color: var(--urg-urgente); background: rgba(226,75,74,.08); }
+  .dm-env-resposta-tit { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+                          margin-bottom: 4px; }
+  .dm-env-resposta-txt { color: var(--text-2); white-space: pre-line; }
+  .dm-env-resposta-meta { font-size: 11px; color: var(--text-3); margin-top: 4px; }
   .dm-acoes select { font: inherit; font-size: 13px; background: var(--bg); color: var(--text);
                       border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; }
   .dm-toast { position: fixed; left: 50%; bottom: 18px; transform: translate(-50%, 8px); z-index: 80;
@@ -1171,6 +1197,57 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     pintaEnvio();
     corpoEl.appendChild(envioEl);
 
+    // Resposta do recebedor (2026-07-14, pedido do Rodrigo): texto livre +
+    // 3 botões de classificação rápida. Mesma trava de SOMENTE_LEITURA das
+    // outras ações — controladoria nunca vê os controles (o Worker
+    // recusaria o PATCH mesmo assim).
+    if (!SOMENTE_LEITURA && (NIVEL === 'chefe' || NIVEL === 'coord')) {
+      var respEl = document.createElement('div'); respEl.className = 'dm-resposta';
+      var respTit = document.createElement('div'); respTit.className = 'dm-resposta-tit'; respTit.textContent = 'Responder';
+      respEl.appendChild(respTit);
+
+      var respStatusEl = document.createElement('div');
+      function pintaRespostaStatus() {
+        if (!d.status_resposta) { respStatusEl.style.display = 'none'; return; }
+        var cls = d.status_resposta === 'Aprovado' ? 'aprovado' : (d.status_resposta === 'Reprovado' ? 'reprovado' : 'analise');
+        respStatusEl.className = 'dm-resposta-status ' + cls;
+        respStatusEl.style.display = '';
+        respStatusEl.textContent = d.status_resposta +
+          (d.respondido_em ? ' · ' + horaCurta(d.respondido_em) : '') +
+          (d.respondido_por ? ' · ' + d.respondido_por : '');
+      }
+      pintaRespostaStatus();
+      respEl.appendChild(respStatusEl);
+
+      var respTa = document.createElement('textarea');
+      respTa.className = 'dm-resposta-ta';
+      respTa.placeholder = 'Escreva uma resposta (opcional)…';
+      respTa.value = d.resposta || '';
+      respEl.appendChild(respTa);
+
+      var respBtns = document.createElement('div'); respBtns.className = 'dm-resposta-btns';
+      [{'label': 'Em análise', 'cls': 'analise'}, {'label': 'Aprovado', 'cls': 'aprovado'}, {'label': 'Reprovado', 'cls': 'reprovado'}].forEach(function (opt) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'dm-btn dm-resposta-btn-' + opt.cls; b.textContent = opt.label;
+        b.onclick = function () {
+          respBtns.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+          var texto = respTa.value.trim();
+          patch(d.chave, { resposta: texto, status_resposta: opt.label }, function () {
+            d.resposta = texto; d.status_resposta = opt.label; d.respondido_em = new Date().toISOString();
+            pintaRespostaStatus();
+            toast('Resposta salva: ' + opt.label + '.');
+            respBtns.querySelectorAll('button').forEach(function (x) { x.disabled = false; });
+          }, function () {
+            respBtns.querySelectorAll('button').forEach(function (x) { x.disabled = false; });
+            toast('Falha ao salvar a resposta — tenta de novo.', true);
+          });
+        };
+        respBtns.appendChild(b);
+      });
+      respEl.appendChild(respBtns);
+      corpoEl.appendChild(respEl);
+    }
+
     // Histórico de edições (chefe/coord, carregado lazy ao abrir o card).
     // Usa um listener adicional no head — não interfere com abreFecha (ambos
     // respondem ao mesmo clique; abreFecha já setou .aberto antes deste rodar).
@@ -1494,6 +1571,28 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     if (!APENAS_ENVIADAS && d.casa) partes.push(d.casa);
     meta.textContent = partes.filter(Boolean).join(' · ');
     bolha.appendChild(meta);
+
+    // Resposta do recebedor (2026-07-14) — quem enviou vê o retorno aqui,
+    // com a mesma classificação colorida usada em Recebidas.
+    if (d.status_resposta) {
+      var cls = d.status_resposta === 'Aprovado' ? 'aprovado' : (d.status_resposta === 'Reprovado' ? 'reprovado' : 'analise');
+      var respBloco = document.createElement('div'); respBloco.className = 'dm-env-resposta ' + cls;
+      var respTitEl = document.createElement('div'); respTitEl.className = 'dm-env-resposta-tit'; respTitEl.textContent = d.status_resposta;
+      respBloco.appendChild(respTitEl);
+      if (d.resposta) {
+        var respTxtEl = document.createElement('div'); respTxtEl.className = 'dm-env-resposta-txt'; respTxtEl.textContent = d.resposta;
+        respBloco.appendChild(respTxtEl);
+      }
+      var respMetaPartes = [];
+      if (d.respondido_em) respMetaPartes.push(horaCurta(d.respondido_em));
+      if (d.respondido_por) respMetaPartes.push(d.respondido_por);
+      if (respMetaPartes.length) {
+        var respMetaEl = document.createElement('div'); respMetaEl.className = 'dm-env-resposta-meta';
+        respMetaEl.textContent = respMetaPartes.join(' · ');
+        respBloco.appendChild(respMetaEl);
+      }
+      bolha.appendChild(respBloco);
+    }
 
     // Botão editar (só se a demanda não está Resolvida e o nível tem pessoa)
     var podeEditar = (d.status !== 'Resolvido');
