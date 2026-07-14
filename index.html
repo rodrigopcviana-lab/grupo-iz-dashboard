@@ -91,6 +91,16 @@ window.exigirNivel = function (niveisOk, slug) {
   if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
   return { ok: false, nivelAtual: s.nivel };
 };
+// Mensagem padrão de nível insuficiente (2026-07-14): antes cada página
+// reescrevia esta frase à mão — 16 cópias, algumas com link clicável
+// ("Trocar acesso" em <a>), outras só texto. Centralizado aqui pra toda
+// página protegida usar a mesma redação e o mesmo link.
+window.msgTrocarAcesso = function () {
+  return 'Toque em <a href="index.html#nivel">Trocar acesso</a> para entrar com a senha certa.';
+};
+window.msgAcessoNegado = function (nomePagina) {
+  return 'Seu acesso atual não abre ' + nomePagina + '. ' + window.msgTrocarAcesso();
+};
 </script>
 
 
