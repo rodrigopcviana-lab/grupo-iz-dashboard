@@ -496,6 +496,15 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
 </div>
 
 <div id="dm-enviadas" style="display:none">
+  <div id="dm-env-nome-wrap" style="display:none">
+    <label class="dm-env-nome-lbl" for="dm-env-nome">Ver enviadas de</label>
+    <div class="dm-env-nome-row">
+      <input type="text" id="dm-env-nome" placeholder="nome usado no Registro Rápido" autocomplete="off">
+      <button type="button" id="dm-env-nome-ir">Ver</button>
+    </div>
+    <p class="dm-env-nome-hint">Sem senha individual, o Solicitante é o nome escolhido no Registro Rápido —
+    informe o mesmo nome pra ver o histórico dele.</p>
+  </div>
   <div id="dm-env-lista"></div>
   <button class="dm-mais" id="dm-env-mais" style="display:none">Carregar mais</button>
 </div>
@@ -526,6 +535,7 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   }
   var TOKEN = r.sessao.token;
   var NIVEL = r.sessao.nivel;
+  var PESSOA = r.sessao.pessoa || null;
   var SOMENTE_LEITURA = (NIVEL === 'controladoria');
   elApp.style.display = '';
 
