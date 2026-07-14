@@ -190,16 +190,25 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
 <style>
   .pr-toggle-wrap { position: relative; margin-bottom: 14px; padding-top: 1px; }
   .pr-toggle-wrap::before { content: ""; display: block; border-top: 1px solid var(--border); }
-  .pr-toggle-btn { position: relative; margin: 0 auto; width: 58%; max-width: 230px; display: flex;
-                    flex-direction: column; align-items: center; gap: 5px; padding: 7px 14px 9px;
+  .pr-tabs-row { display: flex; justify-content: center; gap: 6px; }
+  .pr-toggle-btn { position: relative; display: flex; flex-direction: column;
+                    align-items: center; gap: 5px; padding: 7px 14px 9px;
                     border: 1px solid var(--border); border-top: none; border-radius: 0 0 16px 16px;
                     background: linear-gradient(180deg,#2a2419,var(--card)); color: var(--text);
                     cursor: pointer; box-shadow: 0 5px 11px rgba(0,0,0,.3); }
+  .pr-tab-p { width: 58%; max-width: 230px; }
+  .pr-tab-n { width: 34%; max-width: 140px; }
+  .pr-tab-n.aberto { border-color: #8b7db8; }
   .pr-toggle-btn .pr-pega { width: 34px; height: 4px; border-radius: 99px; background: var(--acc); opacity: .8; }
+  .pr-toggle-btn .np-pega { width: 22px; height: 3px; border-radius: 99px; background: #8b7db8; opacity: .75; }
   .pr-toggle-btn .pr-rot { display: flex; align-items: center; gap: 7px; font-family: var(--serif); font-size: 14px; }
+  .pr-tab-n .pr-rot { font-size: 11.5px; gap: 5px; }
   .pr-toggle-btn .pr-toggle-ic { display: flex; align-items: center; color: var(--acc); transition: transform .18s; }
   .pr-toggle-btn .pr-toggle-ic svg { width: 15px; height: 15px; display: block; }
-  .pr-toggle-btn.aberto .pr-toggle-ic { transform: rotate(180deg); }
+  .pr-tab-p.aberto .pr-toggle-ic { transform: rotate(180deg); }
+  .pr-toggle-btn .np-toggle-ic { display: flex; align-items: center; color: #8b7db8; transition: transform .18s; }
+  .pr-toggle-btn .np-toggle-ic svg { width: 13px; height: 13px; display: block; }
+  .pr-tab-n.aberto .np-toggle-ic { transform: rotate(180deg); }
   .painel-rapido { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 4px; }
   .painel-rapido[hidden] { display: none; }
   a.pr-card, button.pr-card { position: relative; display: flex; align-items: center; gap: 10px;
@@ -250,10 +259,16 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
   @media (max-width: 420px) { .painel-rapido { gap: 6px; } }
 </style>
 <div class="pr-toggle-wrap">
-  <button type="button" class="pr-toggle-btn" id="pr-toggle-btn" aria-expanded="false" aria-controls="pr-conteudo">
-    <span class="pr-pega"></span>
-    <span class="pr-rot">Painel Rápido <span class="pr-toggle-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
-  </button>
+  <div class="pr-tabs-row">
+    <button type="button" class="pr-toggle-btn pr-tab-p" id="pr-toggle-btn" aria-expanded="false" aria-controls="pr-conteudo">
+      <span class="pr-pega"></span>
+      <span class="pr-rot">Painel Rápido <span class="pr-toggle-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
+    </button>
+    <button type="button" class="pr-toggle-btn pr-tab-n" id="np-toggle-btn" aria-expanded="false" aria-controls="np-painel">
+      <span class="np-pega"></span>
+      <span class="pr-rot">Notas <span class="np-toggle-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg></span></span>
+    </button>
+  </div>
 </div>
 <div class="painel-rapido" id="pr-conteudo" hidden>
   <a class="pr-card pr-registro" href="registro.html">
@@ -282,7 +297,94 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
     <span class="pr-tt"><span class="t">Demandas Enviadas</span><span class="d">o que você registrou</span></span>
   </a>
 </div>
+
+<!-- App de Notas Privadas — armazenado em KV do registro-bares por sub do token -->
+<style>
+  #np-painel { margin-top: 4px; margin-bottom: 8px; }
+  .np-app { border: 1px solid #6b5da0; border-radius: 13px; background: #18152a;
+             overflow: hidden; min-height: 120px; }
+  .np-loading { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .np-skel { height: 14px; border-radius: 6px; background: #2a2440; width: 90%;
+              animation: np-pulse 1.4s ease-in-out infinite; }
+  @keyframes np-pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+  @media (prefers-reduced-motion:reduce) { .np-skel { animation: none; opacity: .7; } }
+  .np-list-header { display: flex; align-items: center; justify-content: space-between;
+                     padding: 10px 14px 8px; border-bottom: 1px solid #2a2440; }
+  .np-list-titulo { font-family: var(--serif); font-size: 13px; color: #a89fd0; }
+  .np-nova-btn { background: none; border: 1px solid #6b5da0; border-radius: 8px;
+                  color: #a89fd0; cursor: pointer; padding: 4px 8px;
+                  display: flex; align-items: center; gap: 4px; font-size: 12px; }
+  .np-nova-btn:hover { border-color: #a89fd0; color: #c4bce8; }
+  .np-item { padding: 10px 14px; border-bottom: 1px solid #1e1b33; cursor: pointer;
+              transition: background .12s; }
+  .np-item:hover { background: #201d38; }
+  .np-item:last-child { border-bottom: none; }
+  .np-item-titulo { font-size: 13.5px; font-weight: 600; color: var(--text);
+                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+  .np-item-preview { font-size: 11.5px; color: var(--text-3); white-space: nowrap;
+                      overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+  .np-item-data { font-size: 10.5px; color: #6b5da0; }
+  .np-ed-topo { display: flex; align-items: center; gap: 6px; padding: 8px 10px;
+                 border-bottom: 1px solid #2a2440; }
+  .np-ed-back { background: none; border: none; color: #a89fd0; cursor: pointer;
+                 font: inherit; font-size: 12px; display: flex; align-items: center;
+                 gap: 4px; padding: 4px 6px; border-radius: 7px; }
+  .np-ed-back:hover { background: #2a2440; }
+  .np-ed-back svg { transform: rotate(90deg); }
+  .np-status { font-size: 11px; color: #6b5da0; flex: 1; text-align: center; }
+  .np-ed-del { background: none; border: none; color: #8b4040; cursor: pointer;
+                padding: 4px 6px; border-radius: 7px; display: flex; align-items: center; }
+  .np-ed-del:hover { background: #2a1a1a; color: #e07070; }
+  .np-titulo-inp { width: 100%; box-sizing: border-box; background: none; border: none;
+                    border-bottom: 1px solid #2a2440; padding: 12px 14px; font-size: 16px;
+                    font-weight: 700; color: var(--text); outline: none; font-family: var(--serif); }
+  .np-titulo-inp::placeholder { color: #3d3660; }
+  .np-conteudo-inp { width: 100%; box-sizing: border-box; background: none; border: none;
+                      padding: 12px 14px; font-size: 13.5px; color: var(--text); outline: none;
+                      min-height: 160px; resize: none; font-family: inherit; line-height: 1.6; }
+  .np-conteudo-inp::placeholder { color: #3d3660; }
+  .np-msg { padding: 20px 14px; font-size: 13px; color: var(--text-3); }
+  .np-vazio-txt { text-align: center; }
+  .np-toast { margin: 6px 10px; padding: 7px 12px; border-radius: 8px; font-size: 12px;
+               background: #3a1c1c; color: #f09090; border: 1px solid #6b2e2e; }
+</style>
+<div id="np-painel" hidden>
+  <div class="np-app">
+    <div id="np-loading" class="np-loading">
+      <div class="np-skel"></div><div class="np-skel" style="width:70%"></div>
+    </div>
+    <div id="np-erro" hidden class="np-msg">
+      Erro ao carregar notas. <button type="button" id="np-retry" style="background:none;border:none;color:#a89fd0;cursor:pointer;text-decoration:underline;font:inherit;font-size:12px">Tentar de novo</button>
+    </div>
+    <div id="np-lista-view" hidden>
+      <div class="np-list-header">
+        <span class="np-list-titulo">Minhas notas</span>
+        <button type="button" id="np-nova-btn" class="np-nova-btn" aria-label="Nova nota">
+          <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z"/><path d="M13 7l4 4"/></svg> Nova
+        </button>
+      </div>
+      <div id="np-lista-itens"></div>
+      <div id="np-vazio" hidden class="np-msg np-vazio-txt">Sem notas ainda. Toque em "Nova" para criar a primeira.</div>
+    </div>
+    <div id="np-editor-view" hidden>
+      <div class="np-ed-topo">
+        <button type="button" id="np-voltar-btn" class="np-ed-back">
+          <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg> voltar
+        </button>
+        <div id="np-status-txt" class="np-status"></div>
+        <button type="button" id="np-del-btn" class="np-ed-del" aria-label="Apagar nota">
+          <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg>
+        </button>
+      </div>
+      <input id="np-titulo-inp" type="text" class="np-titulo-inp" maxlength="100" placeholder="Título">
+      <textarea id="np-conteudo-inp" class="np-conteudo-inp" maxlength="5000" placeholder="Comece a escrever…"></textarea>
+    </div>
+    <div id="np-toast" class="np-toast" hidden></div>
+  </div>
+</div>
+
 <script>(function () {
+  var NP_WORKER = "https://registro-bares.rodrigopcviana.workers.dev";
   try {
     var s = window.sessaoLer && window.sessaoLer();
     // Controle de Doses (PLANO_CONTROLE_DOSES.md, config/doses.json:acesso.registrar)
@@ -296,15 +398,40 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
     var elEnv = document.getElementById('pr-demandas-env-card');
     if (elEnv && s) elEnv.style.display = '';
   } catch (e) {}
-  // Recolhido por padrão — a mesma etiqueta gira a seta (não são duas).
+
+  // --- Abrir/fechar abas (Painel Rápido e Notas — mutuamente exclusivos) ---
   var btn = document.getElementById('pr-toggle-btn');
   var conteudo = document.getElementById('pr-conteudo');
+  var npBtn = document.getElementById('np-toggle-btn');
+  var npPainel = document.getElementById('np-painel');
+
+  function fecharPainel() {
+    conteudo.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+    btn.classList.remove('aberto');
+  }
+  function fecharNotas() {
+    npPainel.hidden = true;
+    npBtn.setAttribute('aria-expanded', 'false');
+    npBtn.classList.remove('aberto');
+  }
+
   btn.onclick = function () {
     var abrir = conteudo.hidden;
+    if (abrir) fecharNotas();
     conteudo.hidden = !abrir;
     btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
     btn.classList.toggle('aberto', abrir);
   };
+
+  npBtn.onclick = function () {
+    var abrir = npPainel.hidden;
+    if (abrir) { fecharPainel(); npAbreGaveta(); }
+    npPainel.hidden = !abrir;
+    npBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    npBtn.classList.toggle('aberto', abrir);
+  };
+
   // Avarias abre/fecha o submenu de categorias — não navega sozinho.
   var avBtn = document.getElementById('pr-avarias-btn');
   var avSub = document.getElementById('pr-avarias-sub');
@@ -314,7 +441,238 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
     avBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
     avBtn.classList.toggle('aberto', abrir);
   };
-})();</script>
+
+  // Abre direto em ?np=1 (link do mini-painel em outras páginas)
+  try {
+    if (new URLSearchParams(location.search).get('np') === '1') {
+      fecharPainel();
+      npPainel.hidden = false;
+      npBtn.setAttribute('aria-expanded', 'true');
+      npBtn.classList.add('aberto');
+      npAbreGaveta();
+    }
+  } catch (e) {}
+})();
+
+// --- App de Notas Privadas ---------------------------------------------------
+(function () {
+  var NP_WORKER = "https://registro-bares.rodrigopcviana.workers.dev";
+  var NP = { notas: [], ativa: null, carregado: false, timer: null, dirty: false };
+
+  var elLoading  = document.getElementById('np-loading');
+  var elErro     = document.getElementById('np-erro');
+  var elListaV   = document.getElementById('np-lista-view');
+  var elEditorV  = document.getElementById('np-editor-view');
+  var elItens    = document.getElementById('np-lista-itens');
+  var elVazio    = document.getElementById('np-vazio');
+  var elNovaBtn  = document.getElementById('np-nova-btn');
+  var elVoltarBtn= document.getElementById('np-voltar-btn');
+  var elDelBtn   = document.getElementById('np-del-btn');
+  var elTitulo   = document.getElementById('np-titulo-inp');
+  var elConteudo = document.getElementById('np-conteudo-inp');
+  var elStatus   = document.getElementById('np-status-txt');
+  var elToast    = document.getElementById('np-toast');
+  var elRetry    = document.getElementById('np-retry');
+
+  function token() {
+    try { var s = window.sessaoLer && window.sessaoLer(); return s && s.token; } catch (e) { return null; }
+  }
+
+  function npMostra(view) {
+    elLoading.style.display  = view === 'loading'  ? '' : 'none';
+    elErro.hidden            = view !== 'erro';
+    elListaV.hidden          = view !== 'lista';
+    elEditorV.hidden         = view !== 'editor';
+  }
+
+  function npToast(msg) {
+    elToast.textContent = msg;
+    elToast.hidden = false;
+    setTimeout(function () { elToast.hidden = true; }, 4000);
+  }
+
+  function npSetStatus(msg, duracao) {
+    elStatus.textContent = msg;
+    if (duracao) setTimeout(function () { if (elStatus.textContent === msg) elStatus.textContent = ''; }, duracao);
+  }
+
+  function npDataCurta(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var agora = new Date();
+    var diff = agora - d;
+    if (diff < 60000) return 'agora';
+    if (diff < 3600000) return Math.floor(diff / 60000) + 'min';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
+    if (d.getFullYear() === agora.getFullYear())
+      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' });
+  }
+
+  function npRenderLista() {
+    elItens.innerHTML = '';
+    var ordenadas = NP.notas.slice().sort(function (a, b) {
+      return (b.atualizado_em || '').localeCompare(a.atualizado_em || '');
+    });
+    elVazio.hidden = ordenadas.length > 0;
+    ordenadas.forEach(function (n) {
+      var el = document.createElement('div');
+      el.className = 'np-item';
+      var titulo = n.titulo || '(sem título)';
+      var preview = (n.conteudo || '').replace(/\s+/g, ' ').slice(0, 80);
+      el.innerHTML =
+        '<div class="np-item-titulo">' + esc(titulo) + '</div>' +
+        (preview ? '<div class="np-item-preview">' + esc(preview) + '</div>' : '') +
+        '<div class="np-item-data">' + esc(npDataCurta(n.atualizado_em)) + '</div>';
+      el.onclick = function () { npAbreEditor(n.id); };
+      elItens.appendChild(el);
+    });
+    npMostra('lista');
+  }
+
+  function npCarrega() {
+    if (!NP_WORKER) { npMostra('erro'); return; }
+    var tok = token();
+    if (!tok) { npMostra('erro'); return; }
+    npMostra('loading');
+    fetch(NP_WORKER + '/api/notas', { headers: { 'X-Token': tok } })
+      .then(function (r) {
+        if (r.status === 401) { window.sessaoLimpar && window.sessaoLimpar(); return null; }
+        return r.json().catch(function () { return null; });
+      })
+      .then(function (d) {
+        if (!d) { npMostra('erro'); return; }
+        NP.notas = d.notas || [];
+        NP.carregado = true;
+        npRenderLista();
+      })
+      .catch(function () { npMostra('erro'); });
+  }
+
+  function npSalva(callback) {
+    if (!NP_WORKER || NP.ativa === null) { if (callback) callback(); return; }
+    var tok = token();
+    if (!tok) { if (callback) callback(); return; }
+    npSetStatus('Salvando…');
+    fetch(NP_WORKER + '/api/notas', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Token': tok },
+      body: JSON.stringify({ notas: NP.notas })
+    })
+      .then(function (r) { return r.json().catch(function () { return null; }); })
+      .then(function (d) {
+        if (d && d.ok) {
+          NP.notas = d.notas || NP.notas;
+          NP.dirty = false;
+          npSetStatus('Salvo', 3000);
+          npRenderLista();
+          if (callback) callback();
+        } else {
+          npSetStatus('Erro — tente de novo');
+          npToast('Falha ao salvar nota.');
+        }
+      })
+      .catch(function () {
+        npSetStatus('Erro — tente de novo');
+        npToast('Falha ao salvar nota.');
+      });
+  }
+
+  function npAutoSalva() {
+    clearTimeout(NP.timer);
+    NP.dirty = true;
+    NP.timer = setTimeout(function () { npSalva(); }, 2000);
+  }
+
+  function npAbreEditor(id) {
+    var nota = null;
+    for (var i = 0; i < NP.notas.length; i++) { if (NP.notas[i].id === id) { nota = NP.notas[i]; break; } }
+    if (!nota) return;
+    NP.ativa = id;
+    NP.dirty = false;
+    elTitulo.value = nota.titulo || '';
+    elConteudo.value = nota.conteudo || '';
+    elStatus.textContent = '';
+    elToast.hidden = true;
+    npMostra('editor');
+    elConteudo.focus();
+  }
+
+  function npFlushEditorEmNota() {
+    if (NP.ativa === null) return;
+    for (var i = 0; i < NP.notas.length; i++) {
+      if (NP.notas[i].id === NP.ativa) {
+        NP.notas[i].titulo = elTitulo.value.trim() || '(sem título)';
+        NP.notas[i].conteudo = elConteudo.value;
+        break;
+      }
+    }
+  }
+
+  function npVoltaLista() {
+    clearTimeout(NP.timer);
+    if (NP.dirty) {
+      npFlushEditorEmNota();
+      npSalva(function () { NP.ativa = null; });
+    } else {
+      NP.ativa = null;
+      npRenderLista();
+    }
+  }
+
+  function npNova() {
+    var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    var agora = new Date().toISOString();
+    var nova = { id: id, titulo: '', conteudo: '', criado_em: agora, atualizado_em: agora };
+    NP.notas.push(nova);
+    var tok = token();
+    if (!tok || !NP_WORKER) { npAbreEditor(id); return; }
+    npSetStatus('Salvando…');
+    fetch(NP_WORKER + '/api/notas', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Token': tok },
+      body: JSON.stringify({ notas: NP.notas })
+    })
+      .then(function (r) { return r.json().catch(function () { return null; }); })
+      .then(function (d) {
+        if (d && d.ok) { NP.notas = d.notas || NP.notas; }
+        npAbreEditor(id);
+      })
+      .catch(function () { npAbreEditor(id); });
+  }
+
+  function npApagar() {
+    if (NP.ativa === null) return;
+    if (!window.confirm('Apagar esta nota?')) return;
+    clearTimeout(NP.timer);
+    NP.notas = NP.notas.filter(function (n) { return n.id !== NP.ativa; });
+    NP.ativa = null;
+    NP.dirty = false;
+    var tok = token();
+    if (tok && NP_WORKER) {
+      fetch(NP_WORKER + '/api/notas', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Token': tok },
+        body: JSON.stringify({ notas: NP.notas })
+      }).catch(function () {});
+    }
+    npRenderLista();
+  }
+
+  elTitulo.oninput = function () { npFlushEditorEmNota(); npAutoSalva(); };
+  elConteudo.oninput = function () { npFlushEditorEmNota(); npAutoSalva(); };
+  elVoltarBtn.onclick = npVoltaLista;
+  elDelBtn.onclick = npApagar;
+  elNovaBtn.onclick = npNova;
+  elRetry.onclick = npCarrega;
+
+  // Exponho para o bloco anterior poder chamar ao abrir a gaveta
+  window.npAbreGaveta = function () {
+    if (!NP.carregado) npCarrega();
+  };
+})();
+</script>
 
 <details class="hero-hoje" open>
 <summary class="k">HOJE NO GRUPO<span class="seta" aria-hidden="true">▾</span></summary>
@@ -545,7 +903,7 @@ Ranking abre pra Chefe de Bar, Coordenação e Controladoria; Vendas só pra Coo
 })();
 </script>
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 13/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 14/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
