@@ -264,6 +264,20 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   .dm-modo-sel button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
   /* Enviadas: linha do tempo (pedido do Rodrigo — "vai se parecer com uma
      estrutura de chat bem formatada"), não a fila de cards de Recebidas. */
+  /* "Ver enviadas de" — só pra chefe/coord/controladoria sem senha
+     individual (2026-07-14): sem pessoa própria no token, o Worker só
+     filtra "enviadas" por um nome autodeclarado (o mesmo do roster do
+     Registro Rápido) — nunca pra equipe/bartender, que não tem esse atalho. */
+  .dm-env-nome-wrap { margin-bottom: 14px; }
+  .dm-env-nome-lbl { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
+                      display: block; margin-bottom: 6px; }
+  .dm-env-nome-row { display: flex; gap: 8px; }
+  .dm-env-nome-row input { flex: 1; min-width: 0; padding: 10px 12px; font-size: 14px; font-family: inherit;
+                            border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); }
+  .dm-env-nome-row button { font: inherit; font-size: 13.5px; font-weight: 600; padding: 10px 16px;
+                             border-radius: 10px; border: 1px solid var(--acc); background: var(--acc);
+                             color: var(--acc-txt); cursor: pointer; }
+  .dm-env-nome-hint { font-size: 11.5px; color: var(--text-3); margin: 6px 2px 0; }
   .dm-env-dia { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
                 margin: 18px 2px 8px; text-align: center; }
   .dm-env-dia:first-child { margin-top: 0; }
@@ -299,6 +313,22 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   .dm-dica button { font: inherit; font-size: 11.5px; color: var(--text-3); background: none; border: none;
                      cursor: pointer; flex: none; padding: 0; }
   .dm-dica button:focus-visible { outline: 2px solid var(--acc); }
+
+  /* Push (Web Push/VAPID) — banner de onboarding, mesmo molde do .dm-dica.
+     iOS só entrega push com o site instalado ("Adicionar à Tela de Início");
+     sem isso o botão "Ativar" não aparece, só a instrução. */
+  .dm-push { display: flex; gap: 10px; align-items: flex-start; background: var(--card);
+             border: 1px solid var(--acc); border-radius: 10px; padding: 11px 13px; margin-bottom: 12px;
+             font-size: 12.5px; color: var(--text-2); line-height: 1.4; }
+  .dm-push b { display: block; color: var(--text); font-family: var(--serif); font-weight: 500;
+               font-size: 14px; margin-bottom: 3px; }
+  .dm-push-txt { flex: 1; min-width: 0; }
+  .dm-push-acoes { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex: none; }
+  .dm-push-acoes button { font: inherit; cursor: pointer; white-space: nowrap; }
+  .dm-push-acoes .dm-push-ativar { font-size: 12.5px; font-weight: 600; padding: 7px 14px; border-radius: 999px;
+                                    border: 1px solid var(--acc); background: var(--acc); color: var(--acc-txt); }
+  .dm-push-acoes .dm-push-fechar { font-size: 11.5px; color: var(--text-3); background: none; border: none; padding: 0; }
+  .dm-push-acoes button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
   .dm-legenda { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding-top: 12px;
                 border-top: 1px solid var(--border); font-size: 11.5px; color: var(--text-3); }
@@ -447,6 +477,18 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
 
 <div id="dm-gate" class="rr-gate" style="display:none"></div>
 <div id="dm-app" style="display:none">
+
+<div class="dm-push" id="dm-push" style="display:none">
+  <div class="dm-push-txt">
+    <b>Ativar notificações</b>
+    <span id="dm-push-msg">Receba um aviso no celular assim que uma ocorrência ou solicitação chegar
+    pra você — igual uma mensagem de WhatsApp, mesmo com o app fechado.</span>
+  </div>
+  <div class="dm-push-acoes">
+    <button type="button" class="dm-push-ativar" id="dm-push-ativar" style="display:none">Ativar</button>
+    <button type="button" class="dm-push-fechar" id="dm-push-fechar">agora não ✕</button>
+  </div>
+</div>
 
 <div class="dm-modo-sel" id="dm-modo-sel" style="display:none">
   <button type="button" class="on" data-modo="recebidas"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg> Recebidas</button>
@@ -604,6 +646,95 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     localStorage.setItem(DICA_KEY, '1');
     elDica.style.display = 'none';
   };
+
+  // Push (Web Push/VAPID) — só quem vê "Recebidas" (chefe/coord/
+  // controladoria) recebe aviso a cada registro novo; equipe/bartender só
+  // veem "Enviadas", não faz sentido tocar o celular deles.
+  (function () {
+    if (['chefe', 'coord', 'controladoria'].indexOf(NIVEL) < 0) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+
+    var VAPID_PUBLIC = "BDI6gDuv5E4ERk_WNG1QGINUdn1Zo11vR0cv8knc2u3dM9uOZaDC1zGbrnnYXLhN6TnjUf0tnssRQ4biTAGiJA0";
+    if (!VAPID_PUBLIC) return;
+    var PUSH_OK_KEY = 'demandas_push_v1_ok';
+    var PUSH_FECHADO_KEY = 'demandas_push_v1_fechado';
+    var elPush = document.getElementById('dm-push');
+    var elPushMsg = document.getElementById('dm-push-msg');
+    var elPushAtivar = document.getElementById('dm-push-ativar');
+    var elPushFechar = document.getElementById('dm-push-fechar');
+
+    function urlBase64ToUint8Array(base64) {
+      var padding = '='.repeat((4 - base64.length % 4) % 4);
+      var base64Padded = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+      var raw = atob(base64Padded);
+      var arr = new Uint8Array(raw.length);
+      for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+      return arr;
+    }
+
+    function escondePush() { elPush.style.display = 'none'; }
+
+    elPushFechar.onclick = function () {
+      localStorage.setItem(PUSH_FECHADO_KEY, '1');
+      escondePush();
+    };
+
+    function ativarPush() {
+      elPushAtivar.disabled = true;
+      Notification.requestPermission().then(function (perm) {
+        if (perm !== 'granted') {
+          elPushMsg.textContent = 'Notificações bloqueadas no navegador. Pra ativar depois, mude a '
+            + 'permissão do site nas configurações do navegador.';
+          elPushAtivar.style.display = 'none';
+          elPushAtivar.disabled = false;
+          return;
+        }
+        navigator.serviceWorker.ready.then(function (reg) {
+          return reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+          });
+        }).then(function (sub) {
+          return fetch(WORKER + '/api/push/subscribe', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+            body: JSON.stringify({ subscription: sub.toJSON() }),
+          });
+        }).then(function (resp) {
+          if (!resp || !resp.ok) throw new Error('subscribe falhou');
+          localStorage.setItem(PUSH_OK_KEY, '1');
+          escondePush();
+        }).catch(function () {
+          elPushMsg.textContent = 'Não deu pra ativar agora — tenta de novo em instantes.';
+          elPushAtivar.disabled = false;
+        });
+      });
+    }
+
+    // Já negado antes: navegador não deixa re-perguntar por JS — só orienta.
+    if (Notification.permission === 'denied') {
+      if (localStorage.getItem(PUSH_FECHADO_KEY)) return;
+      elPushMsg.textContent = 'Notificações estão bloqueadas pra este site. Pra ativar, mude a '
+        + 'permissão nas configurações do navegador.';
+      elPush.style.display = '';
+      return;
+    }
+    if (localStorage.getItem(PUSH_OK_KEY) || localStorage.getItem(PUSH_FECHADO_KEY)) return;
+
+    // iOS só entrega Web Push com o site instalado ("Adicionar à Tela de
+    // Início") — Safari em aba normal nem chega a ter PushManager de verdade.
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    var isStandalone = window.navigator.standalone === true
+      || window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOS && !isStandalone) {
+      elPushMsg.textContent = 'No iPhone, toque em Compartilhar e depois "Adicionar à Tela de Início". '
+        + 'Abra o Portal pelo ícone criado e volte aqui pra ativar as notificações.';
+      elPushAtivar.style.display = 'none';
+    } else {
+      elPushAtivar.style.display = '';
+      elPushAtivar.onclick = ativarPush;
+    }
+    elPush.style.display = '';
+  })();
 
   // I4: legenda fixa (setor/urgência/tipo) — construída a partir da MESMA
   // config que já alimenta filtros e cores dos cards (SETORES/SETOR_COR/
@@ -1442,6 +1573,15 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     elEnvMais.disabled = true;
     var qs = ['modo=enviadas'];
     if (!reset && ENV.cursor) qs.push('cursor=' + encodeURIComponent(ENV.cursor));
+    // Sem PESSOA própria (chefe/coord/controladoria em senha compartilhada):
+    // o Worker só filtra "enviadas" por um nome autodeclarado — o mesmo
+    // usado no roster do Registro Rápido (2026-07-14, achado do Rodrigo:
+    // demanda enviada como "Rodrigo Coelho" não aparecia nas próprias
+    // enviadas da sessão coord, porque coord nunca tem pessoa assinada).
+    if (!PESSOA && !APENAS_ENVIADAS) {
+      var nomeAtualEnv = (document.getElementById('dm-env-nome').value || '').trim();
+      if (nomeAtualEnv) qs.push('nome=' + encodeURIComponent(nomeAtualEnv));
+    }
     fetch(WORKER + '/api/demandas?' + qs.join('&'), { headers: { 'X-Token': TOKEN } })
       .then(function (r) {
         if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
@@ -1478,6 +1618,24 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     elEnviadas.style.display = m === 'enviadas' ? '' : 'none';
     if (m === 'recebidas' && !recCarregado) { recCarregado = true; carregaTudo(true); }
     if (m === 'enviadas' && !ENV.carregado) { ENV.carregado = true; carregaEnviadas(true); }
+  }
+
+  // "Ver enviadas de" — chefe/coord/controladoria SEM pessoa própria (senha
+  // compartilhada) precisam declarar de quem querem ver, já que o Worker não
+  // tem como saber sozinho (2026-07-14). Pré-preenche com o último nome
+  // usado no Registro Rápido (mesma chave de localStorage, mesma origem) —
+  // cobre o caso comum de "acabei de registrar, quero ver o que enviei" sem
+  // precisar digitar de novo.
+  var elEnvNomeWrap = document.getElementById('dm-env-nome-wrap');
+  var elEnvNomeInput = document.getElementById('dm-env-nome');
+  var elEnvNomeBtn = document.getElementById('dm-env-nome-ir');
+  if (!PESSOA && !APENAS_ENVIADAS) {
+    elEnvNomeWrap.style.display = '';
+    try { elEnvNomeInput.value = localStorage.getItem('registro_nome') || ''; } catch (e) {}
+    elEnvNomeBtn.onclick = function () { ENV.carregado = true; carregaEnviadas(true); };
+    elEnvNomeInput.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); elEnvNomeBtn.onclick(); }
+    });
   }
 
   if (APENAS_ENVIADAS) {

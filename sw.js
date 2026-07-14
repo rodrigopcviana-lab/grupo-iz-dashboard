@@ -63,3 +63,32 @@ self.addEventListener("fetch", (event) => {
     );
   }
 });
+
+// Push (Central de Demandas) — só dispara em quem assinou pelo botão
+// "Ativar notificações" de demandas.html; não muda a estratégia de cache
+// acima, por isso não precisa bump de CACHE.
+self.addEventListener("push", (event) => {
+  let dados = {};
+  try { dados = event.data ? event.data.json() : {}; } catch (e) {}
+  const titulo = dados.title || "Central de Demandas";
+  const opcoes = {
+    body: dados.body || "",
+    icon: "icon-192.png",
+    badge: "icon-192.png",
+    data: { url: dados.url || "demandas.html" },
+  };
+  event.waitUntil(self.registration.showNotification(titulo, opcoes));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const alvo = (event.notification.data && event.notification.data.url) || "demandas.html";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((lista) => {
+      for (const c of lista) {
+        if (c.url.indexOf(alvo) >= 0 && "focus" in c) return c.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(alvo);
+    })
+  );
+});
