@@ -48,8 +48,12 @@ window.sessaoLer = function () {
 // casa (Missão 5, 2026-07-10): slug da casa do chefe logado, "*" pra
 // master/coord/boss, null pra níveis sem casa própria. Opcional na chamada
 // pra não quebrar quem ainda chama sessaoSalvar(nivel, token, exp) direto.
-window.sessaoSalvar = function (nivel, token, exp, casa) {
-  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null })); } catch (e) {}
+// pessoa (2026-07-13, Registro Rápido): nome da senha INDIVIDUAL (Escola de
+// Bar F7/Missão 5) — o /api/nivel já devolvia isso no corpo, mas até aqui a
+// sessão do navegador descartava o campo. Sem isso, registro.html não tinha
+// como pré-preencher "Seu nome" com a identidade real de quem logou.
+window.sessaoSalvar = function (nivel, token, exp, casa, pessoa) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null, pessoa: pessoa || null })); } catch (e) {}
 };
 window.sessaoLimpar = function () {
   try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
@@ -62,8 +66,8 @@ window.loginSenha = function (worker, senha) {
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
     return r.json().then(function (d) {
-      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa);
-      return { ok: true, nivel: d.nivel, casa: d.casa, token: d.token };
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa, d.pessoa);
+      return { ok: true, nivel: d.nivel, casa: d.casa, pessoa: d.pessoa, token: d.token };
     });
   }).catch(function () { return { ok: false, status: 0 }; });
 };

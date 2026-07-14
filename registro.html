@@ -48,8 +48,12 @@ window.sessaoLer = function () {
 // casa (Missão 5, 2026-07-10): slug da casa do chefe logado, "*" pra
 // master/coord/boss, null pra níveis sem casa própria. Opcional na chamada
 // pra não quebrar quem ainda chama sessaoSalvar(nivel, token, exp) direto.
-window.sessaoSalvar = function (nivel, token, exp, casa) {
-  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null })); } catch (e) {}
+// pessoa (2026-07-13, Registro Rápido): nome da senha INDIVIDUAL (Escola de
+// Bar F7/Missão 5) — o /api/nivel já devolvia isso no corpo, mas até aqui a
+// sessão do navegador descartava o campo. Sem isso, registro.html não tinha
+// como pré-preencher "Seu nome" com a identidade real de quem logou.
+window.sessaoSalvar = function (nivel, token, exp, casa, pessoa) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null, pessoa: pessoa || null })); } catch (e) {}
 };
 window.sessaoLimpar = function () {
   try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
@@ -62,8 +66,8 @@ window.loginSenha = function (worker, senha) {
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
     return r.json().then(function (d) {
-      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa);
-      return { ok: true, nivel: d.nivel, casa: d.casa, token: d.token };
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa, d.pessoa);
+      return { ok: true, nivel: d.nivel, casa: d.casa, pessoa: d.pessoa, token: d.token };
     });
   }).catch(function () { return { ok: false, status: 0 }; });
 };
@@ -154,8 +158,11 @@ direto para a coordenação.</p>
                    font-size: 14px; }
   .rr-nome-chip b { flex: 1; }
   .rr-nome-chip a { color: var(--acc); font-size: 13px; cursor: pointer; }
-  .rr-nome-input { width: 100%; padding: 11px 12px; font-size: 15px; border-radius: 10px;
+  .rr-nome-fixo { font-size: 11px; color: var(--text-3); border: 1px solid var(--border);
+                   border-radius: 999px; padding: 3px 9px; flex: none; }
+  .rr-nome-input, select.rr-nome-input { width: 100%; padding: 11px 12px; font-size: 15px; border-radius: 10px;
                     border: 1px solid var(--border); background: var(--card); color: var(--text); }
+  .rr-nome-aviso { font-size: 12.5px; color: var(--text-3); margin: 0 0 8px; }
   .rr-enviar { width: 100%; padding: 15px; font-size: 15px; font-weight: 600; border: none;
                border-radius: 999px; background: var(--acc); color: var(--acc-txt); cursor: pointer; }
   .rr-enviar:disabled { opacity: .5; }
@@ -267,7 +274,7 @@ direto para a coordenação.</p>
   </div>
 
   <div class="rr-bloco" data-bloco="descricao">
-    <span class="rr-label">5 · Descrição</span>
+    <span class="rr-label">5 · Descrição (opcional)</span>
     <textarea class="rr-textarea" id="rr-descricao" placeholder="Escolha uma categoria acima"></textarea>
   </div>
 
@@ -321,6 +328,9 @@ direto para a coordenação.</p>
   }
   var TOKEN = r.sessao.token;
   var NIVEL = r.sessao.nivel;
+  // Identidade real de quem logou (senha individual — Escola de Bar F7),
+  // null pra sessão de nível compartilhado (ostra/sevarapadura/cacauepera).
+  var PESSOA = r.sessao.pessoa || null;
   elApp.style.display = '';
 
   var CFG = {
@@ -402,6 +412,18 @@ direto para a coordenação.</p>
       b.classList.add('on');
       localStorage.setItem(CASA_KEY, estado.casa);
       atualizaTextoEnviar();
+      // Roster de nomes é por casa (Missão 5/F7) — sem PESSOA na sessão,
+      // trocar de casa precisa recarregar a lista (bloco 7 · Nome, mais
+      // abaixo no script). `elNomeArea` é var (hoisted como undefined) —
+      // só existe DE VERDADE depois que a linha "var elNomeArea = ..." roda.
+      // Achado real: o auto-clique de casa lembrada (localStorage, logo
+      // abaixo) dispara ESTE handler ainda durante a seção 2, antes da
+      // seção 7 rodar — chamar desenhaNome() cedo demais lançava
+      // TypeError não capturado e travava TODO o resto do script (tipo,
+      // categoria, urgência nunca inicializavam). Guarda de prontidão:
+      // se ainda não existe, a própria chamada inicial de desenhaNome()
+      // no fim da seção 7 cobre o desenho certo.
+      if (!PESSOA && typeof elNomeArea !== 'undefined' && elNomeArea) desenhaNome();
     };
   });
   (function () {
@@ -469,27 +491,69 @@ direto para a coordenação.</p>
     };
   });
 
-  // --- 6. Nome (chip "Sou eu / trocar") ------------------------------------
+  // --- 7. Nome ---------------------------------------------------------------
+  // Com PESSOA (senha individual, Escola de Bar F7): nome travado — vem do
+  // token assinado, não é editável, nada de "trocar" (editar quebraria o
+  // propósito de usar identidade de verdade). Sem PESSOA (senha
+  // compartilhada — ostra/sevarapadura/cacauepera): escolher da lista de
+  // bartenders/chefes da CASA selecionada (pedido do Rodrigo, 2026-07-13 —
+  // nunca mais texto livre quando dá pra confirmar contra o quadro real),
+  // com fallback pro texto livre só se o roster não carregar (offline etc,
+  // pra nunca travar um registro urgente).
   var elNomeArea = document.getElementById('rr-nome-area');
+  var rosterCache = {};  // casa slug -> array de nomes | 'erro'
+  var nomeEscolhido = localStorage.getItem(NOME_KEY) || '';
+
+  function renderSelectRoster(nomes) {
+    var opts = '<option value="">Selecione…</option>' + nomes.map(function (n) {
+      return '<option value="' + esc(n) + '"' + (n === nomeEscolhido ? ' selected' : '') + '>' + esc(n) + '</option>';
+    }).join('');
+    elNomeArea.innerHTML = '<select class="rr-nome-input" id="rr-nome-select">' + opts + '</select>';
+    document.getElementById('rr-nome-select').onchange = function (ev) {
+      nomeEscolhido = ev.target.value;
+      localStorage.setItem(NOME_KEY, nomeEscolhido);
+    };
+  }
+  function renderInputLivre(aviso) {
+    elNomeArea.innerHTML = (aviso ? '<p class="rr-nome-aviso">' + esc(aviso) + '</p>' : '') +
+      '<input class="rr-nome-input" id="rr-nome-input" placeholder="Seu nome" autocomplete="name" value="' + esc(nomeEscolhido) + '">';
+    document.getElementById('rr-nome-input').oninput = function (ev) { nomeEscolhido = ev.target.value; };
+  }
+  function carregaRoster(casaSlug) {
+    var cache = rosterCache[casaSlug];
+    if (Array.isArray(cache)) { renderSelectRoster(cache); return; }
+    if (cache === 'erro') { renderInputLivre('Sem lista de bartenders/chefes — digite seu nome.'); return; }
+    elNomeArea.innerHTML = '<p class="rr-nome-aviso">Carregando…</p>';
+    if (!CFG.worker) { rosterCache[casaSlug] = 'erro'; renderInputLivre('Sem lista de bartenders/chefes — digite seu nome.'); return; }
+    fetch(CFG.worker + '/api/roster?casa=' + encodeURIComponent(casaSlug), { headers: { 'X-Token': TOKEN } })
+      .then(function (resp) { return resp.ok ? resp.json() : null; })
+      .then(function (d) {
+        if (!d || !Array.isArray(d.nomes)) {
+          rosterCache[casaSlug] = 'erro';
+          renderInputLivre('Sem lista de bartenders/chefes — digite seu nome.');
+          return;
+        }
+        rosterCache[casaSlug] = d.nomes;
+        renderSelectRoster(d.nomes);
+      })
+      .catch(function () { rosterCache[casaSlug] = 'erro'; renderInputLivre('Sem conexão — digite seu nome.'); });
+  }
   function desenhaNome() {
-    var nome = localStorage.getItem(NOME_KEY);
-    if (nome) {
-      elNomeArea.innerHTML = '<div class="rr-nome-chip"><b>' + esc(nome) +
-        '</b><a id="rr-nome-trocar">Sou eu · trocar</a></div>';
-      document.getElementById('rr-nome-trocar').onclick = function () {
-        localStorage.removeItem(NOME_KEY);
-        desenhaNome();
-      };
-    } else {
-      elNomeArea.innerHTML = '<input class="rr-nome-input" id="rr-nome-input" placeholder="Seu nome" autocomplete="name">';
+    if (PESSOA) {
+      elNomeArea.innerHTML = '<div class="rr-nome-chip"><b>' + esc(PESSOA) + '</b>' +
+        '<span class="rr-nome-fixo">identidade da senha</span></div>';
+      return;
     }
+    if (!estado.casa) {
+      elNomeArea.innerHTML = '<p class="rr-nome-aviso">Escolha a casa acima primeiro.</p>';
+      return;
+    }
+    carregaRoster(estado.casa);
   }
   desenhaNome();
   function nomeAtual() {
-    var salvo = localStorage.getItem(NOME_KEY);
-    if (salvo) return salvo;
-    var inp = document.getElementById('rr-nome-input');
-    return inp ? inp.value.trim() : '';
+    if (PESSOA) return PESSOA;
+    return (nomeEscolhido || '').trim();
   }
 
   function esc(s) {
@@ -800,7 +864,8 @@ direto para a coordenação.</p>
     if (!estado.casa) return { bloco: 'casa', msg: 'Falta escolher a casa' };
     if (!estado.categoria) return { bloco: 'categoria', msg: 'Falta escolher a categoria' };
     if (!estado.urgencia) return { bloco: 'urgencia', msg: 'Falta escolher a urgência' };
-    if (elDescricao.value.trim().length < 5) return { bloco: 'descricao', msg: 'Descreva com pelo menos 5 caracteres' };
+    // Descrição, foto e áudio são opcionais (pedido do Rodrigo, 2026-07-13)
+    // — sem checagem de tamanho mínimo aqui.
     if (nomeAtual().length < 2) return { bloco: 'nome', msg: 'Falta o seu nome' };
     return null;
   }
@@ -914,7 +979,6 @@ direto para a coordenação.</p>
       return;
     }
     elMsg.textContent = '';
-    if (!localStorage.getItem(NOME_KEY)) localStorage.setItem(NOME_KEY, nomeAtual());
 
     var item = {
       chave_registro: uuid(),

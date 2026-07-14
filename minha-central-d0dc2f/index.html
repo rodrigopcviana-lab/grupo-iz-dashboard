@@ -182,11 +182,14 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
   function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
   function toast(m, e) { elToast.textContent = m; elToast.classList.toggle('erro', !!e); elToast.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { elToast.classList.remove('on'); }, 3200); }
+  // Mostra data+hora ABSOLUTA (pedido do Rodrigo, 2026-07-13) — a cor
+  // (cls) continua vindo dos dias decorridos, só o texto deixou de ser
+  // relativo ("há X").
   function idade(iso) {
     if (!iso) return { txt:'', cls:'' };
-    var ms = Date.now() - new Date(iso).getTime(), dias = ms / 86400000, txt;
-    if (dias < 1) { var h = Math.max(1, Math.round(ms/3600000)); txt = 'há ' + h + (h===1?' hora':' horas'); }
-    else { var d = Math.round(dias); txt = 'há ' + d + (d===1?' dia':' dias'); }
+    var dt = new Date(iso);
+    var dias = (Date.now() - dt.getTime()) / 86400000;
+    var txt = isNaN(dt.getTime()) ? '' : dt.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
     return { txt: txt, cls: dias>7 ? 'v' : (dias>3 ? 'a' : '') };
   }
   function corSetor(label) { var slug = SETOR_SLUG[label]; return (slug && SETOR_COR[slug]) || 'var(--text-3)'; }
@@ -260,6 +263,27 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
       .then(function (r) { if (!r.ok) { onErro(); return; } onOk(); }).catch(onErro);
   }
 
+  // Mesmo retry de gera_demandas() (2026-07-13): o Worker já espera a
+  // materialização do arquivo (~5s), mas visto segundos depois do registro
+  // ainda pode cair fora dessa janela — 2 tentativas extras aqui antes de
+  // desistir de vez, com link "tentar de novo" em vez de "erro" permanente.
+  function buscaAnexoComRetry(url, headers, onSucesso, onFalhaFinal) {
+    var backoffs = [1500, 3000];
+    function tenta(i) {
+      fetch(url, { headers: headers }).then(function (r) { return r.ok ? r.blob() : null; })
+        .then(function (b) {
+          if (b) { onSucesso(b); return; }
+          if (i < backoffs.length) setTimeout(function () { tenta(i + 1); }, backoffs[i]);
+          else onFalhaFinal();
+        })
+        .catch(function () {
+          if (i < backoffs.length) setTimeout(function () { tenta(i + 1); }, backoffs[i]);
+          else onFalhaFinal();
+        });
+    }
+    tenta(0);
+  }
+
   function carregaMidia(container, d) {
     var anexos = d.anexos || []; if (!anexos.length) return;
     var fotos = anexos.filter(function (a) { return !/\.(m4a|webm|mp3|wav|ogg)$/i.test(a.nome); });
@@ -269,20 +293,39 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
       var wrap = document.createElement('div'); wrap.className='mc-fotos';
       fotos.forEach(function (f) {
         var ph = document.createElement('div'); ph.className='mc-ph'; ph.textContent='…'; wrap.appendChild(ph);
-        fetch(url(f.i), { headers: apiHeaders(d.origem) }).then(function (r) { return r.ok?r.blob():null; })
-          .then(function (b) { if (!b) { ph.textContent='erro'; return; }
+        var u = url(f.i);
+        buscaAnexoComRetry(u, apiHeaders(d.origem), function (b) {
+          var img=document.createElement('img'); img.src=URL.createObjectURL(b); img.alt='foto';
+          img.onclick=function(){ window.open(img.src,'_blank'); }; ph.replaceWith(img);
+        }, function () {
+          ph.textContent = '';
+          var a = document.createElement('a'); a.textContent = 'erro · tentar de novo';
+          a.style.cursor = 'pointer'; a.style.fontSize = '11px';
+          a.onclick = function () { ph.textContent = '…'; buscaAnexoComRetry(u, apiHeaders(d.origem), function (b) {
             var img=document.createElement('img'); img.src=URL.createObjectURL(b); img.alt='foto';
             img.onclick=function(){ window.open(img.src,'_blank'); }; ph.replaceWith(img);
-          }).catch(function () { ph.textContent='erro'; });
+          }, function () { ph.textContent = ''; ph.appendChild(a); }); };
+          ph.appendChild(a);
+        });
       });
       container.appendChild(wrap);
     }
     if (audios.length) {
-      var a = audios[0], aw = document.createElement('div'); aw.textContent='Carregando áudio…'; aw.style.marginBottom='10px'; container.appendChild(aw);
-      fetch(url(a.i), { headers: apiHeaders(d.origem) }).then(function (r) { return r.ok?r.blob():null; })
-        .then(function (b) { if (!b) { aw.textContent='Áudio indisponível.'; return; }
-          aw.innerHTML=''; var p=document.createElement('audio'); p.controls=true; p.preload='metadata'; p.style.width='100%'; p.src=URL.createObjectURL(b); aw.appendChild(p);
-        }).catch(function () { aw.textContent='Áudio indisponível.'; });
+      var a0 = audios[0], aw = document.createElement('div'); aw.textContent='Carregando áudio…'; aw.style.marginBottom='10px'; container.appendChild(aw);
+      var au = url(a0.i);
+      buscaAnexoComRetry(au, apiHeaders(d.origem), function (b) {
+        aw.innerHTML=''; var p=document.createElement('audio'); p.controls=true; p.preload='metadata'; p.style.width='100%'; p.src=URL.createObjectURL(b); aw.appendChild(p);
+      }, function () {
+        aw.innerHTML = '';
+        var link = document.createElement('a'); link.textContent = 'Áudio indisponível · tentar de novo'; link.style.cursor = 'pointer';
+        link.onclick = function () {
+          aw.textContent = 'Carregando áudio…';
+          buscaAnexoComRetry(au, apiHeaders(d.origem), function (b) {
+            aw.innerHTML=''; var p=document.createElement('audio'); p.controls=true; p.preload='metadata'; p.style.width='100%'; p.src=URL.createObjectURL(b); aw.appendChild(p);
+          }, function () { aw.innerHTML = ''; aw.appendChild(link); });
+        };
+        aw.appendChild(link);
+      });
     }
   }
 
