@@ -98,16 +98,26 @@ window.exigirNivel = function (niveisOk, slug) {
 <style>
   .pr-mini-wrap { display: none; }
   .prm-toggle-wrap { position: relative; margin-bottom: 10px; padding-top: 1px; }
-  .prm-toggle-wrap::before { content: ""; display: block; border-top: 1px solid var(--border); }
-  .prm-toggle-btn { position: relative; margin: 0 auto; width: 52%; max-width: 180px; display: flex;
-                     flex-direction: column; align-items: center; gap: 3px; padding: 5px 10px 6px;
-                     border: 1px solid var(--border); border-top: none; border-radius: 0 0 12px 12px;
+  .prm-toggle-wrap::before { content: ""; display: block; border-top: 2px solid var(--border); }
+  .prm-tabs-row { display: flex; justify-content: center; gap: 6px; }
+  .prm-toggle-btn { position: relative; display: flex;
+                     flex-direction: column; align-items: center; gap: 4px; padding: 7px 12px 8px;
+                     border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 14px 14px;
                      background: linear-gradient(180deg,#2a2419,var(--card)); color: var(--text);
-                     font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,.28); }
-  .prm-toggle-btn .prm-pega { width: 26px; height: 3px; border-radius: 99px; background: var(--acc); opacity: .8; }
+                     font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 5px 11px rgba(0,0,0,.38);
+                     text-decoration: none; }
+  .prm-tab-p { width: 56%; max-width: 195px; border-color: rgba(208,163,82,.4); }
+  .prm-tab-p.aberto { border-color: var(--acc); }
+  .prm-tab-n { width: 36%; max-width: 148px; background: linear-gradient(180deg,#1e1a30,#171428);
+                border-color: rgba(155,141,204,.4); color: #c4b8e8; }
+  .prm-tab-n.aberto { border-color: #9b8dcc; }
+  .prm-tab-n .prm-pega { background: #9b8dcc; height: 3px; width: 22px; }
+  .prm-tab-n .prm-rot { font-size: 11px; gap: 4px; color: #c4b8e8; }
+  .prm-toggle-btn .prm-pega { width: 30px; height: 4px; border-radius: 99px; background: var(--acc); opacity: 1; }
   .prm-toggle-btn .prm-rot { display: flex; align-items: center; gap: 5px; }
   .prm-toggle-btn .prm-toggle-ic { display: flex; align-items: center; color: var(--acc); transition: transform .18s; }
   .prm-toggle-btn .prm-toggle-ic svg { width: 12px; height: 12px; display: block; }
+  .prm-tab-n .prm-toggle-ic { color: #9b8dcc; }
   .prm-toggle-btn.aberto .prm-toggle-ic { transform: rotate(180deg); }
   .pr-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 0 0 16px; }
   .pr-mini[hidden] { display: none; }
@@ -156,10 +166,16 @@ window.exigirNivel = function (niveisOk, slug) {
 </style>
 <div class="pr-mini-wrap" id="pr-mini-wrap">
   <div class="prm-toggle-wrap">
-    <button type="button" class="prm-toggle-btn" id="prm-toggle-btn" aria-expanded="false" aria-controls="pr-mini-conteudo">
-      <span class="prm-pega"></span>
-      <span class="prm-rot">Painel Rápido <span class="prm-toggle-ic"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
-    </button>
+    <div class="prm-tabs-row">
+      <button type="button" class="prm-toggle-btn prm-tab-p" id="prm-toggle-btn" aria-expanded="false" aria-controls="pr-mini-conteudo">
+        <span class="prm-pega"></span>
+        <span class="prm-rot">Painel Rápido <span class="prm-toggle-ic"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
+      </button>
+      <a href="index.html?np=1" class="prm-toggle-btn prm-tab-n" id="prm-np-link">
+        <span class="prm-pega"></span>
+        <span class="prm-rot"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg> Notas Privadas</span>
+      </a>
+    </div>
   </div>
   <div class="pr-mini" id="pr-mini-conteudo" hidden>
     <a class="prm-card prm-reg" href="registro.html">
@@ -367,7 +383,7 @@ Achou receita errada ou insumo sem preço?
 </script>
 
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 13/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 14/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>

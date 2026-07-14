@@ -98,16 +98,26 @@ window.exigirNivel = function (niveisOk, slug) {
 <style>
   .pr-mini-wrap { display: none; }
   .prm-toggle-wrap { position: relative; margin-bottom: 10px; padding-top: 1px; }
-  .prm-toggle-wrap::before { content: ""; display: block; border-top: 1px solid var(--border); }
-  .prm-toggle-btn { position: relative; margin: 0 auto; width: 52%; max-width: 180px; display: flex;
-                     flex-direction: column; align-items: center; gap: 3px; padding: 5px 10px 6px;
-                     border: 1px solid var(--border); border-top: none; border-radius: 0 0 12px 12px;
+  .prm-toggle-wrap::before { content: ""; display: block; border-top: 2px solid var(--border); }
+  .prm-tabs-row { display: flex; justify-content: center; gap: 6px; }
+  .prm-toggle-btn { position: relative; display: flex;
+                     flex-direction: column; align-items: center; gap: 4px; padding: 7px 12px 8px;
+                     border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 14px 14px;
                      background: linear-gradient(180deg,#2a2419,var(--card)); color: var(--text);
-                     font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,.28); }
-  .prm-toggle-btn .prm-pega { width: 26px; height: 3px; border-radius: 99px; background: var(--acc); opacity: .8; }
+                     font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 5px 11px rgba(0,0,0,.38);
+                     text-decoration: none; }
+  .prm-tab-p { width: 56%; max-width: 195px; border-color: rgba(208,163,82,.4); }
+  .prm-tab-p.aberto { border-color: var(--acc); }
+  .prm-tab-n { width: 36%; max-width: 148px; background: linear-gradient(180deg,#1e1a30,#171428);
+                border-color: rgba(155,141,204,.4); color: #c4b8e8; }
+  .prm-tab-n.aberto { border-color: #9b8dcc; }
+  .prm-tab-n .prm-pega { background: #9b8dcc; height: 3px; width: 22px; }
+  .prm-tab-n .prm-rot { font-size: 11px; gap: 4px; color: #c4b8e8; }
+  .prm-toggle-btn .prm-pega { width: 30px; height: 4px; border-radius: 99px; background: var(--acc); opacity: 1; }
   .prm-toggle-btn .prm-rot { display: flex; align-items: center; gap: 5px; }
   .prm-toggle-btn .prm-toggle-ic { display: flex; align-items: center; color: var(--acc); transition: transform .18s; }
   .prm-toggle-btn .prm-toggle-ic svg { width: 12px; height: 12px; display: block; }
+  .prm-tab-n .prm-toggle-ic { color: #9b8dcc; }
   .prm-toggle-btn.aberto .prm-toggle-ic { transform: rotate(180deg); }
   .pr-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 0 0 16px; }
   .pr-mini[hidden] { display: none; }
@@ -156,10 +166,16 @@ window.exigirNivel = function (niveisOk, slug) {
 </style>
 <div class="pr-mini-wrap" id="pr-mini-wrap">
   <div class="prm-toggle-wrap">
-    <button type="button" class="prm-toggle-btn" id="prm-toggle-btn" aria-expanded="false" aria-controls="pr-mini-conteudo">
-      <span class="prm-pega"></span>
-      <span class="prm-rot">Painel Rápido <span class="prm-toggle-ic"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
-    </button>
+    <div class="prm-tabs-row">
+      <button type="button" class="prm-toggle-btn prm-tab-p" id="prm-toggle-btn" aria-expanded="false" aria-controls="pr-mini-conteudo">
+        <span class="prm-pega"></span>
+        <span class="prm-rot">Painel Rápido <span class="prm-toggle-ic"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
+      </button>
+      <a href="index.html?np=1" class="prm-toggle-btn prm-tab-n" id="prm-np-link">
+        <span class="prm-pega"></span>
+        <span class="prm-rot"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg> Notas Privadas</span>
+      </a>
+    </div>
   </div>
   <div class="pr-mini" id="pr-mini-conteudo" hidden>
     <a class="prm-card prm-reg" href="registro.html">
@@ -334,7 +350,7 @@ do Notion. Achou receita ou insumo errado?
 <script>const PRODUCAO = {"casa": "Grá Bistrô", "atualizado_em": "12/07/2026", "receitas": [{"nome": "Penicillin", "produzivel": 0, "rastreados": 3, "total": 7, "itens": [{"insumo": "Whisky Talisker 10 anos 750ml", "qtd_drink": 2.0, "produto": "Whisky Talisker 10y 750ml", "estoque": 0.0, "doses": 0}, {"insumo": "Whisky Johnnie Walker Double Black 1lt", "qtd_drink": 45.0, "produto": "Whisky Johnnie Walker Double Black 1lt", "estoque": 600.0, "doses": 13}, {"insumo": "Licor Limoncello San Basile 750ml", "qtd_drink": 15.0, "produto": "Licor Limoncello San Basile 750ml", "estoque": 2550.0, "doses": 170}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 25.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope de Gengibre", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "limoncello art.", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Água de Mel (1:1)", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Caipirinha", "produzivel": 22, "rastreados": 1, "total": 3, "itens": [{"insumo": "Cachaça Capueira Prata 700ml", "qtd_drink": 60.0, "produto": "Cachaça Capueira Prata 700ml", "estoque": 1330.0, "doses": 22}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope Simples", "qtd_drink": 30.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Blood and Sand - OFF", "produzivel": 23, "rastreados": 1, "total": 4, "itens": [{"insumo": "Licor Luxardo Maraschino 750ml", "qtd_drink": 22.5, "produto": "Licor Luxardo Maraschino 750ml", "estoque": 525.0, "doses": 23}, {"insumo": "Bulleit Bourbon", "qtd_drink": 30.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Sumo de laranja", "qtd_drink": 30.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Vermute Rosso San Basile", "qtd_drink": 22.5, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Macunaíma", "produzivel": 26, "rastreados": 2, "total": 4, "itens": [{"insumo": "Cachaça Capueira Prata 700ml", "qtd_drink": 50.0, "produto": "Cachaça Capueira Prata 700ml", "estoque": 1330.0, "doses": 26}, {"insumo": "Fernet Branca 750ml", "qtd_drink": 7.5, "produto": "Fernet Branca 750ml", "estoque": 675.0, "doses": 90}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope Simples", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Negroni", "produzivel": 28, "rastreados": 3, "total": 3, "itens": [{"insumo": "Vermute Rosso Carpano 950ml", "qtd_drink": 30.0, "produto": "Vermute Rosso Carpano 950ml", "estoque": 855.0, "doses": 28}, {"insumo": "Campari 998ml", "qtd_drink": 30.0, "produto": "Campari 998ml", "estoque": 1996.0, "doses": 66}, {"insumo": "Gin Uyrá London Dry 5lt", "qtd_drink": 30.0, "produto": "Gin Uyrá London Dry 5lt", "estoque": 10000.0, "doses": 333}]}, {"nome": "Bloody Mary", "produzivel": 35, "rastreados": 3, "total": 7, "itens": [{"insumo": "Suco de Tomate 300ml", "qtd_drink": 120.0, "produto": "Suco tomate 300ml", "estoque": 4200.0, "doses": 35}, {"insumo": "Vodka Hype 1lt", "qtd_drink": 60.0, "produto": "Vodka Hype 1lt", "estoque": 3100.0, "doses": 51}, {"insumo": "Molho de Pimenta Vermelho Tabasco 60ml", "qtd_drink": 2.0, "produto": "Molho de Pimenta Vermelho Tabasco 60ml", "estoque": 420.0, "doses": 210}, {"insumo": "Solução salina", "qtd_drink": 5.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Sumo de Limão Taiti", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "molho inglês 1lt", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Jungle Bird", "produzivel": 35, "rastreados": 2, "total": 3, "itens": [{"insumo": "Rum Spiced San Basile 950ml", "qtd_drink": 45.0, "produto": "Rum Spiced San Basile 950ml", "estoque": 1615.0, "doses": 35}, {"insumo": "Campari 998ml", "qtd_drink": 15.0, "produto": "Campari 998ml", "estoque": 1996.0, "doses": 133}, {"insumo": "Xarope Simples", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Hemmingway Daiquiri", "produzivel": 40, "rastreados": 3, "total": 4, "itens": [{"insumo": "Rum Spiced San Basile 950ml", "qtd_drink": 40.0, "produto": "Rum Spiced San Basile 950ml", "estoque": 1615.0, "doses": 40}, {"insumo": "Licor Luxardo Maraschino 750ml", "qtd_drink": 7.5, "produto": "Licor Luxardo Maraschino 750ml", "estoque": 525.0, "doses": 70}, {"insumo": "Xarope Toranja Monin 700ml", "qtd_drink": 10.0, "produto": "Xarope Toranja Monin 700ml", "estoque": 1540.0, "doses": 154}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 15.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Cardinale", "produzivel": 66, "rastreados": 1, "total": 2, "itens": [{"insumo": "Campari 998ml", "qtd_drink": 30.0, "produto": "Campari 998ml", "estoque": 1996.0, "doses": 66}, {"insumo": "Gin Gordon`s", "qtd_drink": 30.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Fitzgerald", "produzivel": 191, "rastreados": 2, "total": 4, "itens": [{"insumo": "Gin Beg refil 500ml", "qtd_drink": 60.0, "produto": "Gin Beg refil 500ml", "estoque": 11500.0, "doses": 191}, {"insumo": "Angostura bitters", "qtd_drink": 1.5, "produto": "Angostura Bitter 200ml", "estoque": 520.3, "doses": 346}, {"insumo": "Sumo de Limão taiti", "qtd_drink": 25.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope Simples", "qtd_drink": 20.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Bitter Giuseppe", "produzivel": null, "rastreados": 0, "total": 5, "itens": [{"insumo": "Angostura Orange", "qtd_drink": 4.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Cynar Regular 900ml", "qtd_drink": 60.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Sumo de Limão Siciliano", "qtd_drink": 7.5, "produto": null, "estoque": null, "doses": null}, {"insumo": "Vermute Martini Rosso", "qtd_drink": 20.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "vermute martini extra dry", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Mark Twain II", "produzivel": null, "rastreados": 0, "total": 3, "itens": [{"insumo": "Angostura Orange", "qtd_drink": 2.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Whiskey Jack Daniel’s N07 1lt", "qtd_drink": 60.0, "produto": null, "estoque": null, "doses": null}, {"insumo": "Xarope Simples", "qtd_drink": 20.0, "produto": null, "estoque": null, "doses": null}]}, {"nome": "Paloma", "produzivel": null, "rastreados": 0, "total": 1, "itens": [{"insumo": "Calda de Agave", "qtd_drink": 10.0, "produto": null, "estoque": null, "doses": null}]}]};</script>
 
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 13/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 14/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
