@@ -758,18 +758,29 @@ direto para a coordenação.</p>
   (function () {
     var m = /[?&]tipo=(ocorrencia|solicitacao)/.exec(location.search);
     selecionaTipo(m ? m[1] : 'ocorrencia');
-    // Caminho rápido do Painel Rápido (ex.: Avarias): categoria já vem
-    // escolhida na URL — abre o grupo dela, marca o chip e foca a descrição.
-    var mc = /[?&]categoria=([a-z0-9_]+)/.exec(location.search);
+    // Caminho rápido do Painel Rápido (ex.: Avarias): setor já vem escolhido
+    // na URL — marca o botão e foca a descrição. `?categoria=` seguia o
+    // formato antigo (categoria fina); aceito como alias porque os slugs de
+    // setor são um subconjunto dos antigos (manutencao, etc.) — mc cobre os
+    // dois nomes de parâmetro.
+    var mc = /[?&](?:setor|categoria)=([a-z0-9_]+)/.exec(location.search);
     if (mc) {
-      var chip = elCats.querySelector('.rr-cat[data-cat="' + mc[1] + '"]');
-      if (chip) {
-        var grupo = chip.closest('details.rr-grupo');
-        elCats.querySelectorAll('details.rr-grupo').forEach(function (d) { d.open = (d === grupo); });
-        chip.click();
-        chip.scrollIntoView({ block: 'center' });
-        setTimeout(function () { elDescricao.focus(); }, 50);
+      var btn = elCats.querySelector('.rr-setor[data-cat="' + mc[1] + '"]');
+      if (btn) {
+        btn.click();
+        btn.scrollIntoView({ block: 'center' });
       }
+    }
+    // Nota pré-preenchida (Avarias etc.) — mesmo espírito do handoff das
+    // Notas Rápidas (registro_prefill): só pré-preenche, nada é enviado
+    // sozinho. Foca o fim do texto pra pessoa continuar escrevendo.
+    var mn = /[?&]nota=([^&]+)/.exec(location.search);
+    if (mn) {
+      elDescricao.value = decodeURIComponent(mn[1]);
+      setTimeout(function () {
+        elDescricao.focus();
+        elDescricao.setSelectionRange(elDescricao.value.length, elDescricao.value.length);
+      }, 50);
     }
   })();
 
