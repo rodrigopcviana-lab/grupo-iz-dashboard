@@ -4,7 +4,7 @@
  * Só GET — escrita (contagem/turno/registro) NÃO passa por aqui; a fila
  * offline durável entra na Fase 3. Caminhos relativos: funciona em localhost
  * e em /grupo-iz-dashboard/ (Pages). */
-const CACHE = "iz-portal-v1";
+const CACHE = "iz-portal-v2";
 const CORE = [
   "index.html",
   "portal.css",
@@ -42,8 +42,10 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          }
           return res;
         })
         .catch(() => caches.match(req).then((r) => r || caches.match("index.html")))
@@ -53,8 +55,10 @@ self.addEventListener("fetch", (event) => {
       caches.match(req).then((cached) => {
         const network = fetch(req)
           .then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+            if (res.ok) {
+              const copy = res.clone();
+              caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+            }
             return res;
           })
           .catch(() => cached);

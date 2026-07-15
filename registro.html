@@ -865,8 +865,15 @@ direto para a coordenação.</p>
       backoffMs = Math.min(backoffMs * 2, 60000);
     });
   }
+  // Gatilhos redundantes: 'online' não é confiável no PWA standalone do iPhone
+  // ao reconectar, e 'load' não dispara ao retomar o app da bandeja (sem reload
+  // de verdade) — sem isso o registro ficava preso na fila até a pessoa recarregar
+  // a página na mão (achado: 2026-07-14, sintoma relatado no celular).
   window.addEventListener('online', processaFila);
   window.addEventListener('load', processaFila);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) processaFila(); });
+  window.addEventListener('pageshow', processaFila);
+  setInterval(processaFila, 15000);
   processaFila();
 
   // --- validação + scroll até o primeiro bloco pendente ---------------------
