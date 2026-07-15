@@ -117,15 +117,16 @@ window.msgAcessoNegado = function (nomePagina) {
                      background: linear-gradient(180deg,#2a2419,var(--card)); color: var(--text);
                      font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 5px 11px rgba(0,0,0,.38);
                      text-decoration: none; }
-  .prm-tab-p { width: 38%; max-width: 140px; border-color: rgba(208,163,82,.4); }
+  .prm-tab-p { width: 28%; max-width: 105px; border-color: rgba(208,163,82,.4); }
   .prm-tab-p.aberto { border-color: var(--acc); }
-  .prm-tab-r { width: 30%; max-width: 128px; background: linear-gradient(180deg,#33201d,#221512);
-                border-color: rgba(224,122,82,.5); color: var(--text); }
-  .prm-tab-r:hover { filter: brightness(1.12); }
-  .prm-tab-r .prm-pega { background: #f28a63; }
-  .prm-tab-r .prm-rot { font-size: 10.5px; gap: 4px; }
-  .prm-tab-r .prm-rot svg { width: 11px; height: 11px; display: block; }
-  .prm-tab-n { width: 26%; max-width: 118px; background: linear-gradient(180deg,#1e1a30,#171428);
+  .prm-tab-c { width: 44%; max-width: 170px; background: linear-gradient(180deg,#2a2419,var(--card));
+                border-color: rgba(208,163,82,.5); color: var(--text); }
+  .prm-tab-c.aberto { border-color: #e0c088; }
+  .prm-tab-c .prm-pega { background: #e0c088; }
+  .prm-tab-c .prm-rot { font-size: 12.5px; gap: 5px; }
+  .prm-tab-c .prm-toggle-ic { color: #e0c088; }
+  .prm-tab-c.aberto .prm-toggle-ic { transform: rotate(180deg); }
+  .prm-tab-n { width: 28%; max-width: 105px; background: linear-gradient(180deg,#1e1a30,#171428);
                 border-color: rgba(155,141,204,.4); color: #c4b8e8; }
   .prm-tab-n.aberto { border-color: #9b8dcc; }
   .prm-tab-n .prm-pega { background: #9b8dcc; height: 3px; width: 22px; }
@@ -138,6 +139,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .prm-toggle-btn.aberto .prm-toggle-ic { transform: rotate(180deg); }
   .pr-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 0 0 16px; }
   .pr-mini[hidden] { display: none; }
+  .pr-mini-central { display: flex; gap: 6px; margin: 0 0 16px; }
+  .pr-mini-central[hidden] { display: none; }
+  .pr-mini-central > .prm-card { flex: 1; }
   a.prm-card, button.prm-card { position: relative; display: flex; align-items: center; gap: 7px;
                text-align: left; border-radius: 10px; padding: 6px 8px; text-decoration: none;
                color: var(--text); min-height: 36px; min-width: 0; border: 1.5px solid; overflow: hidden;
@@ -146,7 +150,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .prm-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
   .prm-card.prm-av { background: linear-gradient(135deg,#34181e,#1e1215); border-color: #cf7089; }
   .prm-card.prm-av::before { background: #e192a6; }
-  .prm-card.prm-central { grid-column: 1 / -1; background: linear-gradient(135deg,#3d3320,#241f13); border-color: #d0a352; }
+  .prm-card.prm-nova-demanda { background: linear-gradient(135deg,#33201d,#221512); border-color: #e07a52; }
+  .prm-card.prm-nova-demanda::before { background: #f28a63; }
+  .prm-card.prm-central { background: linear-gradient(135deg,#3d3320,#241f13); border-color: #d0a352; }
   .prm-card.prm-central::before { background: #e0c088; }
   .prm-card.prm-dose { background: linear-gradient(135deg,#132434,#101820); border-color: #6fa8dc; }
   .prm-card.prm-dose::before { background: #8ec0ea; }
@@ -154,6 +160,7 @@ window.msgAcessoNegado = function (nomePagina) {
                           align-items: center; justify-content: center; flex: none; }
   .prm-card .prm-chip svg { width: 13px; height: 13px; display: block; flex: none; }
   .prm-card.prm-av .prm-chip { background: rgba(225,146,166,.16); color: #e192a6; }
+  .prm-card.prm-nova-demanda .prm-chip { background: rgba(220,154,142,.16); color: #f0a58f; }
   .prm-card.prm-dose .prm-chip { background: rgba(111,168,220,.18); color: #8ec0ea; }
   .prm-card.prm-central .prm-chip { background: rgba(208,163,82,.18); color: #e0c088; }
   .prm-card .prm-tt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
@@ -177,15 +184,15 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="prm-tabs-row">
       <button type="button" class="prm-toggle-btn prm-tab-p" id="prm-toggle-btn" aria-expanded="false" aria-controls="pr-mini-conteudo">
         <span class="prm-pega"></span>
-        <span class="prm-rot">Painel Rápido <span class="prm-toggle-ic"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
+        <span class="prm-rot">Registro <span class="prm-toggle-ic"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
       </button>
-      <a href="registro.html" class="prm-toggle-btn prm-tab-r">
+      <button type="button" class="prm-toggle-btn prm-tab-c" id="prm-central-toggle-btn" aria-expanded="false" aria-controls="pr-mini-central-conteudo">
         <span class="prm-pega"></span>
-        <span class="prm-rot"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z"/><path d="M13 7l4 4"/></svg> Lançar Demanda</span>
-      </a>
+        <span class="prm-rot">Central de Demandas <span class="prm-toggle-ic"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
+      </button>
       <a href="index.html?np=1" class="prm-toggle-btn prm-tab-n" id="prm-np-link">
         <span class="prm-pega"></span>
-        <span class="prm-rot"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg> Notas Privadas</span>
+        <span class="prm-rot"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg> Notas</span>
       </a>
     </div>
   </div>
@@ -201,6 +208,11 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="prm-avarias-sub" id="prm-avarias-sub" hidden>
       <div class="prm-avarias-grid"><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&categoria=avaria_copos"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>copos e taças</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&categoria=avaria_mobilia"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>mobília</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&categoria=avaria_equipamentos"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>equipamentos</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&categoria=avaria_estrutural"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>estrutural (pintura, tomadas…)</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&categoria=avaria_utensilios"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>utensílios</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&categoria=avaria_vestuario"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>vestuário</span></a></div>
     </div>
+  </div>
+  <div class="pr-mini-central" id="pr-mini-central-conteudo" hidden>
+    <a class="prm-card prm-nova-demanda" href="registro.html">
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z"/><path d="M13 7l4 4"/></svg></span>
+      <span class="prm-tt"><span class="prm-t">Nova Demanda</span><span class="prm-d">ocorrência/solicitação</span></span></a>
     <a class="prm-card prm-central" id="prm-central-card" href="demandas.html" style="display:none">
       <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span>
       <span class="prm-tt"><span class="prm-t">Central de Demandas</span><span class="prm-d">acompanhar registros</span></span></a>
@@ -219,13 +231,30 @@ window.msgAcessoNegado = function (nomePagina) {
     var elD = document.getElementById('prm-dose-card');
     if (okDose && elD) elD.style.display = '';
   } catch (e) {}
+  // Registro e Central de Demandas são mutuamente exclusivos (Notas é link
+  // direto, não tem drawer aqui).
   var btn = document.getElementById('prm-toggle-btn');
   var conteudo = document.getElementById('pr-mini-conteudo');
+  var btnCentral = document.getElementById('prm-central-toggle-btn');
+  var centralConteudo = document.getElementById('pr-mini-central-conteudo');
+  function fechaAba(b, c) {
+    c.hidden = true;
+    b.setAttribute('aria-expanded', 'false');
+    b.classList.remove('aberto');
+  }
+  function abreAba(b, c, outroB, outroC) {
+    fechaAba(outroB, outroC);
+    c.hidden = false;
+    b.setAttribute('aria-expanded', 'true');
+    b.classList.add('aberto');
+  }
   btn.onclick = function () {
-    var abrir = conteudo.hidden;
-    conteudo.hidden = !abrir;
-    btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
-    btn.classList.toggle('aberto', abrir);
+    if (conteudo.hidden) abreAba(btn, conteudo, btnCentral, centralConteudo);
+    else fechaAba(btn, conteudo);
+  };
+  btnCentral.onclick = function () {
+    if (centralConteudo.hidden) abreAba(btnCentral, centralConteudo, btn, conteudo);
+    else fechaAba(btnCentral, centralConteudo);
   };
   var avBtn = document.getElementById('prm-avarias-btn');
   var avSub = document.getElementById('prm-avarias-sub');
