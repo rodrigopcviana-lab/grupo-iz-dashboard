@@ -112,7 +112,7 @@ window.msgAcessoNegado = function (nomePagina) {
 direto para a coordenação.</p>
 
 <style>
-  body { --verm: #dc9a8e; }
+  body { --verm: #dc9a8e; --laranja: #e0954c; --azul: #8ec0ea; }
   .rr-bloco { margin-bottom: 16px; }
   .rr-bloco.rr-pendente { outline: 2px solid var(--verm); outline-offset: 3px; border-radius: 14px; }
   .rr-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
@@ -124,41 +124,45 @@ direto para a coordenação.</p>
   .rr-tipo svg { width: 18px; height: 18px; vertical-align: -.15em; margin-right: 3px; }
   .rr-tipo.on.rr-tipo-ocorrencia { background: #3a2420; border-color: var(--verm); color: var(--verm); }
   .rr-tipo.on.rr-tipo-solicitacao { background: #17352b; border-color: var(--verde); color: var(--verde); }
-  .rr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  /* Categoria — sanfonas (mockup E0 v2): caminho PRINCIPAL do formulário. */
-  .rr-cat-sel { font-size: 13px; color: var(--text-2); margin-bottom: 10px; }
-  .rr-cat-sel b { color: var(--acc); }
-  .rr-grupos { display: flex; flex-direction: column; gap: 8px; }
-  details.rr-grupo { border: 1px solid var(--border); border-radius: 12px; background: var(--card); overflow: hidden; }
-  details.rr-grupo > summary { list-style: none; cursor: pointer; padding: 12px 14px; font-size: 14px;
-            color: var(--text); display: flex; align-items: center; gap: 10px; }
-  details.rr-grupo > summary::-webkit-details-marker { display: none; }
-  details.rr-grupo > summary .gi { width: 18px; height: 18px; color: var(--text-3); flex: none; }
-  details.rr-grupo > summary .gcv { margin-left: auto; color: var(--text-3); font-size: 12px; transition: transform .15s; }
-  details.rr-grupo[open] > summary { border-bottom: 1px solid var(--border); }
-  details.rr-grupo[open] > summary .gcv { transform: rotate(180deg); }
-  details.rr-grupo.tem-sel > summary { color: var(--acc); }
-  details.rr-grupo.tem-sel > summary .gi { color: var(--acc); }
-  .rr-cat-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px 14px; }
-  .rr-cat { display: inline-flex; align-items: center; gap: 7px; padding: 10px 13px; font-size: 13.5px;
-            border-radius: 999px; border: 1px solid var(--border); background: var(--bg);
-            color: var(--text-2); cursor: pointer; }
-  .rr-cat svg { width: 15px; height: 15px; flex: none; color: var(--acc); }
-  .rr-cat.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
-  .rr-cat.on svg { color: var(--acc-txt); }
-  .rr-urgs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  /* Casa (etapa 2) — botões coloridos por casa (paleta --casa-*). Cada chip
+     carrega a própria cor via --cc (definido inline por casa); selecionado,
+     preenche com a cor da casa. */
+  .rr-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .rr-casa { --cc: var(--text-3); display: flex; align-items: center; justify-content: center; gap: 7px;
+             padding: 13px 8px; font-size: 14px; font-weight: 600; text-align: center;
+             border-radius: 13px; border: 1.5px solid var(--border); background: var(--card);
+             color: var(--text-2); cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+  .rr-casa .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--cc); flex: none; }
+  .rr-casa:hover { border-color: var(--cc); color: var(--text); }
+  .rr-casa.on { border-color: var(--cc); color: var(--cc);
+                background: color-mix(in srgb, var(--cc) 16%, var(--card)); }
+  .rr-casa.on .dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc) 30%, transparent); }
+  /* Setor (etapa 4) — grade de botões coloridos, mesma paleta da Central. */
+  .rr-setores { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .rr-setor { --sc: var(--text-3); display: flex; align-items: center; gap: 9px;
+              padding: 13px 12px; font-size: 14px; font-weight: 500; text-align: left;
+              border-radius: 13px; border: 1.5px solid var(--border); background: var(--card);
+              color: var(--text); cursor: pointer; transition: border-color .15s, background .15s; }
+  .rr-setor .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--sc); flex: none; }
+  .rr-setor:hover { border-color: var(--sc); }
+  .rr-setor.on { border-color: var(--sc); font-weight: 600;
+                 background: color-mix(in srgb, var(--sc) 16%, var(--card)); }
+  .rr-setor.on .dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--sc) 30%, transparent); }
+  .rr-urgs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .rr-urg { padding: 12px 6px; border-radius: 12px; border: 1px solid var(--border);
             background: var(--card); color: var(--text); text-align: center; cursor: pointer; }
   .rr-urg .rr-urg-dot { width: 10px; height: 10px; border-radius: 50%; margin: 0 auto 6px;
             background: var(--text-3); }
   .rr-urg b { display: block; font-size: 13px; }
   .rr-urg span { font-size: 10.5px; color: var(--text-3); }
-  .rr-urg[data-urg="urgente"] .rr-urg-dot { background: var(--verm); }
   .rr-urg[data-urg="hoje"] .rr-urg-dot { background: var(--amarelo); }
-  .rr-urg[data-urg="aguardar"] .rr-urg-dot { background: var(--verde); }
-  .rr-urg.on-urgente { border-color: var(--verm); background: #2c1c19; }
+  .rr-urg[data-urg="uma_semana"] .rr-urg-dot { background: var(--laranja); }
+  .rr-urg[data-urg="um_mes"] .rr-urg-dot { background: var(--azul); }
+  .rr-urg[data-urg="tres_meses"] .rr-urg-dot { background: var(--text-3); }
   .rr-urg.on-hoje { border-color: var(--amarelo); background: #2c2314; }
-  .rr-urg.on-aguardar { border-color: var(--verde); background: #16281f; }
+  .rr-urg.on-uma_semana { border-color: var(--laranja); background: #2c2114; }
+  .rr-urg.on-um_mes { border-color: var(--azul); background: #16232c; }
+  .rr-urg.on-tres_meses { border-color: var(--text-3); background: var(--card2, #262626); }
   .rr-aviso-urgencia { font-size: 12.5px; color: var(--text-3); margin-top: 8px; display: none; }
   .rr-aviso-urgencia.on { display: block; }
   .rr-textarea { width: 100%; min-height: 96px; padding: 12px; font-size: 15px; font-family: inherit;
@@ -234,9 +238,10 @@ direto para a coordenação.</p>
                    letter-spacing: .04em; padding: 2px 8px; border-radius: 999px; background: var(--border);
                    color: var(--text-2); }
   .rr-ab-urg { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-  .rr-ab-item.rr-ab-urgente .rr-ab-urg { background: var(--verm); }
   .rr-ab-item.rr-ab-hoje .rr-ab-urg { background: var(--amarelo); }
-  .rr-ab-item.rr-ab-aguardar .rr-ab-urg { background: var(--verde); }
+  .rr-ab-item.rr-ab-uma_semana .rr-ab-urg { background: var(--laranja); }
+  .rr-ab-item.rr-ab-um_mes .rr-ab-urg { background: var(--azul); }
+  .rr-ab-item.rr-ab-tres_meses .rr-ab-urg { background: var(--text-3); }
   .rr-ab-desc { font-size: 13.5px; color: var(--text); margin-top: 6px; line-height: 1.4; }
   .rr-ab-meta { font-size: 11.5px; color: var(--text-3); margin-top: 6px; }
 </style>
@@ -258,7 +263,7 @@ direto para a coordenação.</p>
   <div class="rr-bloco" data-bloco="casa">
     <span class="rr-label">2 · Casa</span>
     <div class="rr-chips" id="rr-casas">
-      <button type="button" class="chip" data-casa="iz">IZ</button><button type="button" class="chip" data-casa="1929">1929</button><button type="button" class="chip" data-casa="gra">Grá</button><button type="button" class="chip" data-casa="famu">FAMU</button><button type="button" class="chip" data-casa="enttres">Enttres</button><button type="button" class="chip" data-casa="fulles">Fulles</button><button type="button" class="chip" data-casa="nip">NIP</button>
+      <button type="button" class="rr-casa" data-casa="iz" style="--cc:var(--casa-iz)"><span class="dot"></span>IZ</button><button type="button" class="rr-casa" data-casa="1929" style="--cc:var(--casa-1929)"><span class="dot"></span>1929</button><button type="button" class="rr-casa" data-casa="gra" style="--cc:var(--casa-gra)"><span class="dot"></span>Grá</button><button type="button" class="rr-casa" data-casa="famu" style="--cc:var(--casa-famu)"><span class="dot"></span>FAMU</button><button type="button" class="rr-casa" data-casa="enttres" style="--cc:var(--casa-enttres)"><span class="dot"></span>Enttres</button><button type="button" class="rr-casa" data-casa="fulles" style="--cc:var(--casa-fulles)"><span class="dot"></span>Fulles</button><button type="button" class="rr-casa" data-casa="nip" style="--cc:var(--casa-nip)"><span class="dot"></span>NIP</button>
     </div>
   </div>
 
@@ -274,28 +279,27 @@ direto para a coordenação.</p>
         <span class="txt"><span class="mt" id="rr-audio-txt">Gravar áudio</span><span class="md" id="rr-audio-hint">toque para gravar · máx 3 min</span></span>
       </button>
     </div>
-    <input type="file" id="rr-foto-input" accept="image/*" capture="environment" multiple hidden>
+    <input type="file" id="rr-foto-input" accept="image/*" multiple hidden>
     <div class="rr-anx-lista" id="rr-anx-lista"></div>
   </div>
 
   <div class="rr-bloco" data-bloco="categoria">
-    <span class="rr-label">4 · Categoria</span>
-    <p class="rr-cat-sel" id="rr-cat-sel" style="display:none">Selecionada: <b id="rr-cat-sel-nome"></b></p>
-    <div class="rr-grupos" id="rr-cats"></div>
+    <span class="rr-label">4 · Setor</span>
+    <div class="rr-setores" id="rr-cats"></div>
   </div>
 
   <div class="rr-bloco" data-bloco="descricao">
     <span class="rr-label">5 · Descrição (opcional)</span>
-    <textarea class="rr-textarea" id="rr-descricao" placeholder="Escolha uma categoria acima"></textarea>
+    <textarea class="rr-textarea" id="rr-descricao" placeholder="Escolha um setor acima"></textarea>
   </div>
 
   <div class="rr-bloco" data-bloco="urgencia">
-    <span class="rr-label">6 · Urgência</span>
+    <span class="rr-label">6 · Necessário desde</span>
     <div class="rr-urgs" id="rr-urgs">
-      <button type="button" class="rr-urg" data-urg="urgente"><span class="rr-urg-dot"></span><b>Urgente</b><span>agora</span></button><button type="button" class="rr-urg" data-urg="hoje"><span class="rr-urg-dot"></span><b>Hoje</b><span>hoje</span></button><button type="button" class="rr-urg" data-urg="aguardar"><span class="rr-urg-dot"></span><b>Pode aguardar</b><span>sem pressa</span></button>
+      <button type="button" class="rr-urg" data-urg="hoje"><span class="rr-urg-dot"></span><b>Hoje</b><span>desde hoje</span></button><button type="button" class="rr-urg" data-urg="uma_semana"><span class="rr-urg-dot"></span><b>Uma semana</b><span>há 1 semana</span></button><button type="button" class="rr-urg" data-urg="um_mes"><span class="rr-urg-dot"></span><b>Um mês</b><span>há 1 mês</span></button><button type="button" class="rr-urg" data-urg="tres_meses"><span class="rr-urg-dot"></span><b>3 meses+</b><span>há 3 meses+</span></button>
     </div>
     <p class="rr-aviso-urgencia" id="rr-aviso-urgencia">
-      Urgência real? Além do registro,
+      Precisa para hoje? Além do registro,
       <a class="wa" id="rr-wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">avise o coordenador</a>
     </p>
   </div>
@@ -344,9 +348,17 @@ direto para a coordenação.</p>
   elApp.style.display = '';
 
   var CFG = {
-    categorias: {"ocorrencia": [{"slug": "equipamento", "label": "Equipamento com defeito", "placeholder": "Qual equipamento? O que está acontecendo? Desde quando? Dá pra operar sem ele?", "icone": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1\"/>"}, {"slug": "insumo", "label": "Falta de insumo", "placeholder": "O que faltou? Quanto ainda tem? Afeta o serviço de hoje?", "icone": "<path d=\"M4 8l8-4 8 4-8 4z\"/><path d=\"M4 8v8l8 4 8-4V8\"/><path d=\"M12 12v8\"/>"}, {"slug": "cliente", "label": "Cliente / atendimento", "placeholder": "O que houve? Mesa/comanda? Como foi contornado?", "icone": "<path d=\"M4 5h16v11H8l-4 4z\"/>"}, {"slug": "avaria_copos", "label": "Avarias — copos e taças", "placeholder": "O que quebrou (copo, taça, item)? Quantas unidades? Como aconteceu?", "icone": "<path d=\"M7 3h10l-1.5 8a3.5 3.5 0 0 1-7 0z\"/><path d=\"M12 14v6M8.5 20h7\"/>"}, {"slug": "avaria_mobilia", "label": "Avarias — mobília", "placeholder": "Qual móvel (mesa, cadeira, banqueta)? O que aconteceu? Compromete o uso?", "icone": "<path d=\"M5 11V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4\"/><path d=\"M4 11h16v5H4z\"/><path d=\"M5 16v4M19 16v4\"/>"}, {"slug": "avaria_equipamentos", "label": "Avarias — equipamentos", "placeholder": "Qual equipamento quebrou/avariou? Como aconteceu? Dá pra operar sem ele?", "icone": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1\"/>"}, {"slug": "avaria_estrutural", "label": "Avarias — estrutural (pintura, tomadas…)", "placeholder": "O que avariou (parede, tomada, piso, etc.)? Onde? Há risco imediato?", "icone": "<path d=\"M13 3L4 14h6l-1 7 9-11h-6z\"/>"}, {"slug": "avaria_utensilios", "label": "Avarias — utensílios", "placeholder": "Qual utensílio (coqueteleira, jigger, faca etc.)? Quantas unidades? Como aconteceu?", "icone": "<path d=\"M8 3v6a2 2 0 0 0 4 0V3M10 9v12M17 3v8a2 2 0 0 1-2 2v9\"/>"}, {"slug": "avaria_vestuario", "label": "Avarias — vestuário", "placeholder": "Qual peça (uniforme, avental etc.)? De quem? Como aconteceu?", "icone": "<path d=\"M9 4l3 2 3-2 4 3-2 3-2-1v11H8V9l-2 1-2-3z\"/>"}, {"slug": "conduta", "label": "Equipe / conduta", "placeholder": "O que aconteceu? Quem estava presente?", "icone": "<circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2\"/><circle cx=\"17.2\" cy=\"9\" r=\"2.2\"/><path d=\"M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2\"/>"}, {"slug": "fornecedor", "label": "Fornecedor / entrega", "placeholder": "Qual fornecedor? O que era esperado × o que chegou?", "icone": "<rect x=\"2\" y=\"8\" width=\"11\" height=\"8\" rx=\"1\"/><path d=\"M13 11h4l3 3v2h-7z\"/><circle cx=\"6\" cy=\"18\" r=\"1.6\"/><circle cx=\"16.5\" cy=\"18\" r=\"1.6\"/>"}, {"slug": "estrutura", "label": "Estrutura (água/luz/gás)", "placeholder": "Onde (bar, salão, estoque)? O que está acontecendo? Há risco imediato?", "icone": "<path d=\"M13 3L4 14h6l-1 7 9-11h-6z\"/>"}, {"slug": "seguranca", "label": "Segurança", "placeholder": "O que houve? Já foi acionado alguém?", "icone": "<path d=\"M12 3l7 3v6c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V6z\"/>"}, {"slug": "outro", "label": "Outro", "placeholder": "Descreva com o máximo de detalhes: o quê, onde, quando, quem.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}], "solicitacao": [{"slug": "compra", "label": "Compra de insumo", "placeholder": "O que comprar? Quantidade? Para quando? Motivo.", "icone": "<circle cx=\"9\" cy=\"20\" r=\"1.4\"/><circle cx=\"17\" cy=\"20\" r=\"1.4\"/><path d=\"M3 4h2l2.2 11.4a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L20.5 8H6.2\"/>"}, {"slug": "manutencao", "label": "Manutenção / reparo", "placeholder": "O que precisa de reparo? Onde? Atrapalha a operação?", "icone": "<path d=\"M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-1.4 1.4-2-2z\"/>"}, {"slug": "reposicao", "label": "Reposição de utensílios", "placeholder": "O que repor? Quantidade em uso × necessária?", "icone": "<path d=\"M12 3l9 5-9 5-9-5z\"/><path d=\"M3 13l9 5 9-5\"/>"}, {"slug": "escala", "label": "Escala / folga / troca", "placeholder": "Quem? Qual dia/turno? Já tem substituto em mente?", "icone": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M16 3v4M8 3v4M4 11h16\"/>"}, {"slug": "limpeza", "label": "Material de limpeza", "placeholder": "O que faltou/vai faltar? Para quando?", "icone": "<path d=\"M9 3l3 3-8 8-3-3z\"/><path d=\"M13 7l4-4M7 13l-4 8 8-4\"/>"}, {"slug": "treinamento", "label": "Treinamento", "placeholder": "Tema? Para quem (pessoa/equipe)? Qual a motivação?", "icone": "<path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"/><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/>"}, {"slug": "apoio_coordenador", "label": "Apoio do coordenador", "placeholder": "O que você precisa do Rodrigo? Qual o prazo?", "icone": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.3a2.5 2.5 0 0 1 4.6 1.3c0 1.7-2.3 1.7-2.3 3.4\"/><path d=\"M12 17.5h.01\"/>"}, {"slug": "melhoria", "label": "Melhoria / sugestão", "placeholder": "Qual a ideia? Que problema resolve?", "icone": "<path d=\"M9 18h6M10 21h4\"/><path d=\"M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2h5c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z\"/>"}, {"slug": "outro", "label": "Outro", "placeholder": "Descreva com o máximo de detalhes: o quê, onde, quando, quem.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}]},
-    grupos: {"ocorrencia": [{"slug": "equip", "label": "Equipamento & Estrutura", "icone": "<path d=\"M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-1.4 1.4-2-2z\"/>", "cats": [{"slug": "equipamento", "label": "Equipamento com defeito", "placeholder": "Qual equipamento? O que está acontecendo? Desde quando? Dá pra operar sem ele?", "icone": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1\"/>"}, {"slug": "estrutura", "label": "Estrutura (água/luz/gás)", "placeholder": "Onde (bar, salão, estoque)? O que está acontecendo? Há risco imediato?", "icone": "<path d=\"M13 3L4 14h6l-1 7 9-11h-6z\"/>"}, {"slug": "seguranca", "label": "Segurança", "placeholder": "O que houve? Já foi acionado alguém?", "icone": "<path d=\"M12 3l7 3v6c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V6z\"/>"}]}, {"slug": "insumos", "label": "Operação & Insumos", "icone": "<path d=\"M4 8l8-4 8 4-8 4z\"/><path d=\"M4 8v8l8 4 8-4V8\"/><path d=\"M12 12v8\"/>", "cats": [{"slug": "insumo", "label": "Falta de insumo", "placeholder": "O que faltou? Quanto ainda tem? Afeta o serviço de hoje?", "icone": "<path d=\"M4 8l8-4 8 4-8 4z\"/><path d=\"M4 8v8l8 4 8-4V8\"/><path d=\"M12 12v8\"/>"}, {"slug": "fornecedor", "label": "Fornecedor / entrega", "placeholder": "Qual fornecedor? O que era esperado × o que chegou?", "icone": "<rect x=\"2\" y=\"8\" width=\"11\" height=\"8\" rx=\"1\"/><path d=\"M13 11h4l3 3v2h-7z\"/><circle cx=\"6\" cy=\"18\" r=\"1.6\"/><circle cx=\"16.5\" cy=\"18\" r=\"1.6\"/>"}]}, {"slug": "avarias", "label": "Avarias", "icone": "<path d=\"M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z\"/>", "cats": [{"slug": "avaria_copos", "label": "Avarias — copos e taças", "placeholder": "O que quebrou (copo, taça, item)? Quantas unidades? Como aconteceu?", "icone": "<path d=\"M7 3h10l-1.5 8a3.5 3.5 0 0 1-7 0z\"/><path d=\"M12 14v6M8.5 20h7\"/>"}, {"slug": "avaria_mobilia", "label": "Avarias — mobília", "placeholder": "Qual móvel (mesa, cadeira, banqueta)? O que aconteceu? Compromete o uso?", "icone": "<path d=\"M5 11V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4\"/><path d=\"M4 11h16v5H4z\"/><path d=\"M5 16v4M19 16v4\"/>"}, {"slug": "avaria_equipamentos", "label": "Avarias — equipamentos", "placeholder": "Qual equipamento quebrou/avariou? Como aconteceu? Dá pra operar sem ele?", "icone": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1\"/>"}, {"slug": "avaria_estrutural", "label": "Avarias — estrutural (pintura, tomadas…)", "placeholder": "O que avariou (parede, tomada, piso, etc.)? Onde? Há risco imediato?", "icone": "<path d=\"M13 3L4 14h6l-1 7 9-11h-6z\"/>"}, {"slug": "avaria_utensilios", "label": "Avarias — utensílios", "placeholder": "Qual utensílio (coqueteleira, jigger, faca etc.)? Quantas unidades? Como aconteceu?", "icone": "<path d=\"M8 3v6a2 2 0 0 0 4 0V3M10 9v12M17 3v8a2 2 0 0 1-2 2v9\"/>"}, {"slug": "avaria_vestuario", "label": "Avarias — vestuário", "placeholder": "Qual peça (uniforme, avental etc.)? De quem? Como aconteceu?", "icone": "<path d=\"M9 4l3 2 3-2 4 3-2 3-2-1v11H8V9l-2 1-2-3z\"/>"}]}, {"slug": "pessoas", "label": "Pessoas & Clientes", "icone": "<circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2\"/><circle cx=\"17.2\" cy=\"9\" r=\"2.2\"/><path d=\"M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2\"/>", "cats": [{"slug": "cliente", "label": "Cliente / atendimento", "placeholder": "O que houve? Mesa/comanda? Como foi contornado?", "icone": "<path d=\"M4 5h16v11H8l-4 4z\"/>"}, {"slug": "conduta", "label": "Equipe / conduta", "placeholder": "O que aconteceu? Quem estava presente?", "icone": "<circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2\"/><circle cx=\"17.2\" cy=\"9\" r=\"2.2\"/><path d=\"M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2\"/>"}]}, {"slug": "outros", "label": "Outros", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>", "cats": [{"slug": "outro", "label": "Outro", "placeholder": "Descreva com o máximo de detalhes: o quê, onde, quando, quem.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}]}], "solicitacao": [{"slug": "equip", "label": "Equipamento & Estrutura", "icone": "<path d=\"M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-1.4 1.4-2-2z\"/>", "cats": [{"slug": "manutencao", "label": "Manutenção / reparo", "placeholder": "O que precisa de reparo? Onde? Atrapalha a operação?", "icone": "<path d=\"M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-1.4 1.4-2-2z\"/>"}]}, {"slug": "insumos", "label": "Operação & Insumos", "icone": "<path d=\"M4 8l8-4 8 4-8 4z\"/><path d=\"M4 8v8l8 4 8-4V8\"/><path d=\"M12 12v8\"/>", "cats": [{"slug": "compra", "label": "Compra de insumo", "placeholder": "O que comprar? Quantidade? Para quando? Motivo.", "icone": "<circle cx=\"9\" cy=\"20\" r=\"1.4\"/><circle cx=\"17\" cy=\"20\" r=\"1.4\"/><path d=\"M3 4h2l2.2 11.4a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L20.5 8H6.2\"/>"}, {"slug": "reposicao", "label": "Reposição de utensílios", "placeholder": "O que repor? Quantidade em uso × necessária?", "icone": "<path d=\"M12 3l9 5-9 5-9-5z\"/><path d=\"M3 13l9 5 9-5\"/>"}, {"slug": "limpeza", "label": "Material de limpeza", "placeholder": "O que faltou/vai faltar? Para quando?", "icone": "<path d=\"M9 3l3 3-8 8-3-3z\"/><path d=\"M13 7l4-4M7 13l-4 8 8-4\"/>"}]}, {"slug": "pessoas", "label": "Pessoas & Clientes", "icone": "<circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2\"/><circle cx=\"17.2\" cy=\"9\" r=\"2.2\"/><path d=\"M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2\"/>", "cats": [{"slug": "escala", "label": "Escala / folga / troca", "placeholder": "Quem? Qual dia/turno? Já tem substituto em mente?", "icone": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M16 3v4M8 3v4M4 11h16\"/>"}, {"slug": "treinamento", "label": "Treinamento", "placeholder": "Tema? Para quem (pessoa/equipe)? Qual a motivação?", "icone": "<path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"/><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/>"}, {"slug": "apoio_coordenador", "label": "Apoio do coordenador", "placeholder": "O que você precisa do Rodrigo? Qual o prazo?", "icone": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.3a2.5 2.5 0 0 1 4.6 1.3c0 1.7-2.3 1.7-2.3 3.4\"/><path d=\"M12 17.5h.01\"/>"}]}, {"slug": "outros", "label": "Outros", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>", "cats": [{"slug": "melhoria", "label": "Melhoria / sugestão", "placeholder": "Qual a ideia? Que problema resolve?", "icone": "<path d=\"M9 18h6M10 21h4\"/><path d=\"M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2h5c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z\"/>"}, {"slug": "outro", "label": "Outro", "placeholder": "Descreva com o máximo de detalhes: o quê, onde, quando, quem.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}]}]},
+    categorias: {"ocorrencia": [{"slug": "manutencao", "label": "Manutenção", "placeholder": "O que quebrou/avariou? Onde? Dá pra operar sem isso? Há risco imediato?", "icone": "<path d=\"M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-1.4 1.4-2-2z\"/>"}, {"slug": "compras_insumos", "label": "Compras / Insumos", "placeholder": "O que faltou ou veio errado? Quanto ainda tem? Afeta o serviço de hoje?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "rh_pessoas", "label": "RH & Pessoas", "placeholder": "O que aconteceu (escala, folga, conduta, equipe)? Quem estava presente?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "gerencia_casa", "label": "Gerência da casa", "placeholder": "O que houve (cliente, limpeza, segurança, avaria do salão)? Como foi contornado?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "operacao_bar", "label": "Operação de bar", "placeholder": "O que aconteceu na operação do bar? Desde quando? Afeta o serviço?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "marketing", "label": "Marketing", "placeholder": "O que houve (material, divulgação, evento, redes sociais)? Qual o impacto?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "coordenacao", "label": "Coordenação", "placeholder": "Descreva com detalhes: o quê, onde, quando e quem.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}], "solicitacao": [{"slug": "manutencao", "label": "Manutenção", "placeholder": "O que precisa de reparo/manutenção? Onde? Atrapalha a operação?", "icone": "<path d=\"M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-1.4 1.4-2-2z\"/>"}, {"slug": "compras_insumos", "label": "Compras / Insumos", "placeholder": "O que comprar/repor? Quantidade? Para quando? Motivo.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "rh_pessoas", "label": "RH & Pessoas", "placeholder": "Do que precisa (escala, troca, folga, treinamento)? Quem? Qual dia/turno?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "gerencia_casa", "label": "Gerência da casa", "placeholder": "O que você precisa da gerência da casa? Para quando?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "operacao_bar", "label": "Operação de bar", "placeholder": "Qual a ideia/melhoria ou apoio na operação do bar? Que problema resolve?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "marketing", "label": "Marketing", "placeholder": "O que precisa (divulgação, material gráfico, evento, redes)? Para quando?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "coordenacao", "label": "Coordenação", "placeholder": "O que você precisa da coordenação? Qual o prazo?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}]},
+    setores: [{"slug": "manutencao", "label": "Manutenção"}, {"slug": "compras_insumos", "label": "Compras / Insumos"}, {"slug": "rh_pessoas", "label": "RH & Pessoas"}, {"slug": "gerencia_casa", "label": "Gerência da casa"}, {"slug": "operacao_bar", "label": "Operação de bar"}, {"slug": "marketing", "label": "Marketing"}, {"slug": "coordenacao", "label": "Coordenação"}],
     worker: "https://registro-bares.rodrigopcviana.workers.dev"
+  };
+  // Setor -> cor: MESMA paleta da Central de Demandas (dm-setor / SETOR_COR
+  // em gera_demandas). Mudou lá? Espelhar aqui.
+  var SETOR_COR = {
+    manutencao: 'var(--casa-fulles)', compras_insumos: 'var(--casa-gra)',
+    rh_pessoas: 'var(--casa-famu)', gerencia_casa: 'var(--casa-nip)',
+    operacao_bar: 'var(--casa-iz)', marketing: 'var(--setor-marketing)',
+    coordenacao: 'var(--casa-1929)'
   };
 
   // --- E7.2: Registros abertos (só chefe/coord — mesma regra do Worker) ----
@@ -371,9 +383,9 @@ direto para a coordenação.</p>
           elLista.innerHTML = '<p class="rr-abertos-msg">Nenhum registro aberto no momento.</p>';
           return;
         }
-        var URG_SLUG = { 'Urgente': 'urgente', 'Hoje': 'hoje', 'Pode aguardar': 'aguardar' };
+        var URG_SLUG = { 'Hoje': 'hoje', 'Uma semana': 'uma_semana', 'Um mês': 'um_mes', '3 meses+': 'tres_meses' };
         elLista.innerHTML = d.registros.map(function (x) {
-          var slug = URG_SLUG[x.urgencia] || 'aguardar';
+          var slug = URG_SLUG[x.urgencia] || 'tres_meses';
           var quando = x.data ? new Date(x.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
           return '<div class="rr-ab-item rr-ab-' + slug + '">' +
             '<div class="rr-ab-top"><span class="rr-ab-urg"></span><b>' + escAb(x.tipo) + '</b> · ' +
@@ -415,10 +427,10 @@ direto para a coordenação.</p>
   });
 
   // --- 2. Casa -------------------------------------------------------------
-  document.querySelectorAll('#rr-casas .chip').forEach(function (b) {
+  document.querySelectorAll('#rr-casas .rr-casa').forEach(function (b) {
     b.onclick = function () {
       estado.casa = b.dataset.casa;
-      document.querySelectorAll('#rr-casas .chip').forEach(function (x) { x.classList.remove('on'); });
+      document.querySelectorAll('#rr-casas .rr-casa').forEach(function (x) { x.classList.remove('on'); });
       b.classList.add('on');
       localStorage.setItem(CASA_KEY, estado.casa);
       atualizaTextoEnviar();
@@ -439,65 +451,60 @@ direto para a coordenação.</p>
   (function () {
     var lembrada = localStorage.getItem(CASA_KEY);
     if (lembrada) {
-      var btn = document.querySelector('#rr-casas .chip[data-casa="' + lembrada + '"]');
+      var btn = document.querySelector('#rr-casas .rr-casa[data-casa="' + lembrada + '"]');
       if (btn) btn.onclick();
     }
   })();
 
-  // --- 3. Categoria (sanfonas por grupo, mudam com o tipo) ------------------
+  // --- 3. Setor (grade fixa de botões, mesma lista pros 2 tipos; muda só o
+  // placeholder) — 2026-07-14, substitui as sanfonas de categoria fina. -----
   var elCats = document.getElementById('rr-cats');
   var elDescricao = document.getElementById('rr-descricao');
-  var elCatSel = document.getElementById('rr-cat-sel');
-  var elCatSelNome = document.getElementById('rr-cat-sel-nome');
-  function catSvg(icone) {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
-      'stroke-linecap="round" stroke-linejoin="round">' + icone + '</svg>';
+  // Handoff "Virar demanda" das Notas Rápidas (PLANO_NOTAS_RAPIDAS.md): a nota
+  // pré-preenche a descrição aqui e é consumida UMA vez (apagada em seguida).
+  // Só pré-preenche — setor/tipo/urgência ficam pro usuário; nada é enviado
+  // sozinho.
+  try {
+    var _pf = localStorage.getItem('registro_prefill');
+    if (_pf) {
+      localStorage.removeItem('registro_prefill');
+      var _pfo = JSON.parse(_pf);
+      if (_pfo && _pfo.descricao) elDescricao.value = String(_pfo.descricao).slice(0, 2000);
+    }
+  } catch (e) {}
+  function placeholderDoSetor(tipo, slug) {
+    var lista = CFG.categorias[tipo] || [];
+    for (var i = 0; i < lista.length; i++) { if (lista[i].slug === slug) return lista[i].placeholder; }
+    return '';
   }
   function desenhaCategorias() {
-    var gs = CFG.grupos[estado.tipo] || [];
-    // 1º grupo abre por padrão; demais fechados (o caminho é tocar e escolher).
-    elCats.innerHTML = gs.map(function (g, gi) {
-      var chips = g.cats.map(function (c) {
-        return '<button type="button" class="rr-cat" data-cat="' + c.slug + '" data-ph="' +
-          c.placeholder.replace(/"/g, '&quot;') + '" data-nome="' + c.label.replace(/"/g, '&quot;') + '">' +
-          catSvg(c.icone) + c.label + '</button>';
-      }).join('');
-      return '<details class="rr-grupo" data-grupo="' + g.slug + '"' + (gi === 0 ? ' open' : '') + '>' +
-        '<summary><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
-        'stroke-linecap="round" stroke-linejoin="round">' + g.icone + '</svg>' + g.label +
-        '<span class="gcv">&#9662;</span></summary>' +
-        '<div class="rr-cat-chips">' + chips + '</div></details>';
+    elCats.innerHTML = CFG.setores.map(function (s) {
+      return '<button type="button" class="rr-setor" data-cat="' + s.slug + '" ' +
+        'style="--sc:' + (SETOR_COR[s.slug] || 'var(--text-3)') + '">' +
+        '<span class="dot"></span>' + esc(s.label) + '</button>';
     }).join('');
     estado.categoria = null;
-    elDescricao.placeholder = 'Escolha uma categoria acima';
-    elCatSel.style.display = 'none';
-    elCats.querySelectorAll('.rr-cat').forEach(function (b) {
+    elDescricao.placeholder = 'Escolha um setor acima';
+    elCats.querySelectorAll('.rr-setor').forEach(function (b) {
       b.onclick = function () {
         estado.categoria = b.dataset.cat;
-        elCats.querySelectorAll('.rr-cat').forEach(function (x) { x.classList.remove('on'); });
+        elCats.querySelectorAll('.rr-setor').forEach(function (x) { x.classList.remove('on'); });
         b.classList.add('on');
-        // realça o grupo que contém a seleção; recolhe os outros pra caber
-        elCats.querySelectorAll('details.rr-grupo').forEach(function (d) {
-          var dono = d.contains(b);
-          d.classList.toggle('tem-sel', dono);
-        });
-        elCatSelNome.textContent = b.dataset.nome;
-        elCatSel.style.display = '';
-        elDescricao.placeholder = b.dataset.ph;
+        elDescricao.placeholder = placeholderDoSetor(estado.tipo, b.dataset.cat);
       };
     });
   }
 
-  // --- 4. Urgência -----------------------------------------------------------
+  // --- 4. Necessário desde -----------------------------------------------------
   var elAvisoUrg = document.getElementById('rr-aviso-urgencia');
   document.querySelectorAll('#rr-urgs .rr-urg').forEach(function (b) {
     b.onclick = function () {
       estado.urgencia = b.dataset.urg;
       document.querySelectorAll('#rr-urgs .rr-urg').forEach(function (x) {
-        x.classList.remove('on-urgente', 'on-hoje', 'on-aguardar');
+        x.classList.remove('on-hoje', 'on-uma_semana', 'on-um_mes', 'on-tres_meses');
       });
       b.classList.add('on-' + estado.urgencia);
-      elAvisoUrg.classList.toggle('on', estado.urgencia === 'urgente');
+      elAvisoUrg.classList.toggle('on', estado.urgencia === 'hoje');
     };
   });
 
@@ -768,7 +775,7 @@ direto para a coordenação.</p>
 
   // --- botão Enviar mostra a casa escolhida (D5.2) --------------------------
   function nomeCasa(slug) {
-    var b = document.querySelector('#rr-casas .chip[data-casa="' + slug + '"]');
+    var b = document.querySelector('#rr-casas .rr-casa[data-casa="' + slug + '"]');
     return b ? b.textContent : '';
   }
   function atualizaTextoEnviar() {
@@ -851,8 +858,8 @@ direto para a coordenação.</p>
         window.irParaLogin(SLUG);
       } else {
         bannerPendente(fila.length);
-        if (item.urgencia === 'urgente') {
-          elBannerAlerta.innerHTML = '<div class="rr-banner erro">Urgente e sem envio — ' +
+        if (item.urgencia === 'hoje') {
+          elBannerAlerta.innerHTML = '<div class="rr-banner erro">Necessário hoje e sem envio — ' +
             '<a class="wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">avise o coordenador agora</a></div>';
         }
         setTimeout(processaFila, backoffMs);
@@ -881,7 +888,7 @@ direto para a coordenação.</p>
     if (!estado.tipo) return { bloco: 'tipo', msg: 'Falta escolher o tipo' };
     if (!estado.casa) return { bloco: 'casa', msg: 'Falta escolher a casa' };
     if (!estado.categoria) return { bloco: 'categoria', msg: 'Falta escolher a categoria' };
-    if (!estado.urgencia) return { bloco: 'urgencia', msg: 'Falta escolher a urgência' };
+    if (!estado.urgencia) return { bloco: 'urgencia', msg: 'Falta escolher desde quando é necessário' };
     // Descrição, foto e áudio são opcionais (pedido do Rodrigo, 2026-07-13)
     // — sem checagem de tamanho mínimo aqui.
     if (nomeAtual().length < 2) return { bloco: 'nome', msg: 'Falta o seu nome' };
@@ -981,7 +988,7 @@ direto para a coordenação.</p>
     elBannerAlerta.innerHTML = '<div class="rr-banner erro">Sem sinal pra enviar a foto/áudio. ' +
       'O TEXTO do registro foi guardado neste aparelho e vai sozinho quando a internet voltar. ' +
       'A foto/áudio não foi enviada desta vez.' +
-      (item.urgencia === 'urgente'
+      (item.urgencia === 'hoje'
         ? ' <a class="wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">Avise o coordenador agora</a>' : '') +
       '</div>';
   }
@@ -1031,7 +1038,7 @@ direto para a coordenação.</p>
 })();
 </script>
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 14/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 15/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>

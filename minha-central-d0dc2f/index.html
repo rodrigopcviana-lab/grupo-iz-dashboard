@@ -118,7 +118,7 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
   </div>
   <input type="search" class="mc-busca" id="mc-busca" placeholder="Buscar por descrição, transcrição ou solicitante…" aria-label="Buscar">
   <div class="mc-filtros">
-    <select id="mc-f-urgencia"><option value="">Urgência: Todas</option></select>
+    <select id="mc-f-urgencia"><option value="">Necessário desde: Todas</option></select>
     <select id="mc-f-setor"><option value="">Setor: Todos</option></select>
   </div>
   <div id="mc-offline" class="mc-offline" style="display:none"></div>
@@ -139,7 +139,7 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
   <div class="mc-legenda" id="mc-legenda"></div>
 </div>
 <div class="mc-toast" id="mc-toast"></div>
-<script>window.__MC = {"slug": "minha-central-d0dc2f", "izWorker": "https://registro-bares.rodrigopcviana.workers.dev", "bentoWorker": "https://bento-portal-contagem.rodrigopcviana.workers.dev", "setores": {"manutencao": "Manutenção", "compras_insumos": "Compras / Insumos", "rh_pessoas": "RH & Pessoas", "gerencia_casa": "Gerência da casa", "operacao_bar": "Operação de bar", "coordenacao": "Coordenação"}, "casas": {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "enttres": "Enttres", "fulles": "Fulles", "nip": "NIP"}, "urgencias": {"urgente": "Urgente", "hoje": "Hoje", "aguardar": "Pode aguardar"}, "status": ["Novo", "Visto", "Em andamento", "Resolvido"]};</script>
+<script>window.__MC = {"slug": "minha-central-d0dc2f", "izWorker": "https://registro-bares.rodrigopcviana.workers.dev", "bentoWorker": "https://bento-portal-contagem.rodrigopcviana.workers.dev", "setores": {"manutencao": "Manutenção", "compras_insumos": "Compras / Insumos", "rh_pessoas": "RH & Pessoas", "gerencia_casa": "Gerência da casa", "operacao_bar": "Operação de bar", "marketing": "Marketing", "coordenacao": "Coordenação"}, "casas": {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "enttres": "Enttres", "fulles": "Fulles", "nip": "NIP"}, "urgencias": {"hoje": "Hoje", "uma_semana": "Uma semana", "um_mes": "Um mês", "tres_meses": "3 meses+"}, "status": ["Novo", "Visto", "Em andamento", "Resolvido"]};</script>
 <script>
 (function () {
   var C = window.__MC;
@@ -193,7 +193,15 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
     return { txt: txt, cls: dias>7 ? 'v' : (dias>3 ? 'a' : '') };
   }
   function corSetor(label) { var slug = SETOR_SLUG[label]; return (slug && SETOR_COR[slug]) || 'var(--text-3)'; }
-  function corUrg(u) { return u==='Urgente'?'var(--urg-urgente)':(u==='Hoje'?'var(--urg-hoje)':'var(--urg-aguardar)'); }
+  // IZ usa os 4 rótulos novos de "Necessário desde"; Bento (fonte separada,
+  // ver PLANO_TRES_CENTRAIS.md) ainda manda os rótulos antigos de Urgência
+  // (Urgente/Hoje/Pode aguardar) — cobre os dois vocabulários pra não cair
+  // no cinza padrão pra metade dos cards.
+  function corUrg(u) {
+    return u==='Hoje' ? 'var(--urg-hoje)' : u==='Uma semana' ? 'var(--urg-uma_semana)'
+      : u==='Um mês' ? 'var(--urg-um_mes)' : u==='3 meses+' ? 'var(--urg-tres_meses)'
+      : u==='Urgente' ? 'var(--urg-urgente)' : 'var(--urg-aguardar)';
+  }
   function chipUrg(u) { var c = corUrg(u); return '<span class="mc-chip" style="color:'+c+';border-color:'+c+'">&#9679; '+esc(u)+'</span>'; }
   function chipCasa(c) { var cor = 'var(--casa-'+(CASA_SLUG[c]||'iz')+')'; return '<span class="mc-chip" style="color:'+cor+';border-color:'+cor+'">'+esc(c)+'</span>'; }
   function chipOrigem(o) { return '<span class="mc-or '+o+'">'+(o==='bento'?'BENTO':'IZ')+'</span>'; }
@@ -468,7 +476,7 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
     function grupo(tit, itens) { return '<span><b>'+tit+':</b> '+itens.map(function (it) { return '<span class="it"><span class="dot" style="background:'+it.cor+'"></span>'+esc(it.label)+'</span>'; }).join(' ')+'</span>'; }
     var setor = Object.keys(SETORES).map(function (s) { return { label:SETORES[s], cor:SETOR_COR[s]||'var(--text-3)' }; });
     var urg = Object.keys(URGENCIAS).map(function (s) { return { label:URGENCIAS[s], cor:corUrg(URGENCIAS[s]) }; });
-    document.getElementById('mc-legenda').innerHTML = grupo('Origem', [{label:'IZ',cor:'var(--casa-iz)'},{label:'Bento',cor:'var(--bento)'}]) + grupo('Urgência', urg) + grupo('Setor', setor);
+    document.getElementById('mc-legenda').innerHTML = grupo('Origem', [{label:'IZ',cor:'var(--casa-iz)'},{label:'Bento',cor:'var(--bento)'}]) + grupo('Necessário desde', urg) + grupo('Setor', setor);
   })();
 
   if (!bentoKey) elConectar.style.display='';
