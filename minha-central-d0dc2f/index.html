@@ -96,6 +96,16 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
 .mc-legenda{ display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; padding-top:12px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-3); }
 .mc-legenda .it{ display:inline-flex; align-items:center; gap:5px; }
 .mc-legenda .dot{ width:8px; height:8px; border-radius:50%; }
+.mc-bento-hoje{ background:var(--card); border:1px solid var(--border); border-left:4px solid var(--bento);
+  border-radius:12px; padding:13px 15px; margin-bottom:14px; }
+.mc-bento-hoje h2{ font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-3); margin:0 0 9px; font-weight:600; }
+.mc-bh-fase{ display:flex; align-items:center; justify-content:space-between; padding:4px 0; font-size:13.5px; }
+.mc-bh-tit{ color:var(--text-2); }
+.mc-bh-val{ color:var(--text); font-weight:600; }
+.mc-bh-val.pend{ color:var(--text-3); font-weight:400; font-style:italic; }
+.mc-bh-duracao{ margin-top:6px; padding-top:8px; border-top:1px dashed var(--border); font-size:12.5px; color:var(--text-3); }
+.mc-bh-erro{ margin:0; font-size:12.5px; color:var(--text-3); }
+.mc-bh-erro a{ color:var(--acc); cursor:pointer; }
 </style>
 </head><body>
 <h1>Minha Central <span style="font-weight:400;color:var(--text-3);font-size:13px">IZ + Bento</span></h1>
@@ -111,6 +121,10 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
   </div>
   <div class="mc-topo">
     <div class="mc-badges" id="mc-badges"></div>
+  </div>
+  <div class="mc-bento-hoje" id="mc-bento-hoje">
+    <h2>Bento · Hoje</h2>
+    <div id="mc-bento-hoje-corpo"><p class="mc-bh-erro">Carregando…</p></div>
   </div>
   <div class="mc-fonte" id="mc-fonte">
     <button type="button" data-f="tudo" class="on">Tudo</button>
@@ -473,6 +487,53 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
 
   function carregaTudo() { TIPOS.forEach(carregaTipo); }
 
+  // Card "Bento · Hoje" (Sessão D, 2026-07-15) — só leitura, mostra o turno
+  // (abertura/fechamento) de hoje do Bento; consome GET /api/turno/conformidade
+  // do mesmo worker/chave já usados pelas Demandas do Bento (nenhuma
+  // configuração nova). Mesmo padrão de resiliência do fetchFonte: falha
+  // nunca derruba o resto da tela, só mostra aviso dentro do próprio card.
+  function hojeISO() {
+    var d = new Date();
+    function p(n) { return String(n).padStart(2, '0'); }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function faseHtml(label, linha) {
+    if (!linha) return '<div class="mc-bh-fase"><span class="mc-bh-tit">' + label + '</span>'
+      + '<span class="mc-bh-val pend">— ainda não registrado</span></div>';
+    var h = idade(linha.enviado_em);
+    return '<div class="mc-bh-fase"><span class="mc-bh-tit">' + label + '</span>'
+      + '<span class="mc-bh-val">' + esc(linha.pessoa || '—') + (h.txt ? (' · ' + esc(h.txt)) : '') + '</span></div>';
+  }
+  function renderBentoHoje(linhas) {
+    var hoje = hojeISO();
+    var deHoje = (linhas || []).filter(function (l) { return l.data === hoje; });
+    function ultima(fase) {
+      var f = deHoje.filter(function (l) { return l.fase === fase; });
+      f.sort(function (a, b) { return new Date(b.enviado_em) - new Date(a.enviado_em); });
+      return f[0];
+    }
+    var abertura = ultima('abertura'), fechamento = ultima('fechamento');
+    var html = faseHtml('Abertura', abertura) + faseHtml('Fechamento', fechamento);
+    if (abertura && fechamento) {
+      var ms = new Date(fechamento.enviado_em).getTime() - new Date(abertura.enviado_em).getTime();
+      if (ms > 0) {
+        var horas = Math.floor(ms / 3600000), min = Math.round((ms % 3600000) / 60000);
+        html += '<div class="mc-bh-duracao">Duração: ' + horas + 'h' + (min ? (' ' + min + 'min') : '') + '</div>';
+      }
+    }
+    document.getElementById('mc-bento-hoje-corpo').innerHTML = html;
+  }
+  function renderBentoHojeErro(msg) {
+    document.getElementById('mc-bento-hoje-corpo').innerHTML = '<p class="mc-bh-erro">' + esc(msg) + '</p>';
+  }
+  function carregaBentoHoje() {
+    if (!bentoKey) { renderBentoHojeErro('Conecte o Bento acima para ver o turno de hoje.'); return; }
+    fetch(BENTO + '/api/turno/conformidade', { headers: apiHeaders('bento') })
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+      .then(function (d) { renderBentoHoje(d.linhas || []); })
+      .catch(function () { renderBentoHojeErro('Não consegui carregar o turno de hoje do Bento (worker ainda não implantado ou fora do ar).'); });
+  }
+
   (function () {
     function grupo(tit, itens) { return '<span><b>'+tit+':</b> '+itens.map(function (it) { return '<span class="it"><span class="dot" style="background:'+it.cor+'"></span>'+esc(it.label)+'</span>'; }).join(' ')+'</span>'; }
     var setor = Object.keys(SETORES).map(function (s) { return { label:SETORES[s], cor:SETOR_COR[s]||'var(--text-3)' }; });
@@ -485,7 +546,7 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
     var v = document.getElementById('mc-chave').value.trim(); if (!v) return;
     try { localStorage.setItem(BENTO_KEY_LS, v); } catch (e) {}
     bentoKey = v; elConectar.style.display='none'; document.getElementById('mc-chave').value='';
-    toast('Chave do Bento salva neste aparelho.'); renderBadges(); carregaTudo();
+    toast('Chave do Bento salva neste aparelho.'); renderBadges(); carregaTudo(); carregaBentoHoje();
   };
   document.getElementById('mc-fonte').querySelectorAll('button').forEach(function (b) {
     b.onclick = function () { fonte=b.dataset.f; document.getElementById('mc-fonte').querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x===b); }); TIPOS.forEach(redesenha); };
@@ -499,6 +560,7 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
 
   renderBadges();
   carregaTudo();
+  carregaBentoHoje();
 
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
 })();

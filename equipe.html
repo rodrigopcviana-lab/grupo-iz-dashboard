@@ -12,10 +12,9 @@
 <body>
 <a class="volta-mural" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
-<div class="marca">Portal dos Bares</div>
-<div class="kicker">GRUPO IZ</div>
+<div class="marca">Portal dos Bares</div><div class="kicker">GRUPO IZ</div>
 <div class="topo-linha">
-<a class="nivel-pill" id="nivel-pill" href="index.html#nivel">Nível: <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-tr">Trocar</span></a>
+<a class="nivel-pill" id="nivel-pill" href="index.html#nivel"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Trocar</span></a>
 
 <button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar receita" title="Buscar receita (/)">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -330,7 +329,7 @@ window.msgAcessoNegado = function (nomePagina) {
 })();
 </script>
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 15/07/2026.
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 17/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -353,11 +352,28 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
       var lista = el.dataset.niveis ? el.dataset.niveis.split(' ') : [];
       el.style.display = lista.indexOf(atual) >= 0 ? '' : 'none';
     });
+    var rotulo = LABEL[atual] || LABEL.equipe;
+    // Nome de quem logou (senha individual — Escola de Bar F7 / Missão 5).
+    // Sai de sessaoLer(), NUNCA de portal_nivel: são duas chaves diferentes
+    // do localStorage e podem discordar. sessaoLer() já devolve null em
+    // sessão expirada, então a pill larga o nome sozinha quando a sessão
+    // morre — que é o certo. Senha de tier compartilhada não tem pessoa e
+    // cai no ramo de sempre.
+    var s = window.sessaoLer && window.sessaoLer();
+    var pessoa = (s && s.pessoa) ? s.pessoa : null;
     var txt = document.getElementById('nivel-pill-txt');
-    if (txt) txt.textContent = LABEL[atual] || LABEL.equipe;
+    if (txt) txt.textContent = pessoa || rotulo;
+    var niv = document.getElementById('np-niv');
+    if (niv) niv.textContent = rotulo;   // CSS decide se aparece
     // cor da pill acompanha o nível logado (CSS [data-nivel] em CSS_NIVEL)
     var pill = document.getElementById('nivel-pill');
-    if (pill) pill.setAttribute('data-nivel', atual);
+    if (pill) {
+      pill.setAttribute('data-nivel', atual);
+      // remover, não só setar: aplica() roda de novo no login (definirNivel)
+      // e um data-tem-pessoa velho ficaria grudado numa sessão sem nome.
+      if (pessoa) pill.setAttribute('data-tem-pessoa', '1');
+      else pill.removeAttribute('data-tem-pessoa');
+    }
   }
   window.definirNivel = function (v) {
     try { localStorage.setItem('portal_nivel', v); } catch (e) {}

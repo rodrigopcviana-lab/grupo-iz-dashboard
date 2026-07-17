@@ -40,6 +40,27 @@
   header.topo { margin-bottom: 12px; }
   header.topo .marca { font-family: var(--serif); font-size: 20px; color: var(--text); }
   header.topo .kicker { font-size: 11px; letter-spacing: .18em; color: var(--acc); margin-top: 2px; }
+  /* Lockup da marca (só na home) — logo do Grupo IZ + Portal dos Bares.
+     A altura da logo (~38px) casa com a do bloco de texto (marca 20px +
+     kicker 13px + 2px), pra o topo dela bater com o "P" de Portal e a base
+     com a base do "GRUPO IZ". A largura sai sozinha do viewBox 111x75 —
+     NUNCA cravar width: a logo não é quadrada, e foi supor isso que estragou
+     as duas primeiras tentativas (2026-07-15/17).
+     Não tentar de novo o truque de align-self:stretch + aspect-ratio pra ela
+     se auto-dimensionar pelo texto: o SVG define a altura do flex container
+     e o container define a do SVG, a dependência circular resolve pra
+     largura total e a logo toma a tela (testado em 2026-07-17). */
+  header.topo .marca-blk { display: flex; align-items: center; gap: 12px; }
+  header.topo .marca-txt { min-width: 0; }
+  header.topo .logo-iz { height: 38px; width: auto; flex: none; color: var(--acc); }
+  @media (max-width: 559px) {
+    /* a logo já diz "GRUPO IZ" — o kicker vira repetição e a linha que ele
+       ocupa faz falta pro Painel Rápido mini, que vem logo abaixo. */
+    header.topo .marca-blk .kicker { display: none; }
+    header.topo .marca-blk .marca { font-size: 17px; }
+    header.topo .logo-iz { height: 24px; }
+    header.topo .marca-blk { gap: 10px; }
+  }
   /* Navegação seccionada (4 grupos <details>) — ver _nav_secionada() */
   nav#nav-principal { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; padding: 0;
         position: relative; z-index: 20; }
@@ -317,6 +338,22 @@
                 border: 1px solid var(--border); border-radius: 999px; padding: 6px 6px 6px 12px;
                 font-size: 12px; color: var(--text-2); text-decoration: none; margin-top: 8px; }
   .nivel-pill b { color: var(--nivel-cor, var(--acc)); font-weight: 600; }
+  /* Identidade na pill (2026-07-17): com senha individual, o <b> passa a ser
+     o NOME de quem logou (herdando a cor do nível) e o rótulo do nível vai
+     pro .np-niv; o prefixo "Nível:" sai. Sem pessoa — senha de tier
+     compartilhada, o caso mais comum hoje — nada disso liga e a pill fica
+     idêntica à de antes. Quem manda é o data-tem-pessoa posto por JS_NIVEL. */
+  .nivel-pill .np-niv { display: none; color: var(--text-2); }
+  .nivel-pill[data-tem-pessoa] .np-niv { display: inline; }
+  .nivel-pill[data-tem-pessoa] .np-niv::before { content: "·"; margin-right: 7px;
+        color: var(--text-3); }
+  .nivel-pill[data-tem-pessoa] .np-pre { display: none; }
+  @media (max-width: 559px) {
+    /* Em 375px a pill divide a topo-linha com a lupa da busca. Tendo nome,
+       o nível é o que cede — o nome é a informação que importa. Sem nome ele
+       fica, senão a pill esvazia. */
+    .nivel-pill[data-tem-pessoa] .np-niv { display: none; }
+  }
   .nivel-pill .np-tr { background: #2c2416; color: var(--acc); border-radius: 999px; padding: 4px 10px;
                        font-size: 11.5px; font-weight: 600; white-space: nowrap; }
   .nivel-pill:hover { border-color: var(--acc); }
