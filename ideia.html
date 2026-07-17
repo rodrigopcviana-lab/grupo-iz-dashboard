@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
-<title>Fechamento de turno · Portal dos Bares — Grupo IZ</title>
+<title>Ideia · Portal dos Bares — Grupo IZ</title>
 <link rel="stylesheet" href="portal.css">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bares IZ">
 </head>
@@ -272,37 +272,697 @@ window.msgAcessoNegado = function (nomePagina) {
 })();</script>
 
 
-<h1>Fechamento de turno</h1>
-<p class="sub">Ranking de ruptura e problema de equipamento por casa, taxa de etiquetagem e
-pendências ainda abertas — calculado a partir dos relatórios de turno. Itens marcados como
-<strong>persistentes</strong> apareceram em 3 ou mais turnos dentro de 7 dias.</p>
+<h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg> Ideia</h1>
+<p class="sub">Desenhe, escreva e cole fotos por cima — um rascunho de guardanapo, só que no bolso. Guarda no seu cofre pessoal.</p>
 
-<p class="sub" id="fc-msg">Carregando…</p>
-<div id="fc-corpo"></div>
+<style>
+  .idea-app { user-select: none; -webkit-user-select: none; }
+  .idea-app .ico { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.7;
+                    fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  #idea-aviso { display: none; padding: 10px 13px; font-size: 12.5px; color: var(--text-2);
+                background: var(--card); border: 1px solid var(--acc); border-radius: 10px;
+                margin-bottom: 12px; }
+  #idea-aviso b { color: var(--acc); font-weight: 600; }
+  .idea-toolbar { display: flex; align-items: center; gap: 10px; padding: 8px;
+                   border: 1px solid var(--border); border-radius: 13px; background: var(--card);
+                   overflow-x: auto; margin-bottom: 10px; }
+  .idea-toolbar::-webkit-scrollbar { display: none; }
+  .idea-tgrupo { display: flex; align-items: center; gap: 4px; padding: 3px;
+                  background: var(--bg); border: 1px solid var(--border); border-radius: 12px; flex: none; }
+  .idea-tbtn { display: flex; align-items: center; justify-content: center;
+               width: 36px; height: 34px; border: 0; border-radius: 9px; background: transparent;
+               color: var(--text-2); cursor: pointer; font: inherit; position: relative; }
+  .idea-tbtn.on { background: var(--card-2, #262017); color: var(--acc);
+                   box-shadow: inset 0 0 0 1px var(--border); }
+  .idea-tbtn:disabled { opacity: .35; cursor: default; }
+  .idea-tbtn .aa { font-size: 14px; font-weight: 700; letter-spacing: -.5px; }
+  .idea-cor { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent;
+              cursor: pointer; flex: none; padding: 0; background-clip: padding-box; }
+  .idea-cor.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--acc); }
+  .idea-esp { display: flex; align-items: center; justify-content: center;
+              width: 32px; height: 34px; border: 0; border-radius: 9px;
+              background: transparent; cursor: pointer; color: var(--text-2); }
+  .idea-esp.on { background: var(--card-2, #262017); color: var(--acc); box-shadow: inset 0 0 0 1px var(--border); }
+  .idea-esp i { border-radius: 999px; background: currentColor; display: block; }
+  .idea-palco { position: relative; height: min(64vh, 520px); min-height: 320px;
+                overflow: hidden; background: var(--paper, #1d1812); border: 1px solid var(--border);
+                border-radius: 14px; touch-action: none; }
+  .idea-palco #idea-cv { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none;
+                display: block; background-image: radial-gradient(circle, rgba(243,237,226,.055) 1px, transparent 1px);
+                background-size: 26px 26px; }
+  #idea-editor-texto { position: absolute; display: none; z-index: 5; min-width: 140px; max-width: 70%;
+                        background: var(--card); border: 1px solid var(--acc); border-radius: 10px;
+                        padding: 8px 10px; font: inherit; font-size: 16px; color: var(--text);
+                        resize: none; outline: none; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .idea-dica { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px;
+               background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--border);
+               color: var(--text-2); font-size: 12px; padding: 6px 14px; border-radius: 999px;
+               pointer-events: none; opacity: 0; transition: opacity .25s; z-index: 4; white-space: nowrap; }
+  .idea-dica.mostra { opacity: 1; }
+  .idea-acoes { display: flex; gap: 8px; margin-top: 10px; }
+  .idea-acoes button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+                        border-radius: 11px; padding: 11px; font: inherit; font-size: 13.5px;
+                        font-weight: 600; cursor: pointer; }
+  #idea-btn-salvar { border: 0; background: var(--acc); color: var(--acc-txt); }
+  #idea-btn-salvar:disabled { background: var(--card); color: var(--text-3); border: 1px solid var(--border); cursor: not-allowed; }
+  .idea-acoes .sec { border: 1px solid var(--border); background: var(--card); color: var(--text-2); }
+  .idea-rodape { margin-top: 16px; }
+  .idea-gal-tit { font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase;
+                   color: var(--text-3); margin-bottom: 8px; }
+  .idea-gal-rolo { display: flex; gap: 8px; overflow-x: auto; padding: 2px; }
+  .idea-gal-rolo::-webkit-scrollbar { display: none; }
+  .idea-thumb { width: 56px; height: 56px; border-radius: 9px; border: 1px solid var(--border);
+                background: var(--paper, #1d1812); flex: none; cursor: pointer; overflow: hidden;
+                display: flex; align-items: center; justify-content: center; color: var(--text-3); padding: 0; }
+  .idea-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .idea-gal-vazio { font-size: 12.5px; color: var(--text-3); }
+  .idea-veu { position: fixed; inset: 0; background: rgba(10,8,5,.72); z-index: 500;
+              display: none; align-items: center; justify-content: center; padding: 22px;
+              backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+  .idea-veu.aberto { display: flex; }
+  .idea-modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+                padding: 20px; width: min(360px, 100%); box-shadow: 0 18px 50px rgba(0,0,0,.55); }
+  .idea-modal h2 { font-size: 15px; font-weight: 650; margin-bottom: 4px; }
+  .idea-modal p { font-size: 12.5px; color: var(--text-2); margin-bottom: 12px; }
+  .idea-modal input { width: 100%; background: var(--bg); border: 1px solid var(--border);
+                       border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px;
+                       color: var(--text); outline: none; margin-bottom: 14px; }
+  .idea-modal input:focus { border-color: var(--acc); }
+  .idea-modal .linha-btn { display: flex; gap: 8px; justify-content: flex-end; }
+  .idea-btn-ghost { border: 1px solid var(--border); background: transparent; color: var(--text-2);
+                     border-radius: 10px; padding: 9px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+  .idea-btn-cheio { border: 0; background: var(--acc); color: var(--acc-txt); border-radius: 10px;
+                     padding: 9px 16px; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+  .idea-btn-cheio:disabled { opacity: .55; cursor: wait; }
+  #idea-veu-preview .modal { display: flex; flex-direction: column; gap: 12px; }
+  #idea-veu-preview img { max-width: 100%; max-height: 60vh; border-radius: 12px;
+                           border: 1px solid var(--border); background: var(--paper, #1d1812); }
+  #idea-veu-preview .leg { font-size: 13px; color: var(--text-2); }
+  #idea-toast { position: fixed; left: 50%; transform: translateX(-50%) translateY(16px);
+                bottom: 22px; z-index: 600; background: var(--card); border: 1px solid var(--border);
+                color: var(--text); font-size: 13px; padding: 10px 18px; border-radius: 12px; opacity: 0;
+                transition: opacity .25s, transform .25s; pointer-events: none; max-width: 86vw; text-align: center;
+                box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  #idea-toast.mostra { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #idea-toast.erro { border-color: var(--urg-urgente, #c9705a); }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="ii-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.7 1 1.6 1 2.5h6c0-.9.2-1.8 1-2.5A6 6 0 0 0 12 3z"/></symbol>
+  <symbol id="ii-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14 6.5l3.5 3.5"/></symbol>
+  <symbol id="ii-eraser" viewBox="0 0 24 24"><path d="M7 19h13M5.5 13.5l7-7a2 2 0 0 1 2.8 0l3.2 3.2a2 2 0 0 1 0 2.8L12 19H8l-2.5-2.7a2 2 0 0 1 0-2.8z"/></symbol>
+  <symbol id="ii-img" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4.5 17l4.5-4 3.5 3 3-2.5 4 3.5"/></symbol>
+  <symbol id="ii-move" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-2.5 2.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5"/></symbol>
+  <symbol id="ii-undo" viewBox="0 0 24 24"><path d="M8 6L4 10l4 4"/><path d="M4 10h10a6 6 0 0 1 0 12h-3"/></symbol>
+  <symbol id="ii-redo" viewBox="0 0 24 24"><path d="M16 6l4 4-4 4"/><path d="M20 10H10a6 6 0 0 0 0 12h3"/></symbol>
+  <symbol id="ii-save" viewBox="0 0 24 24"><path d="M12 4v11M12 15l-4-3.5M12 15l4-3.5"/><path d="M5 19h14"/></symbol>
+  <symbol id="ii-share" viewBox="0 0 24 24"><path d="M12 3v11M12 3L8.5 6.5M12 3l3.5 3.5"/><path d="M6 11v8h12v-8"/></symbol>
+</defs></svg>
+
+<div class="idea-app">
+<div id="idea-aviso"></div>
+
+<div class="idea-toolbar">
+  <div class="idea-tgrupo" id="idea-g-tools">
+    <button class="idea-tbtn on" data-tool="pen" title="Desenhar"><svg class="ico"><use href="#ii-pencil"/></svg></button>
+    <button class="idea-tbtn" data-tool="eraser" title="Borracha"><svg class="ico"><use href="#ii-eraser"/></svg></button>
+    <button class="idea-tbtn" data-tool="text" title="Texto"><span class="aa">Aa</span></button>
+    <button class="idea-tbtn" id="idea-btn-foto" title="Colar foto"><svg class="ico"><use href="#ii-img"/></svg></button>
+    <button class="idea-tbtn" data-tool="move" title="Mover / redimensionar"><svg class="ico"><use href="#ii-move"/></svg></button>
+  </div>
+  <div class="idea-tgrupo" id="idea-g-cores"></div>
+  <div class="idea-tgrupo" id="idea-g-esp">
+    <button class="idea-esp" data-w="2.5"><i style="width:5px;height:5px"></i></button>
+    <button class="idea-esp on" data-w="5"><i style="width:9px;height:9px"></i></button>
+    <button class="idea-esp" data-w="9"><i style="width:14px;height:14px"></i></button>
+  </div>
+  <div class="idea-tgrupo">
+    <button class="idea-tbtn" id="idea-btn-undo" disabled title="Desfazer"><svg class="ico"><use href="#ii-undo"/></svg></button>
+    <button class="idea-tbtn" id="idea-btn-redo" disabled title="Refazer"><svg class="ico"><use href="#ii-redo"/></svg></button>
+  </div>
+</div>
+
+<div class="idea-palco" id="idea-palco">
+  <canvas id="idea-cv"></canvas>
+  <textarea id="idea-editor-texto" rows="1" placeholder="escreva…"></textarea>
+  <div class="idea-dica" id="idea-dica"></div>
+</div>
+
+<div class="idea-acoes">
+  <button type="button" id="idea-btn-salvar" disabled><svg class="ico" style="width:15px;height:15px"><use href="#ii-save"/></svg>Guardar</button>
+  <button type="button" class="sec" id="idea-btn-export"><svg class="ico" style="width:15px;height:15px"><use href="#ii-save"/></svg>PNG</button>
+  <button type="button" class="sec" id="idea-btn-share" hidden><svg class="ico" style="width:15px;height:15px"><use href="#ii-share"/></svg>Compartilhar</button>
+</div>
+
+<div class="idea-rodape">
+  <p class="idea-gal-tit">Minhas ideias</p>
+  <div class="idea-gal-rolo" id="idea-galeria"><span class="idea-gal-vazio" id="idea-gal-vazio">—</span></div>
+</div>
+
+<input type="file" id="idea-input-foto" accept="image/*" hidden>
+
+<div class="idea-veu" id="idea-veu-titulo">
+  <div class="idea-modal">
+    <h2>Guardar ideia</h2>
+    <p>Vai pro seu cofre pessoal — só você vê as suas.</p>
+    <input id="idea-inp-titulo" maxlength="80" placeholder="dê um nome (opcional)">
+    <div class="linha-btn">
+      <button class="idea-btn-ghost" id="idea-btn-cancela-salvar">Cancelar</button>
+      <button class="idea-btn-cheio" id="idea-btn-confirma-salvar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="idea-veu" id="idea-veu-preview">
+  <div class="idea-modal">
+    <img id="idea-preview-img" alt="">
+    <span class="leg" id="idea-preview-leg"></span>
+    <button class="idea-btn-ghost" id="idea-btn-fecha-preview">Fechar</button>
+  </div>
+</div>
+
+<div id="idea-toast"></div>
+</div>
 
 <script>
 (function () {
-  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
-  var msg = document.getElementById('fc-msg');
-  var corpo = document.getElementById('fc-corpo');
+  var WORKER = "https://registro-bares.rodrigopcviana.workers.dev";
 
-  if (!WORKER) {
-    msg.textContent = 'O fechamento de turno ainda não foi ativado.';
-    return;
+  function sessao() { try { return window.sessaoLer && window.sessaoLer(); } catch (e) { return null; } }
+  var SESSAO = sessao();
+
+  var avisoEl = document.getElementById('idea-aviso');
+  var btnSalvar = document.getElementById('idea-btn-salvar');
+  if (SESSAO && SESSAO.pessoa) {
+    btnSalvar.disabled = false;
+  } else if (SESSAO) {
+    avisoEl.style.display = 'block';
+    avisoEl.innerHTML = 'Pra <b>guardar</b> suas ideias no cofre, peça sua <b>senha individual</b> ao coordenador. Desenhar e exportar PNG funcionam do mesmo jeito.';
+  } else {
+    avisoEl.style.display = 'block';
+    avisoEl.innerHTML = 'Sem sessão do portal — dá pra desenhar e exportar PNG, mas <b>guardar no cofre</b> exige entrar com a <b>senha individual</b>.';
   }
 
-  fetch(WORKER + '/api/turno_fechamento')
-    .then(function (r) {
-      if (r.status === 404) { msg.textContent = 'Ainda não há fechamento calculado.'; return null; }
-      if (!r.ok) { msg.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return null; }
-      return r.json();
-    })
-    .then(function (d) {
-      if (!d) return;
-      corpo.innerHTML = d.html || '<p class="sub">Sem dado ainda.</p>';
-      msg.textContent = '';
-    })
-    .catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; });
+  var CORES = ['#d0a352', '#ece3d0', '#e07a52', '#5dcaa5', '#6fa8dc', '#d98fb0'];
+  var PAPEL = '#1d1812';
+
+  var palco = document.getElementById('idea-palco');
+  var cv = document.getElementById('idea-cv');
+  var ctx = cv.getContext('2d');
+  var W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 3);
+
+  var camada = document.createElement('canvas');
+  var cctx = camada.getContext('2d');
+
+  function dimensiona() {
+    var r = palco.getBoundingClientRect();
+    var novoW = Math.max(1, Math.round(r.width)), novoH = Math.max(1, Math.round(r.height));
+    if (novoW === W && novoH === H) return;
+    W = novoW; H = novoH;
+    [cv, camada].forEach(function (c) { c.width = W * DPR; c.height = H * DPR; });
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    cctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    refazTracos(); desenha();
+  }
+
+  var ops = [];
+  var refeitos = [];
+  var objetos = new Map();
+  var imgCache = new Map();
+  var selecionado = null;
+
+  var tool = 'pen';
+  var cor = CORES[0];
+  var espessura = 5;
+
+  function pushOp(op) { ops.push(op); refeitos.length = 0; aplicaOp(op); atualizaUndo(); }
+  function aplicaOp(op) {
+    if (op.t === 'obj+') objetos.set(op.obj.id, JSON.parse(JSON.stringify(op.obj)));
+    else if (op.t === 'obj~') { var o = objetos.get(op.id); if (o) Object.assign(o, op.depois); }
+    else if (op.t === 'obj-') objetos.delete(op.id);
+  }
+  function reconstruir() {
+    objetos.clear();
+    ops.forEach(aplicaOp);
+    if (selecionado && !objetos.has(selecionado)) selecionado = null;
+    refazTracos(); desenha();
+  }
+  function desfazer() { if (!ops.length) return; refeitos.push(ops.pop()); selecionado = null; reconstruir(); atualizaUndo(); }
+  function refazer() { if (!refeitos.length) return; ops.push(refeitos.pop()); reconstruir(); atualizaUndo(); }
+  function atualizaUndo() {
+    document.getElementById('idea-btn-undo').disabled = !ops.length;
+    document.getElementById('idea-btn-redo').disabled = !refeitos.length;
+  }
+
+  function tracaCaminho(g, pts) {
+    if (pts.length === 1) {
+      g.beginPath(); g.arc(pts[0][0], pts[0][1], g.lineWidth / 2, 0, Math.PI * 2);
+      g.fillStyle = g.strokeStyle; g.fill(); return;
+    }
+    g.beginPath();
+    g.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length - 1; i++) {
+      var mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+      g.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+    }
+    var u = pts[pts.length - 1]; g.lineTo(u[0], u[1]);
+    g.stroke();
+  }
+  function pintaTraco(g, op) {
+    g.save();
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    g.lineWidth = op.borracha ? op.w * 4 : op.w;
+    g.strokeStyle = op.borracha ? '#000' : op.cor;
+    g.globalCompositeOperation = op.borracha ? 'destination-out' : 'source-over';
+    tracaCaminho(g, op.pts);
+    g.restore();
+  }
+  function refazTracos() {
+    cctx.clearRect(0, 0, W, H);
+    ops.forEach(function (op) { if (op.t === 'traco') pintaTraco(cctx, op); });
+  }
+
+  function medidasObj(o) {
+    if (o.kind === 'img') return { w: o.w * o.escala, h: o.h * o.escala };
+    var fs = 22 * o.escala;
+    var linhas = o.txt.split('\n');
+    ctx.save(); ctx.font = '600 ' + fs + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    var mw = 0; linhas.forEach(function (l) { mw = Math.max(mw, ctx.measureText(l).width); });
+    ctx.restore();
+    return { w: mw, h: linhas.length * fs * 1.25, fs: fs };
+  }
+  function desenhaObj(g, o) {
+    if (o.kind === 'img') {
+      var im = imgCache.get(o.id);
+      if (im) g.drawImage(im, o.x, o.y, o.w * o.escala, o.h * o.escala);
+    } else {
+      var m = medidasObj(o);
+      g.save();
+      g.font = '600 ' + m.fs + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      g.fillStyle = o.cor; g.textBaseline = 'top';
+      o.txt.split('\n').forEach(function (l, i) { g.fillText(l, o.x, o.y + i * m.fs * 1.25); });
+      g.restore();
+    }
+  }
+  function desenha() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(camada, 0, 0, W, H);
+    objetos.forEach(function (o) { desenhaObj(ctx, o); });
+    if (selecionado && objetos.has(selecionado)) {
+      var o = objetos.get(selecionado), m = medidasObj(o);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(208,163,82,.9)'; ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 5]);
+      ctx.strokeRect(o.x - 6, o.y - 6, m.w + 12, m.h + 12);
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(o.x + m.w + 6, o.y + m.h + 6, 9, 0, Math.PI * 2);
+      ctx.fillStyle = '#d0a352'; ctx.fill();
+      ctx.strokeStyle = '#241a06'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(o.x + m.w + 2, o.y + m.h + 10); ctx.lineTo(o.x + m.w + 10, o.y + m.h + 2);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(o.x + m.w + 6, o.y - 6, 9, 0, Math.PI * 2);
+      ctx.fillStyle = '#c9705a'; ctx.fill();
+      ctx.strokeStyle = '#241a06';
+      ctx.beginPath();
+      ctx.moveTo(o.x + m.w + 2.5, o.y - 9.5); ctx.lineTo(o.x + m.w + 9.5, o.y - 2.5);
+      ctx.moveTo(o.x + m.w + 9.5, o.y - 9.5); ctx.lineTo(o.x + m.w + 2.5, o.y - 2.5);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  function hitObj(x, y) {
+    var lista = Array.from(objetos.values());
+    for (var i = lista.length - 1; i >= 0; i--) {
+      var o = lista[i], m = medidasObj(o);
+      if (x >= o.x - 8 && x <= o.x + m.w + 16 && y >= o.y - 16 && y <= o.y + m.h + 16) return o;
+    }
+    return null;
+  }
+
+  var ponteiros = new Map();
+  var gesto = null;
+
+  function posDe(ev) {
+    var r = cv.getBoundingClientRect();
+    return [ev.clientX - r.left, ev.clientY - r.top];
+  }
+
+  cv.addEventListener('pointerdown', function (ev) {
+    ev.preventDefault();
+    fechaEditorTexto();
+    try { cv.setPointerCapture(ev.pointerId); } catch (e) {}
+    var xy = posDe(ev), x = xy[0], y = xy[1];
+    ponteiros.set(ev.pointerId, { x: x, y: y });
+
+    if (ponteiros.size === 2 && selecionado && gesto && (gesto.modo === 'move' || gesto.modo === 'escala')) {
+      var o0 = objetos.get(selecionado);
+      var pts0 = Array.from(ponteiros.values()), a = pts0[0], b = pts0[1];
+      gesto = { modo: 'pinca', id: o0.id, d0: Math.hypot(a.x - b.x, a.y - b.y),
+                antes: gesto.antes, esc0: o0.escala, cx: o0.x, cy: o0.y };
+      return;
+    }
+    if (ponteiros.size > 1) return;
+
+    if (tool === 'move') {
+      var o = hitObj(x, y);
+      if (o) {
+        var m = medidasObj(o);
+        var antes = { x: o.x, y: o.y, escala: o.escala };
+        selecionado = o.id;
+        if (Math.hypot(x - (o.x + m.w + 6), y - (o.y - 6)) <= 14) {
+          pushOp({ t: 'obj-', id: o.id }); selecionado = null; gesto = null; desenha(); return;
+        }
+        if (Math.hypot(x - (o.x + m.w + 6), y - (o.y + m.h + 6)) <= 14) {
+          gesto = { modo: 'escala', id: o.id, antes: antes, m0: m, x0: x, y0: y, esc0: o.escala };
+        } else {
+          gesto = { modo: 'move', id: o.id, antes: antes, dx: x - o.x, dy: y - o.y };
+        }
+        if (o.kind === 'text' && ev.detail >= 2) abreEditorTexto(o);
+      } else { selecionado = null; gesto = null; }
+      desenha();
+      return;
+    }
+    if (tool === 'text') { abreEditorTexto(null, x, y); return; }
+
+    var op = { t: 'traco', cor: cor, w: espessura, borracha: tool === 'eraser', pts: [[x, y]] };
+    gesto = { modo: 'traco', op: op };
+  });
+
+  cv.addEventListener('pointermove', function (ev) {
+    if (!ponteiros.has(ev.pointerId)) return;
+    ev.preventDefault();
+    var xy = posDe(ev), x = xy[0], y = xy[1];
+    ponteiros.set(ev.pointerId, { x: x, y: y });
+    if (!gesto) return;
+
+    if (gesto.modo === 'traco') {
+      var coalesced = ev.getCoalescedEvents ? ev.getCoalescedEvents() : [];
+      var evs = coalesced.length ? coalesced : [ev];
+      evs.forEach(function (e) { gesto.op.pts.push(posDe(e)); });
+      refazTracos(); pintaTraco(cctx, gesto.op); desenha();
+    } else if (gesto.modo === 'move') {
+      var o = objetos.get(gesto.id); if (!o) return;
+      o.x = x - gesto.dx; o.y = y - gesto.dy; desenha();
+    } else if (gesto.modo === 'escala') {
+      var o2 = objetos.get(gesto.id); if (!o2) return;
+      var base = Math.max(40, Math.hypot(gesto.m0.w, gesto.m0.h));
+      var delta = ((x - gesto.x0) + (y - gesto.y0)) / base;
+      o2.escala = Math.min(8, Math.max(.15, gesto.esc0 * (1 + delta)));
+      desenha();
+    } else if (gesto.modo === 'pinca' && ponteiros.size >= 2) {
+      var o3 = objetos.get(gesto.id); if (!o3) return;
+      var pts = Array.from(ponteiros.values()), a2 = pts[0], b2 = pts[1];
+      var d = Math.hypot(a2.x - b2.x, a2.y - b2.y);
+      o3.escala = Math.min(8, Math.max(.15, gesto.esc0 * (d / gesto.d0)));
+      desenha();
+    }
+  });
+
+  function fimPonteiro(ev) {
+    if (!ponteiros.has(ev.pointerId)) return;
+    ponteiros.delete(ev.pointerId);
+    if (!gesto) return;
+    if (gesto.modo === 'traco') {
+      if (gesto.op.pts.length) { refazTracos(); pushOp(gesto.op); refazTracos(); desenha(); }
+      gesto = null;
+    } else if (ponteiros.size === 0) {
+      var o = objetos.get(gesto.id);
+      if (o && gesto.antes) {
+        var depois = { x: o.x, y: o.y, escala: o.escala };
+        if (JSON.stringify(depois) !== JSON.stringify(gesto.antes)) {
+          ops.push({ t: 'obj~', id: o.id, antes: gesto.antes, depois: depois });
+          refeitos.length = 0; atualizaUndo();
+        }
+      }
+      gesto = null;
+    }
+  }
+  cv.addEventListener('pointerup', fimPonteiro);
+  cv.addEventListener('pointercancel', fimPonteiro);
+
+  var editor = document.getElementById('idea-editor-texto');
+  var editorAlvo = null;
+  var editorPos = [0, 0];
+  function abreEditorTexto(obj, x, y) {
+    editorAlvo = obj || null;
+    editorPos = obj ? [obj.x, obj.y] : [x, y];
+    editor.value = obj ? obj.txt : '';
+    editor.style.display = 'block';
+    editor.style.left = Math.min(editorPos[0], W - 160) + 'px';
+    editor.style.top = Math.min(editorPos[1], H - 60) + 'px';
+    requestAnimationFrame(function () { editor.focus(); });
+  }
+  function fechaEditorTexto() {
+    if (editor.style.display !== 'block') return;
+    var txt = editor.value.trim();
+    editor.style.display = 'none';
+    if (editorAlvo) {
+      if (txt && txt !== editorAlvo.txt) {
+        pushOp({ t: 'obj~', id: editorAlvo.id, antes: { txt: editorAlvo.txt }, depois: { txt: txt } });
+      } else if (!txt) {
+        pushOp({ t: 'obj-', id: editorAlvo.id }); selecionado = null;
+      }
+    } else if (txt) {
+      var id = 'o' + Date.now() + Math.random().toString(36).slice(2, 6);
+      pushOp({ t: 'obj+', obj: { id: id, kind: 'text', txt: txt, cor: cor, x: editorPos[0], y: editorPos[1], escala: 1 } });
+      selecionado = id; ferramenta('move');
+    }
+    editorAlvo = null; desenha();
+  }
+  editor.addEventListener('blur', fechaEditorTexto);
+  editor.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); fechaEditorTexto(); } });
+
+  var inputFoto = document.getElementById('idea-input-foto');
+  document.getElementById('idea-btn-foto').addEventListener('click', function () { inputFoto.click(); });
+  inputFoto.addEventListener('change', function () {
+    var f = inputFoto.files && inputFoto.files[0];
+    inputFoto.value = '';
+    if (!f) return;
+    var url = URL.createObjectURL(f);
+    var im = new Image();
+    im.onload = function () {
+      URL.revokeObjectURL(url);
+      var id = 'o' + Date.now() + Math.random().toString(36).slice(2, 6);
+      var alvo = Math.min(W, H) * .55;
+      var esc = Math.min(alvo / im.width, alvo / im.height, 1);
+      var w = im.width, h = im.height;
+      imgCache.set(id, im);
+      pushOp({ t: 'obj+', obj: { id: id, kind: 'img', w: w, h: h, escala: esc,
+               x: (W - w * esc) / 2, y: (H - h * esc) / 2 } });
+      selecionado = id; ferramenta('move'); desenha();
+    };
+    im.onerror = function () { URL.revokeObjectURL(url); toast('não consegui ler essa imagem', true); };
+    im.src = url;
+  });
+
+  var DICAS = { pen: 'Desenhe com o dedo, caneta ou mouse', eraser: 'Borracha — apaga só o traço, não a foto',
+                text: 'Toque no quadro pra escrever', move: 'Toque num objeto: arraste, alça redimensiona, X remove' };
+  var dicaTimer = null;
+  function dica(msg) {
+    var el = document.getElementById('idea-dica');
+    el.textContent = msg; el.classList.add('mostra');
+    clearTimeout(dicaTimer); dicaTimer = setTimeout(function () { el.classList.remove('mostra'); }, 2600);
+  }
+  function ferramenta(t) {
+    tool = t;
+    document.querySelectorAll('#idea-g-tools .idea-tbtn[data-tool]').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.tool === t);
+    });
+    if (t !== 'move') { selecionado = null; desenha(); }
+    if (DICAS[t]) dica(DICAS[t]);
+  }
+  document.querySelectorAll('#idea-g-tools .idea-tbtn[data-tool]').forEach(function (b) {
+    b.addEventListener('click', function () { ferramenta(b.dataset.tool); });
+  });
+
+  var gCores = document.getElementById('idea-g-cores');
+  CORES.forEach(function (c, i) {
+    var b = document.createElement('button');
+    b.className = 'idea-cor' + (i === 0 ? ' on' : '');
+    b.style.background = c; b.title = 'Cor';
+    b.addEventListener('click', function () {
+      cor = c;
+      gCores.querySelectorAll('.idea-cor').forEach(function (x) { x.classList.toggle('on', x === b); });
+      if (tool === 'eraser') ferramenta('pen');
+      if (selecionado) {
+        var o = objetos.get(selecionado);
+        if (o && o.kind === 'text' && o.cor !== c) {
+          pushOp({ t: 'obj~', id: o.id, antes: { cor: o.cor }, depois: { cor: c } }); desenha();
+        }
+      }
+    });
+    gCores.appendChild(b);
+  });
+  document.querySelectorAll('.idea-esp').forEach(function (b) {
+    b.addEventListener('click', function () {
+      espessura = parseFloat(b.dataset.w);
+      document.querySelectorAll('.idea-esp').forEach(function (x) { x.classList.toggle('on', x === b); });
+    });
+  });
+  document.getElementById('idea-btn-undo').addEventListener('click', desfazer);
+  document.getElementById('idea-btn-redo').addEventListener('click', refazer);
+
+  function composita(escala) {
+    dimensiona();
+    var s = escala || 2;
+    var out = document.createElement('canvas');
+    out.width = Math.round(W * s); out.height = Math.round(H * s);
+    var g = out.getContext('2d');
+    g.scale(s, s);
+    g.fillStyle = PAPEL; g.fillRect(0, 0, W, H);
+    g.drawImage(camada, 0, 0, W, H);
+    objetos.forEach(function (o) { desenhaObj(g, o); });
+    return out;
+  }
+  function blobDe(canvas, tipo, q) {
+    return new Promise(function (res) { canvas.toBlob(res, tipo, q); });
+  }
+  function blobComprimido() {
+    var alvo = 1024 * 1024;
+    return blobDe(composita(2), 'image/png').then(function (b) {
+      if (b && b.size <= alvo) return { blob: b, ext: 'png' };
+      var qs = [0.88, 0.75, 0.6];
+      var tenta = function (i) {
+        if (i >= qs.length) return blobDe(composita(1), 'image/jpeg', 0.6).then(function (b2) { return { blob: b2, ext: 'jpg' }; });
+        return blobDe(composita(2), 'image/jpeg', qs[i]).then(function (b2) {
+          if (b2 && b2.size <= alvo) return { blob: b2, ext: 'jpg' };
+          return tenta(i + 1);
+        });
+      };
+      return tenta(0);
+    });
+  }
+  function nomeArquivo(ext) {
+    var d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
+    return 'ideia-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + '.' + ext;
+  }
+  document.getElementById('idea-btn-export').addEventListener('click', function () {
+    blobDe(composita(2), 'image/png').then(function (b) {
+      if (!b) return toast('falha ao gerar o PNG', true);
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(b); a.download = nomeArquivo('png');
+      a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+      toast('PNG exportado');
+    });
+  });
+  var btnShare = document.getElementById('idea-btn-share');
+  if (navigator.share) {
+    btnShare.hidden = false;
+    btnShare.addEventListener('click', function () {
+      blobDe(composita(2), 'image/png').then(function (b) {
+        if (!b) return toast('falha ao gerar o PNG', true);
+        var file = new File([b], nomeArquivo('png'), { type: 'image/png' });
+        var p2 = (navigator.canShare && navigator.canShare({ files: [file] }))
+          ? navigator.share({ files: [file], title: 'Ideia' })
+          : navigator.share({ title: 'Ideia' });
+        p2.catch(function () {});
+      });
+    });
+  }
+
+  var veuTitulo = document.getElementById('idea-veu-titulo');
+  btnSalvar.addEventListener('click', function () {
+    if (!SESSAO || !SESSAO.pessoa) return;
+    if (!ops.length) return toast('o quadro ainda está vazio', true);
+    var d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
+    document.getElementById('idea-inp-titulo').value = '';
+    document.getElementById('idea-inp-titulo').placeholder = 'Ideia · ' + p(d.getDate()) + '/' + p(d.getMonth() + 1);
+    veuTitulo.classList.add('aberto');
+  });
+  document.getElementById('idea-btn-cancela-salvar').addEventListener('click', function () { veuTitulo.classList.remove('aberto'); });
+
+  document.getElementById('idea-btn-confirma-salvar').addEventListener('click', function () {
+    var btn = document.getElementById('idea-btn-confirma-salvar');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+    blobComprimido().then(function (r) {
+      if (!r.blob) throw new Error('render');
+      var nome = nomeArquivo(r.ext);
+      return fetch(WORKER + '/api/anexo', {
+        method: 'POST',
+        headers: { 'X-Token': SESSAO.token, 'Content-Type': r.ext === 'png' ? 'image/png' : 'image/jpeg',
+                   'X-Nome': encodeURIComponent(nome) },
+        body: r.blob,
+      }).then(function (r1) {
+        if (r1.status === 401) throw new Error('sessao');
+        if (!r1.ok) throw new Error('anexo');
+        return r1.json();
+      });
+    }).then(function (up) {
+      var titulo = document.getElementById('idea-inp-titulo').value.trim();
+      return fetch(WORKER + '/api/ideias', {
+        method: 'POST',
+        headers: { 'X-Token': SESSAO.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titulo: titulo, chave: crypto.randomUUID(), anexos: [{ id: up.id, name: up.name }] }),
+      });
+    }).then(function (r2) {
+      if (r2.status === 401) throw new Error('sessao');
+      if (!r2.ok) throw new Error('ideia');
+      veuTitulo.classList.remove('aberto');
+      toast('Ideia guardada no seu cofre');
+      carregaGaleria();
+    }).catch(function (e) {
+      toast(e.message === 'sessao'
+        ? 'sessão expirou — entre de novo no portal'
+        : 'não consegui guardar agora — tente de novo', true);
+    }).finally(function () {
+      btn.disabled = false; btn.textContent = 'Guardar';
+    });
+  });
+
+  var galeria = document.getElementById('idea-galeria');
+  function carregaGaleria() {
+    var vazio = document.getElementById('idea-gal-vazio');
+    if (!SESSAO) { vazio.textContent = 'entre no portal pra ver as suas'; return; }
+    if (!WORKER) { vazio.textContent = '—'; return; }
+    fetch(WORKER + '/api/ideias', { headers: { 'X-Token': SESSAO.token } }).then(function (r) {
+      if (!r.ok) { vazio.textContent = '—'; return; }
+      return r.json().then(function (d) {
+        if (d.aviso) { vazio.textContent = d.aviso; return; }
+        if (!d.ideias || !d.ideias.length) { vazio.textContent = 'nenhuma ainda — desenhe e guarde'; return; }
+        galeria.innerHTML = '';
+        d.ideias.slice(0, 12).forEach(function (ideia) {
+          var b = document.createElement('button');
+          b.className = 'idea-thumb'; b.title = ideia.titulo || 'Ideia';
+          b.innerHTML = '<svg class="ico" style="width:16px;height:16px"><use href="#ii-bulb"/></svg>';
+          galeria.appendChild(b);
+          if (ideia.anexos && ideia.anexos.length) {
+            fetch(WORKER + '/api/ideia/' + encodeURIComponent(ideia.chave) + '/anexo/0',
+                  { headers: { 'X-Token': SESSAO.token } })
+              .then(function (rr) { return rr.ok ? rr.blob() : null; })
+              .then(function (bl) {
+                if (!bl) return;
+                var url = URL.createObjectURL(bl);
+                b.innerHTML = '<img src="' + url + '" alt="">';
+                b.addEventListener('click', function () { abrePreview(url, ideia); });
+              }).catch(function () {});
+          }
+        });
+      });
+    }).catch(function () { vazio.textContent = '—'; });
+  }
+  function abrePreview(url, ideia) {
+    document.getElementById('idea-preview-img').src = url;
+    document.getElementById('idea-preview-leg').textContent =
+      (ideia.titulo || 'Ideia') + (ideia.criado ? ' · ' + ideia.criado.slice(0, 10).split('-').reverse().join('/') : '');
+    document.getElementById('idea-veu-preview').classList.add('aberto');
+  }
+  document.getElementById('idea-btn-fecha-preview').addEventListener('click', function () {
+    document.getElementById('idea-veu-preview').classList.remove('aberto');
+  });
+
+  var toastTimer = null;
+  function toast(msg, erro) {
+    var t = document.getElementById('idea-toast');
+    t.textContent = msg; t.classList.toggle('erro', !!erro); t.classList.add('mostra');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('mostra'); }, 2800);
+  }
+
+  window.addEventListener('resize', dimensiona);
+  dimensiona();
+  carregaGaleria();
+  dica(DICAS.pen);
 })();
 </script>
 
