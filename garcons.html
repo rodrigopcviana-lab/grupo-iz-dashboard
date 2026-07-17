@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16130f">
+<title>Desempenho por garçom · Portal dos Bares — Grupo IZ</title>
+<link rel="stylesheet" href="portal.css">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bares IZ">
+</head>
+<body>
+<a class="volta-mural" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
+<header class="topo">
+<div class="marca">Portal dos Bares</div><div class="kicker">GRUPO IZ</div>
+<div class="topo-linha">
+<a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
+
+<button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar receita" title="Buscar receita (/)">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4.5 4.5"/></svg>
+<span class="lb-txt">Buscar receita</span>
+</button>
+<div id="busca-global-ov" role="dialog" aria-modal="true" aria-label="Buscar receita">
+<div class="bg-caixa">
+<div class="bg-topo">
+<input id="bg-input" type="search" placeholder="Nome do drink…" autocomplete="off">
+<button class="bg-fechar" id="bg-fechar" type="button" aria-label="Fechar busca">&times;</button>
+</div>
+<div class="bg-res" id="bg-res"><p class="bg-dica">Digite ao menos 2 letras.</p></div>
+</div>
+</div>
+
+</div>
+</header>
+
+<script>
+window.SESSAO_LS = 'portal_sessao';
+window.sessaoLer = function () {
+  try {
+    var raw = localStorage.getItem(window.SESSAO_LS);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    return s;
+  } catch (e) { return null; }
+};
+// casa (Missão 5, 2026-07-10): slug da casa do chefe logado, "*" pra
+// master/coord/boss, null pra níveis sem casa própria. Opcional na chamada
+// pra não quebrar quem ainda chama sessaoSalvar(nivel, token, exp) direto.
+// pessoa (2026-07-13, Registro Rápido): nome da senha INDIVIDUAL (Escola de
+// Bar F7/Missão 5) — o /api/nivel já devolvia isso no corpo, mas até aqui a
+// sessão do navegador descartava o campo. Sem isso, registro.html não tinha
+// como pré-preencher "Seu nome" com a identidade real de quem logou.
+window.sessaoSalvar = function (nivel, token, exp, casa, pessoa) {
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null, pessoa: pessoa || null })); } catch (e) {}
+};
+window.sessaoLimpar = function () {
+  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
+};
+window.loginSenha = function (worker, senha) {
+  return fetch(worker + '/api/nivel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senha: senha }),
+  }).then(function (r) {
+    if (r.status === 401) return { ok: false, status: 401 };
+    if (!r.ok) return { ok: false, status: r.status };
+    return r.json().then(function (d) {
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa, d.pessoa);
+      return { ok: true, nivel: d.nivel, casa: d.casa, pessoa: d.pessoa, token: d.token };
+    });
+  }).catch(function () { return { ok: false, status: 0 }; });
+};
+// Gate padrão das páginas protegidas (2026-07-09): a senha é digitada SÓ na
+// home. Sem sessão -> manda pra home logar, com volta automática pra cá.
+// Sessão de nível insuficiente -> NÃO redireciona (senão a home logada
+// devolveria pra cá e viraria loop); a página mostra a mensagem e o caminho
+// é a pill "Trocar acesso". Só para páginas na raiz do portal — as cascas
+// de /vendas/ (repo do site) replicam a própria versão com '../'.
+window.irParaLogin = function (slug) {
+  location.replace('index.html?volta=' + encodeURIComponent(slug) + '#nivel');
+};
+window.exigirNivel = function (niveisOk, slug) {
+  var s = window.sessaoLer();
+  // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz: passa em
+  // qualquer página que a equipe abre. Páginas de treino ainda listam
+  // 'bartender' explicitamente pra tratar o comportamento por pessoa.
+  var efet = (s && s.nivel === 'bartender' && niveisOk.indexOf('bartender') < 0 &&
+              niveisOk.indexOf('equipe') >= 0) ? 'equipe' : (s ? s.nivel : null);
+  if (s && (niveisOk.indexOf(s.nivel) >= 0 || niveisOk.indexOf(efet) >= 0)) return { ok: true, sessao: s };
+  if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
+  return { ok: false, nivelAtual: s.nivel };
+};
+// Mensagem padrão de nível insuficiente (2026-07-14): antes cada página
+// reescrevia esta frase à mão — 16 cópias, algumas com link clicável
+// ("Trocar acesso" em <a>), outras só texto. Centralizado aqui pra toda
+// página protegida usar a mesma redação e o mesmo link.
+window.msgTrocarAcesso = function () {
+  return 'Toque em <a href="index.html#nivel">Trocar acesso</a> para entrar com a senha certa.';
+};
+window.msgAcessoNegado = function (nomePagina) {
+  return 'Seu acesso atual não abre ' + nomePagina + '. ' + window.msgTrocarAcesso();
+};
+</script>
+
+<nav id="nav-principal" class="nav-sec"><details class="grp" data-niveis="chefe controladoria coord equipe rh suprimentos"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Operação</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="index.html" class="grp-link" data-niveis="equipe chefe coord rh controladoria suprimentos"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a><a href="eventos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a><a href="contagem.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contagem de insumos</span></a><a href="contagem-copos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg><span>Contagem de copos</span></a><a href="compras.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Pedido de Compras</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="turno.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>Relatório de turno</span></a><a href="rotinas.html" class="grp-link" data-niveis="equipe chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Rotinas</span></a><a href="producao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Produção possível</span></a></div></details><details class="grp" data-niveis="chefe coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Bar</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="cocktails.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas técnicas</span></a><a href="treinamentos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Treinamentos</span></a><a href="calculadora.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Calculadora PB</span></a><a href="lab.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Lab de Drinks</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="constelacao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Constelação de Sabores</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="lab-proposta.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Lab 2.0 — proposta</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="planejador-3d.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Planejador 3D</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Pessoas</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="equipe.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Equipe</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="metas.html" class="grp-link" data-niveis="equipe chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Metas &amp; Desenv.</span></a><a href="contatos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg><span>Contatos</span></a><a href="regras.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Escala &amp; BH</span></a><a href="minha-atividade.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Minha Atividade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="meu-perfil.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Meu perfil</span></a></div></details><details class="grp on" data-niveis="chefe controladoria coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Gestão</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="demandas.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central de Demandas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="curva-abc.html" class="grp-link" data-niveis="chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Ranking</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="consumo.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Consumo</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="vendas/index.html" class="grp-link" data-niveis="controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg><span>Vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="rentabilidade.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Rentabilidade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="contratos.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contratos On Trade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="patrimonio.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Controle de Patrimônio</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="doses-painel.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg><span>Controle de Doses</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="garcons.html" class="grp-link on" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Desempenho por garçom</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="evolucao.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Evolução do treino</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="atividade.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Atividade por pessoa</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></details></nav>
+
+<style>
+  .pr-mini-wrap { display: none; }
+  .prm-toggle-wrap { position: relative; margin-bottom: 10px; padding-top: 1px; }
+  .prm-toggle-wrap::before { content: ""; display: block; border-top: 2px solid var(--border); }
+  .prm-tabs-row { display: flex; justify-content: center; gap: 6px; }
+  .prm-toggle-btn { position: relative; display: flex;
+                     flex-direction: column; align-items: center; gap: 4px; padding: 7px 12px 8px;
+                     border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 14px 14px;
+                     background: linear-gradient(180deg,#2a2419,var(--card)); color: var(--text);
+                     font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 5px 11px rgba(0,0,0,.38);
+                     text-decoration: none; }
+  .prm-tab-p { width: 28%; max-width: 105px; border-color: rgba(208,163,82,.4); }
+  .prm-tab-p.aberto { border-color: var(--acc); }
+  .prm-tab-c { width: 44%; max-width: 170px; background: linear-gradient(180deg,#2a2419,var(--card));
+                border-color: rgba(208,163,82,.5); color: var(--text); }
+  .prm-tab-c .prm-pega { background: #e0c088; }
+  .prm-tab-c .prm-rot { font-size: 12.5px; gap: 5px; }
+  .prm-tab-n { width: 28%; max-width: 105px; background: linear-gradient(180deg,#1e1a30,#171428);
+                border-color: rgba(155,141,204,.4); color: #c4b8e8; }
+  .prm-tab-n.aberto { border-color: #9b8dcc; }
+  .prm-tab-n .prm-pega { background: #9b8dcc; height: 3px; width: 22px; }
+  .prm-tab-n .prm-rot { font-size: 11px; gap: 4px; color: #c4b8e8; }
+  .prm-toggle-btn .prm-pega { width: 30px; height: 4px; border-radius: 99px; background: var(--acc); opacity: 1; }
+  .prm-toggle-btn .prm-rot { display: flex; align-items: center; gap: 5px; }
+  .prm-toggle-btn .prm-toggle-ic { display: flex; align-items: center; color: var(--acc); transition: transform .18s; }
+  .prm-toggle-btn .prm-toggle-ic svg { width: 12px; height: 12px; display: block; }
+  .prm-toggle-btn.aberto .prm-toggle-ic { transform: rotate(180deg); }
+
+  /* Linha fixa Avarias · Nova demanda · Dose — mesma ideia do painel cheio, ~67%. */
+  .prm-fixos { display: flex; gap: 6px; margin: 0 0 16px; }
+  .prm-fixos > * { flex: 1; min-width: 0; }
+  a.prm-fx, button.prm-fx { display: flex; flex-direction: column; align-items: center; gap: 4px;
+              border: 1.5px solid var(--border); border-radius: 10px; padding: 7px 5px 6px;
+              background: var(--card); color: var(--text); text-decoration: none; font: inherit;
+              font-size: 10px; cursor: pointer; text-align: center; transition: filter .15s; }
+  a.prm-fx:hover, button.prm-fx:hover { filter: brightness(1.12); }
+  .prm-fx-ic { display: flex; color: var(--acc); }
+  .prm-fx.prm-fx-avarias { border-color: #cf7089; }
+  .prm-fx.prm-fx-avarias .prm-fx-ic { color: #e192a6; }
+  .prm-fx.prm-fx-avarias.aberto { border-color: #e192a6; }
+  .prm-fx.prm-fx-nova { background: linear-gradient(135deg,#33201d,#221512); border-color: #e07a52; font-weight: 600; }
+  .prm-fx.prm-fx-nova .prm-fx-ic { color: #f0a58f; }
+  .prm-fx.prm-fx-dose { border-color: #6fa8dc; }
+  .prm-fx.prm-fx-dose .prm-fx-ic { color: #8ec0ea; }
+
+  .pr-mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 0 0 16px; }
+  .pr-mini[hidden] { display: none; }
+  a.prm-card, button.prm-card { position: relative; display: flex; align-items: center; gap: 7px;
+               text-align: left; border-radius: 10px; padding: 6px 8px; text-decoration: none;
+               color: var(--text); min-height: 36px; min-width: 0; border: 1.5px solid; overflow: hidden;
+               transition: filter .15s; font: inherit; cursor: pointer; width: 100%; box-sizing: border-box; }
+  a.prm-card:hover, button.prm-card:hover { filter: brightness(1.12); }
+  .prm-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+  .prm-card.prm-receita { background: linear-gradient(135deg,#152a20,#0f1913); border-color: #8fd0a5; }
+  .prm-card.prm-receita::before { background: #a8dfba; }
+  .prm-card.prm-3d { background: linear-gradient(135deg,#1c1729,#12101c); border-color: #a58fd0; }
+  .prm-card.prm-3d::before { background: #bfa8e0; }
+  .prm-card.prm-ideia { background: linear-gradient(135deg,#332612,#1e160a); border-color: #e0c060; }
+  .prm-card.prm-ideia::before { background: #f0d68a; }
+  .prm-card .prm-chip { width: 24px; height: 24px; border-radius: 7px; display: flex;
+                          align-items: center; justify-content: center; flex: none; }
+  .prm-card .prm-chip svg { width: 13px; height: 13px; display: block; flex: none; }
+  .prm-card.prm-receita .prm-chip { background: rgba(143,208,165,.16); color: #a8dfba; }
+  .prm-card.prm-3d .prm-chip { background: rgba(165,143,208,.16); color: #bfa8e0; }
+  .prm-card.prm-ideia .prm-chip { background: rgba(224,192,96,.16); color: #f0d68a; }
+  .prm-card .prm-tt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .prm-card .prm-t { font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prm-card .prm-d { font-size: 9.5px; color: var(--text-3); font-weight: 400; white-space: nowrap;
+                      overflow: hidden; text-overflow: ellipsis; }
+  .prm-avarias-sub { border: 1px dashed #a85068; border-radius: 10px; padding: 7px; margin: -10px 0 16px;
+                      background: rgba(207,112,137,.07); }
+  .prm-avarias-sub[hidden] { display: none; }
+  .prm-avarias-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
+  .prm-av-chip { display: flex; align-items: center; gap: 5px; border: 1px solid #6b3d48; border-radius: 8px;
+                 padding: 5px 7px; background: var(--card); font-size: 10.5px; color: var(--text);
+                 text-decoration: none; }
+  .prm-av-chip:hover { border-color: #cf7089; }
+  .prm-av-ic { flex: none; display: flex; color: #e192a6; }
+</style>
+<div class="pr-mini-wrap" id="pr-mini-wrap">
+  <div class="prm-toggle-wrap">
+    <div class="prm-tabs-row">
+      <button type="button" class="prm-toggle-btn prm-tab-p" id="prm-toggle-btn" aria-expanded="false" aria-controls="pr-mini-conteudo">
+        <span class="prm-pega"></span>
+        <span class="prm-rot">Criar <span class="prm-toggle-ic"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
+      </button>
+      <a href="demandas.html" class="prm-toggle-btn prm-tab-c">
+        <span class="prm-pega"></span>
+        <span class="prm-rot">Central de Demandas</span>
+      </a>
+      <a href="index.html?np=1" class="prm-toggle-btn prm-tab-n" id="prm-np-link">
+        <span class="prm-pega"></span>
+        <span class="prm-rot"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg> Notas</span>
+      </a>
+    </div>
+  </div>
+  <div class="prm-fixos">
+    <button type="button" class="prm-fx prm-fx-avarias" id="prm-avarias-btn" aria-expanded="false" aria-controls="prm-avarias-sub">
+      <span class="prm-fx-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span>
+      <span>Avarias</span>
+    </button>
+    <a class="prm-fx prm-fx-nova" href="registro.html">
+      <span class="prm-fx-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+      <span>Nova demanda</span>
+    </a>
+    <a class="prm-fx prm-fx-dose" id="prm-dose-card" href="dose.html" style="display:none">
+      <span class="prm-fx-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span>
+      <span>Dose</span>
+    </a>
+  </div>
+  <div class="prm-avarias-sub" id="prm-avarias-sub" hidden>
+    <div class="prm-avarias-grid"><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Copos%20e%20ta%C3%A7as%3A%20"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Copos e taças</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Mob%C3%ADlia%3A%20"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Mobília</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Equipamentos%3A%20"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Equipamentos</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Estrutural%20%28pintura%2C%20tomadas%E2%80%A6%29%3A%20"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Estrutural (pintura, tomadas…)</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Utens%C3%ADlios%3A%20"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Utensílios</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Vestu%C3%A1rio%3A%20"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Vestuário</span></a><a class="prm-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20"><span class="prm-av-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Outra avaria — escrever</span></a></div>
+  </div>
+  <div class="pr-mini" id="pr-mini-conteudo" hidden>
+    <a class="prm-card prm-receita" id="prm-receita-card" href="cocktails.html#nova" style="display:none">
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span>
+      <span class="prm-tt"><span class="prm-t">Nova receita</span><span class="prm-d">ficha técnica</span></span></a>
+    <a class="prm-card prm-3d" id="prm-3d-card" href="planejador-3d.html" style="display:none">
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg></span>
+      <span class="prm-tt"><span class="prm-t">Projeto 3D</span><span class="prm-d">planejador da bancada</span></span></a>
+    <a class="prm-card prm-ideia" id="prm-ideia-card" href="ideia.html">
+      <span class="prm-chip"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg></span>
+      <span class="prm-tt"><span class="prm-t">Ideia</span><span class="prm-d">desenho e colagem</span></span></a>
+  </div>
+</div>
+<script>(function(){
+  try {
+    var s = window.sessaoLer && window.sessaoLer();
+    if (s) document.getElementById('pr-mini-wrap').style.display = 'block';
+    var okDose = s && ['bartender', 'chefe', 'coord'].indexOf(s.nivel) !== -1 && !false;
+    var elD = document.getElementById('prm-dose-card');
+    if (okDose && elD) elD.style.display = '';
+    var okReceita = s && ['chefe', 'coord'].indexOf(s.nivel) !== -1;
+    var elReceita = document.getElementById('prm-receita-card');
+    if (okReceita && elReceita) elReceita.style.display = '';
+    var okCoord = s && s.nivel === 'coord';
+    var el3d = document.getElementById('prm-3d-card');
+    if (okCoord && el3d) el3d.style.display = '';
+  } catch (e) {}
+  // Criar abre/fecha a gaveta (Notas é link direto, não tem drawer aqui;
+  // Central de Demandas idem, e some inteiramente na própria página).
+  var btn = document.getElementById('prm-toggle-btn');
+  var conteudo = document.getElementById('pr-mini-conteudo');
+  function fechaAba() {
+    conteudo.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+    btn.classList.remove('aberto');
+  }
+  function abreAba() {
+    conteudo.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    btn.classList.add('aberto');
+  }
+  btn.onclick = function () {
+    if (conteudo.hidden) abreAba(); else fechaAba();
+  };
+  var avBtn = document.getElementById('prm-avarias-btn');
+  var avSub = document.getElementById('prm-avarias-sub');
+  avBtn.onclick = function () {
+    var abrir = avSub.hidden;
+    avSub.hidden = !abrir;
+    avBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    avBtn.classList.toggle('aberto', abrir);
+  };
+})();</script>
+
+
+<h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg> Desempenho por garçom</h1>
+<p class="sub">Doses acompanhadas, taxa de excesso e valor perdido por garçom — tudo derivado
+do Controle de Doses, sem cadastro novo. Chefe de bar vê a própria casa; coordenação vê todas.</p>
+
+<style>
+  body { --dose: #6fa8dc; --dose-2: #8ec0ea; --verm: #e0958f; --verde: #9fe1cb; }
+  .gc-vazio, .gc-erro { padding: 22px 10px; text-align: center; color: var(--text-2); font-size: 13.5px; }
+  .gc-card { border: 1px solid var(--border); border-radius: 14px; padding: 15px 16px;
+             margin-bottom: 12px; background: var(--card); }
+  .gc-topo { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
+  .gc-avatar { width: 38px; height: 38px; border-radius: 50%; flex: none;
+               background: rgba(111,168,220,.16); border: 1px solid var(--dose);
+               display: flex; align-items: center; justify-content: center;
+               font-size: 13px; font-weight: 700; color: var(--dose-2); }
+  .gc-nome { font-family: var(--serif); font-size: 15.5px; }
+  .gc-sub { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+  .gc-met { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 13px; }
+  .gc-m { text-align: center; }
+  .gc-m .v { font-family: var(--serif); font-size: 17px; }
+  .gc-m .v.warn { color: var(--verm); }
+  .gc-m .l { font-size: 9.5px; color: var(--text-3); margin-top: 2px; }
+  .gc-ev-lbl { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .05em;
+               text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+  .gc-ev-lbl .melhorando { color: var(--verde); }
+  .gc-ev-lbl .piorando { color: var(--verm); }
+  .gc-bars { display: flex; align-items: flex-end; gap: 6px; height: 48px; }
+  .gc-bar { flex: 1; background: #4a3f2a; border-radius: 3px 3px 0 0; min-height: 3px; }
+  .gc-bar.hi { background: var(--verm); }
+  .gc-bar.lo { background: var(--verde); }
+  .gc-bar.sem { background: #2a2620; }
+  .gc-bars-x { display: flex; gap: 6px; margin-top: 4px; }
+  .gc-bars-x span { flex: 1; text-align: center; font-size: 9px; color: var(--text-3); }
+  .gc-ordenar { display: flex; gap: 7px; margin-bottom: 16px; }
+  .gc-ordenar button { padding: 6px 13px; border-radius: 20px; border: 1px solid var(--border);
+                        background: var(--card); color: var(--text-2); font-size: 12.5px; cursor: pointer;
+                        font: inherit; }
+  .gc-ordenar button.on { border-color: var(--dose); color: var(--dose-2); background: rgba(111,168,220,.12); }
+</style>
+
+<div id="gc-gate" class="rr-gate" style="display:none"></div>
+<div id="gc-app" style="display:none">
+  <div class="gc-ordenar" id="gc-ordenar">
+    <button type="button" class="on" data-ord="excesso">Taxa de excesso</button>
+    <button type="button" data-ord="perdido">Valor perdido</button>
+    <button type="button" data-ord="doses">Nº de doses</button>
+  </div>
+  <div id="gc-lista"><p class="gc-vazio">Carregando…</p></div>
+</div>
+
+<script>
+(function () {
+  var SLUG = 'garcons.html';
+  var NIVEIS_OK = ['chefe', 'coord'];
+  var elGate = document.getElementById('gc-gate');
+  var elApp = document.getElementById('gc-app');
+
+  var r = window.exigirNivel(NIVEIS_OK, SLUG);
+  if (!r.ok) {
+    if (!r.redirecionou) {
+      elGate.style.display = '';
+      elGate.innerHTML = window.msgAcessoNegado('o Desempenho por garçom');
+    }
+    return;
+  }
+  var TOKEN = r.sessao.token;
+  elApp.style.display = '';
+
+  var WORKER = "https://controle-doses.rodrigopcviana.workers.dev";
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function sessao401() { window.sessaoLimpar(); window.irParaLogin(SLUG); }
+  function fmtReais(n) { return 'R$ ' + n.toFixed(2).replace('.', ','); }
+
+  // Sem acento/maiúscula pra agrupar; "Anderson"/"anderson "/"ANDERSON" caem
+  // na mesma chave — a comanda é OCR de texto livre, a grafia varia.
+  function normaliza(s) {
+    return String(s || '').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  var GARCONS = [];
+  var ordemAtual = 'excesso';
+
+  function carrega() {
+    document.getElementById('gc-lista').innerHTML = '<p class="gc-vazio">Carregando…</p>';
+    fetch(WORKER + '/api/doses', { headers: { 'X-Token': TOKEN } })
+      .then(function (resp) {
+        if (resp.status === 401) { sessao401(); return null; }
+        if (!resp.ok) { document.getElementById('gc-lista').innerHTML = '<p class="gc-erro">Erro ao carregar (' + resp.status + ').</p>'; return null; }
+        return resp.json();
+      })
+      .then(function (d) {
+        if (!d) return;
+        GARCONS = agrega(d.doses || []);
+        render();
+      })
+      .catch(function () { document.getElementById('gc-lista').innerHTML = '<p class="gc-erro">Sem conexão — tente recarregar.</p>'; });
+  }
+  if (WORKER) carrega();
+  else document.getElementById('gc-lista').innerHTML = '<p class="gc-erro">Worker ainda não configurado.</p>';
+
+  // Últimas 5 semanas, semana 0 = a atual, contando pra trás a partir de
+  // agora — não é o número ISO da semana, só um bucket relativo (evita
+  // complicação de calendário; o que importa é comparar recente x antigo).
+  function semanasAtras(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return Math.floor((Date.now() - d.getTime()) / (7 * 86400000));
+  }
+
+  function agrega(doses) {
+    var fechadas = doses.filter(function (x) { return x.status === 'Fechado' && x.servido_ml != null && x.garcom; });
+    var grupos = {};
+    fechadas.forEach(function (x) {
+      var chave = normaliza(x.garcom) + '|' + (x.casa || '');
+      if (!grupos[chave]) grupos[chave] = { doses: [], grafias: {} };
+      grupos[chave].doses.push(x);
+      var raw = (x.garcom || '').trim();
+      grupos[chave].grafias[raw] = (grupos[chave].grafias[raw] || 0) + 1;
+    });
+    return Object.keys(grupos).map(function (chave) {
+      var g = grupos[chave];
+      var lista = g.doses;
+      var total = lista.length;
+      var acima = lista.filter(function (x) { return x.veredito !== 'Dentro do padrão'; }).length;
+      var taxa = total ? (acima / total * 100) : 0;
+      var somaMl = lista.reduce(function (s, x) { return s + (x.servido_ml || 0); }, 0);
+      var mediaMl = total ? (somaMl / total) : 0;
+      var comValor = lista.filter(function (x) { return x.valor_perdido != null; });
+      var somaPerdido = comValor.reduce(function (s, x) { return s + x.valor_perdido; }, 0);
+
+      // Grafia mais frequente do grupo (maioria simples).
+      var nomeExibido = Object.keys(g.grafias).sort(function (a, b) { return g.grafias[b] - g.grafias[a]; })[0];
+
+      // Buckets de semana (0=atual .. 4=há 4 semanas), só últimas 5 semanas.
+      var buckets = [0, 1, 2, 3, 4].map(function () { return { total: 0, acima: 0 }; });
+      lista.forEach(function (x) {
+        var sem = semanasAtras(x.horario_saida);
+        if (sem == null || sem < 0 || sem > 4) return;
+        buckets[sem].total++;
+        if (x.veredito !== 'Dentro do padrão') buckets[sem].acima++;
+      });
+      // Exibição cronológica: mais antiga (S1) à esquerda, atual (S5) à direita.
+      var semanal = buckets.slice().reverse().map(function (b) {
+        return b.total ? Math.round((b.acima / b.total) * 100) : null;
+      });
+      // Tendência: primeiras 2 semanas com dado vs últimas 2 — só opina se
+      // houver dado dos dois lados.
+      var comDado = semanal.map(function (v, i) { return { v: v, i: i }; }).filter(function (x) { return x.v != null; });
+      var tendencia = null;
+      if (comDado.length >= 2) {
+        var meio = comDado.length / 2;
+        var antigas = comDado.filter(function (x) { return x.i < meio; });
+        var recentes = comDado.filter(function (x) { return x.i >= meio; });
+        if (antigas.length && recentes.length) {
+          var mediaAntiga = antigas.reduce(function (s, x) { return s + x.v; }, 0) / antigas.length;
+          var mediaRecente = recentes.reduce(function (s, x) { return s + x.v; }, 0) / recentes.length;
+          if (mediaRecente < mediaAntiga - 1) tendencia = 'melhorando';
+          else if (mediaRecente > mediaAntiga + 1) tendencia = 'piorando';
+        }
+      }
+
+      return {
+        nome: nomeExibido, casa: lista[0].casa || '', total: total, taxa: taxa,
+        mediaMl: mediaMl, somaPerdido: comValor.length ? somaPerdido : null,
+        semanal: semanal, tendencia: tendencia,
+      };
+    });
+  }
+
+  function iniciais(nome) {
+    var partes = String(nome).trim().split(/\s+/).filter(Boolean);
+    if (!partes.length) return '?';
+    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+  }
+
+  function cardHtml(g) {
+    var barras = g.semanal.map(function (v) {
+      if (v == null) return '<div class="gc-bar sem" style="height:8%"></div>';
+      var classe = v > 15 ? 'hi' : 'lo';
+      return '<div class="gc-bar ' + classe + '" style="height:' + Math.max(8, v) + '%"></div>';
+    }).join('');
+    var rotulos = ['S1', 'S2', 'S3', 'S4', 'S5'].map(function (s) { return '<span>' + s + '</span>'; }).join('');
+    var tendTxt = g.tendencia === 'melhorando' ? 'melhorando' : (g.tendencia === 'piorando' ? 'piorando' : '');
+    var tendHtml = tendTxt ? '<span class="' + tendTxt + '">' + tendTxt + '</span>' : '<span></span>';
+    return '<div class="gc-card">' +
+      '<div class="gc-topo"><div class="gc-avatar">' + esc(iniciais(g.nome)) + '</div>' +
+      '<div><div class="gc-nome">' + esc(g.nome) + '</div>' +
+      '<div class="gc-sub">' + esc(g.casa) + ' · ' + g.total + (g.total === 1 ? ' dose acompanhada' : ' doses acompanhadas') + '</div></div></div>' +
+      '<div class="gc-met">' +
+      '<div class="gc-m"><div class="v' + (g.taxa > 15 ? ' warn' : '') + '">' + g.taxa.toFixed(0) + '%</div><div class="l">taxa excesso</div></div>' +
+      '<div class="gc-m"><div class="v">' + g.mediaMl.toFixed(0) + ' ml</div><div class="l">média servida</div></div>' +
+      '<div class="gc-m"><div class="v' + (g.somaPerdido ? ' warn' : '') + '">' + (g.somaPerdido != null ? esc(fmtReais(g.somaPerdido)) : '—') + '</div><div class="l">perdido</div></div>' +
+      '</div>' +
+      '<div class="gc-ev-lbl"><span>Taxa de excesso por semana</span>' + tendHtml + '</div>' +
+      '<div class="gc-bars">' + barras + '</div>' +
+      '<div class="gc-bars-x">' + rotulos + '</div>' +
+      '</div>';
+  }
+
+  function render() {
+    var lista = GARCONS.slice();
+    if (!lista.length) {
+      document.getElementById('gc-lista').innerHTML = '<p class="gc-vazio">Nenhuma dose fechada com garçom identificado ainda.</p>';
+      return;
+    }
+    if (ordemAtual === 'perdido') {
+      lista.sort(function (a, b) { return (b.somaPerdido || 0) - (a.somaPerdido || 0); });
+    } else if (ordemAtual === 'doses') {
+      lista.sort(function (a, b) { return b.total - a.total; });
+    } else {
+      lista.sort(function (a, b) { return b.taxa - a.taxa; });
+    }
+    document.getElementById('gc-lista').innerHTML = lista.map(cardHtml).join('');
+  }
+
+  document.querySelectorAll('#gc-ordenar button').forEach(function (b) {
+    b.onclick = function () {
+      ordemAtual = b.dataset.ord;
+      document.querySelectorAll('#gc-ordenar button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      render();
+    };
+  });
+})();
+</script>
+
+<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 17/07/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+
+<script>
+(function () {
+  var LABEL = {"equipe": "Equipe de Bar", "chefe": "Chefe de Bar", "coord": "Coordenação", "rh": "RH", "controladoria": "Controladoria & Administração", "suprimentos": "Suprimentos"};
+  function nivelAtual() {
+    try { return localStorage.getItem('portal_nivel') || 'equipe'; } catch (e) { return 'equipe'; }
+  }
+  function aplica() {
+    var atual = nivelAtual();
+    // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz (equipe)
+    // no menu — o que muda pra ele é só o comportamento do Plano de treino.
+    if (atual === 'bartender') atual = 'equipe';
+    // data-niveis = lista de nomes de nível (separados por espaço) que podem
+    // ver aquele elemento — já vem pronta do Python (_niveis_permitidos),
+    // cobrindo tanto a escada (equipe/chefe/coord) quanto os acessos
+    // paralelos (rh/controladoria). Aqui é só checar se o nível atual está
+    // na lista — nada de comparação numérica.
+    document.querySelectorAll('[data-niveis]').forEach(function (el) {
+      var lista = el.dataset.niveis ? el.dataset.niveis.split(' ') : [];
+      el.style.display = lista.indexOf(atual) >= 0 ? '' : 'none';
+    });
+    var rotulo = LABEL[atual] || LABEL.equipe;
+    // Nome de quem logou (senha individual — Escola de Bar F7 / Missão 5).
+    // Sai de sessaoLer(), NUNCA de portal_nivel: são duas chaves diferentes
+    // do localStorage e podem discordar. sessaoLer() já devolve null em
+    // sessão expirada, então a pill larga o nome sozinha quando a sessão
+    // morre — que é o certo. Senha de tier compartilhada não tem pessoa e
+    // cai no ramo de sempre.
+    var s = window.sessaoLer && window.sessaoLer();
+    var pessoa = (s && s.pessoa) ? s.pessoa : null;
+    var txt = document.getElementById('nivel-pill-txt');
+    if (txt) txt.textContent = pessoa || rotulo;
+    var niv = document.getElementById('np-niv');
+    if (niv) niv.textContent = rotulo;   // CSS decide se aparece
+    // cor da pill acompanha o nível logado (CSS [data-nivel] em CSS_NIVEL)
+    var pill = document.getElementById('nivel-pill');
+    if (pill) {
+      pill.setAttribute('data-nivel', atual);
+      // remover, não só setar: aplica() roda de novo no login (definirNivel)
+      // e um data-tem-pessoa velho ficaria grudado numa sessão sem nome.
+      if (pessoa) pill.setAttribute('data-tem-pessoa', '1');
+      else pill.removeAttribute('data-tem-pessoa');
+    }
+  }
+  window.definirNivel = function (v) {
+    try { localStorage.setItem('portal_nivel', v); } catch (e) {}
+    aplica();
+    if (typeof window.onNivelDefinido === 'function') window.onNivelDefinido(v);
+  };
+  window.nivelAtual = nivelAtual;
+  aplica();
+})();
+</script>
+
+
+<script>
+(function () {
+  var grps = document.querySelectorAll('#nav-principal .grp');
+  grps.forEach(function (g) {
+    g.addEventListener('toggle', function () {
+      if (g.open) grps.forEach(function (o) { if (o !== g) o.open = false; });
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#nav-principal')) grps.forEach(function (g) { g.open = false; });
+  });
+})();
+</script>
+
+
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  if (!WORKER) return;
+  var CHAVE = 'geo_ok_ts', VALIDADE = 30 * 60 * 1000;
+  try {
+    var t = parseInt(sessionStorage.getItem(CHAVE) || '0', 10);
+    if (t && Date.now() - t < VALIDADE) return;
+  } catch (e) {}
+
+  function overlay(titulo, msg, mostrarBtn) {
+    var d = document.getElementById('geo-blk') || document.createElement('div');
+    d.id = 'geo-blk';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#16130f;color:#f3ede2;'
+      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+      + 'text-align:center;padding:32px;font-family:-apple-system,Segoe UI,Roboto,sans-serif';
+    d.innerHTML = '<div style="font-family:Georgia,serif;font-size:22px;margin-bottom:12px">'
+      + titulo + '</div><div style="max-width:420px;color:#c3baa9;line-height:1.5">' + msg + '</div>'
+      + (mostrarBtn ? '<button id="geo-retry" style="margin-top:22px;padding:12px 22px;border:none;'
+      + 'border-radius:999px;background:#d0a352;color:#241a06;font-weight:600;font-size:15px;'
+      + 'cursor:pointer">Tentar de novo</button>' : '');
+    if (!d.parentNode) document.body.appendChild(d);
+    var b = document.getElementById('geo-retry');
+    if (b) b.onclick = function () { verifica(); };
+  }
+  function libera() {
+    try { sessionStorage.setItem(CHAVE, String(Date.now())); } catch (e) {}
+    var d = document.getElementById('geo-blk');
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+
+  function checa(lat, lon) {
+    fetch(WORKER + '/api/geo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: lat, lon: lon }),
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.ok) libera();
+      else overlay('Fora de área',
+        'O Portal dos Bares só funciona dentro das casas do Grupo IZ. '
+        + 'Você precisa estar em uma delas para acessar.', true);
+    }).catch(function () { libera(); }); // rede falhou: não tranca
+  }
+
+  function verifica() {
+    overlay('Confirmando localização…', 'Só um instante.', false);
+    if (!navigator.geolocation) { libera(); return; }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { checa(pos.coords.latitude, pos.coords.longitude); },
+      function () {
+        overlay('Ative a localização',
+          'Para usar o portal no bar, permita o acesso à localização no seu '
+          + 'navegador e toque em “Tentar de novo”.', true);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }
+
+  // 1º toque no Worker SEM coordenadas: só pra saber se a cerca está ligada.
+  // Se desligada, para aqui — nenhum pedido de GPS aparece.
+  fetch(WORKER + '/api/geo', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.desativado) return;
+    verifica();
+  }).catch(function () {}); // rede falhou: não tranca
+})();
+</script>
+
+
+<script>
+(function () {
+  var COR = { iz: '#d0a352', '1929': '#c9705a', gra: '#8fd0a5', famu: '#a58fd0', fulles: '#6fa8dc', nip: '#d98fb0' };
+  var btn = document.getElementById('lupa-busca');
+  var ov = document.getElementById('busca-global-ov');
+  var input = document.getElementById('bg-input');
+  var res = document.getElementById('bg-res');
+  var fechar = document.getElementById('bg-fechar');
+  if (!btn || !ov) return;
+  var idx = null, carregando = false;
+
+  function semAcento(s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+
+  function carrega() {
+    if (idx || carregando) return;
+    carregando = true;
+    fetch('receitas_idx.json').then(function (r) { return r.json(); })
+      .then(function (d) { idx = d; if (input.value.trim().length >= 2) aplica(); })
+      .catch(function () { idx = []; res.innerHTML = '<p class="bg-vazio">Índice indisponível — ' +
+        '<a href="cocktails.html">abrir fichas técnicas</a>.</p>'; });
+  }
+
+  function marca(nome, q) {
+    var i = semAcento(nome).indexOf(q);
+    if (i < 0) return nome;
+    return nome.slice(0, i) + '<mark>' + nome.slice(i, i + q.length) + '</mark>' + nome.slice(i + q.length);
+  }
+
+  function aplica() {
+    var q = semAcento(input.value.trim());
+    if (q.length < 2) { res.innerHTML = '<p class="bg-dica">Digite ao menos 2 letras.</p>'; return; }
+    if (!idx) { res.innerHTML = '<p class="bg-dica">Carregando…</p>'; return; }
+    var achados = idx.filter(function (it) { return semAcento(it.n).indexOf(q) >= 0; }).slice(0, 8);
+    if (!achados.length) {
+      res.innerHTML = '<p class="bg-vazio">Nada com "' + input.value.trim() +
+        '" — <a href="cocktails.html">ver todas as fichas &rarr;</a></p>';
+      return;
+    }
+    res.innerHTML = '';
+    achados.forEach(function (it) {
+      var a = document.createElement('a');
+      a.className = 'bg-item'; a.href = 'cocktails.html#r-' + it.s;
+      var casas = (it.c || []).map(function (c) {
+        return '<i style="background:' + (COR[c] || '#8f8672') + '"></i>';
+      }).join('');
+      a.innerHTML = '<span class="nome">' + marca(it.n, q) + '</span><span class="bg-casas">' + casas + '</span>';
+      res.appendChild(a);
+    });
+  }
+
+  function abre() {
+    ov.classList.add('aberto');
+    document.body.style.overflow = 'hidden';
+    carrega();
+    setTimeout(function () { input.focus(); }, 30);
+  }
+  function fecha() {
+    ov.classList.remove('aberto');
+    document.body.style.overflow = '';
+  }
+  btn.addEventListener('click', abre);
+  fechar.addEventListener('click', fecha);
+  ov.addEventListener('click', function (e) { if (e.target === ov) fecha(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && ov.style.display !== 'flex' && !ov.classList.contains('aberto') &&
+        document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault(); abre();
+    } else if (e.key === 'Escape' && ov.classList.contains('aberto')) {
+      fecha();
+    }
+  });
+  input.addEventListener('input', aplica);
+})();
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+
+</body>
+</html>
