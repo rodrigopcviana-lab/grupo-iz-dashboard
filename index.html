@@ -31,6 +31,7 @@
 </div>
 </div>
 
+<button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="ic-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4"/><path d="M12 8v5l3 2"/><circle cx="12" cy="14" r="8"/></svg><svg class="ic-mini-ring" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" opacity=".25"/><path d="M12 3a9 9 0 0 1 9 9"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
 
@@ -272,54 +273,76 @@ window.msgAcessoNegado = function (nomePagina) {
   .pr-av-chip:hover { border-color: #cf7089; }
   .pr-av-ic { flex: none; display: flex; color: #e192a6; }
   @media (max-width: 420px) { .painel-rapido { gap: 6px; } .pr-fixos { gap: 6px; } }
+
+  /* Painel Rápido — recolhido por padrão (pedido do Rodrigo, 2026-07-18):
+     uma seta só, alterna o painel inteiro (etiquetas + linha fixa). */
+  .pr-master-wrap { margin-bottom: 10px; }
+  .pr-master-btn { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+                    border: 1.5px solid var(--border); border-radius: 13px; padding: 9px 14px;
+                    background: var(--card); color: var(--text); font: inherit; font-size: 13px;
+                    font-weight: 600; cursor: pointer; }
+  .pr-master-btn:hover { filter: brightness(1.12); }
+  .pr-master-ic { display: flex; align-items: center; color: var(--acc); transition: transform .18s; }
+  .pr-master-ic svg { width: 15px; height: 15px; display: block; }
+  .pr-master-btn.aberto .pr-master-ic { transform: rotate(180deg); }
+  #pr-master-body[hidden] { display: none; }
+  #pr-master-body { margin-top: 10px; }
 </style>
-<div class="pr-toggle-wrap">
-  <div class="pr-tabs-row">
-    <button type="button" class="pr-toggle-btn pr-tab-p" id="pr-toggle-btn" aria-expanded="false" aria-controls="pr-conteudo">
-      <span class="pr-pega"></span>
-      <span class="pr-rot">Criar <span class="pr-toggle-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
-    </button>
-    <a href="demandas.html" class="pr-toggle-btn pr-tab-c">
-      <span class="pr-pega"></span>
-      <span class="pr-rot">Central de Demandas</span>
-    </a>
-    <button type="button" class="pr-toggle-btn pr-tab-n" id="np-toggle-btn" aria-expanded="false" aria-controls="np-painel">
-      <span class="np-pega"></span>
-      <span class="pr-rot">Notas <span class="np-toggle-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg></span></span>
-    </button>
-  </div>
-</div>
-<div class="pr-fixos">
-  <button type="button" class="pr-fx pr-fx-avarias" id="pr-avarias-btn" aria-expanded="false" aria-controls="pr-avarias-sub">
-    <span class="pr-fx-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span>
-    <span>Avarias</span>
+<div class="pr-master-wrap">
+  <button type="button" class="pr-master-btn" id="pr-master-btn" aria-expanded="false" aria-controls="pr-master-body">
+    <span>Painel Rápido</span>
+    <span class="pr-master-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
   </button>
-  <a class="pr-fx pr-fx-nova" href="registro.html">
-    <span class="pr-fx-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
-    <span>Nova demanda</span>
-  </a>
-  <a class="pr-fx pr-fx-dose" id="pr-dose-card" href="dose.html" style="display:none">
-    <span class="pr-fx-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span>
-    <span>Dose</span>
-  </a>
-</div>
-<div class="pr-avarias-sub" id="pr-avarias-sub" hidden>
-  <p class="pr-avarias-cab">O que avariou?</p>
-  <div class="pr-avarias-grid"><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Copos%20e%20ta%C3%A7as%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Copos e taças</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Mob%C3%ADlia%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Mobília</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Equipamentos%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Equipamentos</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Estrutural%20%28pintura%2C%20tomadas%E2%80%A6%29%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Estrutural (pintura, tomadas…)</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Utens%C3%ADlios%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Utensílios</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Vestu%C3%A1rio%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Vestuário</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Outra avaria — escrever</span></a></div>
-</div>
-<div class="painel-rapido" id="pr-conteudo" hidden>
-  <a class="pr-card pr-receita" id="pr-receita-card" href="cocktails.html#nova" style="display:none">
-    <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span>
-    <span class="pr-tt"><span class="t">Nova receita</span><span class="d">ficha técnica direto no banco</span></span>
-  </a>
-  <a class="pr-card pr-3d" id="pr-3d-card" href="planejador-3d.html" style="display:none">
-    <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg></span>
-    <span class="pr-tt"><span class="t">Projeto 3D</span><span class="d">planejador da bancada</span></span>
-  </a>
-  <a class="pr-card pr-ideia" id="pr-ideia-card" href="ideia.html">
-    <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg></span>
-    <span class="pr-tt"><span class="t">Ideia</span><span class="d">desenho e colagem livre</span></span>
-  </a>
+  <div id="pr-master-body" hidden>
+    <div class="pr-toggle-wrap">
+      <div class="pr-tabs-row">
+        <button type="button" class="pr-toggle-btn pr-tab-p" id="pr-toggle-btn" aria-expanded="false" aria-controls="pr-conteudo">
+          <span class="pr-pega"></span>
+          <span class="pr-rot">Criar <span class="pr-toggle-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
+        </button>
+        <a href="demandas.html" class="pr-toggle-btn pr-tab-c">
+          <span class="pr-pega"></span>
+          <span class="pr-rot">Central de Demandas</span>
+        </a>
+        <button type="button" class="pr-toggle-btn pr-tab-n" id="np-toggle-btn" aria-expanded="false" aria-controls="np-painel">
+          <span class="np-pega"></span>
+          <span class="pr-rot">Notas <span class="np-toggle-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg></span></span>
+        </button>
+      </div>
+    </div>
+    <div class="pr-fixos">
+      <button type="button" class="pr-fx pr-fx-avarias" id="pr-avarias-btn" aria-expanded="false" aria-controls="pr-avarias-sub">
+        <span class="pr-fx-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span>
+        <span>Avarias</span>
+      </button>
+      <a class="pr-fx pr-fx-nova" href="registro.html">
+        <span class="pr-fx-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+        <span>Nova demanda</span>
+      </a>
+      <a class="pr-fx pr-fx-dose" id="pr-dose-card" href="dose.html" style="display:none">
+        <span class="pr-fx-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span>
+        <span>Dose</span>
+      </a>
+    </div>
+    <div class="pr-avarias-sub" id="pr-avarias-sub" hidden>
+      <p class="pr-avarias-cab">O que avariou?</p>
+      <div class="pr-avarias-grid"><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Copos%20e%20ta%C3%A7as%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Copos e taças</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Mob%C3%ADlia%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Mobília</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Equipamentos%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Equipamentos</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Estrutural%20%28pintura%2C%20tomadas%E2%80%A6%29%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Estrutural (pintura, tomadas…)</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Utens%C3%ADlios%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Utensílios</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Vestu%C3%A1rio%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Vestuário</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Outra avaria — escrever</span></a></div>
+    </div>
+    <div class="painel-rapido" id="pr-conteudo" hidden>
+      <a class="pr-card pr-receita" id="pr-receita-card" href="cocktails.html#nova" style="display:none">
+        <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span>
+        <span class="pr-tt"><span class="t">Nova receita</span><span class="d">ficha técnica direto no banco</span></span>
+      </a>
+      <a class="pr-card pr-3d" id="pr-3d-card" href="planejador-3d.html" style="display:none">
+        <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg></span>
+        <span class="pr-tt"><span class="t">Projeto 3D</span><span class="d">planejador da bancada</span></span>
+      </a>
+      <a class="pr-card pr-ideia" id="pr-ideia-card" href="ideia.html">
+        <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg></span>
+        <span class="pr-tt"><span class="t">Ideia</span><span class="d">desenho e colagem livre</span></span>
+      </a>
+    </div>
+  </div>
 </div>
 
 <!-- Prévia das Notas (camada 1 do PLANO_NOTAS_RAPIDAS.md) — captura rápida +
@@ -383,6 +406,16 @@ window.msgAcessoNegado = function (nomePagina) {
     if (okCoord && el3d) el3d.style.display = '';
   } catch (e) {}
 
+  // --- Painel Rápido inteiro: recolhido por padrão, uma seta só ---
+  var masterBtn = document.getElementById('pr-master-btn');
+  var masterBody = document.getElementById('pr-master-body');
+  masterBtn.onclick = function () {
+    var abrir = masterBody.hidden;
+    masterBody.hidden = !abrir;
+    masterBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    masterBtn.classList.toggle('aberto', abrir);
+  };
+
   // --- Abrir/fechar abas (Criar, Notas — mutuamente exclusivas; Central de
   // Demandas virou link direto, não abre mais gaveta) ---
   var btn = document.getElementById('pr-toggle-btn');
@@ -425,6 +458,9 @@ window.msgAcessoNegado = function (nomePagina) {
   // Abre direto em ?np=1 (link do mini-painel em outras páginas)
   try {
     if (new URLSearchParams(location.search).get('np') === '1') {
+      masterBody.hidden = false;
+      masterBtn.setAttribute('aria-expanded', 'true');
+      masterBtn.classList.add('aberto');
       abreAba(abas[1]);
     }
   } catch (e) {}
@@ -593,6 +629,19 @@ window.msgAcessoNegado = function (nomePagina) {
 <div class="hg-prox" id="hg-prox" hidden><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Próximo: <b id="hg-prox-txt"></b></span><a class="go" href="eventos.html" aria-label="Ver o mural">›</a></div>
 </details>
 
+<!-- Cocktail do mês (PLANO_RANKING_COCKTAILS.md §5) — campeão do grupo no mês
+     fechado + meta do mês corrente. Casca: o dado vem do Worker
+     (/api/cocktails-ranking, payload de equipe, sem R$) sob sessão. Sem sessão
+     ou em falha, o card fica escondido (nunca quebra o mural). display:none
+     INLINE de propósito: o reveal via el.style.display='' só volta ao default
+     se o none for inline (lição de CSS do CLAUDE.md). -->
+<details class="hero-hoje" id="hero-cocktail-mes" style="display:none" open>
+<summary class="k">COCKTAIL DO MÊS<span class="seta" aria-hidden="true">▾</span></summary>
+<div class="row"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg>
+  <span><b id="cm-nome">—</b><span id="cm-sub" style="display:block;color:var(--text-2);font-size:12.5px;margin-top:2px"></span></span>
+  <a class="go" href="cocktails-ranking.html" aria-label="Ver o ranking de cocktails">›</a></div>
+</details>
+
 <style>
   .hero-hoje .coq-ico { color: var(--acc); flex: none; display: flex; }
   .coq-historico { margin-top: 10px; padding-top: 10px; border-top: 1px solid #4a3f2a; }
@@ -638,6 +687,29 @@ window.msgAcessoNegado = function (nomePagina) {
   var REG_WORKER = "https://registro-bares.rodrigopcviana.workers.dev";
   var PRES_WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
   function sessao() { try { return window.sessaoLer && window.sessaoLer(); } catch (e) { return null; } }
+  function fmtN(n) { return n == null ? '—' : Number(n).toLocaleString('pt-BR'); }
+
+  // Cocktail do mês (PLANO_RANKING_COCKTAILS.md §5) — mesmo Worker da presença
+  // (contagem-worker, rota /api/cocktails-ranking). Sem sessão ou em falha o
+  // card fica escondido, nunca quebra o mural.
+  function carregaCocktailMes() {
+    var card = document.getElementById('hero-cocktail-mes');
+    if (!card) return;
+    var s = sessao();
+    if (!s || !PRES_WORKER) return;
+    fetch(PRES_WORKER + '/api/cocktails-ranking', { headers: { 'X-Token': s.token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.grupo || !d.grupo.top || !d.grupo.top.length) return;
+        var camp = d.grupo.top[0];
+        document.getElementById('cm-nome').textContent = 'Cocktail do mês — ' + camp.nome;
+        document.getElementById('cm-sub').textContent =
+          fmtN(camp.qtde) + ' vendidos no grupo em ' + d.mes_ref + ' · meta de ' +
+          d.mes_meta + ': ' + fmtN(d.grupo.meta_mes) + ' drinks';
+        card.style.display = '';
+      })
+      .catch(function () {});
+  }
 
   function carregaDemandas() {
     var elN = document.getElementById('hg-dm-n'), elS = document.getElementById('hg-dm-s');
@@ -677,10 +749,11 @@ window.msgAcessoNegado = function (nomePagina) {
   carregaDemandas();
   if (window.marcaPresenca) window.marcaPresenca();
   carregaOnline();
+  carregaCocktailMes();
 })();
 </script>
 
-<div class="home-areas"><section class="area-sec" data-niveis="chefe coord equipe rh"><div class="area-h"><span class="dot" style="background:var(--verde)"></span>Operação</div><div class="area-grid"><a class="qa" href="eventos.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg></span><span class="qtt"><span class="t">Eventos</span><span class="d">105 cadastrados</span></span></a><a class="qa" href="contagem.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><span class="qtt"><span class="t">Contagem de insumos</span><span class="d">estoque por casa</span></span></a><a class="qa" href="contagem-copos.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg></span><span class="qtt"><span class="t">Contagem de copos</span><span class="d">copos e taças</span></span></a><a class="qa" href="compras.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span class="qtt"><span class="t">Pedido de Compras<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">sugestão de compra semanal</span></span></a><a class="qa" href="turno.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span><span class="qtt"><span class="t">Relatório de turno</span><span class="d">fechamento de turno</span></span></a><a class="qa" href="rotinas.html" data-niveis="equipe chefe coord rh"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span><span class="qtt"><span class="t">Rotinas</span><span class="d">2 casas com checklist</span></span></a><a class="qa" href="producao.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="qtt"><span class="t">Produção possível</span><span class="d">drinks possíveis agora</span></span></a></div></section><section class="area-sec" data-niveis="chefe coord equipe"><div class="area-h"><span class="dot" style="background:var(--acc)"></span>Bar</div><div class="area-grid"><a class="qa" href="cocktails.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="qtt"><span class="t">Fichas técnicas</span><span class="d">211 receitas</span></span></a><a class="qa" href="treinamentos.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="qtt"><span class="t">Treinamentos</span><span class="d">plano, módulos e biblioteca</span></span></a><a class="qa" href="calculadora.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg></span><span class="qtt"><span class="t">Calculadora PB</span><span class="d">50 receitas com custo</span></span></a><a class="qa" href="lab.html" data-niveis="coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="qtt"><span class="t">Lab de Drinks<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">montador autoral</span></span></a><a class="qa" href="constelacao.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="qtt"><span class="t">Constelação de Sabores<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">explorador de sabores</span></span></a><a class="qa" href="lab-proposta.html" data-niveis="coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="qtt"><span class="t">Lab 2.0 — proposta<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">redesign do Lab</span></span></a><a class="qa" href="planejador-3d.html" data-niveis="coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg></span><span class="qtt"><span class="t">Planejador 3D</span><span class="d">layout 3D da bancada</span></span></a></div></section><section class="area-sec" data-niveis="chefe controladoria coord equipe rh"><div class="area-h"><span class="dot" style="background:var(--lilas)"></span>Pessoas</div><div class="area-grid"><a class="qa" href="equipe.html" data-niveis="chefe coord rh"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="qtt"><span class="t">Equipe<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">24 pessoas</span></span></a><a class="qa" href="metas.html" data-niveis="equipe chefe coord controladoria"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span class="qtt"><span class="t">Metas &amp; Desenv.</span><span class="d">trilha, avaliação e PDI</span></span></a><a class="qa" href="contatos.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg></span><span class="qtt"><span class="t">Contatos</span><span class="d">chefes de bar</span></span></a><a class="qa" href="regras.html" data-niveis="chefe coord rh"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg></span><span class="qtt"><span class="t">Escala &amp; BH</span><span class="d">folgas e banco de horas</span></span></a><a class="qa" href="minha-atividade.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span class="qtt"><span class="t">Minha Atividade<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="meu-perfil.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="qtt"><span class="t">Meu perfil</span><span class="d"></span></span></a></div></section><section class="area-sec" data-niveis="chefe controladoria coord equipe"><div class="area-h"><span class="dot" style="background:var(--amarelo)"></span>Gestão</div><div class="area-grid"><a class="qa" href="demandas.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><span class="qtt"><span class="t">Central de Demandas<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">ocorrências e solicitações</span></span></a><a class="qa" href="curva-abc.html" data-niveis="chefe coord controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></span><span class="qtt"><span class="t">Ranking<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">quem fatura mais</span></span></a><a class="qa" href="consumo.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="qtt"><span class="t">Consumo<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">semana a semana por casa</span></span></a><a class="qa" href="vendas/index.html" data-niveis="controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg></span><span class="qtt"><span class="t">Vendas<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">faturamento por casa</span></span></a><a class="qa" href="rentabilidade.html" data-niveis="coord controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></span><span class="qtt"><span class="t">Rentabilidade<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">custo x venda x CMV</span></span></a><a class="qa" href="contratos.html" data-niveis="coord controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><span class="qtt"><span class="t">Contratos On Trade<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">vigência e contrapartidas por marca</span></span></a><a class="qa" href="cotacoes.html" data-niveis="coord controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg></span><span class="qtt"><span class="t">Cotações de Compras<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="patrimonio.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span class="qtt"><span class="t">Controle de Patrimônio<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">copos, utensílios e equipamentos</span></span></a><a class="qa" href="doses-painel.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span><span class="qtt"><span class="t">Controle de Doses<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="garcons.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="qtt"><span class="t">Desempenho por garçom<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="evolucao.html" data-niveis="coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span class="qtt"><span class="t">Evolução do treino<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">progresso por bartender</span></span></a><a class="qa" href="atividade.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="qtt"><span class="t">Atividade por pessoa<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="presenca.html" data-niveis="coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg></span><span class="qtt"><span class="t">Presença online<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a></div></section></div>
+<div class="home-areas"><section class="area-sec" data-niveis="chefe coord equipe rh"><div class="area-h"><span class="dot" style="background:var(--verde)"></span>Operação</div><div class="area-grid"><a class="qa" href="eventos.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg></span><span class="qtt"><span class="t">Eventos</span><span class="d">105 cadastrados</span></span></a><a class="qa" href="contagem.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><span class="qtt"><span class="t">Contagem de insumos</span><span class="d">estoque por casa</span></span></a><a class="qa" href="contagem-copos.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg></span><span class="qtt"><span class="t">Contagem de copos</span><span class="d">copos e taças</span></span></a><a class="qa" href="compras.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span class="qtt"><span class="t">Pedido de Compras<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">sugestão de compra semanal</span></span></a><a class="qa" href="turno.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span><span class="qtt"><span class="t">Relatório de turno</span><span class="d">fechamento de turno</span></span></a><a class="qa" href="rotinas.html" data-niveis="equipe chefe coord rh"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span><span class="qtt"><span class="t">Rotinas</span><span class="d">2 casas com checklist</span></span></a><a class="qa" href="producao.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#17352b;color:var(--verde)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="qtt"><span class="t">Produção possível</span><span class="d">drinks possíveis agora</span></span></a></div></section><section class="area-sec" data-niveis="chefe coord equipe"><div class="area-h"><span class="dot" style="background:var(--acc)"></span>Bar</div><div class="area-grid"><a class="qa" href="cocktails.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="qtt"><span class="t">Fichas técnicas</span><span class="d">211 receitas</span></span></a><a class="qa" href="cocktails-ranking.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span class="qtt"><span class="t">Ranking de Cocktails</span><span class="d">ranking, metas e alertas</span></span></a><a class="qa" href="treinamentos.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="qtt"><span class="t">Treinamentos</span><span class="d">plano, módulos e biblioteca</span></span></a><a class="qa" href="calculadora.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg></span><span class="qtt"><span class="t">Calculadora PB</span><span class="d">50 receitas com custo</span></span></a><a class="qa" href="lab.html" data-niveis="coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="qtt"><span class="t">Lab de Drinks<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">montador autoral</span></span></a><a class="qa" href="constelacao.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="qtt"><span class="t">Constelação de Sabores<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">explorador de sabores</span></span></a><a class="qa" href="lab-proposta.html" data-niveis="coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="qtt"><span class="t">Lab 2.0 — proposta<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">redesign do Lab</span></span></a><a class="qa" href="planejador-3d.html" data-niveis="coord"><span class="chip" style="background:#362a15;color:var(--acc)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg></span><span class="qtt"><span class="t">Planejador 3D</span><span class="d">layout 3D da bancada</span></span></a></div></section><section class="area-sec" data-niveis="chefe controladoria coord equipe rh"><div class="area-h"><span class="dot" style="background:var(--lilas)"></span>Pessoas</div><div class="area-grid"><a class="qa" href="equipe.html" data-niveis="chefe coord rh"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="qtt"><span class="t">Equipe<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">24 pessoas</span></span></a><a class="qa" href="metas.html" data-niveis="equipe chefe coord controladoria"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span class="qtt"><span class="t">Metas &amp; Desenv.</span><span class="d">trilha, avaliação e PDI</span></span></a><a class="qa" href="contatos.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg></span><span class="qtt"><span class="t">Contatos</span><span class="d">chefes de bar</span></span></a><a class="qa" href="regras.html" data-niveis="chefe coord rh"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg></span><span class="qtt"><span class="t">Escala &amp; BH</span><span class="d">folgas e banco de horas</span></span></a><a class="qa" href="minha-atividade.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span class="qtt"><span class="t">Minha Atividade<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="meu-perfil.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#302743;color:var(--lilas)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="qtt"><span class="t">Meu perfil</span><span class="d"></span></span></a></div></section><section class="area-sec" data-niveis="chefe controladoria coord equipe"><div class="area-h"><span class="dot" style="background:var(--amarelo)"></span>Gestão</div><div class="area-grid"><a class="qa" href="demandas.html" data-niveis="equipe chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><span class="qtt"><span class="t">Central de Demandas<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">ocorrências e solicitações</span></span></a><a class="qa" href="curva-abc.html" data-niveis="chefe coord controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></span><span class="qtt"><span class="t">Curva ABC<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">posição ABC de todas as bebidas</span></span></a><a class="qa" href="consumo.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="qtt"><span class="t">Consumo<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">semana a semana por casa</span></span></a><a class="qa" href="vendas/index.html" data-niveis="controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg></span><span class="qtt"><span class="t">Vendas<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">faturamento por casa</span></span></a><a class="qa" href="rentabilidade.html" data-niveis="coord controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></span><span class="qtt"><span class="t">Rentabilidade<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">custo x venda x CMV</span></span></a><a class="qa" href="contratos.html" data-niveis="coord controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><span class="qtt"><span class="t">Contratos On Trade<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">vigência e contrapartidas por marca</span></span></a><a class="qa" href="cotacoes.html" data-niveis="coord controladoria"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg></span><span class="qtt"><span class="t">Cotações de Compras<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="patrimonio.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span class="qtt"><span class="t">Controle de Patrimônio<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">copos, utensílios e equipamentos</span></span></a><a class="qa" href="doses-painel.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span><span class="qtt"><span class="t">Controle de Doses<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="garcons.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="qtt"><span class="t">Desempenho por garçom<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="evolucao.html" data-niveis="coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span class="qtt"><span class="t">Evolução do treino<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d">progresso por bartender</span></span></a><a class="qa" href="atividade.html" data-niveis="chefe coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="qtt"><span class="t">Atividade por pessoa<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a><a class="qa" href="presenca.html" data-niveis="coord"><span class="chip" style="background:#3a2d12;color:var(--amarelo)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg></span><span class="qtt"><span class="t">Presença online<span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span><span class="d"></span></span></a></div></section></div>
 
 <div class="home-foot">
 <a class="wa" href="https://wa.me/556281483511?text=Ol%C3%A1%20Rodrigo!%20Vim%20pelo%20Portal%20dos%20Bares.%20"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg> Falar com a coordenação</a>
@@ -866,6 +939,43 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 })();
 </script>
+
+
+<div class="pomo-pop" id="pomo-pop" role="dialog" aria-label="Modo Foco">
+  <div class="pp-head">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--acc)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4"/><path d="M12 8v5l3 2"/><circle cx="12" cy="14" r="8"/></svg>
+    <h3>Modo Foco</h3>
+    <span class="modo-tag" id="pomo-modo">Foco</span>
+    <button class="pp-close" id="pomo-close" type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="ring-wrap">
+    <div class="pomo-ring" id="pomo-ring">
+      <svg width="172" height="172" viewBox="0 0 172 172"><circle class="track" cx="86" cy="86" r="76"/><circle class="prog" id="pomo-prog" cx="86" cy="86" r="76"/></svg>
+      <div class="center"><div class="tempo" id="pomo-tempo">25:00</div><div class="sub" id="pomo-sub">foco · ciclo 1</div></div>
+    </div>
+  </div>
+  <div class="pomo-presets" id="pomo-presets">
+    <button class="pomo-preset on" type="button" data-foco="25" data-pausa="5"><b>25</b>foco · 5</button>
+    <button class="pomo-preset" type="button" data-foco="50" data-pausa="10"><b>50</b>foco · 10</button>
+    <button class="pomo-preset" type="button" data-foco="15" data-pausa="3"><b>15</b>foco · 3</button>
+  </div>
+  <div class="pomo-controls">
+    <button class="pomo-btn2 primario" id="pomo-play" type="button"><svg id="pomo-ic-play" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span id="pomo-play-lbl">Iniciar</span></button>
+    <button class="pomo-btn2" id="pomo-reset" type="button" title="Reiniciar" aria-label="Reiniciar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+  </div>
+  <div class="pomo-lbl">Ruído branco</div>
+  <div class="pomo-noises" id="pomo-noises">
+    <button class="pomo-noise" type="button" data-noise="white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h2l2-6 3 15 3-12 2 6h6"/></svg><span class="nm">Branco</span><span class="ds">chuva forte</span></button>
+    <button class="pomo-noise" type="button" data-noise="pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14c2 0 2-4 4-4s2 4 4 4 2-5 4-5 2 5 4 5"/><path d="M3 19h18"/></svg><span class="nm">Rosa</span><span class="ds">ventilador</span></button>
+    <button class="pomo-noise" type="button" data-noise="brown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15c3 0 3-6 6-6s3 6 6 6 3-4 6-4"/></svg><span class="nm">Marrom</span><span class="ds">cachoeira</span></button>
+  </div>
+  <div class="pomo-vol">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 8a5 5 0 0 1 0 8"/></svg>
+    <input type="range" id="pomo-vol" min="0" max="100" value="45" aria-label="Volume do ruído">
+  </div>
+  <button class="pomo-religar" id="pomo-religar" type="button">Tocar de novo</button>
+  <p class="pomo-hint">O ruído continua com o portal minimizado ou em segundo plano. Ao trocar de página o som tenta religar sozinho.</p>
+</div>
 
 <p class="nota">Portal dos Bares · Grupo IZ · atualizado em 18/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
@@ -1080,6 +1190,186 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     }
   });
   input.addEventListener('input', aplica);
+})();
+</script>
+
+
+<script>
+(function () {
+  var CH = 'portal_pomodoro';
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var def = { modo: 'foco', foco: 25, pausa: 5, ciclo: 1, rodando: false, fimTs: 0,
+              restante: 25 * 60, noise: null, vol: 45 };
+  var s;
+  try { s = Object.assign({}, def, JSON.parse(localStorage.getItem(CH) || '{}')); }
+  catch (e) { s = Object.assign({}, def); }
+  function salvar() { try { localStorage.setItem(CH, JSON.stringify(s)); } catch (e) {} }
+
+  var R = 76, CIRC = 2 * Math.PI * R;
+  var $ = function (id) { return document.getElementById(id); };
+  var btn = $('pomo-btn'), pop = $('pomo-pop'), badge = $('pomo-badge'),
+      prog = $('pomo-prog'), tempoEl = $('pomo-tempo'), subEl = $('pomo-sub'),
+      modoTag = $('pomo-modo'), ring = $('pomo-ring'), playLbl = $('pomo-play-lbl'),
+      icPlay = $('pomo-ic-play'), volEl = $('pomo-vol'), religar = $('pomo-religar');
+  if (!btn || !pop) return;
+  prog.style.strokeDasharray = CIRC;
+  volEl.value = s.vol;
+
+  // ---- áudio (Web Audio, gerado — nenhum arquivo) ----
+  var ac = null, src = null, gain = null;
+  function garanteAc() {
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ac = new AC();
+      gain = ac.createGain(); gain.gain.value = s.vol / 100 * 0.6; gain.connect(ac.destination);
+    }
+    return ac;
+  }
+  function bufferRuido(tipo) {
+    var dur = 2.2, n = Math.floor(ac.sampleRate * dur), b = ac.createBuffer(1, n, ac.sampleRate),
+        d = b.getChannelData(0), i;
+    if (tipo === 'white') { for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; }
+    else if (tipo === 'pink') {
+      var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (i = 0; i < n; i++) {
+        var w = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759;
+        b2 = 0.96900 * b2 + w * 0.1538520; b3 = 0.86650 * b3 + w * 0.3104856;
+        b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
+        d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+      }
+    } else { var last = 0; for (i = 0; i < n; i++) { var v = Math.random() * 2 - 1; last = (last + 0.02 * v) / 1.02; d[i] = last * 3.5; } }
+    return b;
+  }
+  function paraBuffer() { if (src) { try { src.stop(); } catch (e) {} src.disconnect(); src = null; } }
+  function iniciaBuffer() {
+    if (!s.noise || !garanteAc()) return;
+    paraBuffer();
+    src = ac.createBufferSource(); src.buffer = bufferRuido(s.noise); src.loop = true;
+    src.connect(gain); src.start();
+  }
+  // Toca o ruído; se o navegador segurar o áudio (autoplay), arma religar por gesto.
+  function aplicaSom() {
+    if (!s.noise) { paraBuffer(); mostraReligar(false); return; }
+    if (!garanteAc()) return;
+    if (ac.state === 'suspended') {
+      ac.resume().then(function () {
+        if (ac.state === 'running') { iniciaBuffer(); mostraReligar(false); }
+        else armaGesto();
+      }).catch(armaGesto);
+    } else { iniciaBuffer(); mostraReligar(false); }
+  }
+  var gestoArmado = false;
+  function armaGesto() {
+    mostraReligar(true);
+    if (gestoArmado) return; gestoArmado = true;
+    var f = function () {
+      document.removeEventListener('pointerdown', f); document.removeEventListener('keydown', f);
+      gestoArmado = false;
+      if (ac) ac.resume().then(function () { if (s.noise) iniciaBuffer(); mostraReligar(false); });
+    };
+    document.addEventListener('pointerdown', f); document.addEventListener('keydown', f);
+  }
+  function mostraReligar(v) { religar.classList.toggle('on', !!v); }
+  religar.addEventListener('click', function (e) { e.stopPropagation(); aplicaSom(); });
+  volEl.addEventListener('input', function () { s.vol = +volEl.value; if (gain) gain.gain.value = s.vol / 100 * 0.6; salvar(); });
+
+  // ---- painel abre/fecha ----
+  function toggle(v) { pop.classList.toggle('aberto', v === undefined ? !pop.classList.contains('aberto') : v); }
+  btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+  $('pomo-close').addEventListener('click', function () { toggle(false); });
+  document.addEventListener('click', function (e) {
+    if (pop.classList.contains('aberto') && !pop.contains(e.target) && !btn.contains(e.target)) toggle(false);
+  });
+
+  // ---- presets ----
+  function marcaPreset() {
+    Array.prototype.forEach.call(document.querySelectorAll('.pomo-preset'), function (p) {
+      p.classList.toggle('on', +p.dataset.foco === s.foco && +p.dataset.pausa === s.pausa);
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.pomo-preset'), function (p) {
+    p.addEventListener('click', function () {
+      s.foco = +p.dataset.foco; s.pausa = +p.dataset.pausa;
+      if (!s.rodando) { s.modo = 'foco'; s.restante = s.foco * 60; }
+      marcaPreset(); render(); salvar();
+    });
+  });
+
+  // ---- ruídos ----
+  function marcaNoise() {
+    Array.prototype.forEach.call(document.querySelectorAll('.pomo-noise'), function (b) {
+      b.classList.toggle('on', b.dataset.noise === s.noise);
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.pomo-noise'), function (b) {
+    b.addEventListener('click', function () {
+      s.noise = (s.noise === b.dataset.noise) ? null : b.dataset.noise;
+      marcaNoise(); aplicaSom(); salvar();
+    });
+  });
+
+  // ---- controles ----
+  $('pomo-play').addEventListener('click', function () {
+    if (s.rodando) { s.restante = Math.max(0, Math.round((s.fimTs - Date.now()) / 1000)); s.rodando = false; }
+    else { s.fimTs = Date.now() + s.restante * 1000; s.rodando = true; if (s.noise) aplicaSom(); }
+    render(); salvar();
+  });
+  $('pomo-reset').addEventListener('click', function () {
+    s.rodando = false; s.modo = 'foco'; s.ciclo = 1; s.restante = s.foco * 60; render(); salvar();
+  });
+
+  function chime() {
+    if (!garanteAc()) return;
+    if (ac.state === 'suspended') return;
+    var g = ac.createGain(); g.connect(ac.destination);
+    var o = ac.createOscillator(); o.frequency.value = s.modo === 'foco' ? 660 : 520; o.connect(g);
+    g.gain.setValueAtTime(0.001, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.25, ac.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.6);
+    o.start(); o.stop(ac.currentTime + 0.62);
+  }
+  function trocaFase(comChime) {
+    if (comChime) chime();
+    if (s.modo === 'foco') { s.modo = 'pausa'; s.restante = s.pausa * 60; }
+    else { s.modo = 'foco'; s.ciclo++; s.restante = s.foco * 60; }
+    s.fimTs = Date.now() + s.restante * 1000;
+  }
+
+  function fmt(sec) { sec = Math.max(0, sec); return pad(Math.floor(sec / 60)) + ':' + pad(sec % 60); }
+  function render() {
+    var total = (s.modo === 'foco' ? s.foco : s.pausa) * 60;
+    var frac = Math.max(0, Math.min(1, s.restante / total));
+    prog.style.strokeDashoffset = CIRC * (1 - frac);
+    tempoEl.textContent = fmt(s.restante);
+    subEl.textContent = (s.modo === 'foco' ? 'foco' : 'pausa') + ' · ciclo ' + s.ciclo;
+    ring.classList.toggle('pausa', s.modo === 'pausa');
+    modoTag.textContent = s.modo === 'foco' ? 'Foco' : 'Pausa';
+    modoTag.classList.toggle('pausa', s.modo === 'pausa');
+    playLbl.textContent = s.rodando ? 'Pausar' : 'Iniciar';
+    icPlay.innerHTML = s.rodando ? '<path d="M7 5h3v14H7zM14 5h3v14h-3z"/>' : '<path d="M7 4.5v15l12-7.5z"/>';
+    btn.classList.toggle('rodando', s.rodando);
+    badge.textContent = Math.max(0, Math.ceil(s.restante / 60));
+  }
+  function tick() {
+    if (s.rodando) {
+      s.restante = Math.round((s.fimTs - Date.now()) / 1000);
+      if (s.restante <= 0) { trocaFase(true); salvar(); }
+    }
+    render();
+  }
+
+  // ---- restauração ao carregar a página ----
+  marcaPreset(); marcaNoise();
+  if (s.rodando) {
+    s.restante = Math.round((s.fimTs - Date.now()) / 1000);
+    if (s.restante <= 0) { trocaFase(false); }  // sem chime na restauração silenciosa
+  }
+  render();
+  if (s.noise) aplicaSom();  // religa o ruído sozinho (com fallback de gesto)
+  setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
 })();
 </script>
 
