@@ -103,6 +103,35 @@ window.msgAcessoNegado = function (nomePagina) {
 };
 </script>
 
+
+<script>
+(function () {
+  var PRES_WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  function deviceId() {
+    try {
+      var k = localStorage.getItem('portal_device');
+      if (!k) { k = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('portal_device', k); }
+      return k;
+    } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
+  }
+  window.marcaPresenca = function () {
+    var s = window.sessaoLer && window.sessaoLer();
+    if (!s || !PRES_WORKER) return;
+    try {
+      var ult = +(localStorage.getItem('portal_presenca_ts') || 0);
+      if (Date.now() - ult < 90000) return;
+      localStorage.setItem('portal_presenca_ts', String(Date.now()));
+    } catch (e) {}
+    fetch(PRES_WORKER + '/api/presenca', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      body: JSON.stringify({ device: deviceId() }),
+    }).catch(function () {});
+  };
+  window.marcaPresenca();
+  setInterval(window.marcaPresenca, 120000);
+})();
+</script>
+
 <nav id="nav-principal" class="nav-sec"><details class="grp" data-niveis="chefe controladoria coord equipe rh suprimentos"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Operação</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="index.html" class="grp-link" data-niveis="equipe chefe coord rh controladoria suprimentos"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a><a href="eventos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a><a href="contagem.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contagem de insumos</span></a><a href="contagem-copos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg><span>Contagem de copos</span></a><a href="compras.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Pedido de Compras</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="turno.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>Relatório de turno</span></a><a href="rotinas.html" class="grp-link" data-niveis="equipe chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Rotinas</span></a><a href="producao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Produção possível</span></a></div></details><details class="grp" data-niveis="chefe coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Bar</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="cocktails.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas técnicas</span></a><a href="treinamentos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Treinamentos</span></a><a href="calculadora.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Calculadora PB</span></a><a href="lab.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Lab de Drinks</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="constelacao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Constelação de Sabores</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="lab-proposta.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Lab 2.0 — proposta</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="planejador-3d.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Planejador 3D</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Pessoas</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="equipe.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Equipe</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="metas.html" class="grp-link" data-niveis="equipe chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Metas &amp; Desenv.</span></a><a href="contatos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg><span>Contatos</span></a><a href="regras.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Escala &amp; BH</span></a><a href="minha-atividade.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Minha Atividade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="meu-perfil.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Meu perfil</span></a></div></details><details class="grp on" data-niveis="chefe controladoria coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Gestão</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="demandas.html" class="grp-link on" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central de Demandas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="curva-abc.html" class="grp-link" data-niveis="chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Ranking</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="consumo.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Consumo</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="vendas/index.html" class="grp-link" data-niveis="controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg><span>Vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="rentabilidade.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Rentabilidade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="contratos.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contratos On Trade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="cotacoes.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg><span>Cotações de Compras</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="patrimonio.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Controle de Patrimônio</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="doses-painel.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg><span>Controle de Doses</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="garcons.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Desempenho por garçom</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="evolucao.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Evolução do treino</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="atividade.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Atividade por pessoa</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="presenca.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg><span>Presença online</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></details></nav>
 
 <style>
@@ -272,9 +301,9 @@ window.msgAcessoNegado = function (nomePagina) {
   <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg> Central de Demandas</h1>
   <a class="dm-nova-topo" href="registro.html"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nova</a>
 </div>
-<p class="sub" id="dm-sub">Ocorrências e solicitações do Registro Rápido, em duas filas por tipo — a
-posição na fila já é a prioridade (urgência primeiro, mais antiga depois). Toque no status
-do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.</p>
+<p class="sub" id="dm-sub">Ocorrências e solicitações do Registro Rápido — a posição na fila já é a
+prioridade (urgência primeiro, mais antiga depois).</p>
+<div class="dm-escopo" id="dm-escopo" style="display:none"></div>
 
 <style>
   /* Botão "Nova" fixo no topo (Mural v3, PLANO_MURAL_CRIAR_PERFIL.md,
@@ -285,6 +314,12 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
                   background: var(--acc); color: var(--acc-txt); border-radius: 999px;
                   padding: 8px 15px; font-size: 13px; font-weight: 600; text-decoration: none; }
   .dm-nova-topo:hover { filter: brightness(1.08); }
+  /* R1 (PLANO_DEMANDAS_V2): faixa de escopo por nível — diz o que a pessoa vê e
+     pode fazer. Cor da borda/fundo = cor do nível (setada inline no JS). */
+  .dm-escopo { display: flex; gap: 9px; align-items: flex-start; font-size: 12.5px; color: var(--text-2);
+               border-radius: 10px; padding: 9px 12px; margin-bottom: 14px; line-height: 1.45; }
+  .dm-escopo .dm-escopo-ic { flex: none; margin-top: 1px; }
+  .dm-escopo b { color: var(--text); font-weight: 600; }
   /* F-Enviadas (2026-07-13): seletor Recebidas | Enviadas — chefe/coord/
      controladoria alternam; equipe/bartender nem veem o seletor, entram
      direto em Enviadas (única visão que faz sentido pro nível deles). */
@@ -319,46 +354,59 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   .dm-env-desc { font-size: 14px; color: var(--text); margin-bottom: 6px; white-space: pre-line; }
   .dm-env-desc b { font-family: var(--serif); font-weight: 500; }
   .dm-env-meta { font-size: 12px; color: var(--text-3); }
-  .dm-casas { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px;
-              -webkit-overflow-scrolling: touch; }
-  .dm-casa-chip { flex: none; font: inherit; font-size: 12.5px; border-radius: 999px; padding: 6px 13px;
-                  border: 1px solid var(--border); background: var(--card); color: var(--text-2);
-                  cursor: pointer; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; }
-  .dm-casa-chip b { font-variant-numeric: tabular-nums; color: var(--text-3); font-weight: 600; }
-  .dm-casa-chip.on { border-color: var(--cc, var(--acc)); color: var(--text);
-                      background: color-mix(in srgb, var(--cc, var(--acc)) 16%, transparent); }
-  .dm-casa-chip.on b { color: inherit; }
-  .dm-casa-chip:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  /* R1b (PLANO_DEMANDAS_V2): resumo em frase — substitui a fileira de chips de
+     status/urgência. X/Y (hoje/paradas) são clicáveis (aplicam filtroRapido). */
+  .dm-resumo-frase { font-size: 12.5px; color: var(--text-2); line-height: 1.7; margin: 0 0 12px; }
+  .dm-resumo-hl { display: inline-flex; align-items: center; border-bottom: 1px dashed var(--text-3);
+                   cursor: pointer; color: var(--text); }
+  .dm-resumo-hl.warn { color: var(--urg-uma_semana); border-color: var(--urg-uma_semana); }
+  .dm-resumo-hl.on { color: var(--acc); border-color: var(--acc); }
+  .dm-resumo-hl:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .dm-resumo-novas { color: var(--acc); }
 
-  .dm-filtros { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
-  .dm-filtros select { font: inherit; font-size: 12.5px; background: var(--card);
-                        color: var(--text-2); border: 1px solid var(--border); border-radius: 8px;
-                        padding: 7px 9px; white-space: nowrap; }
-  .dm-filtros select:focus-visible { outline: 2px solid var(--acc); }
+  /* R1b: barra de filtros única (Casa/Setor/Desde/Status) — substitui os chips de
+     casas, os chips de resumo (status/urgência) e os 2 <select> visíveis. Os
+     <select> (dm-f-urgencia/dm-f-setor) continuam existindo ocultos como fonte de
+     verdade do fetch; esta barra só os escreve via JS. */
+  .dm-filtros-bar { position: relative; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+                     margin-bottom: 12px; }
+  .dm-fbar-chip { flex: none; font: inherit; font-size: 12px; border-radius: 999px; padding: 7px 12px;
+                   border: 1px solid var(--border); background: var(--card); color: var(--text-2);
+                   cursor: pointer; display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+  .dm-fbar-chip.on { border-color: var(--acc); color: var(--text);
+                      background: color-mix(in srgb, var(--acc) 15%, transparent); }
+  .dm-fbar-chip .v { color: var(--text); font-weight: 600; }
+  .dm-fbar-chip.limpar { border-style: dashed; color: var(--text-3); }
+  .dm-fbar-chip:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .dm-fbar-menu { position: absolute; top: 100%; left: 0; z-index: 30; margin-top: 6px;
+                   background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+                   padding: 6px; min-width: 190px; max-height: 280px; overflow-y: auto;
+                   box-shadow: 0 14px 34px rgba(0,0,0,.4); }
+  .dm-fbar-menu button { display: flex; width: 100%; align-items: center; gap: 8px; font: inherit;
+                          font-size: 12.5px; padding: 8px 10px; border: none; background: none;
+                          color: var(--text-2); cursor: pointer; border-radius: 8px; text-align: left; }
+  .dm-fbar-menu button:hover { background: rgba(255,255,255,.05); }
+  .dm-fbar-menu button.on { color: var(--text); background: color-mix(in srgb, var(--acc) 14%, transparent);
+                             font-weight: 600; }
+  .dm-fbar-menu button .n { margin-left: auto; font-size: 11px; color: var(--text-3);
+                             font-variant-numeric: tabular-nums; }
+  .dm-fbar-menu button .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dm-fbar-menu button:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
 
-  .dm-resumo { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
-
-  .dm-dica { display: flex; gap: 10px; align-items: flex-start; background: var(--card);
+  /* Push (Web Push/VAPID) — banner de onboarding. R1b: virou linha compacta
+     (sino + frase + Ativar) — mesmos elementos/IDs de antes, só o layout mudou;
+     o fluxo de subscribe (JS) não foi tocado. iOS só entrega push com o site
+     instalado ("Adicionar à Tela de Início"); sem isso o botão "Ativar" some. */
+  .dm-push { display: flex; gap: 10px; align-items: center; background: var(--card);
              border: 1px solid var(--acc); border-radius: 10px; padding: 9px 12px; margin-bottom: 12px;
-             font-size: 12.5px; color: var(--text-2); line-height: 1.4; }
-  .dm-dica button { font: inherit; font-size: 11.5px; color: var(--text-3); background: none; border: none;
-                     cursor: pointer; flex: none; padding: 0; }
-  .dm-dica button:focus-visible { outline: 2px solid var(--acc); }
-
-  /* Push (Web Push/VAPID) — banner de onboarding, mesmo molde do .dm-dica.
-     iOS só entrega push com o site instalado ("Adicionar à Tela de Início");
-     sem isso o botão "Ativar" não aparece, só a instrução. */
-  .dm-push { display: flex; gap: 10px; align-items: flex-start; background: var(--card);
-             border: 1px solid var(--acc); border-radius: 10px; padding: 11px 13px; margin-bottom: 12px;
-             font-size: 12.5px; color: var(--text-2); line-height: 1.4; }
-  .dm-push b { display: block; color: var(--text); font-family: var(--serif); font-weight: 500;
-               font-size: 14px; margin-bottom: 3px; }
+             font-size: 12px; color: var(--text-2); line-height: 1.4; }
+  .dm-push b { display: none; }
   .dm-push-txt { flex: 1; min-width: 0; }
-  .dm-push-acoes { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex: none; }
+  .dm-push-acoes { display: flex; flex-direction: row; gap: 8px; align-items: center; flex: none; }
   .dm-push-acoes button { font: inherit; cursor: pointer; white-space: nowrap; }
-  .dm-push-acoes .dm-push-ativar { font-size: 12.5px; font-weight: 600; padding: 7px 14px; border-radius: 999px;
+  .dm-push-acoes .dm-push-ativar { font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 999px;
                                     border: 1px solid var(--acc); background: var(--acc); color: var(--acc-txt); }
-  .dm-push-acoes .dm-push-fechar { font-size: 11.5px; color: var(--text-3); background: none; border: none; padding: 0; }
+  .dm-push-acoes .dm-push-fechar { font-size: 11px; color: var(--text-3); background: none; border: none; padding: 0; }
   .dm-push-acoes button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
   .dm-legenda { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding-top: 12px;
@@ -536,6 +584,7 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
 <div id="dm-app" style="display:none">
 
 <div class="dm-push" id="dm-push" style="display:none">
+  <svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
   <div class="dm-push-txt">
     <b>Ativar notificações</b>
     <span id="dm-push-msg">Receba um aviso no celular assim que uma ocorrência ou solicitação chegar
@@ -553,21 +602,18 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
 </div>
 
 <div id="dm-recebidas">
-<div class="dm-dica" id="dm-dica" style="display:none">
-  <span>Toque na etiqueta de status do card pra avançar (Novo → Visto → Em andamento → Resolvido).
-  Abrindo o card dá pra corrigir o setor ou reabrir uma demanda pelo seletor completo.</span>
-  <button type="button" id="dm-dica-fechar">entendi ✕</button>
-</div>
-<div class="dm-casas" id="dm-casas" style="display:none"></div>
-<div class="dm-resumo" id="dm-resumo"></div>
+<div class="dm-resumo-frase" id="dm-resumo-frase"></div>
 <div class="dm-busca-wrap">
   <input type="search" id="dm-busca" placeholder="Buscar por descrição, transcrição ou solicitante…" aria-label="Buscar demanda">
   <p class="dm-busca-hint">Busca só no que já foi carregado — toque em "Carregar mais" para ampliar o alcance.</p>
 </div>
-<div class="dm-filtros" id="dm-filtros">
-  <select id="dm-f-urgencia"><option value="">Necessário desde: Todas</option></select>
-  <select id="dm-f-setor"><option value="">Setor: Todos</option></select>
-</div>
+<!-- R1b (PLANO_DEMANDAS_V2): selects seguem existindo, só ocultos — continuam a
+     fonte de verdade que queryFila() lê (fUrgencia.value/fSetor.value). A barra
+     visual abaixo é construída em JS (renderFiltrosBar) e só ESCREVE nesses
+     selects; zero mudança na máquina de fetch. -->
+<select id="dm-f-urgencia" style="display:none"><option value="">Necessário desde: Todas</option></select>
+<select id="dm-f-setor" style="display:none"><option value="">Setor: Todos</option></select>
+<div class="dm-filtros-bar" id="dm-filtros-bar"></div>
 
 <div class="dm-abas" id="dm-abas">
   <button type="button" class="on" data-tipo="ocorrencia">Ocorrências<span class="n" id="dm-aba-n-ocorrencia"></span></button>
@@ -658,18 +704,24 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   // um_mes, tres_meses) — mesma fonte que já popula o filtro, sem duplicar a lista aqui.
   var URGENCIA_RANK = {};
   Object.keys(URGENCIAS).forEach(function (slug, i) { URGENCIA_RANK[URGENCIAS[slug]] = i; });
+  // F3 (C2.2, PLANO_DEMANDAS_V2): rótulos legados de urgência (registros
+  // pré-2026-07-15, quando "Urgência" virou "Necessário desde"). Sem isso caíam
+  // em rank 99 — iam pro fundo da fila DEPOIS de "3 meses+" e sumiam dos
+  // contadores. "Urgente" ordena no topo (-1); "Pode aguardar" junto do fim.
+  // Mesma cobertura de vocabulário que a Minha Central já faz.
+  URGENCIA_RANK['Urgente'] = -1;
+  URGENCIA_RANK['Pode aguardar'] = (URGENCIA_RANK['3 meses+'] != null) ? URGENCIA_RANK['3 meses+'] : 99;
 
   var TIPOS_DEF = [
     { key: 'ocorrencia', label: 'Ocorrências' },
     { key: 'solicitacao', label: 'Solicitações' }
   ];
 
-  var elCasas = document.getElementById('dm-casas');
-  var elResumo = document.getElementById('dm-resumo');
+  var elResumoFrase = document.getElementById('dm-resumo-frase');
+  var elFiltrosBar = document.getElementById('dm-filtros-bar');
   var elBusca = document.getElementById('dm-busca');
   var elAbas = document.getElementById('dm-abas');
   var elToast = document.getElementById('dm-toast');
-  var elDica = document.getElementById('dm-dica');
   var elLegenda = document.getElementById('dm-legenda');
   var fUrgencia = document.getElementById('dm-f-urgencia');
   var fSetor = document.getElementById('dm-f-setor');
@@ -680,6 +732,29 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   // carregado em t.itens (nunca sobre o total real na base).
   var statusAtivo = null;
   var buscaTermo = '';
+  // R1b (PLANO_DEMANDAS_V2): filtro rápido client-side dos destaques do resumo
+  // em frase (X chegaram hoje / Y paradas há mais de 7 dias) — mesma família de
+  // statusAtivo/buscaTermo, aplicado em itemVisivel(). menuAberto controla qual
+  // painel da barra de filtros está exibido (um por vez).
+  var filtroRapido = null;  // null | 'hoje' | 'paradas'
+  var menuAberto = '';      // '' | 'casa' | 'setor' | 'urg' | 'status'
+  // F4 (C2.3, PLANO_DEMANDAS_V2): cache-buster local. Um PATCH/aviso bem-sucedido
+  // chama marcaBust(); enquanto Date.now()<bustAte (60s), os GETs anexam
+  // nc=bustTag — URL diferente = chave de cache diferente no Worker, então a
+  // leitura logo após o PATCH não é servida pelo cache de 45s com o dado velho
+  // (status recém-mudado "voltava no tempo" num refetch/reload). Expira sozinho.
+  var bustTag = 0, bustAte = 0;
+  function marcaBust() { bustTag = Date.now(); bustAte = bustTag + 60000; }
+
+  // R1b: "novas desde a sua última visita" no resumo em frase. Lê o valor
+  // ANTERIOR (comparação) e imediatamente carimba agora como a visita atual —
+  // a próxima visita compara contra este carimbo. Sem tentar ler de novo no
+  // unload (mobile não dispara isso com confiança); carimbar no load já cobre
+  // o caso comum.
+  var ULTIMA_VISITA_KEY = 'demandas_ultima_visita';
+  var ultimaVisitaAnterior = null;
+  try { ultimaVisitaAnterior = localStorage.getItem(ULTIMA_VISITA_KEY) || null; } catch (e) {}
+  try { localStorage.setItem(ULTIMA_VISITA_KEY, new Date().toISOString()); } catch (e) {}
 
   Object.keys(URGENCIAS).forEach(function (s) {
     var o = document.createElement('option'); o.value = s; o.textContent = URGENCIAS[s]; fUrgencia.appendChild(o);
@@ -687,7 +762,37 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   Object.keys(SETORES).forEach(function (s) {
     var o = document.createElement('option'); o.value = s; o.textContent = SETORES[s]; fSetor.appendChild(o);
   });
-  if (NIVEL === 'coord' || NIVEL === 'controladoria') { elCasas.style.display = ''; }
+
+  // R1 (PLANO_DEMANDAS_V2): faixa de escopo por nível — a primeira coisa que a
+  // pessoa lê diz o que ELA vê e o que pode fazer. Substitui a
+  // NOTA_VISIBILIDADE_CASA genérica (que só falava de chefe/coord). Cor = cor do
+  // nível (mesma paleta do CSS_NIVEL, setada inline pra não depender de
+  // data-nivel no body). Ícone é SVG de linha (regra: sem emoji em interface).
+  (function renderEscopo() {
+    var el = document.getElementById('dm-escopo');
+    if (!el) return;
+    var NIVEL_COR = { coord: 'var(--casa-fulles)', chefe: 'var(--casa-1929)',
+      controladoria: 'var(--casa-gra)', bartender: 'var(--casa-gra)', equipe: 'var(--casa-iz)' };
+    var casaNome = (r.sessao.casa && CASAS[r.sessao.casa]) ? CASAS[r.sessao.casa] : 'sua casa';
+    var TXT = {
+      coord: '<b>Você vê todas as casas.</b> Pode triar, responder ao solicitante e autorizar o aviso por WhatsApp ao chefe.',
+      chefe: '<b>Você vê só a casa ' + esc(casaNome) + '.</b> Recebidas pra triar e responder; em Enviadas, o que você mesmo registrou. Só você e a coordenação veem esta fila.',
+      controladoria: '<b>Você vê todas as casas, sem editar.</b> Acesso de auditoria — inclui o histórico de edições de cada demanda.',
+      bartender: '<b>Você vê só o que VOCÊ registrou.</b> A triagem é do chefe e da coordenação; aqui você acompanha o andamento e a resposta de cada pedido.',
+      equipe: '<b>Sessão da equipe (senha compartilhada).</b> Registrar funciona normal; acompanhar o que você enviou pede senha individual.'
+    };
+    var txt = TXT[NIVEL];
+    if (!txt) return;
+    var cor = NIVEL_COR[NIVEL] || 'var(--acc)';
+    var ico = '<svg class="dm-escopo-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="' + cor +
+      '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg>';
+    el.style.borderColor = 'color-mix(in srgb, ' + cor + ' 32%, transparent)';
+    el.style.background = 'color-mix(in srgb, ' + cor + ' 9%, transparent)';
+    el.style.border = '1px solid color-mix(in srgb, ' + cor + ' 32%, transparent)';
+    el.innerHTML = ico + '<span>' + txt + '</span>';
+    el.style.display = '';
+  })();
 
   // I4: cor de urgência centralizada (era só um ternário inline no resumo) —
   // uma fonte pro resumo e pra legenda não desviarem um do outro.
@@ -695,16 +800,6 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   function corUrgencia(slug) {
     return URG_COR_SLUG[slug] || 'var(--urg-tres_meses)';
   }
-
-  // I4: dica de primeira visita, dispensa persistente por navegador
-  // (localStorage — versionada: mudar o texto de forma relevante troca a chave
-  // pra reaparecer). Legenda de cores é sempre visível (não é dispensável).
-  var DICA_KEY = 'demandas_dica_v1_fechada';
-  if (!localStorage.getItem(DICA_KEY)) { elDica.style.display = ''; }
-  document.getElementById('dm-dica-fechar').onclick = function () {
-    localStorage.setItem(DICA_KEY, '1');
-    elDica.style.display = 'none';
-  };
 
   // Push (Web Push/VAPID) — só quem vê "Recebidas" (chefe/coord/
   // controladoria) recebe aviso a cada registro novo; equipe/bartender só
@@ -845,7 +940,9 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     var slug = SETOR_LABEL_TO_SLUG[label];
     return (slug && SETOR_COR[slug]) || 'var(--text-3)';
   }
-  var URG_COR_LABEL = { 'Hoje': 'var(--urg-hoje)', 'Uma semana': 'var(--urg-uma_semana)', 'Um mês': 'var(--urg-um_mes)', '3 meses+': 'var(--urg-tres_meses)' };
+  // F3 (C2.2): 'Urgente'/'Pode aguardar' legados também ganham cor (senão o chip
+  // caía no fallback cinza) — mesma lista de rótulos coberta em URGENCIA_RANK.
+  var URG_COR_LABEL = { 'Hoje': 'var(--urg-hoje)', 'Uma semana': 'var(--urg-uma_semana)', 'Um mês': 'var(--urg-um_mes)', '3 meses+': 'var(--urg-tres_meses)', 'Urgente': 'var(--urg-urgente)', 'Pode aguardar': 'var(--urg-tres_meses)' };
   function chipUrgencia(u) {
     var cor = URG_COR_LABEL[u] || 'var(--urg-tres_meses)';
     var cls = 'style="color:' + cor + ';border-color:' + cor + ';background:color-mix(in srgb,' + cor + ' 14%,transparent)"';
@@ -947,7 +1044,7 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     }).then(function (r) {
       if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
       if (!r.ok) { onErro(); return; }
-      onOk();
+      marcaBust(); onOk();
     }).catch(onErro);
   }
 
@@ -961,7 +1058,7 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     }).then(function (r) {
       if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
       if (!r.ok) { onErro(); return; }
-      onOk();
+      marcaBust(); onOk();
     }).catch(onErro);
   }
 
@@ -984,10 +1081,31 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   function normaliza(s) {
     return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
+  // R1b: dois helpers de data pro resumo em frase (X chegaram hoje / Y paradas
+  // há mais de 7 dias) e pro filtroRapido que os destaques disparam.
+  function diasDesde(iso) {
+    if (!iso) return null;
+    var t = new Date(iso).getTime();
+    if (isNaN(t)) return null;
+    return (Date.now() - t) / 86400000;
+  }
+  function mesmoDia(iso) {
+    if (!iso) return false;
+    var dt = new Date(iso);
+    if (isNaN(dt.getTime())) return false;
+    var agora = new Date();
+    return dt.getFullYear() === agora.getFullYear() && dt.getMonth() === agora.getMonth() && dt.getDate() === agora.getDate();
+  }
+
   function itemVisivel(d) {
     if (statusAtivo && d.status !== statusAtivo) return false;
+    if (filtroRapido === 'hoje' && !mesmoDia(d.recebido_em || d.data)) return false;
+    if (filtroRapido === 'paradas') {
+      var dd = diasDesde(d.recebido_em || d.data);
+      if (!(dd != null && dd > 7)) return false;
+    }
     if (buscaTermo) {
-      var alvo = normaliza((d.descricao || '') + ' ' + (d.transcricao || '') + ' ' + (d.registrado_por || d.solicitante || ''));
+      var alvo = normaliza((d.descricao || '') + ' ' + (d.transcricao || '') + ' ' + (d.solicitante || '') + ' ' + (d.registrado_por || ''));  // F6: busca cobre os dois nomes
       if (alvo.indexOf(buscaTermo) === -1) return false;
     }
     return true;
@@ -1007,20 +1125,31 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
   }
 
   function renderCard(d, pos, t, resolvido) {
+    // R2 (PLANO_DEMANDAS_V2): card v2 — borda esquerda = COR DA URGÊNCIA (o que
+    // ordena a fila é o que salta aos olhos); setor vira chip nomeado com ponto
+    // de cor; status vira pill informativa no head (o controle é a régua no
+    // corpo). O head continua <div role="button"> (não <button>) — precedente
+    // do card antigo, agora sem filho interativo mas mantido pra não mexer na
+    // acessibilidade que já funcionava.
     var card = document.createElement('div');
     card.className = 'dm-card';
     var sc = corDoSetorLabel(d.setor);
+    var uc = corUrgLabel(d.urgencia);
     card.style.setProperty('--sc', sc);
-    var ida = idade(d.recebido_em || d.data);
+    card.style.setProperty('--uc', uc);
+    var isoRecebido = d.recebido_em || d.data;
+    // Selo "nova" (R1b preparou ultimaVisitaAnterior): chegou depois da última
+    // visita desta pessoa a esta página — nunca em resolvidas.
+    if (!resolvido && ultimaVisitaAnterior && isoRecebido &&
+        new Date(isoRecebido).getTime() > new Date(ultimaVisitaAnterior).getTime()) {
+      card.classList.add('nova');
+    }
 
     if (pos) {
       var posEl = document.createElement('span'); posEl.className = 'dm-pos'; posEl.textContent = pos + 'º';
       card.appendChild(posEl);
     }
 
-    // dm-card-head é <div role="button"> (não <button>) pra poder abrigar o
-    // dm-status-chip como filho interativo — <button> dentro de <button> é
-    // inválido e quebraria o toque no status.
     var head = document.createElement('div');
     head.className = 'dm-card-head';
     head.tabIndex = 0;
@@ -1028,40 +1157,45 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     head.setAttribute('aria-expanded', 'false');
 
     var l1 = document.createElement('div'); l1.className = 'l1';
-    l1.innerHTML = chipCasa(d.casa) + chipUrgencia(d.urgencia);
+    // Chip de casa só pra quem vê várias casas (coord/controladoria) — pro
+    // chefe a casa é sempre a dele, o chip era ruído.
+    var chipSetorHtml = d.setor
+      ? '<span class="dm-setor' + (d.setor_confirmado ? ' conf' : '') + '" style="--sc:' + sc + '"' +
+        (d.setor_confirmado ? ' title="setor confirmado"' : ' title="setor sugerido — confirme na triagem"') +
+        '><span class="dot"></span>' + esc(d.setor) + '</span>'
+      : '';
+    l1.innerHTML = ((NIVEL === 'coord' || NIVEL === 'controladoria') ? chipCasa(d.casa) : '') + chipSetorHtml;
     head.appendChild(l1);
 
-    // Etiqueta de status (toque avança pra próxima etapa) + select completo
-    // dentro do corpo expandido (corrige ou reabre um "Resolvido" — o mockup
-    // I1 aprovado pelo Rodrigo mantém as duas formas de controle). As duas
-    // chamam aplicaStatus(), que sincroniza ambas e faz o PATCH otimista com
-    // rollback; definida depois que os dois elementos existem.
-    var statusBtn = document.createElement('button');
-    statusBtn.type = 'button';
-    statusBtn.className = 'dm-status-chip';
-    function pintaStatusBtn() {
-      var idx = STATUS_OPCOES.indexOf(d.status);
-      var ultimo = idx === -1 || idx === STATUS_OPCOES.length - 1;
-      statusBtn.textContent = (d.status || 'Novo') + (!SOMENTE_LEITURA && !ultimo ? ' →' : '');
-      // controladoria: acesso só-leitura — a etiqueta vira só um rótulo (o
-      // worker recusaria o PATCH mesmo se o botão estivesse ativo).
-      statusBtn.disabled = ultimo || SOMENTE_LEITURA;
-      statusBtn.title = SOMENTE_LEITURA ? 'Só leitura — sem permissão pra mudar status'
-        : (ultimo ? 'Resolvido' : 'Toque para avançar: ' + STATUS_OPCOES[idx + 1]);
-      statusBtn.classList.toggle('resolvido', d.status === 'Resolvido');
+    // Pill de status: informativa (cor por etapa). Mudar status é na régua da
+    // Triagem, dentro do card — um controle só, que avança E volta.
+    var stPill = document.createElement('span');
+    stPill.className = 'dm-stpill';
+    function pintaStPill() {
+      stPill.textContent = d.status || 'Novo';
+      stPill.style.setProperty('--stc', corStatus(d.status || 'Novo'));
     }
-    pintaStatusBtn();
-    l1.appendChild(statusBtn);
+    pintaStPill();
+    l1.appendChild(stPill);
 
     var l2 = document.createElement('div'); l2.className = 'l2';
-    l2.innerHTML = '<b>' + esc(d.categoria) + '</b> — ' + esc((d.descricao || '').slice(0, 90)) +
+    var tipoLabel = d.tipo || (t.key === 'ocorrencia' ? 'Ocorrência' : 'Solicitação');
+    l2.innerHTML = '<b>' + esc(tipoLabel) + '</b> — ' + esc((d.descricao || '').slice(0, 90)) +
       (d.descricao && d.descricao.length > 90 ? '…' : '');
     head.appendChild(l2);
 
     var l3 = document.createElement('div'); l3.className = 'l3';
-    l3.innerHTML = 'por ' + esc(d.registrado_por || d.solicitante || 'anônimo') + ' · ' +
-      '<span class="' + ida.cls + '">' + ida.txt + '</span>' +
-      (d.setor ? ' · <span class="dm-setor' + (d.setor_confirmado ? ' conf' : '') + '" style="--sc:' + sc + '">' + esc(d.setor) + '</span>' : '');
+    // F6: assinado (senha individual) vence o autodeclarado; o selo de check só
+    // aparece quando a identidade veio assinada (Solicitante).
+    var seloAssinado = d.solicitante
+      ? '<span class="ok" title="identidade pela senha individual" aria-label="identidade confirmada">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>'
+      : '';
+    var dd = diasDesde(isoRecebido);
+    l3.innerHTML = '<span class="dm-autor">' + seloAssinado + esc(d.solicitante || d.registrado_por || 'anônimo') + '</span>' +
+      ' · <span>' + esc(horaCurta(isoRecebido)) + '</span>' +
+      (dd != null && dd > 7 ? ' · <span class="dm-parada">aberta há ' + Math.floor(dd) + ' dias</span>' : '');
     head.appendChild(l3);
 
     var seta = document.createElement('span'); seta.className = 'dm-seta'; seta.setAttribute('aria-hidden', 'true'); seta.innerHTML = '&#9662;';
@@ -1281,10 +1415,15 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
       corpoEl.appendChild(respEl);
     }
 
-    // Histórico de edições (chefe/coord, carregado lazy ao abrir o card).
-    // Usa um listener adicional no head — não interfere com abreFecha (ambos
-    // respondem ao mesmo clique; abreFecha já setou .aberto antes deste rodar).
-    if (!SOMENTE_LEITURA && (NIVEL === 'chefe' || NIVEL === 'coord')) {
+    // Histórico de edições (carregado lazy ao abrir o card). Usa um listener
+    // adicional no head — não interfere com abreFecha (ambos respondem ao mesmo
+    // clique; abreFecha já setou .aberto antes deste rodar).
+    // F8 (C2.6, PLANO_DEMANDAS_V2): controladoria TAMBÉM vê — é só leitura (o
+    // Worker já libera /edicoes pra chefe/coord/controladoria, barra só
+    // equipe/bartender), e histórico de edições é a cara da auditoria. Antes o
+    // front escondia dela por causa do `!SOMENTE_LEITURA` — removido aqui (isto
+    // é uma vista, não um controle de edição).
+    if (NIVEL === 'chefe' || NIVEL === 'coord' || NIVEL === 'controladoria') {
       var edicaoEl = document.createElement('div'); edicaoEl.className = 'dm-edicoes'; edicaoEl.style.display = 'none';
       var edicaoCarregada = false;
       corpoEl.appendChild(edicaoEl);
@@ -1337,6 +1476,7 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     if ((NIVEL === 'coord' || NIVEL === 'controladoria') && casaAtiva) qs.push('casa=' + encodeURIComponent(casaAtiva));
     var cursor = resolvido ? t.resolvidosCursor : t.cursor;
     if (!reset && cursor) qs.push('cursor=' + encodeURIComponent(cursor));
+    if (Date.now() < bustAte) qs.push('nc=' + bustTag);   // F4: cache-buster pós-PATCH
     return qs.join('&');
   }
 
@@ -1363,7 +1503,6 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     var rotulo = (mostrados !== t.itens.length ? mostrados + ' de ' : '') + t.itens.length + sufixo;
     t.elN.textContent = rotulo;
     if (t.elAbaN) t.elAbaN.textContent = ' ' + rotulo;
-    renderCasas();
     renderResumo();
   }
 
@@ -1385,12 +1524,23 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
         t.hasMore = !!d.has_more;
         t.elMais.style.display = t.hasMore ? '' : 'none';
         t.elMais.disabled = false;
+        t.elMais.textContent = 'Carregar mais';   // F5: reseta se um erro anterior trocou o texto
         redesenhaFila(t);
       })
       .catch(function () {
-        t.elLista.innerHTML = '<p class="dm-erro">Erro ao carregar. <a data-retry>Tentar de novo</a></p>';
-        var a = t.elLista.querySelector('[data-retry]');
-        if (a) a.onclick = function () { carregaFila(t, reset); };
+        // F5 (C2.4, PLANO_DEMANDAS_V2): erro no "Carregar mais" NÃO apaga a fila
+        // já carregada — só zera quando a lista está vazia (falha do primeiro
+        // carregamento). Com itens presentes, mantém tudo e mostra o retry no
+        // próprio botão (que já rechama carregaFila ao clicar).
+        if (t.itens.length) {
+          t.elMais.style.display = '';
+          t.elMais.disabled = false;
+          t.elMais.textContent = 'Erro — tentar de novo';
+        } else {
+          t.elLista.innerHTML = '<p class="dm-erro">Erro ao carregar. <a data-retry>Tentar de novo</a></p>';
+          var a = t.elLista.querySelector('[data-retry]');
+          if (a) a.onclick = function () { carregaFila(t, reset); };
+        }
       });
   }
 
@@ -1448,92 +1598,167 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     };
   });
 
-  function contagemPorCasa() {
-    var counts = {};
-    Object.keys(CASAS).forEach(function (s) { counts[s] = 0; });
-    TIPOS_DEF.forEach(function (t) {
-      FILAS[t.key].itens.forEach(function (d) {
-        var slug = CASA_LABEL_TO_SLUG[d.casa];
-        if (slug && counts.hasOwnProperty(slug)) counts[slug]++;
-      });
+  // R1b: uma única passada sobre os itens já carregados (mesma ressalva de
+  // sempre — reflete só o que está em FILAS.*.itens, não o total real se houver
+  // "carregar mais" pendente), respeitando busca. casa/setor/urgência JÁ vêm
+  // filtrados pelo Worker (são filtros de fetch) — contá-los de novo aqui não
+  // faria sentido; só status e busca são client-side.
+  function todasItens() {
+    return FILAS.ocorrencia.itens.concat(FILAS.solicitacao.itens);
+  }
+  function contagensFiltro() {
+    var casaC = {}, setorC = {}, urgC = {}, statusC = {};
+    Object.keys(CASAS).forEach(function (s) { casaC[s] = 0; });
+    Object.keys(SETORES).forEach(function (s) { setorC[s] = 0; });
+    Object.keys(URGENCIAS).forEach(function (s) { urgC[s] = 0; });
+    STATUS_OPCOES.forEach(function (s) { if (s !== 'Resolvido') statusC[s] = 0; });
+    todasItens().forEach(function (d) {
+      if (buscaTermo) {
+        var alvo = normaliza((d.descricao || '') + ' ' + (d.transcricao || '') + ' ' + (d.solicitante || '') + ' ' + (d.registrado_por || ''));
+        if (alvo.indexOf(buscaTermo) === -1) return;
+      }
+      var casaSlug = CASA_LABEL_TO_SLUG[d.casa];
+      if (casaSlug && casaC.hasOwnProperty(casaSlug)) casaC[casaSlug]++;
+      var setorSlug = SETOR_LABEL_TO_SLUG[d.setor];
+      if (setorSlug && setorC.hasOwnProperty(setorSlug)) setorC[setorSlug]++;
+      Object.keys(URGENCIAS).forEach(function (s) { if (URGENCIAS[s] === d.urgencia) urgC[s]++; });
+      if (statusC.hasOwnProperty(d.status)) statusC[d.status]++;
     });
-    return counts;
+    return { casa: casaC, setor: setorC, urg: urgC, status: statusC };
   }
 
-  // Contagem por chip reflete só o que já foi carregado nas duas filas (igual
-  // ao "mostrando" de antes) — não é o total real se houver "carregar mais"
-  // pendente.
-  function renderCasas() {
-    if (NIVEL !== 'coord' && NIVEL !== 'controladoria') return;
-    var counts = contagemPorCasa();
+  // R1b: resumo em frase — substitui a fileira de chips de status/urgência.
+  // "chegaram hoje"/"paradas há mais de 7 dias" são destaques clicáveis
+  // (filtroRapido, client-side, junto de statusAtivo/buscaTermo em itemVisivel).
+  // "novas desde a última visita" só aparece a partir da 2ª visita (sem
+  // ultimaVisitaAnterior não há o que comparar).
+  function renderResumoFrase() {
     var total = FILAS.ocorrencia.itens.length + FILAS.solicitacao.itens.length;
-    var html = '<button type="button" class="dm-casa-chip' + (!casaAtiva ? ' on' : '') + '" data-casa="" aria-pressed="' + !casaAtiva + '">Todas <b>' + total + '</b></button>';
-    Object.keys(CASAS).forEach(function (s) {
-      var on = casaAtiva === s;
-      html += '<button type="button" class="dm-casa-chip' + (on ? ' on' : '') + '" data-casa="' + s + '" aria-pressed="' + on + '" style="--cc:var(--casa-' + s + ')">' +
-        esc(CASAS[s]) + ' <b>' + (counts[s] || 0) + '</b></button>';
+    if (!total) { elResumoFrase.innerHTML = ''; return; }
+    var hoje = 0, paradas = 0, novas = 0;
+    todasItens().forEach(function (d) {
+      var iso = d.recebido_em || d.data;
+      if (mesmoDia(iso)) hoje++;
+      var dd = diasDesde(iso);
+      if (dd != null && dd > 7) paradas++;
+      if (ultimaVisitaAnterior && iso && new Date(iso).getTime() > new Date(ultimaVisitaAnterior).getTime()) novas++;
     });
-    elCasas.innerHTML = html;
-    elCasas.querySelectorAll('button').forEach(function (b) {
-      b.onclick = function () { casaAtiva = b.dataset.casa || null; carregaTudo(true); };
-    });
-  }
-
-  // I3: contadores por status e por urgência, somando as duas filas já
-  // carregadas (nunca o total real na base — mesma ressalva da contagem por
-  // casa). Clique em status filtra client-side (sem refetch, junto da busca);
-  // clique em urgência reusa o select já existente (fUrgencia) — uma única
-  // fonte de verdade pro filtro de urgência, que já dispara refetch no worker.
-  function contagensResumo() {
-    var statusCounts = {}, urgCounts = {};
-    STATUS_OPCOES.forEach(function (s) { if (s !== 'Resolvido') statusCounts[s] = 0; });
-    Object.keys(URGENCIAS).forEach(function (slug) { urgCounts[URGENCIAS[slug]] = 0; });
-    TIPOS_DEF.forEach(function (t) {
-      FILAS[t.key].itens.forEach(function (d) {
-        if (buscaTermo) {
-          var alvo = normaliza((d.descricao || '') + ' ' + (d.transcricao || '') + ' ' + (d.registrado_por || d.solicitante || ''));
-          if (alvo.indexOf(buscaTermo) === -1) return;
-        }
-        if (statusCounts.hasOwnProperty(d.status)) statusCounts[d.status]++;
-        if (urgCounts.hasOwnProperty(d.urgencia)) urgCounts[d.urgencia]++;
-      });
-    });
-    return { status: statusCounts, urg: urgCounts };
-  }
-
-  function renderResumo() {
-    var total = FILAS.ocorrencia.itens.length + FILAS.solicitacao.itens.length;
-    if (!total) { elResumo.innerHTML = ''; return; }
-    var c = contagensResumo();
-    var html = '';
-    Object.keys(c.status).forEach(function (s) {
-      var on = statusAtivo === s;
-      html += '<button type="button" class="dm-casa-chip' + (on ? ' on' : '') + '" data-status="' + esc(s) + '" aria-pressed="' + on + '">' +
-        esc(s) + ' <b>' + c.status[s] + '</b></button>';
-    });
-    Object.keys(URGENCIAS).forEach(function (slug) {
-      var label = URGENCIAS[slug];
-      var on = fUrgencia.value === slug;
-      html += '<button type="button" class="dm-casa-chip' + (on ? ' on' : '') + '" data-urg="' + slug +
-        '" aria-pressed="' + on + '" style="--cc:' + corUrgencia(slug) + '">' + esc(label) + ' <b>' + (c.urg[label] || 0) + '</b></button>';
-    });
-    elResumo.innerHTML = html;
-    elResumo.querySelectorAll('[data-status]').forEach(function (b) {
-      b.onclick = function () {
-        statusAtivo = (statusAtivo === b.dataset.status) ? null : b.dataset.status;
+    var sufixo = (FILAS.ocorrencia.hasMore || FILAS.solicitacao.hasMore) ? '+' : '';
+    var partes = [
+      '<b>' + total + sufixo + ' aberta' + (total === 1 ? '' : 's') + '</b>',
+      '<span class="dm-resumo-hl' + (filtroRapido === 'hoje' ? ' on' : '') + '" data-filtro-rapido="hoje" role="button" tabindex="0">' + hoje + ' chegaram hoje</span>',
+      '<span class="dm-resumo-hl warn' + (filtroRapido === 'paradas' ? ' on' : '') + '" data-filtro-rapido="paradas" role="button" tabindex="0">' + paradas + ' paradas há mais de 7 dias</span>'
+    ];
+    if (ultimaVisitaAnterior) {
+      partes.push('<span class="dm-resumo-novas">' + novas + ' nova' + (novas === 1 ? '' : 's') + ' desde a sua última visita (' + horaCurta(ultimaVisitaAnterior) + ')</span>');
+    }
+    elResumoFrase.innerHTML = partes.join(' · ');
+    elResumoFrase.querySelectorAll('[data-filtro-rapido]').forEach(function (b) {
+      function ativa() {
+        filtroRapido = (filtroRapido === b.dataset.filtroRapido) ? null : b.dataset.filtroRapido;
         redesenhaFila(FILAS.ocorrencia); redesenhaFila(FILAS.solicitacao);
+      }
+      b.onclick = ativa;
+      b.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ativa(); } });
+    });
+  }
+
+  // R1b: barra de filtros única (Casa — só coord/controladoria —, Setor, Desde,
+  // Status), substituindo os chips de casas + chips de resumo + os 2 <select>
+  // visíveis. Casa/Setor/Desde escrevem em casaAtiva/fSetor.value/fUrgencia.value
+  // (os MESMOS estados de sempre) e chamam carregaTudo(true) — mesma máquina de
+  // fetch de antes, zero mudança de comportamento de rede. Status é client-side
+  // (statusAtivo), como já era.
+  function renderFiltrosBar() {
+    var coordish = (NIVEL === 'coord' || NIVEL === 'controladoria');
+    var c = contagensFiltro();
+
+    function seta() {
+      return ' <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+    }
+    function icX() {
+      return '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+    }
+    function chip(id, rotulo, valorLabel) {
+      var ativo = !!valorLabel;
+      return '<button type="button" class="dm-fbar-chip' + (ativo ? ' on' : '') + '" data-abre-menu="' + id + '" ' +
+        'aria-expanded="' + (menuAberto === id) + '">' + esc(rotulo) +
+        (ativo ? ': <span class="v">' + esc(valorLabel) + '</span>' : '') + seta() + '</button>';
+    }
+    function menu(id, itens, valorAtual) {
+      return '<div class="dm-fbar-menu" data-menu="' + id + '" style="display:' + (menuAberto === id ? '' : 'none') + '">' +
+        '<button type="button" data-menu-val="' + id + '" data-slug="">Todas</button>' +
+        itens.map(function (it) {
+          var on = valorAtual === it.slug;
+          return '<button type="button" data-menu-val="' + id + '" data-slug="' + it.slug + '" class="' + (on ? 'on' : '') + '">' +
+            (it.cor ? '<span class="dot" style="background:' + it.cor + '"></span>' : '') + esc(it.label) +
+            '<span class="n">' + it.n + '</span></button>';
+        }).join('') + '</div>';
+    }
+
+    var html = '';
+    if (coordish) html += chip('casa', 'Casa', casaAtiva ? CASAS[casaAtiva] : '');
+    html += chip('setor', 'Setor', fSetor.value ? SETORES[fSetor.value] : '');
+    html += chip('urg', 'Desde', fUrgencia.value ? URGENCIAS[fUrgencia.value] : '');
+    html += chip('status', 'Status', statusAtivo || '');
+    if (casaAtiva || fSetor.value || fUrgencia.value || statusAtivo) {
+      html += '<button type="button" class="dm-fbar-chip limpar" data-limpar-filtros="1">' + icX() + ' limpar</button>';
+    }
+    if (coordish) {
+      html += menu('casa', Object.keys(CASAS).map(function (s) { return { slug: s, label: CASAS[s], cor: 'var(--casa-' + s + ')', n: c.casa[s] || 0 }; }), casaAtiva);
+    }
+    html += menu('setor', Object.keys(SETORES).map(function (s) { return { slug: s, label: SETORES[s], cor: SETOR_COR[s], n: c.setor[s] || 0 }; }), fSetor.value);
+    html += menu('urg', Object.keys(URGENCIAS).map(function (s) { return { slug: s, label: URGENCIAS[s], cor: corUrgencia(s), n: c.urg[s] || 0 }; }), fUrgencia.value);
+    html += menu('status', STATUS_OPCOES.filter(function (s) { return s !== 'Resolvido'; }).map(function (s) { return { slug: s, label: s, n: c.status[s] || 0 }; }), statusAtivo);
+
+    elFiltrosBar.innerHTML = html;
+
+    elFiltrosBar.querySelectorAll('[data-abre-menu]').forEach(function (b) {
+      b.onclick = function (ev) {
+        ev.stopPropagation();
+        var id = b.dataset.abreMenu;
+        menuAberto = (menuAberto === id) ? '' : id;
+        renderFiltrosBar();
       };
     });
-    elResumo.querySelectorAll('[data-urg]').forEach(function (b) {
-      b.onclick = function () {
-        fUrgencia.value = (fUrgencia.value === b.dataset.urg) ? '' : b.dataset.urg;
+    var limparBtn = elFiltrosBar.querySelector('[data-limpar-filtros]');
+    if (limparBtn) {
+      limparBtn.onclick = function () {
+        casaAtiva = null; fSetor.value = ''; fUrgencia.value = ''; statusAtivo = null; menuAberto = '';
         carregaTudo(true);
       };
+    }
+    elFiltrosBar.querySelectorAll('[data-menu-val]').forEach(function (b) {
+      b.onclick = function () {
+        var id = b.dataset.menuVal, slug = b.dataset.slug;
+        menuAberto = '';
+        if (id === 'casa') { casaAtiva = slug || null; renderFiltrosBar(); carregaTudo(true); }
+        else if (id === 'setor') { fSetor.value = slug; renderFiltrosBar(); carregaTudo(true); }
+        else if (id === 'urg') { fUrgencia.value = slug; renderFiltrosBar(); carregaTudo(true); }
+        else if (id === 'status') { statusAtivo = slug || null; renderFiltrosBar(); redesenhaFila(FILAS.ocorrencia); redesenhaFila(FILAS.solicitacao); }
+      };
     });
+  }
+  // Fecha o menu aberto ao tocar fora da barra (um painel por vez).
+  document.addEventListener('click', function (ev) {
+    if (!menuAberto) return;
+    if (ev.target.closest('.dm-filtros-bar')) return;
+    menuAberto = '';
+    renderFiltrosBar();
+  });
+
+  // Chamado sempre junto (mesmos 3 call-sites de antes: fim de redesenhaFila,
+  // e otimista/rollback de aplicaStatus) — mantém a frase e a barra em dia com
+  // o que está carregado, sem duplicar a chamada nos call-sites existentes.
+  function renderResumo() {
+    renderResumoFrase();
+    renderFiltrosBar();
   }
 
   function limpaFiltroRapido() {
-    statusAtivo = null; buscaTermo = ''; elBusca.value = '';
+    statusAtivo = null; filtroRapido = null; buscaTermo = ''; elBusca.value = '';
     redesenhaFila(FILAS.ocorrencia); redesenhaFila(FILAS.solicitacao);
   }
 
@@ -1549,9 +1774,6 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
     });
   }
 
-  [fUrgencia, fSetor].forEach(function (el) {
-    el.addEventListener('change', function () { carregaTudo(true); });
-  });
   elBusca.addEventListener('input', function () {
     buscaTermo = normaliza(elBusca.value.trim());
     redesenhaFila(FILAS.ocorrencia); redesenhaFila(FILAS.solicitacao);
@@ -1627,8 +1849,13 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
       bolha.appendChild(respBloco);
     }
 
-    // Botão editar (só se a demanda não está Resolvida e o nível tem pessoa)
-    var podeEditar = (d.status !== 'Resolvido');
+    // Botão editar: só se a demanda não está Resolvida E a sessão tem PESSOA
+    // (senha individual). F1-front (C2.1, PLANO_DEMANDAS_V2): sem pessoa, o
+    // Worker recusa a edição de descrição (só o autor por senha individual
+    // edita), então mostrar o botão pra sessão compartilhada era um botão que
+    // sempre falhava. O comentário já previa "tem pessoa" mas o código não
+    // checava — agora checa.
+    var podeEditar = (d.status !== 'Resolvido') && !!PESSOA;
     if (podeEditar) {
       var editarBtn = document.createElement('button');
       editarBtn.className = 'dm-env-editar-btn';
@@ -1714,6 +1941,7 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
       var nomeAtualEnv = (document.getElementById('dm-env-nome').value || '').trim();
       if (nomeAtualEnv) qs.push('nome=' + encodeURIComponent(nomeAtualEnv));
     }
+    if (Date.now() < bustAte) qs.push('nc=' + bustTag);   // F4: cache-buster pós-PATCH
     fetch(WORKER + '/api/demandas?' + qs.join('&'), { headers: { 'X-Token': TOKEN } })
       .then(function (r) {
         if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
@@ -1733,12 +1961,21 @@ do card pra avançar. Chefe de bar vê a própria casa; coordenação vê todas.
         ENV.hasMore = !!d.has_more;
         elEnvMais.style.display = ENV.hasMore ? '' : 'none';
         elEnvMais.disabled = false;
+        elEnvMais.textContent = 'Carregar mais';   // F5: reseta texto de erro anterior
         redesenhaEnviadas();
       })
       .catch(function () {
-        elEnvLista.innerHTML = '<p class="dm-erro">Erro ao carregar. <a data-retry>Tentar de novo</a></p>';
-        var a = elEnvLista.querySelector('[data-retry]');
-        if (a) a.onclick = function () { carregaEnviadas(reset); };
+        // F5 (C2.4): erro no "Carregar mais" das Enviadas não apaga a timeline
+        // já carregada — só zera se estiver vazia; senão, retry no botão.
+        if (ENV.itens.length) {
+          elEnvMais.style.display = '';
+          elEnvMais.disabled = false;
+          elEnvMais.textContent = 'Erro — tentar de novo';
+        } else {
+          elEnvLista.innerHTML = '<p class="dm-erro">Erro ao carregar. <a data-retry>Tentar de novo</a></p>';
+          var a = elEnvLista.querySelector('[data-retry]');
+          if (a) a.onclick = function () { carregaEnviadas(reset); };
+        }
       });
   }
   elEnvMais.addEventListener('click', function () { carregaEnviadas(false); });
