@@ -159,6 +159,16 @@ window.msgAcessoNegado = function (nomePagina) {
       return k;
     } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
   }
+  function deviceLabel() {
+    try { var m = localStorage.getItem('portal_device_label'); if (m) return m; } catch (e) {}
+    var ua = navigator.userAgent || '';
+    if (/iPhone/.test(ua)) return 'iPhone';
+    if (/iPad/.test(ua)) return 'iPad';
+    if (/Android/.test(ua)) return 'Android';
+    if (/Macintosh|Mac OS X/.test(ua)) return 'Mac';
+    if (/Windows/.test(ua)) return 'Windows';
+    return 'Aparelho';
+  }
   window.marcaPresenca = function () {
     var s = window.sessaoLer && window.sessaoLer();
     if (!s || !PRES_WORKER) return;
@@ -167,10 +177,27 @@ window.msgAcessoNegado = function (nomePagina) {
       if (Date.now() - ult < 90000) return;
       localStorage.setItem('portal_presenca_ts', String(Date.now()));
     } catch (e) {}
-    fetch(PRES_WORKER + '/api/presenca', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
-      body: JSON.stringify({ device: deviceId() }),
-    }).catch(function () {});
+    function envia(extra) {
+      var corpo = { device: deviceId() };
+      if (extra) for (var kk in extra) corpo[kk] = extra[kk];
+      fetch(PRES_WORKER + '/api/presenca', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+        body: JSON.stringify(corpo),
+      }).catch(function () {});
+    }
+    // Só a sessão de COORD (o Rodrigo — único coord) reporta a posição do
+    // próprio aparelho, pra ele reencontrar os dispositivos onde está logado.
+    // Nenhum outro nível dispara pedido de GPS aqui. Após o 1º "permitir" o
+    // navegador não pergunta de novo; maximumAge reusa posição recente.
+    if (s.nivel === 'coord' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function (pos) { envia({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy, label: deviceLabel() }); },
+        function () { envia(null); },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      );
+    } else {
+      envia(null);
+    }
   };
   window.marcaPresenca();
   setInterval(window.marcaPresenca, 120000);

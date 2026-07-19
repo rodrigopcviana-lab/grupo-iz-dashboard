@@ -159,6 +159,16 @@ window.msgAcessoNegado = function (nomePagina) {
       return k;
     } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
   }
+  function deviceLabel() {
+    try { var m = localStorage.getItem('portal_device_label'); if (m) return m; } catch (e) {}
+    var ua = navigator.userAgent || '';
+    if (/iPhone/.test(ua)) return 'iPhone';
+    if (/iPad/.test(ua)) return 'iPad';
+    if (/Android/.test(ua)) return 'Android';
+    if (/Macintosh|Mac OS X/.test(ua)) return 'Mac';
+    if (/Windows/.test(ua)) return 'Windows';
+    return 'Aparelho';
+  }
   window.marcaPresenca = function () {
     var s = window.sessaoLer && window.sessaoLer();
     if (!s || !PRES_WORKER) return;
@@ -167,10 +177,27 @@ window.msgAcessoNegado = function (nomePagina) {
       if (Date.now() - ult < 90000) return;
       localStorage.setItem('portal_presenca_ts', String(Date.now()));
     } catch (e) {}
-    fetch(PRES_WORKER + '/api/presenca', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
-      body: JSON.stringify({ device: deviceId() }),
-    }).catch(function () {});
+    function envia(extra) {
+      var corpo = { device: deviceId() };
+      if (extra) for (var kk in extra) corpo[kk] = extra[kk];
+      fetch(PRES_WORKER + '/api/presenca', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+        body: JSON.stringify(corpo),
+      }).catch(function () {});
+    }
+    // Só a sessão de COORD (o Rodrigo — único coord) reporta a posição do
+    // próprio aparelho, pra ele reencontrar os dispositivos onde está logado.
+    // Nenhum outro nível dispara pedido de GPS aqui. Após o 1º "permitir" o
+    // navegador não pergunta de novo; maximumAge reusa posição recente.
+    if (s.nivel === 'coord' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function (pos) { envia({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy, label: deviceLabel() }); },
+        function () { envia(null); },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      );
+    } else {
+      envia(null);
+    }
   };
   window.marcaPresenca();
   setInterval(window.marcaPresenca, 120000);
@@ -389,6 +416,21 @@ window.msgAcessoNegado = function (nomePagina) {
   .atv-pessoa .nome { font-weight: 600; color: var(--text); }
   .atv-nums { font-size: 12px; color: var(--text-3); white-space: nowrap; }
   .atv-nums b { color: var(--acc); font-variant-numeric: tabular-nums; }
+  .atv-mine { background: var(--card); border: 1px solid var(--acc); border-radius: 14px;
+              padding: 14px 16px; margin-bottom: 14px; }
+  .atv-mine h2 { font-family: var(--serif); font-size: 17px; margin: 0 0 4px; }
+  .atv-mine .hint { font-size: 12px; color: var(--text-3); margin: 0 0 8px; }
+  .atv-dev { padding: 9px 0; border-bottom: 1px dashed var(--border); }
+  .atv-dev:last-child { border-bottom: none; }
+  .atv-dev-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .atv-dev-top .nome { font-weight: 600; color: var(--text); font-size: 14px; }
+  .atv-dev-top .meta { font-size: 12px; color: var(--text-3); }
+  .atv-dev-bot { display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+                 margin-top: 3px; flex-wrap: wrap; }
+  .atv-dev-bot .meta { font-size: 11.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .atv-dev-link { font-size: 12.5px; font-weight: 600; color: var(--acc); text-decoration: none;
+                  border: 1px solid var(--acc); border-radius: 999px; padding: 2px 10px; }
+  .atv-vazio { color: var(--text-3); font-size: 13px; }
 </style>
 <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg> Atividade por pessoa</h1>
 <p class="sub">Registros abertos, fichas consultadas e progresso do treino — por bartender.</p>
@@ -397,6 +439,7 @@ window.msgAcessoNegado = function (nomePagina) {
   <h2>Acesso restrito</h2>
   <p class="sub" id="atv-msg" style="margin:4px 0 0" role="status" aria-live="polite">Verificando seu acesso…</p>
 </div>
+<div id="atv-coord" style="display:none"></div>
 <div id="atv-corpo" style="display:none"></div>
 
 <script>
@@ -421,6 +464,53 @@ window.msgAcessoNegado = function (nomePagina) {
     if (!iso) return 'sem atividade';
     var d = new Date(iso);
     return isNaN(d) ? 'sem atividade' : d.toLocaleDateString('pt-BR');
+  }
+  function haQuanto(iso) {
+    var min = Math.max(0, (Date.now() - new Date(iso).getTime()) / 60000);
+    if (min < 1) return 'agora';
+    if (min < 60) return 'há ' + Math.round(min) + ' min';
+    var h = Math.floor(min / 60), m = Math.round(min % 60);
+    return 'há ' + h + 'h' + (m ? String(m).padStart(2, '0') : '');
+  }
+  function fmtAcc(m) { return m == null ? '' : (m < 1000 ? Math.round(m) + ' m' : (Math.round(m / 100) / 10) + ' km'); }
+
+  // "Meus aparelhos": seção só do coordenador (o Rodrigo — único coord, sem
+  // senha individual, por isso não aparece nas casas abaixo). Última posição
+  // conhecida de cada aparelho onde a sessão de coord está logada, pra ele
+  // reencontrar os dispositivos. Fonte: GET /api/presenca/coord-devices.
+  function desenhaDevices(d) {
+    var lista = (d && d.devices) || [];
+    var alvo = document.getElementById('atv-coord');
+    alvo.innerHTML = '';
+    alvo.style.display = '';
+    var card = el('div', 'atv-mine');
+    card.appendChild(el('h2', null, 'Meus aparelhos'));
+    card.appendChild(el('p', 'hint', 'Onde cada aparelho com a sua sessão de coordenação foi visto por último. Só aparece depois de você permitir a localização naquele aparelho.'));
+    if (!lista.length) {
+      card.appendChild(el('p', 'atv-vazio', 'Nenhum aparelho reportou localização ainda. Abra o portal logado como coordenação e toque em “permitir” quando o navegador pedir a localização.'));
+    } else {
+      lista.forEach(function (dv) {
+        var linha = el('div', 'atv-dev');
+        var top = el('div', 'atv-dev-top');
+        top.appendChild(el('span', 'nome', dv.label || 'Aparelho'));
+        top.appendChild(el('span', 'meta', haQuanto(dv.ts)));
+        var bot = el('div', 'atv-dev-bot');
+        var a = el('a', 'atv-dev-link', 'Ver no mapa');
+        a.href = 'https://www.google.com/maps?q=' + dv.lat + ',' + dv.lon;
+        a.target = '_blank'; a.rel = 'noopener';
+        var meta = el('span', 'meta', Number(dv.lat).toFixed(5) + ', ' + Number(dv.lon).toFixed(5)
+          + (dv.acc != null ? ' · ±' + fmtAcc(dv.acc) : ''));
+        bot.appendChild(a); bot.appendChild(meta);
+        linha.appendChild(top); linha.appendChild(bot);
+        card.appendChild(linha);
+      });
+    }
+    alvo.appendChild(card);
+  }
+  function buscaDevices(token) {
+    fetch(WORKER + '/api/presenca/coord-devices', { headers: { 'X-Token': token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d) desenhaDevices(d); }).catch(function () {});
   }
 
   function desenha(d) {
@@ -466,6 +556,10 @@ window.msgAcessoNegado = function (nomePagina) {
   var r = window.exigirNivel(['coord', 'chefe'], SLUG);
   if (r.ok) {
     busca(r.sessao.token);
+    if (r.sessao.nivel === 'coord') {
+      buscaDevices(r.sessao.token);
+      setInterval(function () { buscaDevices(r.sessao.token); }, 60000);
+    }
   } else if (!r.redirecionou) {
     msg.innerHTML = window.msgAcessoNegado('a Atividade por pessoa');
   }
