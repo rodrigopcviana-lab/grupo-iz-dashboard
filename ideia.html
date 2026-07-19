@@ -551,6 +551,12 @@ window.msgAcessoNegado = function (nomePagina) {
     <button class="idea-tbtn" id="idea-btn-foto" title="Colar foto"><svg class="ico"><use href="#ii-img"/></svg></button>
     <button class="idea-tbtn" data-tool="move" title="Mover / redimensionar"><svg class="ico"><use href="#ii-move"/></svg></button>
   </div>
+  <div class="idea-tgrupo" id="idea-g-formas">
+    <button class="idea-tbtn" data-tool="rect" title="Retângulo"><svg class="ico"><use href="#ii-rect"/></svg></button>
+    <button class="idea-tbtn" data-tool="ellipse" title="Elipse"><svg class="ico"><use href="#ii-oval"/></svg></button>
+    <button class="idea-tbtn" data-tool="line" title="Linha"><svg class="ico"><use href="#ii-line"/></svg></button>
+    <button class="idea-tbtn" data-tool="arrow" title="Seta"><svg class="ico"><use href="#ii-arrow"/></svg></button>
+  </div>
   <div class="idea-tgrupo" id="idea-g-cores"></div>
   <div class="idea-tgrupo" id="idea-g-esp">
     <button class="idea-esp" data-w="2.5"><i style="width:5px;height:5px"></i></button>
@@ -734,11 +740,45 @@ window.msgAcessoNegado = function (nomePagina) {
     tracaCaminho(g, op.pts);
     g.restore();
   }
+  // Formas (retângulo, elipse, linha, seta) vivem na MESMA camada de tinta que
+  // os traços — são "desenho", não objetos móveis (a borracha apaga, o undo
+  // desfaz, o enquadrar conta nos limites, tudo pelo caminho de `ops`).
+  function pintaForma(g, op) {
+    g.save();
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    g.lineWidth = op.w;
+    g.strokeStyle = op.cor;
+    var x0 = op.x0, y0 = op.y0, x1 = op.x1, y1 = op.y1;
+    if (op.kind === 'rect') {
+      g.beginPath();
+      g.rect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0));
+      g.stroke();
+    } else if (op.kind === 'ellipse') {
+      var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      g.beginPath();
+      g.ellipse(cx, cy, Math.max(Math.abs(x1 - x0) / 2, 0.1), Math.max(Math.abs(y1 - y0) / 2, 0.1), 0, 0, Math.PI * 2);
+      g.stroke();
+    } else if (op.kind === 'line' || op.kind === 'arrow') {
+      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+      if (op.kind === 'arrow') {
+        var ang = Math.atan2(y1 - y0, x1 - x0);
+        var head = Math.max(9, op.w * 3.4);
+        g.beginPath();
+        g.moveTo(x1, y1); g.lineTo(x1 - head * Math.cos(ang - Math.PI / 7), y1 - head * Math.sin(ang - Math.PI / 7));
+        g.moveTo(x1, y1); g.lineTo(x1 - head * Math.cos(ang + Math.PI / 7), y1 - head * Math.sin(ang + Math.PI / 7));
+        g.stroke();
+      }
+    }
+    g.restore();
+  }
   function refazTracos() {
     cctx.setTransform(1, 0, 0, 1, 0, 0);
     cctx.clearRect(0, 0, camada.width, camada.height);
     cctx.setTransform(DPR * view.k, 0, 0, DPR * view.k, DPR * view.tx, DPR * view.ty);
-    ops.forEach(function (op) { if (op.t === 'traco') pintaTraco(cctx, op); });
+    ops.forEach(function (op) {
+      if (op.t === 'traco') pintaTraco(cctx, op);
+      else if (op.t === 'forma') pintaForma(cctx, op);
+    });
   }
 
   function medidasObj(o) {
@@ -815,12 +855,19 @@ window.msgAcessoNegado = function (nomePagina) {
   function boundsConteudo() {
     var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, achou = false;
     ops.forEach(function (op) {
-      if (op.t !== 'traco') return;
-      op.pts.forEach(function (p) {
+      if (op.t === 'traco') {
+        op.pts.forEach(function (p) {
+          achou = true;
+          if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+          if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+        });
+      } else if (op.t === 'forma') {
         achou = true;
-        if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
-        if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
-      });
+        var xa = Math.min(op.x0, op.x1), xb = Math.max(op.x0, op.x1);
+        var ya = Math.min(op.y0, op.y1), yb = Math.max(op.y0, op.y1);
+        if (xa < minX) minX = xa; if (xb > maxX) maxX = xb;
+        if (ya < minY) minY = ya; if (yb > maxY) maxY = yb;
+      }
     });
     objetos.forEach(function (o) {
       var m = medidasObj(o); achou = true;
@@ -905,6 +952,11 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     if (tool === 'text') { abreEditorTexto(null, wx, wy, sc); return; }
 
+    if (tool === 'rect' || tool === 'ellipse' || tool === 'line' || tool === 'arrow') {
+      gesto = { modo: 'forma', op: { t: 'forma', kind: tool, cor: cor, w: espessura / view.k, x0: wx, y0: wy, x1: wx, y1: wy } };
+      return;
+    }
+
     gesto = { modo: 'traco', op: { t: 'traco', cor: cor, w: espessura / view.k, borracha: tool === 'eraser', pts: [[wx, wy]] } };
   });
 
@@ -930,6 +982,10 @@ window.msgAcessoNegado = function (nomePagina) {
       var evs = coalesced.length ? coalesced : [ev];
       evs.forEach(function (e) { var p = telaDe(e); gesto.op.pts.push(worldPt(p[0], p[1])); });
       refazTracos(); pintaTraco(cctx, gesto.op); desenha();
+    } else if (gesto.modo === 'forma') {
+      var wf = worldPt(sc[0], sc[1]);
+      gesto.op.x1 = wf[0]; gesto.op.y1 = wf[1];
+      refazTracos(); pintaForma(cctx, gesto.op); desenha();
     } else if (gesto.modo === 'move') {
       var o = objetos.get(gesto.id); if (!o) return;
       var w = worldPt(sc[0], sc[1]);
@@ -955,6 +1011,14 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     if (gesto.modo === 'traco') {
       if (gesto.op.pts.length) { refazTracos(); pushOp(gesto.op); refazTracos(); desenha(); }
+      gesto = null;
+    } else if (gesto.modo === 'forma') {
+      // descarta um toque sem arraste (forma degenerada) — precisa de ao menos
+      // uns poucos pixels de tela pra virar desenho de verdade.
+      var op = gesto.op;
+      if (Math.hypot(op.x1 - op.x0, op.y1 - op.y0) * view.k > 4) {
+        refazTracos(); pushOp(op); refazTracos(); desenha();
+      } else { refazTracos(); desenha(); }
       gesto = null;
     } else if (ponteiros.size === 0) {
       var o = objetos.get(gesto.id);
@@ -1039,7 +1103,9 @@ window.msgAcessoNegado = function (nomePagina) {
   });
 
   var DICAS = { pen: 'Desenhe com o dedo, caneta ou mouse', eraser: 'Borracha — apaga só o traço, não a foto',
-                text: 'Toque no quadro pra escrever', move: 'Toque num objeto: arraste, alça redimensiona, X remove' };
+                text: 'Toque no quadro pra escrever', move: 'Toque num objeto: arraste, alça redimensiona, X remove',
+                rect: 'Arraste pra desenhar um retângulo', ellipse: 'Arraste pra desenhar uma elipse',
+                line: 'Arraste de um ponto ao outro', arrow: 'Arraste pra desenhar uma seta' };
   var dicaTimer = null;
   function dica(msg) {
     var el = document.getElementById('idea-dica');
@@ -1048,13 +1114,13 @@ window.msgAcessoNegado = function (nomePagina) {
   }
   function ferramenta(t) {
     tool = t;
-    document.querySelectorAll('#idea-g-tools .idea-tbtn[data-tool]').forEach(function (b) {
+    document.querySelectorAll('.idea-toolbar .idea-tbtn[data-tool]').forEach(function (b) {
       b.classList.toggle('on', b.dataset.tool === t);
     });
     if (t !== 'move') { selecionado = null; desenha(); }
     if (DICAS[t]) dica(DICAS[t]);
   }
-  document.querySelectorAll('#idea-g-tools .idea-tbtn[data-tool]').forEach(function (b) {
+  document.querySelectorAll('.idea-toolbar .idea-tbtn[data-tool]').forEach(function (b) {
     b.addEventListener('click', function () { ferramenta(b.dataset.tool); });
   });
 
@@ -1099,7 +1165,10 @@ window.msgAcessoNegado = function (nomePagina) {
     var sl = document.createElement('canvas'); sl.width = w; sl.height = h;
     var slg = sl.getContext('2d');
     slg.setTransform(s, 0, 0, s, -rx * s, -ry * s);
-    ops.forEach(function (op) { if (op.t === 'traco') pintaTraco(slg, op); });
+    ops.forEach(function (op) {
+      if (op.t === 'traco') pintaTraco(slg, op);
+      else if (op.t === 'forma') pintaForma(slg, op);
+    });
     g.fillStyle = PAPEL; g.fillRect(0, 0, w, h);
     g.drawImage(sl, 0, 0);
     g.setTransform(s, 0, 0, s, -rx * s, -ry * s);
