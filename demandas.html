@@ -159,6 +159,20 @@ window.msgAcessoNegado = function (nomePagina) {
       return k;
     } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
   }
+  // Rótulo grosseiro do aparelho (iPhone/Android/Mac...) derivado do
+  // User-Agent — mandado no heartbeat pra a coordenação identificar QUAL
+  // aparelho está logado, mesmo em sessão sem nome (senha compartilhada).
+  function deviceLabel() {
+    try { var m = localStorage.getItem('portal_device_label'); if (m) return m; } catch (e) {}
+    var ua = navigator.userAgent || '';
+    if (/iPhone/.test(ua)) return 'iPhone';
+    if (/iPad/.test(ua)) return 'iPad';
+    if (/Android/.test(ua)) return 'Android';
+    if (/Macintosh|Mac OS X/.test(ua)) return 'Mac';
+    if (/Windows/.test(ua)) return 'Windows';
+    if (/Linux/.test(ua)) return 'Linux';
+    return 'Navegador';
+  }
   window.marcaPresenca = function () {
     var s = window.sessaoLer && window.sessaoLer();
     if (!s || !PRES_WORKER) return;
@@ -169,7 +183,7 @@ window.msgAcessoNegado = function (nomePagina) {
     } catch (e) {}
     fetch(PRES_WORKER + '/api/presenca', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
-      body: JSON.stringify({ device: deviceId() }),
+      body: JSON.stringify({ device: deviceId(), label: deviceLabel() }),
     }).catch(function () {});
   };
   window.marcaPresenca();
@@ -505,6 +519,45 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-abas button .n { opacity: .8; font-variant-numeric: tabular-nums; margin-left: 3px; }
   .dm-abas button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
+  /* Views v1 (Galeria/Kanban/Tabela) — ADITIVO sobre a Fila atual (2026-07-19,
+     mockup mockup_demandas_views_v1.html). A Fila (2 abas) fica INTACTA; as 3
+     views novas unificam ocorrência+solicitação e, ao clicar, abrem o card
+     existente (renderCard: triagem+resposta+conversa) num overlay. */
+  .dm-vistas { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .dm-vseg { display: inline-flex; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
+  .dm-vseg button { background: none; border: 0; color: var(--text-3); font: inherit; font-size: 13px; padding: 6px 11px; border-radius: 8px; cursor: pointer; }
+  .dm-vseg button.on { background: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  .dm-vctrl { display: inline-flex; align-items: center; gap: 6px; color: var(--text-3); font-size: 12.5px; }
+  .dm-vctrl select { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 12.5px; }
+  .dm-uni { display: none; }
+  .dm-uni.on { display: block; }
+  .dm-ugh { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; font-size: 12.5px; font-weight: 700; color: var(--text-2); }
+  .dm-ugh .n { color: var(--text-3); font-weight: 600; }
+  .dm-ugh::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .dm-gcard { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--uc, var(--border)); border-radius: 12px; padding: 12px 14px; cursor: pointer; margin-bottom: 9px; }
+  .dm-gcard:hover { border-color: var(--acc); }
+  .dm-gcard .gl1 { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 6px; }
+  .dm-gcard .gl2 { font-size: 14px; margin: 2px 0 5px; }
+  .dm-gcard .gl3 { display: flex; align-items: center; gap: 7px; color: var(--text-3); font-size: 12px; flex-wrap: wrap; }
+  .dm-gtipo { font-size: 10.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; }
+  .dm-gconv { display: inline-flex; align-items: center; gap: 4px; color: var(--text-3); font-size: 11.5px; margin-top: 7px; }
+  .dm-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .dm-gal .dm-gcard { margin-bottom: 0; }
+  .dm-kb { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+  .dm-kcol { flex: 0 0 260px; background: var(--card2, var(--card)); border: 1px solid var(--border); border-radius: 12px; padding: 8px; }
+  .dm-kcol h4 { margin: 4px 6px 8px; font-size: 12.5px; display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+  .dm-kcol h4 .n { margin-left: auto; color: var(--text-3); font-weight: 600; }
+  .dm-tabwrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+  .dm-tab { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 720px; }
+  .dm-tab th, .dm-tab td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .dm-tab th { color: var(--text-3); font-weight: 600; font-size: 11.5px; }
+  .dm-tab tbody tr { cursor: pointer; }
+  .dm-tab td .td-desc { white-space: normal; max-width: 260px; display: inline-block; }
+  .dm-ubar { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .dm-ov { position: fixed; inset: 0; background: rgba(4,5,8,.66); display: none; align-items: flex-start; justify-content: center; z-index: 60; overflow-y: auto; padding: 20px 12px; }
+  .dm-ov.on { display: flex; }
+  .dm-ov-inner { width: 100%; max-width: 560px; }
+
   .dm-filas { display: flex; flex-direction: column; gap: 22px; }
   .dm-fila { display: none; }
   .dm-fila.ativa { display: block; }
@@ -725,6 +778,30 @@ prioridade (urgência primeiro, mais antiga depois).</p>
 <select id="dm-f-setor" style="display:none"><option value="">Setor: Todos</option></select>
 <div class="dm-filtros-bar" id="dm-filtros-bar"></div>
 
+<div class="dm-vistas" id="dm-vistas">
+  <div class="dm-vseg" id="dm-vseg">
+    <button type="button" data-v="fila">Fila</button>
+    <button type="button" data-v="galeria">Galeria</button>
+    <button type="button" data-v="kanban">Kanban</button>
+    <button type="button" data-v="tabela">Tabela</button>
+  </div>
+  <label class="dm-vctrl" id="dm-agrupo-wrap">Agrupar
+    <select id="dm-agrupo">
+      <option value="urgencia">Necessidade</option>
+      <option value="casa">Casa</option>
+      <option value="setor">Setor</option>
+      <option value="status">Status</option>
+    </select>
+  </label>
+  <label class="dm-vctrl" id="dm-kbcol-wrap" style="display:none">Colunas
+    <select id="dm-kbcol">
+      <option value="casa">Casa</option>
+      <option value="status">Status</option>
+      <option value="setor">Setor</option>
+    </select>
+  </label>
+</div>
+
 <div class="dm-abas" id="dm-abas">
   <button type="button" class="on" data-tipo="ocorrencia">Ocorrências<span class="n" id="dm-aba-n-ocorrencia"></span></button>
   <button type="button" data-tipo="solicitacao">Solicitações<span class="n" id="dm-aba-n-solicitacao"></span></button>
@@ -746,6 +823,9 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     <div class="dm-resolvidas-lista" id="dm-resolv-lista-solicitacao" style="display:none"></div>
   </section>
 </div>
+
+<div class="dm-uni" id="dm-uni"></div>
+<div class="dm-ov" id="dm-ov"><div class="dm-ov-inner" id="dm-ov-inner"></div></div>
 
 <div class="dm-legenda" id="dm-legenda"></div>
 </div>
@@ -1969,6 +2049,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   function renderResumo() {
     renderResumoFrase();
     renderFiltrosBar();
+    if (typeof redesenhaUni === 'function') redesenhaUni();
   }
 
   function limpaFiltroRapido() {
@@ -2002,6 +2083,181 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       document.querySelectorAll('.dm-fila').forEach(function (s) { s.classList.toggle('ativa', s.dataset.tipo === abaAtiva); });
     };
   });
+
+  // ===== Views v1: Galeria / Kanban / Tabela (ADITIVO — Fila 100% intacta) =====
+  // Unificam ocorrência+solicitação (FILAS.*.itens, já filtrados por itemVisivel);
+  // clicar abre o card EXISTENTE (renderCard: triagem+resposta+conversa) num
+  // overlay. Fila = comportamento de sempre (2 abas). Escolhas do Rodrigo:
+  // padrão Kanban, Kanban com colunas trocáveis (casa/status/setor).
+  var elUni = document.getElementById('dm-uni');
+  var elVseg = document.getElementById('dm-vseg');
+  var elOv = document.getElementById('dm-ov');
+  var elOvInner = document.getElementById('dm-ov-inner');
+  var elAgrupoWrap = document.getElementById('dm-agrupo-wrap');
+  var elAgrupo = document.getElementById('dm-agrupo');
+  var elKbcolWrap = document.getElementById('dm-kbcol-wrap');
+  var elKbcol = document.getElementById('dm-kbcol');
+  var elFilasBox = document.getElementById('dm-filas');
+  var VISTA_OK = ['fila', 'galeria', 'kanban', 'tabela'];
+  // Padrão = Fila (a view segura/existente) até o Rodrigo validar as views
+  // novas com dado real no site (decisão 2026-07-19: publicar com padrão Fila,
+  // virar pra Kanban depois do OK). Quem escolher outra view fica com ela
+  // (localStorage). Trocar o fallback pra 'kanban' quando validado.
+  var vistaDem = 'fila', agrupoDem = 'urgencia', kbColDem = 'casa';
+  try {
+    vistaDem = localStorage.getItem('demandas_vista') || 'fila';
+    agrupoDem = localStorage.getItem('demandas_agrupo') || 'urgencia';
+    kbColDem = localStorage.getItem('demandas_kbcol') || 'casa';
+  } catch (e) {}
+  if (VISTA_OK.indexOf(vistaDem) < 0) vistaDem = 'fila';
+  var URG_RANK_V = { 'Hoje': 0, 'Uma semana': 1, 'Um mês': 2, '3 meses+': 3, 'Urgente': -1, 'Pode aguardar': 3 };
+  var STATUS_RANK_V = {}; STATUS_OPCOES.forEach(function (s, i) { STATUS_RANK_V[s] = i; });
+
+  function dmTodos() {
+    var arr = [];
+    ['ocorrencia', 'solicitacao'].forEach(function (k) {
+      var st = FILAS[k]; if (!st || !st.itens) return;
+      st.itens.forEach(function (d) { if (itemVisivel(d)) arr.push({ d: d, t: st }); });
+    });
+    return arr;
+  }
+  function grupoChave(d, modo) {
+    if (modo === 'casa') return d.casa || '—';
+    if (modo === 'setor') return d.setor || d.categoria || '—';
+    if (modo === 'status') return d.status || 'Novo';
+    return d.urgencia || '—';
+  }
+  function grupoOrdena(chaves, modo) {
+    if (modo === 'urgencia') return chaves.sort(function (a, b) { return (URG_RANK_V[a] == null ? 99 : URG_RANK_V[a]) - (URG_RANK_V[b] == null ? 99 : URG_RANK_V[b]); });
+    if (modo === 'status') return chaves.sort(function (a, b) { return (STATUS_RANK_V[a] == null ? 99 : STATUS_RANK_V[a]) - (STATUS_RANK_V[b] == null ? 99 : STATUS_RANK_V[b]); });
+    if (modo === 'casa') { var ord = Object.keys(CASAS).map(function (s) { return CASAS[s]; }); return chaves.sort(function (a, b) { return ord.indexOf(a) - ord.indexOf(b); }); }
+    return chaves.sort();
+  }
+  function convBadgeUni(d) {
+    var n = d.msgs_n || 0;
+    if (!n) return '';
+    return '<div class="dm-gconv"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' + n + '</div>';
+  }
+  function gcardCompacto(d, t) {
+    var el = document.createElement('div');
+    el.className = 'dm-gcard';
+    el.style.setProperty('--uc', URG_COR_LABEL[d.urgencia] || 'var(--border)');
+    el.innerHTML =
+      '<div class="gl1">' + chipCasa(d.casa) + chipUrgencia(d.urgencia) + '</div>' +
+      '<div class="gl2"><span class="dm-gtipo">' + esc(d.tipo || '') + '</span> — ' + esc((d.descricao || '').slice(0, 120)) + '</div>' +
+      '<div class="gl3"><span>' + esc(d.setor || d.categoria || '') + '</span> · <span>' + esc(d.status || 'Novo') + '</span> · <span>por ' + esc(d.solicitante || d.registrado_por || 'anônimo') + '</span></div>' +
+      convBadgeUni(d);
+    el.onclick = function () { dmAbreDetalhe(d, t); };
+    return el;
+  }
+  function renderUniGaleria(itens) {
+    var buckets = {};
+    itens.forEach(function (o) { var k = grupoChave(o.d, agrupoDem); (buckets[k] = buckets[k] || []).push(o); });
+    var keys = grupoOrdena(Object.keys(buckets), agrupoDem);
+    var frag = document.createDocumentFragment();
+    keys.forEach(function (k) {
+      var gh = document.createElement('div'); gh.className = 'dm-ugh';
+      gh.innerHTML = esc(k) + ' <span class="n">· ' + buckets[k].length + '</span>';
+      frag.appendChild(gh);
+      var grid = document.createElement('div'); grid.className = 'dm-gal';
+      buckets[k].forEach(function (o) { grid.appendChild(gcardCompacto(o.d, o.t)); });
+      frag.appendChild(grid);
+    });
+    return frag;
+  }
+  function renderUniKanban(itens) {
+    var col = kbColDem;
+    var buckets = {};
+    if (col === 'casa') Object.keys(CASAS).forEach(function (s) { buckets[CASAS[s]] = []; });
+    itens.forEach(function (o) { var k = grupoChave(o.d, col); (buckets[k] = buckets[k] || []).push(o); });
+    var keys = grupoOrdena(Object.keys(buckets), col);
+    var kb = document.createElement('div'); kb.className = 'dm-kb';
+    keys.forEach(function (k) {
+      var c = document.createElement('div'); c.className = 'dm-kcol';
+      var h = document.createElement('h4'); h.innerHTML = esc(k) + ' <span class="n">' + buckets[k].length + '</span>';
+      c.appendChild(h);
+      if (!buckets[k].length) { var v = document.createElement('div'); v.className = 'dm-conversa-vazia'; v.style.padding = '4px 6px'; v.textContent = '—'; c.appendChild(v); }
+      buckets[k].forEach(function (o) { c.appendChild(gcardCompacto(o.d, o.t)); });
+      kb.appendChild(c);
+    });
+    return kb;
+  }
+  function renderUniTabela(itens) {
+    var arr = itens.slice().sort(function (a, b) {
+      var ka = grupoChave(a.d, agrupoDem), kb = grupoChave(b.d, agrupoDem);
+      if (agrupoDem === 'urgencia') return (URG_RANK_V[ka] == null ? 99 : URG_RANK_V[ka]) - (URG_RANK_V[kb] == null ? 99 : URG_RANK_V[kb]);
+      return String(ka).localeCompare(String(kb));
+    });
+    var wrap = document.createElement('div'); wrap.className = 'dm-tabwrap';
+    var html = '<table class="dm-tab"><thead><tr><th>Casa</th><th>Tipo</th><th>Setor</th><th>Descrição</th><th>Necessidade</th><th>Status</th><th>Por</th></tr></thead><tbody>';
+    arr.forEach(function (o) {
+      var d = o.d;
+      html += '<tr data-k="' + esc(d.chave || '') + '">' +
+        '<td>' + esc(d.casa || '') + '</td>' +
+        '<td>' + esc(d.tipo || '') + '</td>' +
+        '<td>' + esc(d.setor || d.categoria || '') + '</td>' +
+        '<td><span class="td-desc">' + esc((d.descricao || '').slice(0, 140)) + '</span></td>' +
+        '<td><i class="dm-ubar" style="background:' + (URG_COR_LABEL[d.urgencia] || 'var(--border)') + '"></i>' + esc(d.urgencia || '') + '</td>' +
+        '<td>' + esc(d.status || 'Novo') + '</td>' +
+        '<td>' + esc(d.solicitante || d.registrado_por || 'anônimo') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('tbody tr').forEach(function (tr) {
+      tr.onclick = function () {
+        var k = tr.getAttribute('data-k');
+        var o = itens.filter(function (x) { return (x.d.chave || '') === k; })[0];
+        if (o) dmAbreDetalhe(o.d, o.t);
+      };
+    });
+    return wrap;
+  }
+  function redesenhaUni() {
+    if (!elUni || vistaDem === 'fila') return;
+    var itens = dmTodos();
+    elUni.innerHTML = '';
+    if (!itens.length) { elUni.innerHTML = '<p class="dm-vazio">Nenhuma demanda no filtro atual.</p>'; return; }
+    if (vistaDem === 'galeria') elUni.appendChild(renderUniGaleria(itens));
+    else if (vistaDem === 'kanban') elUni.appendChild(renderUniKanban(itens));
+    else elUni.appendChild(renderUniTabela(itens));
+  }
+  function dmAbreDetalhe(d, t) {
+    elOvInner.innerHTML = '';
+    var card = renderCard(d, null, t, false);
+    elOvInner.appendChild(card);
+    elOv.classList.add('on');
+    var head = card.querySelector('.dm-card-head');
+    if (head) head.click();
+  }
+  function dmFechaOv() {
+    elOv.classList.remove('on');
+    elOvInner.innerHTML = '';
+    redesenhaUni();
+  }
+  elOv.addEventListener('click', function (ev) { if (ev.target === elOv) dmFechaOv(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && elOv.classList.contains('on')) dmFechaOv(); });
+  function dmAplicaVista() {
+    Array.prototype.forEach.call(elVseg.querySelectorAll('button'), function (b) { b.classList.toggle('on', b.dataset.v === vistaDem); });
+    var ehFila = vistaDem === 'fila';
+    elAbas.style.display = ehFila ? '' : 'none';
+    if (elFilasBox) elFilasBox.style.display = ehFila ? '' : 'none';
+    elUni.classList.toggle('on', !ehFila);
+    elAgrupoWrap.style.display = (vistaDem === 'galeria' || vistaDem === 'tabela') ? '' : 'none';
+    elKbcolWrap.style.display = (vistaDem === 'kanban') ? '' : 'none';
+    redesenhaUni();
+  }
+  Array.prototype.forEach.call(elVseg.querySelectorAll('button'), function (b) {
+    b.onclick = function () {
+      vistaDem = b.dataset.v;
+      try { localStorage.setItem('demandas_vista', vistaDem); } catch (e) {}
+      dmAplicaVista();
+    };
+  });
+  elAgrupo.value = agrupoDem;
+  elAgrupo.onchange = function () { agrupoDem = elAgrupo.value; try { localStorage.setItem('demandas_agrupo', agrupoDem); } catch (e) {} redesenhaUni(); };
+  elKbcol.value = kbColDem;
+  elKbcol.onchange = function () { kbColDem = elKbcol.value; try { localStorage.setItem('demandas_kbcol', kbColDem); } catch (e) {} redesenhaUni(); };
+  dmAplicaVista();
 
   // F-Enviadas (2026-07-13): "Enviadas" é uma linha do tempo própria — não
   // reusa FILAS/carregaFila (que são a fila de Recebidas, com posição,

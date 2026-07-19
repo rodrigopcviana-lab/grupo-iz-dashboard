@@ -159,6 +159,20 @@ window.msgAcessoNegado = function (nomePagina) {
       return k;
     } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
   }
+  // Rótulo grosseiro do aparelho (iPhone/Android/Mac...) derivado do
+  // User-Agent — mandado no heartbeat pra a coordenação identificar QUAL
+  // aparelho está logado, mesmo em sessão sem nome (senha compartilhada).
+  function deviceLabel() {
+    try { var m = localStorage.getItem('portal_device_label'); if (m) return m; } catch (e) {}
+    var ua = navigator.userAgent || '';
+    if (/iPhone/.test(ua)) return 'iPhone';
+    if (/iPad/.test(ua)) return 'iPad';
+    if (/Android/.test(ua)) return 'Android';
+    if (/Macintosh|Mac OS X/.test(ua)) return 'Mac';
+    if (/Windows/.test(ua)) return 'Windows';
+    if (/Linux/.test(ua)) return 'Linux';
+    return 'Navegador';
+  }
   window.marcaPresenca = function () {
     var s = window.sessaoLer && window.sessaoLer();
     if (!s || !PRES_WORKER) return;
@@ -169,7 +183,7 @@ window.msgAcessoNegado = function (nomePagina) {
     } catch (e) {}
     fetch(PRES_WORKER + '/api/presenca', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
-      body: JSON.stringify({ device: deviceId() }),
+      body: JSON.stringify({ device: deviceId(), label: deviceLabel() }),
     }).catch(function () {});
   };
   window.marcaPresenca();
@@ -414,6 +428,16 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
 </div>
 <div id="ps-corpo" style="display:none">
   <div class="ps-card">
+    <h2>Aparelhos conectados agora</h2>
+    <p class="sub" style="margin:2px 0 8px;font-size:12px">Sessões ativas neste
+    momento — pelo aparelho e horário. Os seus (coordenação) e os acessos sem
+    identificação (senha compartilhada).</p>
+    <div style="font-size:11px;color:var(--text-3);margin:6px 0 2px;text-transform:uppercase;letter-spacing:.04em">Meus aparelhos</div>
+    <div id="ps-meus"></div>
+    <div style="font-size:11px;color:var(--text-3);margin:12px 0 2px;text-transform:uppercase;letter-spacing:.04em">Outros acessos</div>
+    <div id="ps-outros"></div>
+  </div>
+  <div class="ps-card">
     <h2>Online agora</h2>
     <div id="ps-online"></div>
   </div>
@@ -592,11 +616,53 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     }).catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; });
   }
 
+  // "Aparelhos conectados agora": uma linha por aparelho com sessão ativa
+  // (KV presenca:v1, TTL 300s). Separa os MEUS (nivel=coord — só o Rodrigo)
+  // dos OUTROS acessos. Identifica pelo rótulo do aparelho + id curto + hora;
+  // nome só quando a sessão é individual. Sem localização.
+  function desenhaDevices(d) {
+    var list = (d && d.devices) || [];
+    var meus = document.getElementById('ps-meus');
+    var outros = document.getElementById('ps-outros');
+    meus.innerHTML = ''; outros.innerHTML = '';
+    var nM = 0, nO = 0;
+    list.forEach(function (dv) {
+      var linha = document.createElement('div'); linha.className = 'ps-on';
+      var esq = document.createElement('span'); esq.className = 'nome';
+      esq.textContent = (dv.label || 'Aparelho') + ' · #' + (dv.curto || '????');
+      var dir = document.createElement('span'); dir.className = 'meta';
+      if (dv.nivel === 'coord') {
+        dir.textContent = 'logado · ' + haQuanto(dv.ts);
+        linha.appendChild(esq); linha.appendChild(dir);
+        meus.appendChild(linha); nM++;
+      } else {
+        var det = [];
+        if (dv.pessoa) det.push(dv.pessoa);
+        else if (dv.casa && dv.nivel) det.push(dv.casa + ' · ' + dv.nivel + ' · sem identificação');
+        else if (dv.nivel) det.push(dv.nivel + ' · sem identificação');
+        else det.push('sem identificação');
+        det.push(haQuanto(dv.ts));
+        dir.textContent = det.join(' · ');
+        linha.appendChild(esq); linha.appendChild(dir);
+        outros.appendChild(linha); nO++;
+      }
+    });
+    if (!nM) meus.innerHTML = '<p class="ps-vazio">Nenhum aparelho seu conectado agora.</p>';
+    if (!nO) outros.innerHTML = '<p class="ps-vazio">Nenhum outro acesso agora.</p>';
+  }
+  function buscaDevices(token) {
+    fetch(WORKER + '/api/presenca/coord-devices', { headers: { 'X-Token': token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d) desenhaDevices(d); }).catch(function () {});
+  }
+
   // Só coordenação (PLANO_PRESENCA_ONLINE.md) — diferente de atividade.html/
   // doses-painel.html, que chefe também vê.
   var r = window.exigirNivel(['coord'], SLUG);
   if (r.ok) {
     busca(r.sessao.token);
+    buscaDevices(r.sessao.token);
+    setInterval(function () { buscaDevices(r.sessao.token); }, 60000);
   } else if (!r.redirecionou) {
     msg.innerHTML = window.msgAcessoNegado('a Presença online');
   }

@@ -159,6 +159,20 @@ window.msgAcessoNegado = function (nomePagina) {
       return k;
     } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
   }
+  // Rótulo grosseiro do aparelho (iPhone/Android/Mac...) derivado do
+  // User-Agent — mandado no heartbeat pra a coordenação identificar QUAL
+  // aparelho está logado, mesmo em sessão sem nome (senha compartilhada).
+  function deviceLabel() {
+    try { var m = localStorage.getItem('portal_device_label'); if (m) return m; } catch (e) {}
+    var ua = navigator.userAgent || '';
+    if (/iPhone/.test(ua)) return 'iPhone';
+    if (/iPad/.test(ua)) return 'iPad';
+    if (/Android/.test(ua)) return 'Android';
+    if (/Macintosh|Mac OS X/.test(ua)) return 'Mac';
+    if (/Windows/.test(ua)) return 'Windows';
+    if (/Linux/.test(ua)) return 'Linux';
+    return 'Navegador';
+  }
   window.marcaPresenca = function () {
     var s = window.sessaoLer && window.sessaoLer();
     if (!s || !PRES_WORKER) return;
@@ -169,7 +183,7 @@ window.msgAcessoNegado = function (nomePagina) {
     } catch (e) {}
     fetch(PRES_WORKER + '/api/presenca', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
-      body: JSON.stringify({ device: deviceId() }),
+      body: JSON.stringify({ device: deviceId(), label: deviceLabel() }),
     }).catch(function () {});
   };
   window.marcaPresenca();
