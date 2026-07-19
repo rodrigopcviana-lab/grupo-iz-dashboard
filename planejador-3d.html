@@ -166,10 +166,13 @@
   .bg-casas i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
   
+  /* margin-left era auto (empurrava o tomate pra direita). Agora quem empurra
+     a dupla é a .radio-btn (margin-left:auto em CSS_RADIO) e o tomate só cola
+     nela com um respiro — a rádio fica imediatamente à esquerda do tomate. */
   .pomo-btn { position: relative; flex: none; width: 34px; height: 34px; border-radius: 999px;
               border: 1px solid var(--border); background: none; color: var(--text-2);
               display: inline-flex; align-items: center; justify-content: center; padding: 0;
-              cursor: pointer; margin-left: auto; }
+              cursor: pointer; margin-left: 4px; }
   .pomo-btn:hover, .pomo-btn:focus-visible { border-color: var(--acc); }
   .pomo-btn.rodando { border-color: var(--acc); }
   /* 50% maior (pedido do Rodrigo, 2026-07-18) — era 19px. */
@@ -268,6 +271,88 @@
   .pomo-mini .mi-txt b { display: block; color: var(--acc); font-variant-numeric: tabular-nums; font-size: 13px; }
   .pomo-mini.pausado .mi-txt b { color: var(--verde); }
 
+  
+  .radio-btn { position: relative; flex: none; width: 34px; height: 34px; border-radius: 999px;
+               border: 1px solid var(--border); background: none; color: var(--text-2);
+               display: inline-flex; align-items: center; justify-content: center; padding: 0;
+               cursor: pointer; margin-left: auto; }
+  .radio-btn:hover, .radio-btn:focus-visible { border-color: #ff7ec2; }
+  .radio-btn.tocando { border-color: #ff7ec2; }
+  .radio-btn svg.vc-ico { width: 22px; height: 22px; flex: none; }
+  .radio-btn .rdot { position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 999px;
+                     background: #ff5c5c; border: 1.5px solid var(--bg); display: none; }
+  .radio-btn.tocando .rdot { display: block; }
+  .radio-pop { position: fixed; top: 60px; right: 12px; width: 320px; max-width: calc(100vw - 24px);
+               background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+               box-shadow: 0 20px 50px rgba(0,0,0,.55); z-index: 95; display: none; overflow: hidden; }
+  .radio-pop.aberto { display: block; }
+  .rp-sun { position: relative; height: 74px; overflow: hidden;
+            background: linear-gradient(180deg, #2a1247 0%, #7b2b6e 45%, #d1477e 75%, #f0894e 100%); }
+  .rp-sun .sun { position: absolute; left: 50%; bottom: -26px; transform: translateX(-50%);
+                 width: 92px; height: 92px; border-radius: 999px;
+                 background: linear-gradient(180deg, #ffe14d 0%, #ff9a3c 55%, #ff5c8a 100%); }
+  .rp-sun i { position: absolute; left: 0; right: 0; height: 2px; background: #2a1247; }
+  .rp-head { position: relative; display: flex; align-items: center; gap: 9px; padding: 12px 14px 4px; }
+  .rp-head .tt { font-family: var(--serif); font-size: 15px; letter-spacing: .02em; }
+  .rp-head .tt b { color: #ff7ec2; font-style: italic; font-weight: 400; }
+  .rp-close { margin-left: auto; background: none; border: none; color: var(--text-3); cursor: pointer; padding: 2px; }
+  .rp-close:hover { color: var(--text); }
+  .rp-now { display: flex; align-items: center; gap: 11px; padding: 6px 14px 12px; }
+  .rp-eq { display: flex; align-items: flex-end; gap: 2px; height: 22px; width: 26px; flex: none; }
+  .rp-eq span { flex: 1; background: var(--text-3); border-radius: 2px; height: 30%; }
+  .radio-pop.tocando .rp-eq span { background: #ff7ec2; animation: rpeq .9s ease-in-out infinite; }
+  .radio-pop.tocando .rp-eq span:nth-child(2) { animation-delay: .18s; }
+  .radio-pop.tocando .rp-eq span:nth-child(3) { animation-delay: .36s; }
+  .radio-pop.tocando .rp-eq span:nth-child(4) { animation-delay: .5s; }
+  @keyframes rpeq { 0%, 100% { height: 25%; } 50% { height: 100%; } }
+  .rp-now .nm { font-size: 14px; font-weight: 600; }
+  .rp-now .ds { font-size: 11px; color: var(--text-3); }
+  .rp-now .st { margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .08em;
+                text-transform: uppercase; color: var(--text-3); }
+  .radio-pop.tocando .rp-now .st { color: var(--verde); }
+  .rp-list { padding: 0 10px 4px; max-height: 236px; overflow-y: auto; }
+  .rp-st { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 10px;
+           border: 1px solid transparent; border-radius: 12px; background: none; color: var(--text-2);
+           cursor: pointer; margin-bottom: 2px; }
+  .rp-st:hover { background: var(--bg); }
+  .rp-st .fq { font-family: var(--serif); font-size: 12px; color: var(--text-3); width: 30px; flex: none; text-align: center; }
+  .rp-st .txt b { display: block; color: var(--text); font-size: 13.5px; font-weight: 600; }
+  .rp-st .txt span { font-size: 10.5px; color: var(--text-3); }
+  .rp-st.on { border-color: #ff7ec2; background: color-mix(in srgb, #ff7ec2 12%, var(--card)); }
+  .rp-st.on .fq, .rp-st.on .txt b { color: #ff7ec2; }
+  .rp-st .live { margin-left: auto; font-size: 9px; font-weight: 700; letter-spacing: .06em; color: #ff5c5c;
+                 border: 1px solid #ff5c5c; border-radius: 999px; padding: 1px 6px; }
+  .rp-ctrl { display: flex; align-items: center; gap: 8px; padding: 8px 14px 6px; }
+  .rp-cbtn { width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--border);
+             background: var(--bg); color: var(--text-2); display: inline-flex; align-items: center;
+             justify-content: center; cursor: pointer; }
+  .rp-cbtn.play { width: 46px; height: 46px; background: #ff7ec2; color: #241021; border-color: #ff7ec2; }
+  .rp-cbtn:hover { border-color: #ff7ec2; color: #ff7ec2; }
+  .rp-cbtn.play:hover { color: #241021; filter: brightness(1.05); }
+  .rp-vol { display: flex; align-items: center; gap: 9px; margin-left: 6px; flex: 1; }
+  .rp-vol svg { width: 16px; height: 16px; color: var(--text-3); flex: none; }
+  .rp-vol input[type=range] { flex: 1; accent-color: #ff7ec2; height: 4px; }
+  .rp-religar { display: none; width: calc(100% - 28px); margin: 0 14px 6px; padding: 8px; border-radius: 10px;
+                border: 1px solid #ff7ec2; background: color-mix(in srgb, #ff7ec2 14%, var(--card));
+                color: #ff7ec2; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .rp-religar.on { display: block; }
+  .rp-hint { font-size: 10.5px; color: var(--text-3); line-height: 1.5; padding: 4px 14px 14px; }
+  #radio-yt { position: absolute; width: 1px; height: 1px; left: -9999px; opacity: 0; pointer-events: none; }
+  /* Mini controle flutuante — canto inferior ESQUERDO (o do Pomodoro fica na
+     direita; assim não colidem quando os dois tocam). */
+  .radio-mini { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+                z-index: 94; display: none; align-items: center; gap: 8px; background: var(--card);
+                border: 1px solid #ff7ec2; border-radius: 999px; padding: 7px 13px 7px 8px;
+                box-shadow: 0 10px 26px rgba(0,0,0,.5); cursor: pointer;
+                -webkit-tap-highlight-color: transparent; }
+  .radio-mini.on { display: inline-flex; }
+  .radio-mini .mi-ico { width: 30px; height: 30px; border-radius: 999px; flex: none; background: #ff7ec2;
+                        color: #241021; display: inline-flex; align-items: center; justify-content: center; }
+  .radio-mini .mi-ico svg { width: 15px; height: 15px; }
+  .radio-mini.pausado .mi-ico { background: var(--text-3); color: var(--card); }
+  .radio-mini .mi-txt { font-size: 11.5px; color: var(--text-3); line-height: 1.25; text-align: left; }
+  .radio-mini .mi-txt b { display: block; color: #ff7ec2; font-size: 13px; }
+
   iframe#app { flex: 1 1 0; width: 100%; border: none; display: block; }
 </style>
 </head>
@@ -298,6 +383,22 @@
 
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="vcSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a1a63"/><stop offset="55%" stop-color="#a13a86"/><stop offset="100%" stop-color="#ff5c8a"/></linearGradient>
+<linearGradient id="vcSun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe14d"/><stop offset="55%" stop-color="#ff9a3c"/><stop offset="100%" stop-color="#ff4f8b"/></linearGradient>
+<clipPath id="vcCoin"><circle cx="12" cy="12" r="11"/></clipPath>
+<symbol id="ic-vc" viewBox="0 0 24 24">
+<g clip-path="url(#vcCoin)">
+<rect x="0" y="0" width="24" height="24" fill="url(#vcSky)"/>
+<circle cx="12" cy="15" r="8.5" fill="url(#vcSun)"/>
+<g stroke="#3a1a63" stroke-width="1.05"><path d="M2 15h20"/><path d="M3 17.1h18"/><path d="M4.5 19h15"/><path d="M6.5 20.7h11"/></g>
+<g fill="#241033"><path d="M15.4 21c-.2-3.2.1-6 .9-8.1l1.1.35c-.9 2-1.2 4.7-1 7.75z"/><path d="M16.6 12.4c1.4-1.1 3-1.5 4.4-1.1-1.1.5-2.6 1-3.9 1.9z"/><path d="M16.4 12.4c-1.5-.9-3.1-1-4.4-.4 1.2.3 2.7.6 4 1.5z"/><path d="M16.5 12.2c.2-1.6 1-3 2.1-3.8-.3 1.2-.7 2.6-1.2 4z"/><path d="M16.4 12.3c-.7-1.4-1.9-2.4-3.2-2.7.6 1 1.4 2.2 2.1 3.6z"/></g>
+</g>
+<circle cx="12" cy="12" r="11" fill="none" stroke="#ff7ec2" stroke-width="1.1"/>
+</symbol>
+</defs></svg>
+<button class="radio-btn" id="radio-btn" type="button" title="Rádio Vice City" aria-label="Rádio Vice City"><svg class="vc-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-vc"/></svg><span class="rdot"></span></button>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <radialGradient id="pgB" cx="38%" cy="28%" r="80%">
 <stop offset="0%" stop-color="#f2705e"/><stop offset="42%" stop-color="#d63a2f"/><stop offset="100%" stop-color="#8f1c1a"/>
 </radialGradient>
@@ -326,9 +427,39 @@
 <button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="pomo-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
-<nav id="nav-principal" class="nav-sec"><details class="grp" data-niveis="chefe controladoria coord equipe rh suprimentos"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Operação</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="index.html" class="grp-link" data-niveis="equipe chefe coord rh controladoria suprimentos"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a><a href="eventos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a><a href="contagem.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contagem de insumos</span></a><a href="contagem-copos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg><span>Contagem de copos</span></a><a href="compras.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Pedido de Compras</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="turno.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>Relatório de turno</span></a><a href="rotinas.html" class="grp-link" data-niveis="equipe chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Rotinas</span></a><a href="producao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Produção possível</span></a></div></details><details class="grp on" data-niveis="chefe coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Bar</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="cocktails.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas técnicas</span></a><a href="cocktails-ranking.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg><span>Ranking de Cocktails</span></a><a href="treinamentos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Treinamentos</span></a><a href="calculadora.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Calculadora PB</span></a><a href="lab.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Lab de Drinks</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="constelacao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Constelação de Sabores</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="lab-proposta.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Lab 2.0 — proposta</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="planejador-3d.html" class="grp-link on" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Planejador 3D</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Pessoas</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="equipe.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Equipe</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="metas.html" class="grp-link" data-niveis="equipe chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Metas &amp; Desenv.</span></a><a href="contatos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg><span>Contatos</span></a><a href="regras.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Escala &amp; BH</span></a><a href="minha-atividade.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Minha Atividade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="meu-perfil.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Meu perfil</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Gestão</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="demandas.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central de Demandas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="curva-abc.html" class="grp-link" data-niveis="chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Curva ABC</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="consumo.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Consumo</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="vendas/index.html" class="grp-link" data-niveis="controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg><span>Vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="rentabilidade.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Rentabilidade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="contratos.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contratos On Trade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="cotacoes.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg><span>Cotações de Compras</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="patrimonio.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Controle de Patrimônio</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="doses-painel.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg><span>Controle de Doses</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="garcons.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Desempenho por garçom</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="evolucao.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Evolução do treino</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="atividade.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Atividade por pessoa</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="presenca.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg><span>Presença online</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></details></nav>
+<nav id="nav-principal" class="nav-sec"><details class="grp" data-niveis="chefe controladoria coord equipe rh suprimentos"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Operação</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="index.html" class="grp-link" data-niveis="equipe chefe coord rh controladoria suprimentos"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a><a href="eventos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a><a href="contagem.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contagem de insumos</span></a><a href="contagem-copos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg><span>Contagem de copos</span></a><a href="compras.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Pedido de Compras</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="turno.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>Relatório de turno</span></a><a href="rotinas.html" class="grp-link" data-niveis="equipe chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Rotinas</span></a><a href="producao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Produção possível</span></a></div></details><details class="grp on" data-niveis="chefe coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Bar</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="cocktails.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas técnicas</span></a><a href="cocktails-ranking.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg><span>Ranking de Cocktails</span></a><a href="treinamentos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Treinamentos</span></a><a href="calculadora.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Calculadora PB</span></a><a href="lab.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Lab de Drinks</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="constelacao.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Constelação de Sabores</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="lab-proposta.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Lab 2.0 — proposta</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="planejador-3d.html" class="grp-link on" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Planejador 3D</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe rh"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Pessoas</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="equipe.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Equipe</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="metas.html" class="grp-link" data-niveis="equipe chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Metas &amp; Desenv.</span></a><a href="contatos.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg><span>Contatos</span></a><a href="regras.html" class="grp-link" data-niveis="chefe coord rh"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Escala &amp; BH</span></a><a href="minha-atividade.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Minha Atividade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="meu-perfil.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Meu perfil</span></a></div></details><details class="grp" data-niveis="chefe controladoria coord equipe"><summary><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Gestão</span><i class="cv">⌄</i></summary><div class="grp-menu"><a href="demandas.html" class="grp-link" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central de Demandas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="curva-abc.html" class="grp-link" data-niveis="chefe coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Curva ABC</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="consumo.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Consumo</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="vendas/index.html" class="grp-link" data-niveis="controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg><span>Vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="rentabilidade.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Rentabilidade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="contratos.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Contratos On Trade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="cotacoes.html" class="grp-link" data-niveis="coord controladoria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg><span>Cotações de Compras</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="patrimonio.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Controle de Patrimônio</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="equipamentos.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Equipamentos &amp; Vidraria</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="doses-painel.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg><span>Controle de Doses</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="garcons.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Desempenho por garçom</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="evolucao.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Evolução do treino</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="atividade.html" class="grp-link" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Atividade por pessoa</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><a href="presenca.html" class="grp-link" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg><span>Presença online</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></details></nav>
 </div>
 <iframe id="app" src="./planejador-3d/index.html" title="Planejador 3D · Portal dos Bares — Grupo IZ" allow="fullscreen"></iframe>
+
+<div class="radio-pop" id="radio-pop" role="dialog" aria-label="Rádio Vice City">
+  <div class="rp-sun"><div class="sun"></div>
+    <i style="bottom:38px"></i><i style="bottom:31px"></i><i style="bottom:24px"></i><i style="bottom:17px"></i><i style="bottom:11px"></i><i style="bottom:6px"></i><i style="bottom:2px"></i>
+  </div>
+  <div class="rp-head">
+    <div class="tt">Rádio <b>Vice City</b></div>
+    <button class="rp-close" id="radio-close" type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="rp-now">
+    <div class="rp-eq"><span></span><span></span><span></span><span></span></div>
+    <div><div class="nm" id="radio-nm">Escolha uma estação</div><div class="ds" id="radio-ds"></div></div>
+    <div class="st" id="radio-st">parado</div>
+  </div>
+  <div class="rp-list" id="radio-list"></div>
+  <div class="rp-ctrl">
+    <button class="rp-cbtn" id="radio-prev" type="button" title="Anterior" aria-label="Anterior"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5 9 12l11 7z"/></svg></button>
+    <button class="rp-cbtn play" id="radio-play" type="button" title="Tocar" aria-label="Tocar"><svg id="radio-play-ic" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg></button>
+    <button class="rp-cbtn" id="radio-next" type="button" title="Próxima" aria-label="Próxima"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M18 5h-2v14h2zM4 5l11 7L4 19z"/></svg></button>
+    <div class="rp-vol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 8a5 5 0 0 1 0 8"/></svg><input type="range" id="radio-vol" min="0" max="100" value="70" aria-label="Volume da rádio"></div>
+  </div>
+  <button class="rp-religar" id="radio-religar" type="button">Tocar de novo</button>
+  <p class="rp-hint">Toca via YouTube. Continua entre as páginas do portal; se o navegador pausar ao trocar de página, um toque religa.</p>
+  <div id="radio-yt"></div>
+</div>
+<button class="radio-mini" id="radio-mini" type="button" aria-label="Pausar rádio">
+  <span class="mi-ico" id="radio-mini-ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg></span>
+  <span class="mi-txt"><b id="radio-mini-b">Rádio</b><span id="radio-mini-sub">Vice City</span></span>
+</button>
+
 
 <div class="pomo-pop" id="pomo-pop" role="dialog" aria-label="Modo Foco">
   <div class="pp-head">
@@ -375,7 +506,7 @@
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota" style="display:none">Portal dos Bares · Grupo IZ · atualizado em 18/07/2026.
+<p class="nota" style="display:none">Portal dos Bares · Grupo IZ · atualizado em 19/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -519,6 +650,187 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     }
   });
   input.addEventListener('input', aplica);
+})();
+</script>
+
+
+<script>
+(function () {
+  var CH = 'portal_radio';
+  var ST = [{"nome": "Fever 105", "fq": "105", "ds": "disco / funk", "vid": "2KOTYup9mVA", "live": false}, {"nome": "Emotion 98.3", "fq": "98", "ds": "baladas anos 80", "vid": "1vU4BF5-kvQ", "live": false}, {"nome": "Flash FM", "fq": "FM", "ds": "pop hits", "vid": "B-8EORB783c", "live": false}, {"nome": "Wave 103", "fq": "103", "ds": "new wave", "vid": "CV7B3Q-AhWM", "live": false}, {"nome": "Retro GTA", "fq": "●", "ds": "ao vivo", "vid": "jsWiI-dDi0s", "live": true}];
+  var def = { idx: -1, tocando: false, vol: 70, pos: 0, ts: 0 };
+  var s;
+  try { s = Object.assign({}, def, JSON.parse(localStorage.getItem(CH) || '{}')); }
+  catch (e) { s = Object.assign({}, def); }
+  function salvar() { try { localStorage.setItem(CH, JSON.stringify(s)); } catch (e) {} }
+  var $ = function (id) { return document.getElementById(id); };
+  var btn = $('radio-btn'), pop = $('radio-pop'), list = $('radio-list'),
+      nmEl = $('radio-nm'), dsEl = $('radio-ds'), stEl = $('radio-st'),
+      playIc = $('radio-play-ic'), volEl = $('radio-vol'), religar = $('radio-religar'),
+      mini = $('radio-mini'), miniIco = $('radio-mini-ico'), miniB = $('radio-mini-b'), miniSub = $('radio-mini-sub');
+  if (!btn || !pop) return;
+  if (!ST.length) { btn.style.display = 'none'; return; }
+  if (s.idx >= ST.length) { s.idx = -1; }
+  volEl.value = s.vol;
+  var PLAY = '<path d="M7 4.5v15l12-7.5z"/>', PAUSE = '<path d="M7 5h3v14H7zM14 5h3v14h-3z"/>';
+  var MPLAY = '<path d="M8 5v14l11-7z"/>';
+  var player = null, pronto = false, tocando = false;
+
+  // ---- lista de estações (do config, via JSON injetado) ----
+  ST.forEach(function (st, i) {
+    var b = document.createElement('button');
+    b.className = 'rp-st'; b.type = 'button';
+    b.innerHTML = '<span class="fq"></span><span class="txt"><b></b><span></span></span>' + (st.live ? '<span class="live">AO VIVO</span>' : '');
+    b.querySelector('.fq').textContent = st.fq;
+    b.querySelector('.txt b').textContent = st.nome;
+    b.querySelector('.txt span').textContent = st.ds;
+    b.addEventListener('click', function () { seleciona(i, true); });
+    list.appendChild(b);
+  });
+
+  // ---- YouTube IFrame API (carregada só quando precisa) ----
+  function carregaYT(cb) {
+    if (window.YT && window.YT.Player) { cb(); return; }
+    if (window.__ytCbs) { window.__ytCbs.push(cb); return; }
+    window.__ytCbs = [cb];
+    window.onYouTubeIframeAPIReady = function () {
+      (window.__ytCbs || []).forEach(function (f) { try { f(); } catch (e) {} });
+      window.__ytCbs = null;
+    };
+    var t = document.createElement('script'); t.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(t);
+  }
+  function iniciaPos(st) {
+    if (!st || st.live) return 0;
+    var extra = s.ts ? Math.max(0, (Date.now() - s.ts) / 1000) : 0;
+    return Math.max(0, (s.pos || 0) + extra);
+  }
+  function garantePlayer(autoplay) {
+    var st = ST[s.idx]; if (!st) return;
+    carregaYT(function () {
+      if (player) { player.loadVideoById({ videoId: st.vid, startSeconds: iniciaPos(st) }); return; }
+      player = new YT.Player('radio-yt', {
+        videoId: st.vid,
+        playerVars: { autoplay: autoplay ? 1 : 0, playsinline: 1, start: Math.floor(iniciaPos(st)) },
+        events: {
+          onReady: function (e) {
+            pronto = true; e.target.setVolume(s.vol);
+            if (s.tocando) { try { e.target.playVideo(); } catch (x) {} armaGestoSeBloquear(); }
+            setupMedia();
+          },
+          onStateChange: function (e) {
+            tocando = (e.data === YT.PlayerState.PLAYING);
+            if (tocando) mostraReligar(false);
+            if (e.data === YT.PlayerState.ENDED && ST[s.idx] && !ST[s.idx].live) proxima();
+            render();
+          }
+        }
+      });
+    });
+  }
+  function seleciona(i, play) {
+    if (i !== s.idx) { s.pos = 0; s.ts = 0; }
+    s.idx = i;
+    if (play) s.tocando = true;
+    render(); salvar();
+    if (!play) return;
+    if (player && pronto) { try { player.loadVideoById(ST[i].vid); } catch (e) {} setupMedia(); }
+    else garantePlayer(true);
+  }
+  function proxima() { seleciona((Math.max(s.idx, 0) + 1) % ST.length, true); }
+  function anterior() { seleciona((Math.max(s.idx, 0) + ST.length - 1) % ST.length, true); }
+  function playPause() {
+    if (s.idx < 0) { seleciona(0, true); return; }
+    if (!player) { s.tocando = true; garantePlayer(true); salvar(); return; }
+    if (tocando) { s.tocando = false; try { player.pauseVideo(); } catch (e) {} }
+    else { s.tocando = true; try { player.playVideo(); } catch (e) {} }
+    salvar();
+  }
+
+  // ---- gesto de desbloqueio de autoplay (mesmo padrão do Modo Foco) ----
+  var gestoArmado = false;
+  function armaGestoSeBloquear() { setTimeout(function () { if (s.tocando && !tocando) armaGesto(); }, 1500); }
+  function armaGesto() {
+    mostraReligar(true);
+    if (gestoArmado) return; gestoArmado = true;
+    var f = function () {
+      document.removeEventListener('pointerdown', f); document.removeEventListener('keydown', f);
+      gestoArmado = false;
+      if (s.tocando && player) { try { player.playVideo(); } catch (e) {} }
+      mostraReligar(false);
+    };
+    document.addEventListener('pointerdown', f); document.addEventListener('keydown', f);
+  }
+  function mostraReligar(v) { if (religar) religar.classList.toggle('on', !!v); }
+  if (religar) religar.addEventListener('click', function (e) {
+    e.stopPropagation(); s.tocando = true;
+    if (player) { try { player.playVideo(); } catch (x) {} } else garantePlayer(true);
+    mostraReligar(false); salvar();
+  });
+
+  volEl.addEventListener('input', function () { s.vol = +volEl.value; if (player && pronto) player.setVolume(s.vol); salvar(); });
+
+  // ---- MediaSession (tela de bloqueio / fones) ----
+  function setupMedia() {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      var st = ST[s.idx] || {};
+      navigator.mediaSession.metadata = new MediaMetadata({ title: st.nome || 'Rádio', artist: 'Rádio Vice City', album: 'Portal dos Bares · Grupo IZ' });
+      navigator.mediaSession.setActionHandler('play', function () { s.tocando = true; if (player) { try { player.playVideo(); } catch (e) {} } else garantePlayer(true); salvar(); });
+      navigator.mediaSession.setActionHandler('pause', function () { s.tocando = false; if (player) { try { player.pauseVideo(); } catch (e) {} } salvar(); });
+      navigator.mediaSession.setActionHandler('nexttrack', function () { proxima(); });
+      navigator.mediaSession.setActionHandler('previoustrack', function () { anterior(); });
+    } catch (e) {}
+  }
+
+  // ---- mini flutuante (aparece em qualquer página quando tocando) ----
+  function atualizaMini() {
+    if (!mini) return;
+    var ativo = s.idx >= 0 && s.tocando && !pop.classList.contains('aberto');
+    mini.classList.toggle('on', ativo);
+    if (!ativo) return;
+    var pausado = !tocando;
+    mini.classList.toggle('pausado', pausado);
+    miniIco.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + (pausado ? MPLAY : PAUSE) + '</svg>';
+    miniB.textContent = ST[s.idx] ? ST[s.idx].nome : 'Rádio';
+    miniSub.textContent = pausado ? 'pausado' : 'no ar';
+    mini.setAttribute('aria-label', (pausado ? 'Religar' : 'Pausar') + ' rádio');
+  }
+  if (mini) mini.addEventListener('click', function () { playPause(); });
+
+  // ---- abre/fecha painel ----
+  function toggle(v) { pop.classList.toggle('aberto', v === undefined ? !pop.classList.contains('aberto') : v); atualizaMini(); }
+  btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+  $('radio-close').addEventListener('click', function () { toggle(false); });
+  document.addEventListener('click', function (e) { if (pop.classList.contains('aberto') && !pop.contains(e.target) && !btn.contains(e.target)) toggle(false); });
+  $('radio-play').addEventListener('click', playPause);
+  $('radio-next').addEventListener('click', proxima);
+  $('radio-prev').addEventListener('click', anterior);
+
+  function render() {
+    Array.prototype.forEach.call(list.children, function (el, i) { el.classList.toggle('on', i === s.idx); });
+    pop.classList.toggle('tocando', tocando);
+    btn.classList.toggle('tocando', tocando);
+    var st = ST[s.idx];
+    nmEl.textContent = st ? st.nome : 'Escolha uma estação';
+    dsEl.textContent = st ? st.ds : (ST.length + ' estações · trilha do Vice City');
+    stEl.textContent = tocando ? 'no ar' : (s.idx < 0 ? 'parado' : 'pausado');
+    playIc.innerHTML = tocando ? PAUSE : PLAY;
+    atualizaMini();
+  }
+
+  // ---- salva posição (retomar entre páginas) ----
+  function guardaPos() {
+    if (player && pronto && tocando && ST[s.idx] && !ST[s.idx].live) {
+      try { s.pos = player.getCurrentTime() || 0; s.ts = Date.now(); salvar(); } catch (e) {}
+    }
+  }
+  setInterval(guardaPos, 2000);
+  window.addEventListener('pagehide', guardaPos);
+
+  // ---- restauração ao carregar a página ----
+  render();
+  if (s.tocando && s.idx >= 0) garantePlayer(true);
 })();
 </script>
 
