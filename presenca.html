@@ -620,6 +620,32 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   // (KV presenca:v1, TTL 300s). Separa os MEUS (nivel=coord — só o Rodrigo)
   // dos OUTROS acessos. Identifica pelo rótulo do aparelho + id curto + hora;
   // nome só quando a sessão é individual. Sem localização.
+  var meuToken = null; // guardado no gate p/ o botão "apelidar" reusar
+  function nomeAparelho(dv) {
+    var base = dv.apelido ? dv.apelido : (dv.label || 'Aparelho');
+    return base + ' · #' + (dv.curto || '????');
+  }
+  function apelidar(device, atual) {
+    if (!meuToken) return;
+    var nome = window.prompt('Apelido para este aparelho (deixe vazio para remover):', atual || '');
+    if (nome === null) return; // cancelou
+    fetch(WORKER + '/api/presenca/apelido', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': meuToken },
+      body: JSON.stringify({ device: device, apelido: nome.trim() }),
+    }).then(function (r) { if (r.ok) buscaDevices(meuToken); }).catch(function () {});
+  }
+  function linhaDevice(dv, meta) {
+    var linha = document.createElement('div'); linha.className = 'ps-on';
+    var esq = document.createElement('span'); esq.className = 'nome'; esq.textContent = nomeAparelho(dv);
+    var dir = document.createElement('span'); dir.className = 'meta'; dir.textContent = meta;
+    var bt = document.createElement('span');
+    bt.textContent = dv.apelido ? 'renomear' : 'apelidar';
+    bt.style.cssText = 'font-size:11px;color:var(--acc);cursor:pointer;margin-left:8px;white-space:nowrap';
+    bt.onclick = function () { apelidar(dv.device, dv.apelido || ''); };
+    dir.appendChild(bt);
+    linha.appendChild(esq); linha.appendChild(dir);
+    return linha;
+  }
   function desenhaDevices(d) {
     var list = (d && d.devices) || [];
     var meus = document.getElementById('ps-meus');
@@ -627,14 +653,8 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     meus.innerHTML = ''; outros.innerHTML = '';
     var nM = 0, nO = 0;
     list.forEach(function (dv) {
-      var linha = document.createElement('div'); linha.className = 'ps-on';
-      var esq = document.createElement('span'); esq.className = 'nome';
-      esq.textContent = (dv.label || 'Aparelho') + ' · #' + (dv.curto || '????');
-      var dir = document.createElement('span'); dir.className = 'meta';
       if (dv.nivel === 'coord') {
-        dir.textContent = 'logado · ' + haQuanto(dv.ts);
-        linha.appendChild(esq); linha.appendChild(dir);
-        meus.appendChild(linha); nM++;
+        meus.appendChild(linhaDevice(dv, 'logado · ' + haQuanto(dv.ts))); nM++;
       } else {
         var det = [];
         if (dv.pessoa) det.push(dv.pessoa);
@@ -642,15 +662,14 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
         else if (dv.nivel) det.push(dv.nivel + ' · sem identificação');
         else det.push('sem identificação');
         det.push(haQuanto(dv.ts));
-        dir.textContent = det.join(' · ');
-        linha.appendChild(esq); linha.appendChild(dir);
-        outros.appendChild(linha); nO++;
+        outros.appendChild(linhaDevice(dv, det.join(' · '))); nO++;
       }
     });
     if (!nM) meus.innerHTML = '<p class="ps-vazio">Nenhum aparelho seu conectado agora.</p>';
     if (!nO) outros.innerHTML = '<p class="ps-vazio">Nenhum outro acesso agora.</p>';
   }
   function buscaDevices(token) {
+    meuToken = token;
     fetch(WORKER + '/api/presenca/coord-devices', { headers: { 'X-Token': token } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { if (d) desenhaDevices(d); }).catch(function () {});
