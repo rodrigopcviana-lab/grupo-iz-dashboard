@@ -15,6 +15,7 @@
 <div class="marca">Portal dos Bares</div><div class="kicker">GRUPO IZ</div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
+<a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
 
 <button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar receita" title="Buscar receita (/)">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -468,12 +469,6 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-push-acoes .dm-push-fechar { font-size: 11px; color: var(--text-3); background: none; border: none; padding: 0; }
   .dm-push-acoes button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
-  .dm-legenda { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding-top: 12px;
-                border-top: 1px solid var(--border); font-size: 11.5px; color: var(--text-3); }
-  .dm-legenda-grupo { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .dm-legenda-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-  .dm-legenda-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-
   .dm-busca-wrap { margin-bottom: 10px; }
   .dm-busca-wrap input[type="search"] { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px;
                                          background: var(--card); color: var(--text); border: 1px solid var(--border);
@@ -510,31 +505,68 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   @keyframes dm-pulsa { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   @media (prefers-reduced-motion: reduce) { .dm-skel { animation: none; } }
 
-  .dm-card { border: 1px solid var(--border); border-left: 4px solid var(--sc, var(--text-3));
+  /* R2 (PLANO_DEMANDAS_V2): cabeçalho de grupo por urgência — a fila é agrupada
+     pelo que a ordena, e a borda do card vira a COR DA URGÊNCIA (--uc), não mais
+     do setor. Cada cor nasce rotulada no próprio cabeçalho (a legenda morreu). */
+  .dm-grupo { display: flex; align-items: center; gap: 7px; font-size: 10.5px; letter-spacing: .1em;
+              text-transform: uppercase; color: var(--text-3); margin: 16px 2px 9px; }
+  .dm-grupo:first-child { margin-top: 2px; }
+  .dm-grupo::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .dm-grupo .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dm-card { border: 1px solid var(--border); border-left: 4px solid var(--uc, var(--text-3));
              border-radius: 12px; background: var(--card); margin-bottom: 10px; position: relative; }
+  .dm-card.nova::before { content: "nova"; position: absolute; top: -8px; right: 10px; z-index: 1;
+                          background: var(--acc); color: var(--acc-txt); border-radius: 999px;
+                          font-size: 9px; font-weight: 700; letter-spacing: .05em; padding: 2px 8px; }
   .dm-card-head { display: block; width: 100%; padding: 16px 14px 12px; cursor: pointer; box-sizing: border-box; }
   .dm-card-head:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
-  .dm-card .l1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+  .dm-card .l1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
   .dm-pos { position: absolute; top: -8px; left: 10px; background: var(--bg); border: 1px solid var(--border);
             border-radius: 999px; font-size: 10px; color: var(--text-3); padding: 1px 7px;
             font-variant-numeric: tabular-nums; }
   .dm-chip { font-size: 11px; letter-spacing: .02em; border-radius: 999px; padding: 2.5px 9px;
              border: 1px solid; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
-  .dm-status-chip { font: inherit; font-size: 11px; letter-spacing: .02em; border-radius: 999px; padding: 2.5px 9px;
-                     border: 1px solid var(--border); background: none; color: var(--text-2); cursor: pointer;
-                     white-space: nowrap; margin-left: auto; }
-  .dm-status-chip:disabled { cursor: default; opacity: .6; }
-  .dm-status-chip.resolvido { border-color: var(--tipo-solicitacao); color: var(--tipo-solicitacao); }
-  .dm-status-chip:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  /* R2: pill de status no head — só MOSTRA o status (cor por etapa); o controle
+     de mudar virou a régua no corpo do card (um controle só, avança e volta). */
+  .dm-stpill { font-size: 10.5px; font-weight: 600; letter-spacing: .02em; border-radius: 999px;
+               padding: 3px 10px; border: 1px solid var(--stc, var(--text-3)); color: var(--stc, var(--text-3));
+               white-space: nowrap; margin-left: auto; }
   .dm-card .l2 { font-size: 14.5px; margin-bottom: 4px; color: var(--text); }
   .dm-card .l2 b { font-family: var(--serif); font-weight: 500; }
-  .dm-card .l3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px;
+  .dm-card .l3 { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 12.5px;
                  color: var(--text-3); }
-  .dm-idade-a { color: var(--amarelo); }
-  .dm-idade-v { color: #f0a5a4; }
-  .dm-setor { font-size: 11.5px; border-radius: 999px; padding: 2px 9px; border: 1.5px dashed var(--sc); color: var(--sc); }
-  .dm-setor.conf { border-style: solid; }
+  .dm-autor { display: inline-flex; align-items: center; gap: 4px; color: var(--text-2); }
+  .dm-autor .ok { color: var(--verde); display: inline-flex; }
+  .dm-parada { color: var(--urg-uma_semana); }
+  .dm-setor { font-size: 11px; border-radius: 999px; padding: 2px 9px; border: 1px solid var(--sc);
+              color: var(--sc); display: inline-flex; align-items: center; gap: 4px; }
+  .dm-setor .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sc); flex: none; }
+  .dm-setor:not(.conf) { border-style: dashed; }
   .dm-setor.conf::after { content: " \2713"; }
+  /* R2: blocos do card expandido (Triagem / Retorno / Aviso) e a régua de status */
+  .dm-sec { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  .dm-sec-t { display: flex; align-items: center; gap: 6px; font-size: 10.5px; text-transform: uppercase;
+              letter-spacing: .08em; color: var(--text-3); margin-bottom: 9px; }
+  .dm-regua { display: flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .dm-regua button { flex: 1; font: inherit; font-size: 11px; padding: 9px 2px; border: none; background: none;
+                     color: var(--text-3); cursor: pointer; border-right: 1px solid var(--border); }
+  .dm-regua button:last-child { border-right: none; }
+  .dm-regua button.on { font-weight: 700; color: var(--acc-txt); background: var(--stc, var(--acc)); }
+  .dm-regua button.feito { color: var(--text-2); background: rgba(255,255,255,.04); }
+  .dm-regua button:disabled { cursor: default; opacity: .6; }
+  .dm-regua button:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
+  .dm-setor-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 9px; }
+  .dm-resp-lida { border: 1px solid; border-radius: 10px; padding: 9px 11px; font-size: 13px; margin-bottom: 8px; }
+  .dm-resp-lida.analise { border-color: var(--amarelo); background: rgba(224,176,92,.08); }
+  .dm-resp-lida.aprovado { border-color: var(--verde); background: rgba(159,225,203,.08); }
+  .dm-resp-lida.reprovado { border-color: var(--urg-urgente); background: rgba(226,75,74,.08); }
+  .dm-resp-lida .rt { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+                      margin-bottom: 4px; }
+  .dm-resp-lida.analise .rt { color: var(--amarelo); }
+  .dm-resp-lida.aprovado .rt { color: var(--verde); }
+  .dm-resp-lida.reprovado .rt { color: var(--urg-urgente); }
+  .dm-resp-lida .rx { color: var(--text-2); white-space: pre-line; }
+  .dm-resp-lida .rm { font-size: 11px; color: var(--text-3); margin-top: 4px; }
   .dm-seta { float: right; color: var(--text-3); transition: transform .18s; font-size: 15px; }
   .dm-card.aberto .dm-seta { transform: rotate(180deg); }
   .dm-card .dm-corpo { display: none; padding: 0 14px 14px; border-top: 1px solid var(--border); }
@@ -695,8 +727,6 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     <div class="dm-resolvidas-lista" id="dm-resolv-lista-solicitacao" style="display:none"></div>
   </section>
 </div>
-
-<div class="dm-legenda" id="dm-legenda"></div>
 </div>
 
 <div id="dm-enviadas" style="display:none">
@@ -1184,20 +1214,31 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   }
 
   function renderCard(d, pos, t, resolvido) {
+    // R2 (PLANO_DEMANDAS_V2): card v2 — borda esquerda = COR DA URGÊNCIA (o que
+    // ordena a fila é o que salta aos olhos); setor vira chip nomeado com ponto
+    // de cor; status vira pill informativa no head (o controle é a régua no
+    // corpo). O head continua <div role="button"> (não <button>) — precedente
+    // do card antigo, agora sem filho interativo mas mantido pra não mexer na
+    // acessibilidade que já funcionava.
     var card = document.createElement('div');
     card.className = 'dm-card';
     var sc = corDoSetorLabel(d.setor);
+    var uc = corUrgLabel(d.urgencia);
     card.style.setProperty('--sc', sc);
-    var ida = idade(d.recebido_em || d.data);
+    card.style.setProperty('--uc', uc);
+    var isoRecebido = d.recebido_em || d.data;
+    // Selo "nova" (R1b preparou ultimaVisitaAnterior): chegou depois da última
+    // visita desta pessoa a esta página — nunca em resolvidas.
+    if (!resolvido && ultimaVisitaAnterior && isoRecebido &&
+        new Date(isoRecebido).getTime() > new Date(ultimaVisitaAnterior).getTime()) {
+      card.classList.add('nova');
+    }
 
     if (pos) {
       var posEl = document.createElement('span'); posEl.className = 'dm-pos'; posEl.textContent = pos + 'º';
       card.appendChild(posEl);
     }
 
-    // dm-card-head é <div role="button"> (não <button>) pra poder abrigar o
-    // dm-status-chip como filho interativo — <button> dentro de <button> é
-    // inválido e quebraria o toque no status.
     var head = document.createElement('div');
     head.className = 'dm-card-head';
     head.tabIndex = 0;
@@ -1205,40 +1246,45 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     head.setAttribute('aria-expanded', 'false');
 
     var l1 = document.createElement('div'); l1.className = 'l1';
-    l1.innerHTML = chipCasa(d.casa) + chipUrgencia(d.urgencia);
+    // Chip de casa só pra quem vê várias casas (coord/controladoria) — pro
+    // chefe a casa é sempre a dele, o chip era ruído.
+    var chipSetorHtml = d.setor
+      ? '<span class="dm-setor' + (d.setor_confirmado ? ' conf' : '') + '" style="--sc:' + sc + '"' +
+        (d.setor_confirmado ? ' title="setor confirmado"' : ' title="setor sugerido — confirme na triagem"') +
+        '><span class="dot"></span>' + esc(d.setor) + '</span>'
+      : '';
+    l1.innerHTML = ((NIVEL === 'coord' || NIVEL === 'controladoria') ? chipCasa(d.casa) : '') + chipSetorHtml;
     head.appendChild(l1);
 
-    // Etiqueta de status (toque avança pra próxima etapa) + select completo
-    // dentro do corpo expandido (corrige ou reabre um "Resolvido" — o mockup
-    // I1 aprovado pelo Rodrigo mantém as duas formas de controle). As duas
-    // chamam aplicaStatus(), que sincroniza ambas e faz o PATCH otimista com
-    // rollback; definida depois que os dois elementos existem.
-    var statusBtn = document.createElement('button');
-    statusBtn.type = 'button';
-    statusBtn.className = 'dm-status-chip';
-    function pintaStatusBtn() {
-      var idx = STATUS_OPCOES.indexOf(d.status);
-      var ultimo = idx === -1 || idx === STATUS_OPCOES.length - 1;
-      statusBtn.textContent = (d.status || 'Novo') + (!SOMENTE_LEITURA && !ultimo ? ' →' : '');
-      // controladoria: acesso só-leitura — a etiqueta vira só um rótulo (o
-      // worker recusaria o PATCH mesmo se o botão estivesse ativo).
-      statusBtn.disabled = ultimo || SOMENTE_LEITURA;
-      statusBtn.title = SOMENTE_LEITURA ? 'Só leitura — sem permissão pra mudar status'
-        : (ultimo ? 'Resolvido' : 'Toque para avançar: ' + STATUS_OPCOES[idx + 1]);
-      statusBtn.classList.toggle('resolvido', d.status === 'Resolvido');
+    // Pill de status: informativa (cor por etapa). Mudar status é na régua da
+    // Triagem, dentro do card — um controle só, que avança E volta.
+    var stPill = document.createElement('span');
+    stPill.className = 'dm-stpill';
+    function pintaStPill() {
+      stPill.textContent = d.status || 'Novo';
+      stPill.style.setProperty('--stc', corStatus(d.status || 'Novo'));
     }
-    pintaStatusBtn();
-    l1.appendChild(statusBtn);
+    pintaStPill();
+    l1.appendChild(stPill);
 
     var l2 = document.createElement('div'); l2.className = 'l2';
-    l2.innerHTML = '<b>' + esc(d.categoria) + '</b> — ' + esc((d.descricao || '').slice(0, 90)) +
+    var tipoLabel = d.tipo || (t.key === 'ocorrencia' ? 'Ocorrência' : 'Solicitação');
+    l2.innerHTML = '<b>' + esc(tipoLabel) + '</b> — ' + esc((d.descricao || '').slice(0, 90)) +
       (d.descricao && d.descricao.length > 90 ? '…' : '');
     head.appendChild(l2);
 
     var l3 = document.createElement('div'); l3.className = 'l3';
-    l3.innerHTML = 'por ' + esc(d.solicitante || d.registrado_por || 'anônimo') + ' · ' +   // F6: assinado (senha individual) vence o autodeclarado
-      '<span class="' + ida.cls + '">' + ida.txt + '</span>' +
-      (d.setor ? ' · <span class="dm-setor' + (d.setor_confirmado ? ' conf' : '') + '" style="--sc:' + sc + '">' + esc(d.setor) + '</span>' : '');
+    // F6: assinado (senha individual) vence o autodeclarado; o selo de check só
+    // aparece quando a identidade veio assinada (Solicitante).
+    var seloAssinado = d.solicitante
+      ? '<span class="ok" title="identidade pela senha individual" aria-label="identidade confirmada">' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>'
+      : '';
+    var dd = diasDesde(isoRecebido);
+    l3.innerHTML = '<span class="dm-autor">' + seloAssinado + esc(d.solicitante || d.registrado_por || 'anônimo') + '</span>' +
+      ' · <span>' + esc(horaCurta(isoRecebido)) + '</span>' +
+      (dd != null && dd > 7 ? ' · <span class="dm-parada">aberta há ' + Math.floor(dd) + ' dias</span>' : '');
     head.appendChild(l3);
 
     var seta = document.createElement('span'); seta.className = 'dm-seta'; seta.setAttribute('aria-hidden', 'true'); seta.innerHTML = '&#9662;';

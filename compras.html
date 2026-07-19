@@ -15,6 +15,7 @@
 <div class="marca">Portal dos Bares</div><div class="kicker">GRUPO IZ</div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
+<a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
 
 <button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar receita" title="Buscar receita (/)">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -622,12 +623,13 @@ window.msgAcessoNegado = function (nomePagina) {
       document.querySelectorAll('#cp-tabs button').forEach(function (x) { x.classList.toggle('on', x === b); });
       document.querySelectorAll('.cp-painel').forEach(function (p) { p.classList.toggle('on', p.id === b.dataset.t); });
       window.scrollTo(0, 0);
+      if (b.dataset.t === 'cp-t3') revisao();
       if (b.dataset.t === 'cp-t4') carregaHistorico();
     });
   });
 
   // --- estado -----------------------------------------------------------
-  var DADOS = null, PRODUTOS = [], casaSel = null, filtro = 'todos', termo = '';
+  var DADOS = null, PRODUTOS = [], casaSel = null, filtro = 'todos', termo = '', mobile = false;
   var fila = [], enviando = false, timers = {};
   // falhas = gravações que o servidor recusou de forma permanente (4xx): nunca
   // somem caladas (antes um 500/erro transitório descartava o item). reintento
@@ -674,6 +676,11 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   function carrega() {
+    // bug real (2026-07-13): faltava esconder o seletor de casa ao carregar —
+    // diferente da contagem.html (mesmo padrão), o painel "Escolha a casa"
+    // nunca sumia, e por tabela o botão "trocar de casa" nunca aparecia
+    // (a condição de mostrá-lo dependia do seletor estar escondido).
+    if (elEscolha) elEscolha.style.display = 'none';
     elTela.innerHTML = '<p class="sub">Carregando…</p>';
     document.getElementById('cp-rev-cob').textContent = 'Carregando…';
     falhas = []; reintento = 0;
@@ -684,7 +691,7 @@ window.msgAcessoNegado = function (nomePagina) {
       resp.json().then(function (d) {
         DADOS = d;
         PRODUTOS = d.produtos.map(prep);
-        desenha();
+        construir(); filtra(); kpis(); renderRodape(); statusRodape(); revisao();
       });
     }).catch(function () { erroCarregar(null); });
   }
@@ -695,18 +702,29 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('cp-retry').onclick = function (ev) { ev.preventDefault(); carrega(); };
   }
 
-  function prep(p) {
+  // sug/sobra dependem só de min+contado — recalculados sempre que o mínimo
+  // muda (editarMin, reconciliação da fila), não só na carga inicial. Bug
+  // real achado em revisão (2026-07-13): editar mínimo atualizava a bolinha
+  // de status mas deixava Sugestão/Sobra/KPI com o valor velho.
+  function recalcDerivados(p) {
     p.sug = p.min == null ? null : Math.max(0, p.min - p.contado);
+    p.sobra = (p.min != null && p.contado > p.min) ? p.contado - p.min : 0;
+  }
+  function prep(p) {
+    recalcDerivados(p);
     p.venda = (p.ant_contado == null || p.ant_pedido == null) ? null
       : Math.max(0, p.ant_contado + p.ant_pedido - p.contado);
-    p.sobra = (p.min != null && p.contado > p.min) ? p.contado - p.min : 0;
-    p.pedido = p.pedido1 != null ? p.pedido1 : (p.sug != null ? p.sug : 0);
+    // Pedido nasce ZERADO — sugestão é só orientação (coluna "Sug."), nunca
+    // pré-preenche o pedido sozinha (decisão 2026-07-13). Exceção: se já
+    // existe "Pedido 1" gravado no Notion (pedido real que alguém montou),
+    // carrega esse valor — não é a sugestão, é trabalho que já foi feito.
+    p.pedido = p.pedido1 != null ? p.pedido1 : 0;
     p.mexido = false;
     // reconcilia com a fila pendente — reload no meio de um pedido não perde o que já foi digitado
     fila.forEach(function (item) {
       if (item.page_id !== p.page_id) return;
       if (DADOS && item.campo === DADOS.campo_pedido1) { p.pedido = item.valor; p.mexido = true; }
-      if (DADOS && item.campo === DADOS.campo_min) { p.min = item.valor; }
+      if (DADOS && item.campo === DADOS.campo_min) { p.min = item.valor; recalcDerivados(p); }
     });
     return p;
   }
@@ -797,37 +815,42 @@ window.msgAcessoNegado = function (nomePagina) {
   setInterval(envia, 15000);
 
   // --- ações do pedido ---------------------------------------------------
+  // Ações de UMA linha: atualiza só o nó dessa linha (nunca reconstrói a
+  // lista inteira) — antes cada toque reconstruía ~200 linhas via innerHTML,
+  // travava no tablet e derrubava o foco da busca (revisão 2026-07-18).
   function setPedido(i, v) {
     var p = PRODUTOS[i];
     p.pedido = Math.max(0, parseInt(v || '0', 10) || 0);
     p.mexido = true;
     agendaGrava(p, DADOS.campo_pedido1, p.pedido);
-    desenha();
+    atualizaLinha(i); filtra(); kpis(); renderRodape();
   }
   function maisPedido(i, d) {
     var p = PRODUTOS[i];
     p.pedido = Math.max(0, (p.pedido || 0) + d);
     p.mexido = true;
     agendaGrava(p, DADOS.campo_pedido1, p.pedido);
-    desenha();
+    atualizaLinha(i); filtra(); kpis(); renderRodape();
   }
   function aceitarTudo() {
-    PRODUTOS.forEach(function (p) {
+    PRODUTOS.forEach(function (p, i) {
       if (p.sug != null && p.sug !== p.pedido) {
         p.pedido = p.sug; p.mexido = true;
         agendaGrava(p, DADOS.campo_pedido1, p.pedido);
+        atualizaLinha(i);
       }
     });
-    desenha();
+    filtra(); kpis(); renderRodape();
   }
   function zerarPedidos() {
-    PRODUTOS.forEach(function (p) {
+    PRODUTOS.forEach(function (p, i) {
       if (p.pedido !== 0) {
         p.pedido = 0; p.mexido = false;
         agendaGrava(p, DADOS.campo_pedido1, 0);
+        atualizaLinha(i);
       }
     });
-    desenha();
+    filtra(); kpis(); renderRodape();
   }
   function editarMin(i) {
     if (!PODE_MIN) return;
@@ -838,16 +861,71 @@ window.msgAcessoNegado = function (nomePagina) {
     var val = parseInt(novo, 10);
     if (isNaN(val) || val < 0) { alert('Valor inválido.'); return; }
     p.min = val;
+    recalcDerivados(p);
     agendaGrava(p, DADOS.campo_min, val);
-    desenha();
+    atualizaLinha(i); filtra(); kpis(); renderRodape();
   }
 
   // --- tela de pedido (② ) ------------------------------------------------
   function celMobile(l, v, cls) {
     return '<span class="m-kv"><label>' + l + '</label><span class="n ' + (cls || '') + '">' + v + '</span></span>';
   }
-  function desenha() {
-    var mobile = window.innerWidth <= 820;
+  // linhaHtml/atualizaLinha/construir/filtra (revisão 2026-07-18): a lista é
+  // construída UMA VEZ por carga de dados; ações de uma linha só (pedido,
+  // mínimo) atualizam aquele nó; busca/filtro só alternam display. Antes,
+  // TODO toque (cada dígito, cada +/-) reconstruía as ~200 linhas inteiras
+  // via innerHTML — travava no tablet, perdia o item "aberto" expandido, e
+  // destruía o próprio campo de busca a cada tecla (o cursor saía do campo).
+  function linhaHtml(i) {
+    var p = PRODUTOS[i], st = statusDe(p);
+    var minTx = p.min == null ? '<small>definir</small>' : p.min;
+    var sugTx = p.sug == null ? '<small>—</small>' : p.sug;
+    var vendaTx = p.venda == null ? '—' : p.venda;
+    var sobraTx = p.sobra > 0 ? '+' + p.sobra : '—';
+    var precoTx = p.preco_unit == null ? 'sem preço' : Math.round(p.preco_unit * 100) / 100;
+    var lapis = PODE_MIN ? '<button class="lapis" title="Editar mínimo" onclick="event.stopPropagation();CP.editarMin(' + i + ')">✎</button>' : '';
+    var pedCel = '<span class="cp-pedcel" onclick="event.stopPropagation()">' +
+      '<button type="button" onclick="CP.mais(' + i + ',-1)">−</button>' +
+      '<input class="' + (p.mexido ? 'mexido' : '') + '" type="number" inputmode="numeric" min="0" value="' + p.pedido + '" onchange="CP.setPedido(' + i + ', this.value)">' +
+      '<button type="button" onclick="CP.mais(' + i + ',1)">+</button></span>';
+    var detalhe = '<div class="cp-detalhe"><span class="cp-det-info">' + esc(p.fornecedor || 'sem fornecedor') +
+      (p.min != null ? ' · mín ' + p.min : '') +
+      (p.preco_unit != null ? ' · ' + rs(p.preco_unit) + '/un' + (p.preco_desatualizado ? ' (desatualizado no B.D.1)' : '') : ' · sem preço no B.D.1') +
+      '</span></div>';
+    if (mobile) {
+      return '<div class="cp-prod" data-idx="' + i + '" onclick="this.classList.toggle(\'aberto\')">' +
+        '<div class="m-l1"><span class="st ' + st + '"></span><span class="nome">' + esc(p.nome) + '</span>' + pedCel + '</div>' +
+        '<div class="m-l2">' + celMobile('Cont', p.contado) + celMobile('Mín', minTx + lapis) +
+        celMobile('Sug', sugTx, 'sug') + celMobile('Venda~', vendaTx, 'venda' + (p.venda == null ? ' vazio' : '')) +
+        celMobile('Sobra', sobraTx, 'sobra' + (p.sobra > 0 ? '' : ' zero-s')) +
+        celMobile('R$', precoTx, 'preco' + (p.preco_unit == null ? ' vazio' : '') + (p.preco_desatualizado ? ' velho' : '')) +
+        '</div>' + detalhe + '</div>';
+    }
+    return '<div class="cp-prod" data-idx="' + i + '" onclick="this.classList.toggle(\'aberto\')">' +
+      '<span class="nomecel"><span class="st ' + st + '"></span><span class="nome">' + esc(p.nome) + '</span></span>' +
+      '<span class="n">' + p.contado + '</span>' +
+      '<span class="n">' + minTx + ' ' + lapis + '</span>' +
+      '<span class="n sug">' + sugTx + '</span>' +
+      '<span class="n venda' + (p.venda == null ? ' vazio' : '') + '">' + vendaTx + '</span>' +
+      '<span class="n sobra' + (p.sobra > 0 ? '' : ' zero-s') + '">' + sobraTx + '</span>' +
+      '<span class="n preco' + (p.preco_unit == null ? ' vazio' : '') + (p.preco_desatualizado ? ' velho' : '') + '">' + precoTx + '</span>' +
+      pedCel + detalhe + '</div>';
+  }
+
+  // Substitui só o nó dessa linha (o resto da lista, e o foco em qualquer
+  // outro campo, ficam intocados). onclick/onchange são atributos inline —
+  // sobrevivem à troca de nó, não precisa re-registrar listener nenhum.
+  function atualizaLinha(i) {
+    var velho = elTela.querySelector('.cp-prod[data-idx="' + i + '"]');
+    if (!velho) return;
+    var wrap = document.createElement('div');
+    wrap.innerHTML = linhaHtml(i);
+    velho.replaceWith(wrap.firstChild);
+  }
+
+  // Constrói a lista inteira — só chamado quando os DADOS mudam (carrega()).
+  function construir() {
+    mobile = window.innerWidth <= 820;
     var html = '<div class="cp-topo-casa">' +
       '<span class="cp-chip-casa"><b>' + esc(nomeCasa(casaSel)) + '</b></span>' +
       '<span class="cp-semana-info">Semana: <b>' + esc(DADOS.semana.titulo || 'atual') + '</b></span>' +
@@ -878,51 +956,16 @@ window.msgAcessoNegado = function (nomePagina) {
         '<span>Venda ~</span><span>Sobra</span><span>R$ unit</span><span style="text-align:right">Pedido</span></div>';
     }
 
+    // TODAS as categorias/produtos entram aqui, sem filtrar por passa() —
+    // busca/filtro só alternam display depois (filtra()), nunca reconstroem.
     var porCat = {};
-    PRODUTOS.forEach(function (p, i) { if (passa(p)) (porCat[p.categoria || 'Sem categoria'] = porCat[p.categoria || 'Sem categoria'] || []).push(i); });
+    PRODUTOS.forEach(function (p, i) { (porCat[p.categoria || 'Sem categoria'] = porCat[p.categoria || 'Sem categoria'] || []).push(i); });
     var cats = Object.keys(porCat).sort();
-    if (!cats.length) {
-      html += '<p class="sub">Nenhum produto neste filtro.</p>';
-    }
     cats.forEach(function (cat) {
       html += '<div class="cp-cat-titulo">' + esc(cat) + '</div>';
-      porCat[cat].forEach(function (i) {
-        var p = PRODUTOS[i], st = statusDe(p);
-        var minTx = p.min == null ? '<small>definir</small>' : p.min;
-        var sugTx = p.sug == null ? '<small>—</small>' : p.sug;
-        var vendaTx = p.venda == null ? '—' : p.venda;
-        var sobraTx = p.sobra > 0 ? '+' + p.sobra : '—';
-        var precoTx = p.preco_unit == null ? 'sem preço' : Math.round(p.preco_unit * 100) / 100;
-        var lapis = PODE_MIN ? '<button class="lapis" title="Editar mínimo" onclick="event.stopPropagation();CP.editarMin(' + i + ')">✎</button>' : '';
-        var pedCel = '<span class="cp-pedcel" onclick="event.stopPropagation()">' +
-          '<button type="button" onclick="CP.mais(' + i + ',-1)">−</button>' +
-          '<input class="' + (p.mexido ? 'mexido' : '') + '" type="number" inputmode="numeric" min="0" value="' + p.pedido + '" onchange="CP.setPedido(' + i + ', this.value)">' +
-          '<button type="button" onclick="CP.mais(' + i + ',1)">+</button></span>';
-        var detalhe = '<div class="cp-detalhe"><span class="cp-det-info">' + esc(p.fornecedor || 'sem fornecedor') +
-          (p.min != null ? ' · mín ' + p.min : '') +
-          (p.preco_unit != null ? ' · ' + rs(p.preco_unit) + '/un' + (p.preco_desatualizado ? ' (desatualizado no B.D.1)' : '') : ' · sem preço no B.D.1') +
-          '</span></div>';
-        if (mobile) {
-          html += '<div class="cp-prod" onclick="this.classList.toggle(\'aberto\')">' +
-            '<div class="m-l1"><span class="st ' + st + '"></span><span class="nome">' + esc(p.nome) + '</span>' + pedCel + '</div>' +
-            '<div class="m-l2">' + celMobile('Cont', p.contado) + celMobile('Mín', minTx + lapis) +
-            celMobile('Sug', sugTx, 'sug') + celMobile('Venda~', vendaTx, 'venda' + (p.venda == null ? ' vazio' : '')) +
-            celMobile('Sobra', sobraTx, 'sobra' + (p.sobra > 0 ? '' : ' zero-s')) +
-            celMobile('R$', precoTx, 'preco' + (p.preco_unit == null ? ' vazio' : '') + (p.preco_desatualizado ? ' velho' : '')) +
-            '</div>' + detalhe + '</div>';
-        } else {
-          html += '<div class="cp-prod" onclick="this.classList.toggle(\'aberto\')">' +
-            '<span class="nomecel"><span class="st ' + st + '"></span><span class="nome">' + esc(p.nome) + '</span></span>' +
-            '<span class="n">' + p.contado + '</span>' +
-            '<span class="n">' + minTx + ' ' + lapis + '</span>' +
-            '<span class="n sug">' + sugTx + '</span>' +
-            '<span class="n venda' + (p.venda == null ? ' vazio' : '') + '">' + vendaTx + '</span>' +
-            '<span class="n sobra' + (p.sobra > 0 ? '' : ' zero-s') + '">' + sobraTx + '</span>' +
-            '<span class="n preco' + (p.preco_unit == null ? ' vazio' : '') + (p.preco_desatualizado ? ' velho' : '') + '">' + precoTx + '</span>' +
-            pedCel + detalhe + '</div>';
-        }
-      });
+      porCat[cat].forEach(function (i) { html += linhaHtml(i); });
     });
+    html += '<p class="sub" id="cp-vazio" style="display:none">Nenhum produto neste filtro.</p>';
 
     html += '<div style="height:56px"></div>'; // espaço pro rodapé fixo
     elTela.innerHTML = html;
@@ -934,16 +977,42 @@ window.msgAcessoNegado = function (nomePagina) {
       elTela.innerHTML = '';
       elEscolha.style.display = '';
       elEscolha.querySelectorAll('.cp-pill').forEach(function (x) { x.classList.remove('on'); });
+      // bug real (2026-07-13): sem isso, o rodapé fixo ("X itens · R$ Y") da
+      // casa anterior continuava flutuando na tela do seletor.
+      var rodVelho = document.getElementById('cp-rodape-fixo');
+      if (rodVelho) rodVelho.remove();
     };
-    document.getElementById('cp-busca').oninput = function () { termo = this.value.trim().toLowerCase(); desenha(); };
+    document.getElementById('cp-busca').oninput = function () { termo = this.value.trim().toLowerCase(); filtra(); };
     document.querySelectorAll('.cp-filtros button').forEach(function (b) {
-      b.onclick = function () { filtro = b.dataset.f; desenha(); };
+      b.onclick = function () {
+        filtro = b.dataset.f;
+        document.querySelectorAll('.cp-filtros button').forEach(function (x) { x.classList.toggle('on', x === b); });
+        filtra();
+      };
     });
     document.getElementById('cp-aceitar-tudo').onclick = aceitarTudo;
     document.getElementById('cp-zerar').onclick = zerarPedidos;
+  }
 
-    kpis(); revisao(); statusRodape();
-    renderRodape();
+  // Só alterna display — nunca toca no innerHTML da lista nem no campo de
+  // busca. Mesmo padrão de _gera_pagina_contagem: anda pelos irmãos entre um
+  // cabeçalho de categoria e o próximo, escondendo o cabeçalho se nenhum
+  // filho ficou visível.
+  function filtra() {
+    var algumVisivel = false;
+    elTela.querySelectorAll('.cp-cat-titulo').forEach(function (cat) {
+      var visivelNaCat = false;
+      var n = cat.nextElementSibling;
+      while (n && n.classList.contains('cp-prod')) {
+        var mostra = passa(PRODUTOS[Number(n.dataset.idx)]);
+        n.style.display = mostra ? '' : 'none';
+        if (mostra) { visivelNaCat = true; algumVisivel = true; }
+        n = n.nextElementSibling;
+      }
+      cat.style.display = visivelNaCat ? '' : 'none';
+    });
+    var vazio = document.getElementById('cp-vazio');
+    if (vazio) vazio.style.display = algumVisivel ? 'none' : '';
   }
 
   function renderRodape() {

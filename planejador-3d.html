@@ -120,6 +120,15 @@
   /* nivel-pill + lupa lado a lado (header.topo não é flex por padrão) */
   .topo-linha { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
   .topo-linha .nivel-pill { margin-top: 0; }
+  /* "Trocar acesso" (2026-07-18, pedido do Rodrigo) — botão próprio no topo,
+     separado da pill "Perfil": os dois precisam existir lado a lado, sem um
+     estar aninhado dentro do outro. Ícone só (mesmo padrão do pomo-btn —
+     tooltip via title/aria-label faz o trabalho do rótulo). */
+  .nivel-tr { flex: none; width: 34px; height: 34px; border-radius: 999px; border: 1px solid var(--border);
+              background: none; color: var(--text-2); display: inline-flex; align-items: center;
+              justify-content: center; padding: 0; cursor: pointer; text-decoration: none; }
+  .nivel-tr:hover, .nivel-tr:focus-visible { border-color: var(--acc); color: var(--acc); }
+  .nivel-tr svg { width: 15px; height: 15px; flex: none; }
   .lupa-busca { flex: none; width: 34px; height: 34px; border-radius: 999px; border: 1px solid var(--border);
                 background: none; color: var(--text-2); display: flex; align-items: center; justify-content: center;
                 gap: 7px; padding: 0; cursor: pointer; margin-left: 6px; }
@@ -163,7 +172,8 @@
               cursor: pointer; margin-left: auto; }
   .pomo-btn:hover, .pomo-btn:focus-visible { border-color: var(--acc); }
   .pomo-btn.rodando { border-color: var(--acc); }
-  .pomo-btn svg.pomo-ico { width: 19px; height: 19px; flex: none; }
+  /* 50% maior (pedido do Rodrigo, 2026-07-18) — era 19px. */
+  .pomo-btn svg.pomo-ico { width: 28.5px; height: 28.5px; flex: none; }
   .pomo-btn .badge { position: absolute; top: -5px; right: -5px; background: var(--acc);
                      color: var(--acc-txt); font-size: 9.5px; font-weight: 700; line-height: 1;
                      padding: 3px 4px; border-radius: 999px; min-width: 15px; text-align: center;
@@ -269,6 +279,7 @@
 <div class="kicker">GRUPO IZ</div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
+<a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
 
 <button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar receita" title="Buscar receita (/)">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
