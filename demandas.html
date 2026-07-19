@@ -654,6 +654,36 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-envio-est.ok .dot { background: var(--tipo-solicitacao); }
   .dm-envio-est.wait .dot { background: var(--urg-hoje); }
   .dm-envio-est.exp .dot { background: var(--urg-urgente); }
+
+  /* Conversa (thread) — "o card cresce a partir da tratativa" (2026-07-19).
+     Bolhas estilo chat: quem está logado à direita, os outros à esquerda. */
+  .dm-conversa { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  .dm-conversa-tit { font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+                      color: var(--text-3); margin-bottom: 10px; }
+  .dm-conversa-lista { display: flex; flex-direction: column; gap: 9px; }
+  .dm-conversa-vazia { font-size: 12.5px; color: var(--text-3); }
+  .dm-msg { max-width: 84%; display: flex; flex-direction: column; gap: 3px; }
+  .dm-msg.eu { align-self: flex-end; align-items: flex-end; }
+  .dm-msg.outro { align-self: flex-start; align-items: flex-start; }
+  .dm-msg .autor { font-size: 11px; color: var(--text-3); padding: 0 3px; }
+  .dm-msg .bolha { padding: 8px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.4;
+                    white-space: pre-wrap; word-break: break-word; }
+  .dm-msg.eu .bolha { background: var(--acc); color: var(--acc-txt); border-bottom-right-radius: 4px; }
+  .dm-msg.outro .bolha { background: var(--card); border: 1px solid var(--border); color: var(--text);
+                          border-bottom-left-radius: 4px; }
+  .dm-msg .hora { font-size: 10.5px; color: var(--text-3); padding: 0 3px; }
+  .dm-conversa-comp { display: flex; gap: 8px; align-items: flex-end; margin-top: 11px; }
+  .dm-conversa-comp textarea { flex: 1; min-width: 0; resize: none; font: inherit; font-size: 13.5px;
+                                padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border);
+                                background: var(--card); color: var(--text); max-height: 96px; }
+  .dm-conversa-comp textarea:focus { outline: none; border-color: var(--acc); }
+  .dm-conversa-enviar { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 0;
+                         background: var(--acc); color: var(--acc-txt); cursor: pointer;
+                         display: flex; align-items: center; justify-content: center; }
+  .dm-conversa-enviar:disabled { opacity: .4; cursor: default; }
+  .dm-env-conversa-btn { margin-top: 8px; margin-left: 8px; font: inherit; font-size: 12.5px;
+                          border: 1px solid var(--border); background: var(--card); color: var(--text-2);
+                          border-radius: 999px; padding: 6px 14px; cursor: pointer; }
 </style>
 
 <div id="dm-gate" class="rr-gate" style="display:none"></div>
@@ -1200,6 +1230,75 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     redesenhaFila(t);
   }
 
+  // Thread de conversa por demanda ("o card cresce a partir da tratativa",
+  // 2026-07-19). Reusada nas duas superfícies: Recebidas (chefe/coord
+  // respondem) e Enviadas (o autor responde com senha individual). Lazy —
+  // só busca o histórico quando a conversa é aberta. Identidade e o lado da
+  // bolha ('eu') vêm do Worker (GET .../mensagens marca eu por token).
+  function montaConversa(chave, podeEscrever) {
+    var wrap = document.createElement('div'); wrap.className = 'dm-conversa';
+    var tit = document.createElement('div'); tit.className = 'dm-conversa-tit'; tit.textContent = 'Conversa';
+    wrap.appendChild(tit);
+    var lista = document.createElement('div'); lista.className = 'dm-conversa-lista';
+    lista.innerHTML = '<div class="dm-conversa-vazia">Carregando…</div>';
+    wrap.appendChild(lista);
+
+    function bolhaMsg(m) {
+      var el = document.createElement('div'); el.className = 'dm-msg ' + (m.eu ? 'eu' : 'outro');
+      var aut = document.createElement('div'); aut.className = 'autor'; aut.textContent = m.autor || '';
+      var b = document.createElement('div'); b.className = 'bolha'; b.textContent = m.texto || '';
+      var h = document.createElement('div'); h.className = 'hora'; h.textContent = m.ts ? horaCurta(m.ts) : '';
+      el.appendChild(aut); el.appendChild(b); el.appendChild(h);
+      return el;
+    }
+    function pinta(msgs) {
+      lista.innerHTML = '';
+      if (!msgs.length) { lista.innerHTML = '<div class="dm-conversa-vazia">Nenhuma mensagem ainda.</div>'; return; }
+      msgs.forEach(function (m) { lista.appendChild(bolhaMsg(m)); });
+    }
+
+    var carregado = false;
+    function carrega() {
+      if (carregado) return; carregado = true;
+      fetch(WORKER + '/api/demanda/' + encodeURIComponent(chave) + '/mensagens', { headers: { 'X-Token': TOKEN } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) { pinta((data && data.mensagens) || []); })
+        .catch(function () { lista.innerHTML = '<div class="dm-conversa-vazia">Erro ao carregar a conversa.</div>'; });
+    }
+
+    if (podeEscrever) {
+      var comp = document.createElement('div'); comp.className = 'dm-conversa-comp';
+      var ta = document.createElement('textarea'); ta.rows = 1; ta.placeholder = 'Responder…'; ta.maxLength = 2000;
+      var enviar = document.createElement('button'); enviar.type = 'button'; enviar.className = 'dm-conversa-enviar'; enviar.disabled = true;
+      enviar.setAttribute('aria-label', 'Enviar');
+      enviar.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>';
+      function envia() {
+        var texto = ta.value.trim(); if (!texto) return;
+        enviar.disabled = true;
+        fetch(WORKER + '/api/demanda/' + encodeURIComponent(chave) + '/mensagens', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+          body: JSON.stringify({ texto: texto })
+        }).then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (data) {
+            if (!data || !data.mensagem) { toast('Falha ao enviar — tenta de novo.', true); enviar.disabled = false; return; }
+            var vazia = lista.querySelector('.dm-conversa-vazia'); if (vazia) lista.innerHTML = '';
+            lista.appendChild(bolhaMsg(data.mensagem));
+            ta.value = ''; ta.style.height = 'auto';
+          }).catch(function () { toast('Falha ao enviar — tenta de novo.', true); enviar.disabled = false; });
+      }
+      ta.addEventListener('input', function () {
+        enviar.disabled = !ta.value.trim();
+        ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 96) + 'px';
+      });
+      ta.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); envia(); } });
+      enviar.onclick = envia;
+      comp.appendChild(ta); comp.appendChild(enviar);
+      wrap.appendChild(comp);
+    }
+
+    return { el: wrap, carrega: carrega };
+  }
+
   function renderCard(d, pos, t, resolvido) {
     var card = document.createElement('div');
     card.className = 'dm-card';
@@ -1509,6 +1608,14 @@ prioridade (urgência primeiro, mais antiga depois).</p>
           }).catch(function () {});
       });
     }
+
+    // Conversa (thread) — o card cresce aqui. chefe/coord respondem;
+    // controladoria (SOMENTE_LEITURA) só lê. Lazy: carrega ao abrir o card,
+    // idempotente (mesmo molde do histórico de edições logo acima).
+    var podeFalar = !SOMENTE_LEITURA && (NIVEL === 'chefe' || NIVEL === 'coord');
+    var conversa = montaConversa(d.chave, podeFalar);
+    corpoEl.appendChild(conversa.el);
+    head.addEventListener('click', function () { if (card.classList.contains('aberto')) conversa.carrega(); });
 
     card.appendChild(corpoEl);
     return card;
@@ -1963,6 +2070,22 @@ prioridade (urgência primeiro, mais antiga depois).</p>
         });
       };
     }
+
+    // Conversa — o autor acompanha e responde a própria demanda. Escrever exige
+    // senha individual (PESSOA); sem ela, abre só pra leitura (o Worker recusa
+    // o POST mesmo). Recolhida por padrão, carrega ao abrir (economiza fetch por
+    // item da timeline).
+    var convBtn = document.createElement('button');
+    convBtn.type = 'button'; convBtn.className = 'dm-env-conversa-btn'; convBtn.textContent = 'Conversa';
+    var conversaEnv = montaConversa(d.chave, !!PESSOA);
+    conversaEnv.el.style.display = 'none';
+    bolha.appendChild(convBtn);
+    bolha.appendChild(conversaEnv.el);
+    convBtn.onclick = function () {
+      var mostrar = conversaEnv.el.style.display === 'none';
+      conversaEnv.el.style.display = mostrar ? '' : 'none';
+      if (mostrar) conversaEnv.carrega();
+    };
 
     return bolha;
   }
