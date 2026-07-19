@@ -159,16 +159,6 @@ window.msgAcessoNegado = function (nomePagina) {
       return k;
     } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
   }
-  function deviceLabel() {
-    try { var m = localStorage.getItem('portal_device_label'); if (m) return m; } catch (e) {}
-    var ua = navigator.userAgent || '';
-    if (/iPhone/.test(ua)) return 'iPhone';
-    if (/iPad/.test(ua)) return 'iPad';
-    if (/Android/.test(ua)) return 'Android';
-    if (/Macintosh|Mac OS X/.test(ua)) return 'Mac';
-    if (/Windows/.test(ua)) return 'Windows';
-    return 'Aparelho';
-  }
   window.marcaPresenca = function () {
     var s = window.sessaoLer && window.sessaoLer();
     if (!s || !PRES_WORKER) return;
@@ -177,27 +167,10 @@ window.msgAcessoNegado = function (nomePagina) {
       if (Date.now() - ult < 90000) return;
       localStorage.setItem('portal_presenca_ts', String(Date.now()));
     } catch (e) {}
-    function envia(extra) {
-      var corpo = { device: deviceId() };
-      if (extra) for (var kk in extra) corpo[kk] = extra[kk];
-      fetch(PRES_WORKER + '/api/presenca', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
-        body: JSON.stringify(corpo),
-      }).catch(function () {});
-    }
-    // Só a sessão de COORD (o Rodrigo — único coord) reporta a posição do
-    // próprio aparelho, pra ele reencontrar os dispositivos onde está logado.
-    // Nenhum outro nível dispara pedido de GPS aqui. Após o 1º "permitir" o
-    // navegador não pergunta de novo; maximumAge reusa posição recente.
-    if (s.nivel === 'coord' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        function (pos) { envia({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy, label: deviceLabel() }); },
-        function () { envia(null); },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-      );
-    } else {
-      envia(null);
-    }
+    fetch(PRES_WORKER + '/api/presenca', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      body: JSON.stringify({ device: deviceId() }),
+    }).catch(function () {});
   };
   window.marcaPresenca();
   setInterval(window.marcaPresenca, 120000);
@@ -754,23 +727,23 @@ window.msgAcessoNegado = function (nomePagina) {
   </div>
   <div class="rp-now">
     <div class="rp-eq"><span></span><span></span><span></span><span></span></div>
-    <div><div class="nm" id="radio-nm">Escolha uma estação</div><div class="ds" id="radio-ds"></div></div>
-    <div class="st" id="radio-st">parado</div>
+    <div><div class="nm" id="radio-nm">Rádio Vice City</div><div class="ds" id="radio-ds"></div></div>
+    <div class="st" id="radio-st">ligando…</div>
   </div>
   <div class="rp-list" id="radio-list"></div>
   <div class="rp-ctrl">
     <button class="rp-cbtn" id="radio-prev" type="button" title="Anterior" aria-label="Anterior"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5 9 12l11 7z"/></svg></button>
-    <button class="rp-cbtn play" id="radio-play" type="button" title="Tocar" aria-label="Tocar"><svg id="radio-play-ic" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg></button>
+    <button class="rp-cbtn play" id="radio-play" type="button" title="Ativar som" aria-label="Ativar som"><svg id="radio-play-ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
     <button class="rp-cbtn" id="radio-next" type="button" title="Próxima" aria-label="Próxima"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M18 5h-2v14h2zM4 5l11 7L4 19z"/></svg></button>
     <div class="rp-vol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 8a5 5 0 0 1 0 8"/></svg><input type="range" id="radio-vol" min="0" max="100" value="70" aria-label="Volume da rádio"></div>
   </div>
-  <button class="rp-religar" id="radio-religar" type="button">Tocar de novo</button>
-  <p class="rp-hint">Toca via YouTube. Continua entre as páginas do portal; se o navegador pausar ao trocar de página, um toque religa.</p>
+  <button class="rp-religar" id="radio-religar" type="button">A rádio está no mudo — tocar com som</button>
+  <p class="rp-hint">Uma transmissão só, sempre no ar e no mesmo ponto pra todo mundo. Abre no mudo (regra do navegador) e ganha som no primeiro toque.</p>
   <div id="radio-yt"></div>
 </div>
-<button class="radio-mini" id="radio-mini" type="button" aria-label="Pausar rádio">
-  <span class="mi-ico" id="radio-mini-ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg></span>
-  <span class="mi-txt"><b id="radio-mini-b">Rádio</b><span id="radio-mini-sub">Vice City</span></span>
+<button class="radio-mini" id="radio-mini" type="button" aria-label="Ativar som da rádio">
+  <span class="mi-ico" id="radio-mini-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg></span>
+  <span class="mi-txt"><b id="radio-mini-b">Rádio</b><span id="radio-mini-sub">no mudo · toque</span></span>
 </button>
 
 
@@ -1040,10 +1013,17 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
 (function () {
   var CH = 'portal_radio';
   var ST = [{"nome": "Fever 105", "fq": "105", "ds": "disco / funk", "vid": "2KOTYup9mVA", "live": false}, {"nome": "Emotion 98.3", "fq": "98", "ds": "baladas anos 80", "vid": "1vU4BF5-kvQ", "live": false}, {"nome": "Flash FM", "fq": "FM", "ds": "pop hits", "vid": "B-8EORB783c", "live": false}, {"nome": "Wave 103", "fq": "103", "ds": "new wave", "vid": "CV7B3Q-AhWM", "live": false}, {"nome": "Retro GTA", "fq": "●", "ds": "ao vivo", "vid": "jsWiI-dDi0s", "live": true}];
-  var def = { idx: -1, tocando: false, vol: 70, pos: 0, ts: 0 };
+  // Estação padrão (a transmissão que todo mundo pega ao abrir): a marcada
+  // com "default" no config, senão a primeira.
+  var DEF = 0; for (var k = 0; k < ST.length; k++) { if (ST[k]['default']) { DEF = k; break; } }
+  // som:true = o usuário QUER ouvir (o padrão) — mas a página sempre abre no
+  // MUDO (regra de autoplay dos navegadores) e desmuta no 1º gesto. Se o
+  // usuário silenciar de propósito, som:false e aí NÃO desmuta sozinho.
+  var def = { idx: DEF, vol: 70, som: true };
   var s;
   try { s = Object.assign({}, def, JSON.parse(localStorage.getItem(CH) || '{}')); }
   catch (e) { s = Object.assign({}, def); }
+  if (typeof s.idx !== 'number' || s.idx < 0 || s.idx >= ST.length) s.idx = DEF;
   function salvar() { try { localStorage.setItem(CH, JSON.stringify(s)); } catch (e) {} }
   var $ = function (id) { return document.getElementById(id); };
   var btn = $('radio-btn'), pop = $('radio-pop'), list = $('radio-list'),
@@ -1052,11 +1032,11 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
       mini = $('radio-mini'), miniIco = $('radio-mini-ico'), miniB = $('radio-mini-b'), miniSub = $('radio-mini-sub');
   if (!btn || !pop) return;
   if (!ST.length) { btn.style.display = 'none'; return; }
-  if (s.idx >= ST.length) { s.idx = -1; }
   volEl.value = s.vol;
-  var PLAY = '<path d="M7 4.5v15l12-7.5z"/>', PAUSE = '<path d="M7 5h3v14H7zM14 5h3v14h-3z"/>';
-  var MPLAY = '<path d="M8 5v14l11-7z"/>';
-  var player = null, pronto = false, tocando = false;
+  // Ícones do alto-falante (traço): COM som / MUDO.
+  var SOM_ON = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9a3.3 3.3 0 0 1 0 6"/><path d="M19 6.5a6.5 6.5 0 0 1 0 11"/>';
+  var SOM_OFF = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>';
+  var player = null, pronto = false, tocando = false, mudo = true;
 
   // ---- lista de estações (do config, via JSON injetado) ----
   ST.forEach(function (st, i) {
@@ -1066,11 +1046,11 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     b.querySelector('.fq').textContent = st.fq;
     b.querySelector('.txt b').textContent = st.nome;
     b.querySelector('.txt span').textContent = st.ds;
-    b.addEventListener('click', function () { seleciona(i, true); });
+    b.addEventListener('click', function () { seleciona(i); });
     list.appendChild(b);
   });
 
-  // ---- YouTube IFrame API (carregada só quando precisa) ----
+  // ---- YouTube IFrame API ----
   function carregaYT(cb) {
     if (window.YT && window.YT.Player) { cb(); return; }
     if (window.__ytCbs) { window.__ytCbs.push(cb); return; }
@@ -1082,75 +1062,99 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     var t = document.createElement('script'); t.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(t);
   }
-  function iniciaPos(st) {
-    if (!st || st.live) return 0;
-    var extra = s.ts ? Math.max(0, (Date.now() - s.ts) / 1000) : 0;
-    return Math.max(0, (s.pos || 0) + extra);
+  // Posição SINCRONIZADA pelo relógio: todo aparelho toca o mesmo ponto.
+  // pos = (segundos do epoch) % duração. Como a duração é fixa, todos calculam
+  // o mesmo lugar (relógios ~alinhados por NTP, erro de ~1s). Ao vivo (dur<=0)
+  // já é sincronizado pelo próprio YouTube (fica na borda ao vivo).
+  function posGlobal(dur) { return dur > 0 ? (Date.now() / 1000) % dur : 0; }
+  function sincroniza(forcar) {
+    if (!player || !pronto) return;
+    var dur = 0; try { dur = player.getDuration() || 0; } catch (e) {}
+    if (dur <= 0) return;
+    var alvo = posGlobal(dur), atual = 0;
+    try { atual = player.getCurrentTime() || 0; } catch (e) {}
+    if (forcar || Math.abs(atual - alvo) > 3) { try { player.seekTo(alvo, true); } catch (e) {} }
   }
-  function garantePlayer(autoplay) {
+  function criaPlayer() {
     var st = ST[s.idx]; if (!st) return;
     carregaYT(function () {
-      if (player) { player.loadVideoById({ videoId: st.vid, startSeconds: iniciaPos(st) }); return; }
+      if (player) return;
       player = new YT.Player('radio-yt', {
         videoId: st.vid,
-        playerVars: { autoplay: autoplay ? 1 : 0, playsinline: 1, start: Math.floor(iniciaPos(st)) },
+        // autoplay + mute: navegador PERMITE tocar mudo sozinho. loop+playlist
+        // = mesmo vídeo em loop infinito (sempre tocando).
+        playerVars: { autoplay: 1, mute: 1, playsinline: 1, controls: 0, disablekb: 1, loop: 1, playlist: st.vid },
         events: {
           onReady: function (e) {
-            pronto = true; e.target.setVolume(s.vol);
-            if (s.tocando) { try { e.target.playVideo(); } catch (x) {} armaGestoSeBloquear(); }
-            setupMedia();
+            pronto = true;
+            try { e.target.mute(); e.target.setVolume(s.vol); } catch (x) {}
+            mudo = true;
+            sincroniza(true);
+            try { e.target.playVideo(); } catch (x) {}
+            if (s.som) armaSom();   // desmuta no 1º gesto (o que o Rodrigo pediu)
+            setupMedia(); render();
           },
           onStateChange: function (e) {
             tocando = (e.data === YT.PlayerState.PLAYING);
-            if (tocando) mostraReligar(false);
-            if (e.data === YT.PlayerState.ENDED && ST[s.idx] && !ST[s.idx].live) proxima();
+            // fim do vídeo → volta pro ponto global e segue (radio sempre no ar)
+            if (e.data === YT.PlayerState.ENDED) { sincroniza(true); try { player.playVideo(); } catch (x) {} }
             render();
           }
         }
       });
     });
   }
-  function seleciona(i, play) {
-    if (i !== s.idx) { s.pos = 0; s.ts = 0; }
-    s.idx = i;
-    if (play) s.tocando = true;
-    render(); salvar();
-    if (!play) return;
-    if (player && pronto) { try { player.loadVideoById(ST[i].vid); } catch (e) {} setupMedia(); }
-    else garantePlayer(true);
+  function trocaVideo() {
+    if (!player || !pronto) { criaPlayer(); return; }
+    var st = ST[s.idx]; if (!st) return;
+    try { player.loadVideoById(st.vid); } catch (e) {}
+    // respeita o estado de som atual no vídeo novo + realinha a sincronia
+    setTimeout(function () {
+      try { if (mudo) player.mute(); else { player.unMute(); player.setVolume(s.vol); } sincroniza(true); } catch (e) {}
+    }, 500);
+    setupMedia();
   }
-  function proxima() { seleciona((Math.max(s.idx, 0) + 1) % ST.length, true); }
-  function anterior() { seleciona((Math.max(s.idx, 0) + ST.length - 1) % ST.length, true); }
-  function playPause() {
-    if (s.idx < 0) { seleciona(0, true); return; }
-    if (!player) { s.tocando = true; garantePlayer(true); salvar(); return; }
-    if (tocando) { s.tocando = false; try { player.pauseVideo(); } catch (e) {} }
-    else { s.tocando = true; try { player.playVideo(); } catch (e) {} }
+  function seleciona(i) { s.idx = i; salvar(); render(); trocaVideo(); }
+  function proxima() { seleciona((s.idx + 1) % ST.length); }
+  function anterior() { seleciona((s.idx + ST.length - 1) % ST.length); }
+
+  // ---- som: mudo <-> com som ----
+  function ativaSom() {
+    s.som = true; mudo = false; salvar();
+    if (player && pronto) { try { player.unMute(); player.setVolume(s.vol); if (player.getPlayerState && player.getPlayerState() !== 1) player.playVideo(); } catch (e) {} }
+    desarmaSom(); render();
+  }
+  function silencia() {
+    s.som = false; mudo = true; salvar();
+    if (player && pronto) { try { player.mute(); } catch (e) {} }
+    render();
+  }
+  function alternaSom() { if (mudo) ativaSom(); else silencia(); }
+
+  // Desmuta no 1º gesto da página (só quando o usuário quer som). É isto que
+  // dá "abre no mudo, faz barulho depois de uma ação".
+  var gesto = null;
+  function armaSom() {
+    if (gesto) return;
+    gesto = function () { ativaSom(); };
+    document.addEventListener('pointerdown', gesto, { once: true });
+    document.addEventListener('keydown', gesto, { once: true });
+    document.addEventListener('touchstart', gesto, { once: true });
+  }
+  function desarmaSom() {
+    if (!gesto) return;
+    document.removeEventListener('pointerdown', gesto);
+    document.removeEventListener('keydown', gesto);
+    document.removeEventListener('touchstart', gesto);
+    gesto = null;
+  }
+  if (religar) religar.addEventListener('click', function (e) { e.stopPropagation(); ativaSom(); });
+
+  volEl.addEventListener('input', function () {
+    s.vol = +volEl.value;
+    if (player && pronto) { try { player.setVolume(s.vol); if (s.vol > 0 && mudo) ativaSom(); } catch (e) {} }
     salvar();
-  }
-
-  // ---- gesto de desbloqueio de autoplay (mesmo padrão do Modo Foco) ----
-  var gestoArmado = false;
-  function armaGestoSeBloquear() { setTimeout(function () { if (s.tocando && !tocando) armaGesto(); }, 1500); }
-  function armaGesto() {
-    mostraReligar(true);
-    if (gestoArmado) return; gestoArmado = true;
-    var f = function () {
-      document.removeEventListener('pointerdown', f); document.removeEventListener('keydown', f);
-      gestoArmado = false;
-      if (s.tocando && player) { try { player.playVideo(); } catch (e) {} }
-      mostraReligar(false);
-    };
-    document.addEventListener('pointerdown', f); document.addEventListener('keydown', f);
-  }
-  function mostraReligar(v) { if (religar) religar.classList.toggle('on', !!v); }
-  if (religar) religar.addEventListener('click', function (e) {
-    e.stopPropagation(); s.tocando = true;
-    if (player) { try { player.playVideo(); } catch (x) {} } else garantePlayer(true);
-    mostraReligar(false); salvar();
   });
-
-  volEl.addEventListener('input', function () { s.vol = +volEl.value; if (player && pronto) player.setVolume(s.vol); salvar(); });
 
   // ---- MediaSession (tela de bloqueio / fones) ----
   function setupMedia() {
@@ -1158,61 +1162,67 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     try {
       var st = ST[s.idx] || {};
       navigator.mediaSession.metadata = new MediaMetadata({ title: st.nome || 'Rádio', artist: 'Rádio Vice City', album: 'Portal dos Bares · Grupo IZ' });
-      navigator.mediaSession.setActionHandler('play', function () { s.tocando = true; if (player) { try { player.playVideo(); } catch (e) {} } else garantePlayer(true); salvar(); });
-      navigator.mediaSession.setActionHandler('pause', function () { s.tocando = false; if (player) { try { player.pauseVideo(); } catch (e) {} } salvar(); });
+      navigator.mediaSession.setActionHandler('play', function () { ativaSom(); });
+      navigator.mediaSession.setActionHandler('pause', function () { silencia(); });
       navigator.mediaSession.setActionHandler('nexttrack', function () { proxima(); });
       navigator.mediaSession.setActionHandler('previoustrack', function () { anterior(); });
     } catch (e) {}
   }
 
-  // ---- mini flutuante (aparece em qualquer página quando tocando) ----
+  // ---- mini flutuante (aparece em qualquer página enquanto toca) ----
   function atualizaMini() {
     if (!mini) return;
-    var ativo = s.idx >= 0 && s.tocando && !pop.classList.contains('aberto');
+    var ativo = tocando && !pop.classList.contains('aberto');
     mini.classList.toggle('on', ativo);
     if (!ativo) return;
-    var pausado = !tocando;
-    mini.classList.toggle('pausado', pausado);
-    miniIco.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + (pausado ? MPLAY : PAUSE) + '</svg>';
+    mini.classList.toggle('pausado', mudo);
+    miniIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (mudo ? SOM_OFF : SOM_ON) + '</svg>';
     miniB.textContent = ST[s.idx] ? ST[s.idx].nome : 'Rádio';
-    miniSub.textContent = pausado ? 'pausado' : 'no ar';
-    mini.setAttribute('aria-label', (pausado ? 'Religar' : 'Pausar') + ' rádio');
+    miniSub.textContent = mudo ? 'no mudo · toque' : 'no ar';
+    mini.setAttribute('aria-label', mudo ? 'Ativar som da rádio' : 'Silenciar rádio');
   }
-  if (mini) mini.addEventListener('click', function () { playPause(); });
+  if (mini) mini.addEventListener('click', function () { alternaSom(); });
 
   // ---- abre/fecha painel ----
   function toggle(v) { pop.classList.toggle('aberto', v === undefined ? !pop.classList.contains('aberto') : v); atualizaMini(); }
   btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
   $('radio-close').addEventListener('click', function () { toggle(false); });
   document.addEventListener('click', function (e) { if (pop.classList.contains('aberto') && !pop.contains(e.target) && !btn.contains(e.target)) toggle(false); });
-  $('radio-play').addEventListener('click', playPause);
+  $('radio-play').addEventListener('click', alternaSom);
   $('radio-next').addEventListener('click', proxima);
   $('radio-prev').addEventListener('click', anterior);
 
   function render() {
     Array.prototype.forEach.call(list.children, function (el, i) { el.classList.toggle('on', i === s.idx); });
+    var soando = tocando && !mudo;
     pop.classList.toggle('tocando', tocando);
+    pop.classList.toggle('soando', soando);
     btn.classList.toggle('tocando', tocando);
+    btn.classList.toggle('mudo', tocando && mudo);
     var st = ST[s.idx];
-    nmEl.textContent = st ? st.nome : 'Escolha uma estação';
-    dsEl.textContent = st ? st.ds : (ST.length + ' estações · trilha do Vice City');
-    stEl.textContent = tocando ? 'no ar' : (s.idx < 0 ? 'parado' : 'pausado');
-    playIc.innerHTML = tocando ? PAUSE : PLAY;
+    nmEl.textContent = st ? st.nome : 'Rádio Vice City';
+    dsEl.textContent = st ? st.ds : (ST.length + ' estações');
+    stEl.textContent = !tocando ? 'ligando…' : (mudo ? 'no mudo' : 'no ar');
+    playIc.innerHTML = mudo ? SOM_OFF : SOM_ON;
+    if (religar) religar.classList.toggle('on', tocando && mudo);
     atualizaMini();
   }
 
-  // ---- salva posição (retomar entre páginas) ----
-  function guardaPos() {
-    if (player && pronto && tocando && ST[s.idx] && !ST[s.idx].live) {
-      try { s.pos = player.getCurrentTime() || 0; s.ts = Date.now(); salvar(); } catch (e) {}
-    }
-  }
-  setInterval(guardaPos, 2000);
-  window.addEventListener('pagehide', guardaPos);
+  // ---- mantém tocando + realinha a sincronia periodicamente ----
+  setInterval(function () {
+    if (!player || !pronto) return;
+    try {
+      if (player.getPlayerState() === 2 && !document.hidden) player.playVideo();  // radio sempre no ar
+      if (tocando) sincroniza(false);
+    } catch (e) {}
+  }, 8000);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && player && pronto) { try { sincroniza(true); if (player.getPlayerState() !== 1) player.playVideo(); } catch (e) {} }
+  });
 
-  // ---- restauração ao carregar a página ----
+  // ---- início: sempre toca (no mudo até um gesto) ----
   render();
-  if (s.tocando && s.idx >= 0) garantePlayer(true);
+  criaPlayer();
 })();
 </script>
 
