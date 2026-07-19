@@ -457,8 +457,17 @@ window.msgAcessoNegado = function (nomePagina) {
     <input type="range" id="pomo-vol" min="0" max="100" value="45" aria-label="Volume do ruído">
   </div>
   <button class="pomo-religar" id="pomo-religar" type="button">Tocar de novo</button>
-  <p class="pomo-hint">O ruído continua com o portal minimizado ou em segundo plano. Ao trocar de página o som tenta religar sozinho.</p>
+  <p class="pomo-hint">O ruído continua com o portal minimizado ou em segundo plano. Pause por aqui, pelo botão flutuante em qualquer página ou pela tela de bloqueio do celular.</p>
 </div>
+<div class="pomo-toast" id="pomo-toast" role="status" aria-live="polite">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg>
+  <span id="pomo-toast-txt"></span>
+</div>
+<button class="pomo-mini" id="pomo-mini" type="button" aria-label="Pausar ruído">
+  <span class="mi-ico" id="pomo-mini-ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg></span>
+  <span class="mi-txt"><b id="pomo-mini-b">Ruído</b><span id="pomo-mini-sub">chuva forte</span></span>
+</button>
+<audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
 <p class="nota">Portal dos Bares · Grupo IZ · atualizado em 18/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
@@ -682,7 +691,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   var CH = 'portal_pomodoro';
   var pad = function (n) { return (n < 10 ? '0' : '') + n; };
   var def = { modo: 'foco', foco: 25, pausa: 5, ciclo: 1, rodando: false, fimTs: 0,
-              restante: 25 * 60, noise: null, vol: 45 };
+              restante: 25 * 60, noise: null, somPausado: false, vol: 45 };
   var s;
   try { s = Object.assign({}, def, JSON.parse(localStorage.getItem(CH) || '{}')); }
   catch (e) { s = Object.assign({}, def); }
@@ -693,55 +702,84 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   var btn = $('pomo-btn'), pop = $('pomo-pop'), badge = $('pomo-badge'),
       prog = $('pomo-prog'), tempoEl = $('pomo-tempo'), subEl = $('pomo-sub'),
       modoTag = $('pomo-modo'), ring = $('pomo-ring'), playLbl = $('pomo-play-lbl'),
-      icPlay = $('pomo-ic-play'), volEl = $('pomo-vol'), religar = $('pomo-religar');
+      icPlay = $('pomo-ic-play'), volEl = $('pomo-vol'), religar = $('pomo-religar'),
+      toast = $('pomo-toast'), toastTxt = $('pomo-toast-txt'),
+      mini = $('pomo-mini'), miniIco = $('pomo-mini-ico'), miniB = $('pomo-mini-b'),
+      miniSub = $('pomo-mini-sub'), el = $('pomo-audio');
   if (!btn || !pop) return;
   prog.style.strokeDasharray = CIRC;
   volEl.value = s.vol;
 
-  // ---- áudio (Web Audio, gerado — nenhum arquivo) ----
-  var ac = null, src = null, gain = null;
-  function garanteAc() {
-    if (!ac) {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      ac = new AC();
-      gain = ac.createGain(); gain.gain.value = s.vol / 100 * 0.6; gain.connect(ac.destination);
-    }
-    return ac;
+  // ---- aviso de virada de fase (só com o painel fechado — ver CSS_POMODORO) ----
+  var toastTimer = null;
+  function mostraToast(msg) {
+    if (!toast) return;
+    toastTxt.textContent = msg;
+    toast.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('on'); }, 5000);
   }
-  function bufferRuido(tipo) {
-    var dur = 2.2, n = Math.floor(ac.sampleRate * dur), b = ac.createBuffer(1, n, ac.sampleRate),
-        d = b.getChannelData(0), i;
-    if (tipo === 'white') { for (i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; }
+
+  // ---- ruído: elemento <audio> tocando um WAV gerado na hora ----
+  // Por que <audio> e não Web Audio puro: o elemento continua tocando com a
+  // aba em 2º plano (inclusive no iOS, onde o AudioContext é suspenso) e
+  // habilita o MediaSession (play/pausa na tela de bloqueio / fones). O WAV é
+  // gerado no navegador — nenhum arquivo baixado, respeita a Regra Zero.
+  // (No iOS o volume do elemento é read-only; o slider só vale em desktop/
+  // Android — no iPhone o volume é o botão físico. Trade-off aceito pra ter
+  // áudio de fundo confiável e controle na tela de bloqueio.)
+  var PAUSE_SVG = '<path d="M7 5h3v14H7zM14 5h3v14h-3z"/>', PLAY_SVG = '<path d="M8 5v14l11-7z"/>';
+  var NOMES = { white: 'Ruído branco · chuva forte', pink: 'Ruído rosa · ventilador',
+                brown: 'Ruído marrom · cachoeira' };
+  function nomeRuido(t) { return ({ white: 'chuva forte', pink: 'ventilador', brown: 'cachoeira' })[t] || 'ruído'; }
+  var blobs = {};
+  function wavURL(tipo) {
+    var sr = 44100, dur = 6, F = 3000, n = sr * dur, tot = n + F, raw = new Float32Array(tot), i;
+    if (tipo === 'white') { for (i = 0; i < tot; i++) raw[i] = (Math.random() * 2 - 1) * 0.5; }
     else if (tipo === 'pink') {
       var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-      for (i = 0; i < n; i++) {
+      for (i = 0; i < tot; i++) {
         var w = Math.random() * 2 - 1;
         b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759;
         b2 = 0.96900 * b2 + w * 0.1538520; b3 = 0.86650 * b3 + w * 0.3104856;
         b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
-        d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+        raw[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11 * 2.4; b6 = w * 0.115926;
       }
-    } else { var last = 0; for (i = 0; i < n; i++) { var v = Math.random() * 2 - 1; last = (last + 0.02 * v) / 1.02; d[i] = last * 3.5; } }
-    return b;
+    } else { var last = 0; for (i = 0; i < tot; i++) { var v = Math.random() * 2 - 1; last = (last + 0.02 * v) / 1.02; raw[i] = last * 3.6; } }
+    // crossfade das F amostras iniciais com a continuação (n+i) → loop sem clique
+    for (i = 0; i < F; i++) { var t = i / F; raw[i] = raw[i] * t + raw[n + i] * (1 - t); }
+    var buf = new ArrayBuffer(44 + n * 2), dv = new DataView(buf);
+    function ws(o, str) { for (var k = 0; k < str.length; k++) dv.setUint8(o + k, str.charCodeAt(k)); }
+    ws(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); ws(8, 'WAVE'); ws(12, 'fmt ');
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    ws(36, 'data'); dv.setUint32(40, n * 2, true);
+    for (i = 0; i < n; i++) { var x = Math.max(-1, Math.min(1, raw[i])); dv.setInt16(44 + i * 2, x * 32767, true); }
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
   }
-  function paraBuffer() { if (src) { try { src.stop(); } catch (e) {} src.disconnect(); src = null; } }
-  function iniciaBuffer() {
-    if (!s.noise || !garanteAc()) return;
-    paraBuffer();
-    src = ac.createBufferSource(); src.buffer = bufferRuido(s.noise); src.loop = true;
-    src.connect(gain); src.start();
+  function garanteEl() {
+    if (el && !el.dataset.init) {
+      el.dataset.init = '1'; el.loop = true;
+      el.addEventListener('play', function () { setMedia('playing'); atualizaMini(); });
+      el.addEventListener('pause', function () { setMedia('paused'); atualizaMini(); });
+    }
+    return el;
   }
-  // Toca o ruído; se o navegador segurar o áudio (autoplay), arma religar por gesto.
+  function tocaEl() {
+    if (!el) return;
+    garanteEl();
+    if (!blobs[s.noise]) blobs[s.noise] = wavURL(s.noise);
+    if (el.dataset.tipo !== s.noise) { el.src = blobs[s.noise]; el.dataset.tipo = s.noise; }
+    el.volume = Math.max(0, Math.min(1, s.vol / 100));
+    var p = el.play();
+    if (p && p.catch) p.catch(function () { armaGesto(); });
+    setupMedia();
+  }
+  function pausaEl() { if (el) { try { el.pause(); } catch (e) {} } }
+  // Fonte única da verdade do áudio a partir do estado (noise + somPausado).
   function aplicaSom() {
-    if (!s.noise) { paraBuffer(); mostraReligar(false); return; }
-    if (!garanteAc()) return;
-    if (ac.state === 'suspended') {
-      ac.resume().then(function () {
-        if (ac.state === 'running') { iniciaBuffer(); mostraReligar(false); }
-        else armaGesto();
-      }).catch(armaGesto);
-    } else { iniciaBuffer(); mostraReligar(false); }
+    if (!s.noise || s.somPausado) { pausaEl(); mostraReligar(false); atualizaMini(); return; }
+    tocaEl(); mostraReligar(false); atualizaMini();
   }
   var gestoArmado = false;
   function armaGesto() {
@@ -750,16 +788,50 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     var f = function () {
       document.removeEventListener('pointerdown', f); document.removeEventListener('keydown', f);
       gestoArmado = false;
-      if (ac) ac.resume().then(function () { if (s.noise) iniciaBuffer(); mostraReligar(false); });
+      if (s.noise && !s.somPausado) tocaEl();
+      mostraReligar(false);
     };
     document.addEventListener('pointerdown', f); document.addEventListener('keydown', f);
   }
   function mostraReligar(v) { religar.classList.toggle('on', !!v); }
-  religar.addEventListener('click', function (e) { e.stopPropagation(); aplicaSom(); });
-  volEl.addEventListener('input', function () { s.vol = +volEl.value; if (gain) gain.gain.value = s.vol / 100 * 0.6; salvar(); });
+  religar.addEventListener('click', function (e) { e.stopPropagation(); s.somPausado = false; aplicaSom(); salvar(); });
+  volEl.addEventListener('input', function () { s.vol = +volEl.value; if (el) el.volume = Math.max(0, Math.min(1, s.vol / 100)); salvar(); });
+
+  // ---- MediaSession: controle na tela de bloqueio / fones (só ruído) ----
+  function setMedia(st) { if ('mediaSession' in navigator) { try { navigator.mediaSession.playbackState = st; } catch (e) {} } }
+  function setupMedia() {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: NOMES[s.noise] || 'Ruído branco', artist: 'Modo Foco',
+        album: 'Portal dos Bares · Grupo IZ'
+      });
+      navigator.mediaSession.setActionHandler('play', function () { s.somPausado = false; aplicaSom(); salvar(); });
+      navigator.mediaSession.setActionHandler('pause', function () { s.somPausado = true; aplicaSom(); salvar(); });
+      navigator.mediaSession.setActionHandler('stop', function () { s.noise = null; s.somPausado = false; marcaNoise(); aplicaSom(); salvar(); });
+    } catch (e) {}
+  }
+
+  // ---- mini controle flutuante (pausa só o ruído; em qualquer página) ----
+  function atualizaMini() {
+    if (!mini) return;
+    var ativo = !!s.noise && !pop.classList.contains('aberto');
+    mini.classList.toggle('on', ativo);
+    if (!ativo) return;
+    mini.classList.toggle('pausado', !!s.somPausado);
+    miniIco.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
+      (s.somPausado ? PLAY_SVG : PAUSE_SVG) + '</svg>';
+    miniB.textContent = s.rodando ? fmt(s.restante) : 'Ruído';
+    miniSub.textContent = s.rodando ? ('ruído · ' + (s.modo === 'foco' ? 'foco' : 'pausa')) : nomeRuido(s.noise);
+    mini.setAttribute('aria-label', (s.somPausado ? 'Religar' : 'Pausar') + ' ruído');
+  }
+  if (mini) mini.addEventListener('click', function () {
+    if (!s.noise) return;
+    s.somPausado = !s.somPausado; aplicaSom(); salvar();
+  });
 
   // ---- painel abre/fecha ----
-  function toggle(v) { pop.classList.toggle('aberto', v === undefined ? !pop.classList.contains('aberto') : v); }
+  function toggle(v) { pop.classList.toggle('aberto', v === undefined ? !pop.classList.contains('aberto') : v); atualizaMini(); }
   btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
   $('pomo-close').addEventListener('click', function () { toggle(false); });
   document.addEventListener('click', function (e) {
@@ -789,6 +861,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   Array.prototype.forEach.call(document.querySelectorAll('.pomo-noise'), function (b) {
     b.addEventListener('click', function () {
       s.noise = (s.noise === b.dataset.noise) ? null : b.dataset.noise;
+      s.somPausado = false;
       marcaNoise(); aplicaSom(); salvar();
     });
   });
@@ -803,21 +876,36 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     s.rodando = false; s.modo = 'foco'; s.ciclo = 1; s.restante = s.foco * 60; render(); salvar();
   });
 
+  // Chime da virada de fase — Web Audio leve e efêmero (só em foreground; em
+  // 2º plano o iOS suspende o contexto e a virada é coberta pelo toast ao
+  // voltar). Independente do motor de ruído do <audio>.
+  var chimeAc = null;
   function chime() {
-    if (!garanteAc()) return;
-    if (ac.state === 'suspended') return;
-    var g = ac.createGain(); g.connect(ac.destination);
-    var o = ac.createOscillator(); o.frequency.value = s.modo === 'foco' ? 660 : 520; o.connect(g);
-    g.gain.setValueAtTime(0.001, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.25, ac.currentTime + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.6);
-    o.start(); o.stop(ac.currentTime + 0.62);
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!chimeAc) chimeAc = new AC();
+      if (chimeAc.state === 'suspended') { chimeAc.resume(); }
+      var g = chimeAc.createGain(); g.connect(chimeAc.destination);
+      var o = chimeAc.createOscillator(); o.frequency.value = s.modo === 'foco' ? 660 : 520; o.connect(g);
+      g.gain.setValueAtTime(0.001, chimeAc.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.25, chimeAc.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, chimeAc.currentTime + 0.6);
+      o.start(); o.stop(chimeAc.currentTime + 0.62);
+    } catch (e) {}
   }
   function trocaFase(comChime) {
     if (comChime) chime();
     if (s.modo === 'foco') { s.modo = 'pausa'; s.restante = s.pausa * 60; }
     else { s.modo = 'foco'; s.ciclo++; s.restante = s.foco * 60; }
     s.fimTs = Date.now() + s.restante * 1000;
+    // Toast só numa virada de verdade (não na restauração silenciosa ao
+    // carregar a página) e só com o painel fechado — aberto, a UI já mostra.
+    if (comChime && !pop.classList.contains('aberto')) {
+      mostraToast(s.modo === 'pausa'
+        ? 'Foco concluído — hora da pausa (' + s.pausa + ' min)'
+        : 'Pausa concluída — de volta ao foco (ciclo ' + s.ciclo + ')');
+    }
   }
 
   function fmt(sec) { sec = Math.max(0, sec); return pad(Math.floor(sec / 60)) + ':' + pad(sec % 60); }
@@ -834,6 +922,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     icPlay.innerHTML = s.rodando ? '<path d="M7 5h3v14H7zM14 5h3v14h-3z"/>' : '<path d="M7 4.5v15l12-7.5z"/>';
     btn.classList.toggle('rodando', s.rodando);
     badge.textContent = Math.max(0, Math.ceil(s.restante / 60));
+    atualizaMini();
   }
   function tick() {
     if (s.rodando) {

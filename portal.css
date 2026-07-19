@@ -473,3 +473,31 @@
                   border: 1px solid var(--acc); background: color-mix(in srgb, var(--acc) 14%, var(--card));
                   color: var(--acc); font-size: 12px; font-weight: 600; cursor: pointer; }
   .pomo-religar.on { display: block; }
+  /* Aviso de virada de fase (foco→pausa / pausa→foco) — só dispara com o
+     painel fechado (o chime + a UI do painel já bastam quando está aberto).
+     Sem isso, quem não está de olho no badge do topo só descobre a virada
+     pelo som — perdível em ambiente barulhento ou de fone. */
+  .pomo-toast { position: fixed; top: 60px; right: 12px; max-width: min(280px, calc(100vw - 24px));
+                background: var(--card); border: 1px solid var(--acc); border-radius: 14px;
+                padding: 12px 14px; box-shadow: 0 14px 34px rgba(0,0,0,.5); z-index: 96;
+                display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text);
+                opacity: 0; transform: translateY(-6px); pointer-events: none;
+                transition: opacity .25s, transform .25s; }
+  .pomo-toast.on { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .pomo-toast svg { flex: none; width: 18px; height: 18px; }
+  /* Mini controle flutuante — pausa só o ruído, aparece em QUALQUER página
+     (bem no fim do <body>, position:fixed) sempre que há um ruído ativo e o
+     painel está fechado. Não mexe no cronômetro. Ver atualizaMini() no JS. */
+  .pomo-mini { position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+               z-index: 94; display: none; align-items: center; gap: 8px; background: var(--card);
+               border: 1px solid var(--acc); border-radius: 999px; padding: 7px 13px 7px 8px;
+               box-shadow: 0 10px 26px rgba(0,0,0,.5); cursor: pointer;
+               -webkit-tap-highlight-color: transparent; }
+  .pomo-mini.on { display: inline-flex; }
+  .pomo-mini .mi-ico { width: 30px; height: 30px; border-radius: 999px; flex: none; background: var(--acc);
+                       color: var(--acc-txt); display: inline-flex; align-items: center; justify-content: center; }
+  .pomo-mini .mi-ico svg { width: 15px; height: 15px; }
+  .pomo-mini.pausado .mi-ico { background: var(--verde); color: #0d221b; }
+  .pomo-mini .mi-txt { font-size: 11.5px; color: var(--text-3); line-height: 1.25; text-align: left; }
+  .pomo-mini .mi-txt b { display: block; color: var(--acc); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .pomo-mini.pausado .mi-txt b { color: var(--verde); }
