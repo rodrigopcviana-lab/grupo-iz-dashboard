@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
-<title>Inventário · Portal dos Bares — Grupo IZ</title>
+<title>Inventário · Bar.IZ — Grupo IZ</title>
 <link rel="stylesheet" href="portal.css">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bares IZ">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
 <a class="volta-mural" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
-<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 111 75" fill="currentColor" role="img" aria-label="Grupo IZ"><rect x="0" y="0" width="111" height="10"/><rect x="0" y="17" width="111" height="10"/><polygon points="80,27 109,27 0,64 0,54"/><rect x="0" y="65" width="111" height="10"/></svg><div class="marca-txt"><div class="marca">Portal dos Bares</div><div class="kicker">GRUPO IZ</div></div></div>
+<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 111 75" fill="currentColor" role="img" aria-label="Grupo IZ"><rect x="0" y="0" width="111" height="10"/><rect x="0" y="17" width="111" height="10"/><polygon points="80,27 109,27 0,64 0,54"/><rect x="0" y="65" width="111" height="10"/></svg><div class="marca-txt"><div class="marca">Bar.IZ</div><div class="kicker">GRUPO IZ</div></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -1065,6 +1065,28 @@ window.msgAcessoNegado = function (nomePagina) {
   table.eq-tab td.n, table.eq-tab th.n { text-align:right; font-variant-numeric:tabular-nums; }
   .eq-vazio { text-align:center; color:var(--text-3); padding:26px 10px; font-size:13.5px; }
   .eq-sub2 { font-size:13px; color:var(--text-2); margin:0 0 10px; }
+  .eq-acoes { display:flex; gap:5px; }
+  .eq-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px;
+      border-radius:7px; border:1px solid var(--border); background:var(--card); color:var(--text-3);
+      cursor:pointer; padding:0; }
+  .eq-icon-btn:hover { border-color:var(--acc); color:var(--acc); }
+  .eq-icon-btn.perigo:hover { border-color:#e08585; color:#e08585; }
+  .eq-editando { display:none; background:var(--bg); border:1px solid var(--acc); border-radius:10px;
+      padding:9px 12px; margin:-2px 0 12px; font-size:12.5px; color:var(--text-2); }
+  .eq-editando.on { display:block; }
+  .eq-cancelar { background:none; border:none; color:var(--text-3); text-decoration:underline; cursor:pointer;
+      font:inherit; font-size:12.5px; padding:0; margin-left:10px; }
+  .eq-confirma-del { display:none; background:var(--bg); border:1px solid #e08585; border-radius:10px;
+      padding:10px 12px; font-size:12.5px; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .eq-confirma-del.on { display:flex; }
+  .eq-confirma-del .btn-del { background:#e08585; color:#241505; border:none; border-radius:7px;
+      padding:7px 14px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .farol { display:inline-flex; align-items:center; }
+  .farol .pt { width:8px; height:8px; border-radius:50%; flex:none; }
+  .farol .pt.ok { background:var(--verde); }
+  .farol .pt.baixo { background:#e08585; }
+  table.eq-tab td.tem-ok { color:var(--verde); font-weight:600; }
+  table.eq-tab td.tem-baixo { color:#e08585; font-weight:600; }
 </style>
 
 <div class="eq-top">
@@ -1081,6 +1103,9 @@ window.msgAcessoNegado = function (nomePagina) {
 <div id="eq-pane-equip">
   <div class="eq-form">
     <h3>Cadastrar equipamento</h3>
+    <p class="eq-editando" id="eqf-editando">Editando <b id="eqf-editando-nome"></b>
+      <button type="button" class="eq-cancelar" id="eqf-cancelar-edicao">cancelar edição</button>
+    </p>
     <div class="eq-grid dois">
       <div class="eq-campo" style="grid-column:1/-1">
         <label for="eqf-nome">Equipamento *</label>
@@ -1111,10 +1136,18 @@ window.msgAcessoNegado = function (nomePagina) {
     <p class="eq-aviso" id="eqf-aviso" role="status" aria-live="polite"></p>
   </div>
   <p class="eq-sub2" id="eq-lista-titulo">Equipamentos cadastrados</p>
+  <div class="eq-confirma-del" id="eqf-confirma-del">
+    <span>Excluir <b id="eqf-confirma-del-nome"></b>? Isso arquiva no Notion — some da lista, mas não perde o histórico.</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="eqf-confirma-del-erro" style="color:#e08585"></span>
+      <button type="button" class="eq-cancelar" id="eqf-cancelar-del">cancelar</button>
+      <button type="button" class="btn-del" id="eqf-confirmar-del">Confirmar exclusão</button>
+    </div>
+  </div>
   <div class="eq-lista">
     <table class="eq-tab" id="eq-tab-equip" style="display:none"><thead><tr>
       <th>Equipamento</th><th>Categoria</th><th class="n">Qtd</th><th>Estado</th>
-      <th>Registrado por</th><th>Data</th>
+      <th>Registrado por</th><th>Data</th><th></th>
     </tr></thead><tbody id="eq-corpo-equip"></tbody></table>
     <p class="eq-vazio" id="eq-vazio-equip" style="display:none">Nenhum equipamento cadastrado ainda.</p>
   </div>
@@ -1139,9 +1172,10 @@ window.msgAcessoNegado = function (nomePagina) {
     <p class="eq-aviso" id="minf-aviso" role="status" aria-live="polite"></p>
   </div>
   <p class="eq-sub2">Mínimos definidos</p>
+  <p class="eq-sub2" id="eq-min-nota" style="display:none"></p>
   <div class="eq-lista">
     <table class="eq-tab" id="eq-tab-min" style="display:none"><thead><tr>
-      <th>Tipo</th><th class="n">Mínimo</th><th>Definido por</th><th>Atualizado</th>
+      <th>Tipo</th><th class="n">Mínimo</th><th class="n">Tem hoje</th><th></th><th>Definido por</th><th>Atualizado</th>
     </tr></thead><tbody id="eq-corpo-min"></tbody></table>
     <p class="eq-vazio" id="eq-vazio-min" style="display:none">Nenhum mínimo definido ainda.</p>
   </div>
@@ -1168,6 +1202,11 @@ window.msgAcessoNegado = function (nomePagina) {
 
   var TOKEN = null;
   var casaFixa = null; // slug se chefe individual (preso à própria casa)
+  var editandoId = null; // id da página Notion em edição, ou null (modo criar)
+  var excluindoId = null; // id da página Notion pra excluir, aguardando confirmação
+  var TEM_HOJE = null; // resposta de /api/vidraria-contagem pra casa atual, ou null
+  var ICON_LAPIS = "<svg class=\"ic\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z\"/><path d=\"M13 7l4 4\"/></svg>";
+  var ICON_LIXEIRA = "<svg class=\"ic\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13\"/></svg>";
 
   function casaSel() { return casaFixa || document.getElementById('eq-casa').value; }
 
@@ -1189,6 +1228,66 @@ window.msgAcessoNegado = function (nomePagina) {
 
   // ---- token 401 comum ----
   function trata401() { window.sessaoLimpar(); window.irParaLogin(SLUG); }
+
+  // ---- edição de equipamento (reusa o form de cadastro) ----
+  function abrirEdicao(it) {
+    editandoId = it.id;
+    document.getElementById('eqf-nome').value = it.nome || '';
+    document.getElementById('eqf-qtd').value = it.quantidade == null ? '' : String(it.quantidade);
+    document.getElementById('eqf-cat').value = it.categoria || '';
+    document.getElementById('eqf-estado').value = it.estado || '';
+    document.getElementById('eqf-marca').value = it.marca || '';
+    document.getElementById('eqf-obs').value = it.observacao || '';
+    document.getElementById('eqf-editando-nome').textContent = it.nome || '';
+    document.getElementById('eqf-editando').classList.add('on');
+    document.getElementById('eqf-salvar').textContent = 'Salvar edição';
+    document.getElementById('eqf-aviso').className = 'eq-aviso';
+    document.getElementById('eqf-aviso').textContent = '';
+    document.getElementById('eqf-editando').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function cancelarEdicao() {
+    editandoId = null;
+    document.getElementById('eqf-nome').value = '';
+    document.getElementById('eqf-qtd').value = '';
+    document.getElementById('eqf-cat').value = '';
+    document.getElementById('eqf-estado').value = '';
+    document.getElementById('eqf-marca').value = '';
+    document.getElementById('eqf-obs').value = '';
+    document.getElementById('eqf-editando').classList.remove('on');
+    document.getElementById('eqf-salvar').textContent = 'Adicionar equipamento';
+  }
+
+  // ---- exclusão de equipamento (soft-delete: arquiva no Notion) ----
+  function abrirExclusao(it) {
+    excluindoId = it.id;
+    document.getElementById('eqf-confirma-del-nome').textContent = it.nome || '';
+    document.getElementById('eqf-confirma-del-erro').textContent = '';
+    document.getElementById('eqf-confirma-del').classList.add('on');
+    document.getElementById('eqf-confirma-del').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function cancelarExclusao() {
+    excluindoId = null;
+    document.getElementById('eqf-confirma-del').classList.remove('on');
+  }
+  function confirmaExclusao() {
+    if (!excluindoId) return;
+    var btn = document.getElementById('eqf-confirmar-del');
+    var erro = document.getElementById('eqf-confirma-del-erro');
+    erro.textContent = '';
+    btn.disabled = true;
+    fetch(WORKER + '/api/equipamento/' + encodeURIComponent(excluindoId), {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify({ excluir: true }),
+    }).then(function (r) {
+      if (r.status === 401) { trata401(); return; }
+      return r.json().then(function (d) {
+        if (r.ok && d.ok) { cancelarExclusao(); carregaEquip(); }
+        else { erro.textContent = (d && d.erro) || 'Não foi possível excluir.'; }
+      });
+    }).catch(function () {
+      erro.textContent = 'Sem conexão. Tente de novo.';
+    }).finally(function () { btn.disabled = false; });
+  }
 
   // ---- listas ----
   function carregaEquip() {
@@ -1214,40 +1313,99 @@ window.msgAcessoNegado = function (nomePagina) {
           tr.appendChild(td(it.estado));
           tr.appendChild(td(it.registrado_por));
           tr.appendChild(td(dataCurta(it.data)));
+          var tdAcoes = document.createElement('td');
+          var acoes = document.createElement('div'); acoes.className = 'eq-acoes';
+          var btnEd = document.createElement('button');
+          btnEd.type = 'button'; btnEd.className = 'eq-icon-btn'; btnEd.title = 'Editar';
+          btnEd.setAttribute('aria-label', 'Editar ' + (it.nome || 'equipamento'));
+          btnEd.innerHTML = ICON_LAPIS;
+          btnEd.onclick = function () { abrirEdicao(it); };
+          var btnDel = document.createElement('button');
+          btnDel.type = 'button'; btnDel.className = 'eq-icon-btn perigo'; btnDel.title = 'Excluir';
+          btnDel.setAttribute('aria-label', 'Excluir ' + (it.nome || 'equipamento'));
+          btnDel.innerHTML = ICON_LIXEIRA;
+          btnDel.onclick = function () { abrirExclusao(it); };
+          acoes.appendChild(btnEd); acoes.appendChild(btnDel);
+          tdAcoes.appendChild(acoes);
+          tr.appendChild(tdAcoes);
           corpo.appendChild(tr);
         });
       })
       .catch(function () {});
+  }
+
+  // busca /api/vidraria-contagem (Controle de Patrimônio cruzado com o de-para
+  // de vidraria) — hoje só existe pro Grá; outra casa/tipo sem mapeamento
+  // volta {disponivel:false} ou tipo ausente, NUNCA um 0 fabricado.
+  function buscaTemHoje() {
+    return fetch(WORKER + '/api/vidraria-contagem?casa=' + encodeURIComponent(casaSel()), { headers: { 'X-Token': TOKEN } })
+      .then(function (r) {
+        if (r.status === 401) { trata401(); return null; }
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .catch(function () { return null; });
   }
 
   function carregaMinimos() {
     var corpo = document.getElementById('eq-corpo-min');
     var tab = document.getElementById('eq-tab-min');
     var vazio = document.getElementById('eq-vazio-min');
-    fetch(WORKER + '/api/vidraria-minimos?casa=' + encodeURIComponent(casaSel()), { headers: { 'X-Token': TOKEN } })
-      .then(function (r) {
-        if (r.status === 401) { trata401(); return null; }
-        if (!r.ok) return null;
-        return r.json();
-      })
-      .then(function (d) {
-        corpo.innerHTML = '';
-        var itens = (d && d.itens) || [];
-        if (!itens.length) { tab.style.display = 'none'; vazio.style.display = ''; return; }
-        tab.style.display = ''; vazio.style.display = 'none';
-        itens.forEach(function (it) {
-          var tr = document.createElement('tr');
-          tr.appendChild(td(it.tipo));
-          tr.appendChild(td(it.minimo == null ? '—' : String(it.minimo), 'n'));
-          tr.appendChild(td(it.atualizado_por));
-          tr.appendChild(td(dataCurta(it.atualizado_em)));
-          corpo.appendChild(tr);
-        });
-      })
-      .catch(function () {});
+    var nota = document.getElementById('eq-min-nota');
+    Promise.all([
+      fetch(WORKER + '/api/vidraria-minimos?casa=' + encodeURIComponent(casaSel()), { headers: { 'X-Token': TOKEN } })
+        .then(function (r) {
+          if (r.status === 401) { trata401(); return null; }
+          return r.ok ? r.json() : null;
+        })
+        .catch(function () { return null; }),
+      buscaTemHoje(),
+    ]).then(function (res) {
+      var dMin = res[0]; var dTem = res[1];
+      TEM_HOJE = dTem;
+      corpo.innerHTML = '';
+      var itens = (dMin && dMin.itens) || [];
+      if (!itens.length) { tab.style.display = 'none'; vazio.style.display = ''; nota.style.display = 'none'; return; }
+      tab.style.display = ''; vazio.style.display = 'none';
+      var disponivel = !!(dTem && dTem.disponivel);
+      nota.style.display = '';
+      nota.textContent = disponivel
+        ? 'Tem hoje cruza com o Controle de Patrimônio (sessão ' + dataCurta(dTem.sessao && dTem.sessao.data) + ') — só cobre os tipos já mapeados.'
+        : 'Tem hoje ainda não disponível para esta casa (sem Controle de Patrimônio cadastrado no Notion).';
+      itens.forEach(function (it) {
+        var tr = document.createElement('tr');
+        tr.appendChild(td(it.tipo));
+        tr.appendChild(td(it.minimo == null ? '—' : String(it.minimo), 'n'));
+
+        var tdTem = document.createElement('td'); tdTem.className = 'n';
+        var tdFarol = document.createElement('td');
+        var v = disponivel && dTem.tipos ? dTem.tipos[it.tipo] : undefined;
+        if (!disponivel) {
+          tdTem.textContent = '—'; tdTem.title = 'Sem Controle de Patrimônio cadastrado nesta casa';
+        } else if (v === undefined) {
+          tdTem.textContent = '—'; tdTem.title = 'Sem mapeamento definido para este tipo ainda';
+        } else if (v === null) {
+          tdTem.textContent = '—'; tdTem.title = 'Item(ns) mapeado(s) não encontrado(s) na última contagem';
+        } else {
+          tdTem.textContent = String(v);
+          if (it.minimo != null) {
+            var ok = v >= it.minimo;
+            tdTem.className = 'n ' + (ok ? 'tem-ok' : 'tem-baixo');
+            var pt = document.createElement('span'); pt.className = 'pt ' + (ok ? 'ok' : 'baixo');
+            var farol = document.createElement('span'); farol.className = 'farol'; farol.appendChild(pt);
+            tdFarol.appendChild(farol);
+          }
+        }
+        tr.appendChild(tdTem); tr.appendChild(tdFarol);
+
+        tr.appendChild(td(it.atualizado_por));
+        tr.appendChild(td(dataCurta(it.atualizado_em)));
+        corpo.appendChild(tr);
+      });
+    });
   }
 
-  // ---- POST equipamento ----
+  // ---- POST/PATCH equipamento (cria ou edita, conforme editandoId) ----
   function salvaEquip() {
     var bt = document.getElementById('eqf-salvar');
     var aviso = document.getElementById('eqf-aviso');
@@ -1255,28 +1413,43 @@ window.msgAcessoNegado = function (nomePagina) {
     aviso.className = 'eq-aviso';
     if (!nome) { aviso.className = 'eq-aviso err'; aviso.textContent = 'Informe o nome do equipamento.'; return; }
     var qtd = document.getElementById('eqf-qtd').value;
-    var payload = {
-      casa: casaSel(),
-      nome: nome,
-      categoria: document.getElementById('eqf-cat').value,
-      estado: document.getElementById('eqf-estado').value,
-      marca: document.getElementById('eqf-marca').value.trim(),
-      observacao: document.getElementById('eqf-obs').value.trim(),
-    };
-    if (qtd !== '') payload.quantidade = Number(qtd);
+    var categoria = document.getElementById('eqf-cat').value;
+    var estado = document.getElementById('eqf-estado').value;
+    var marca = document.getElementById('eqf-marca').value.trim();
+    var obs = document.getElementById('eqf-obs').value.trim();
+    var editando = editandoId;
+    var payload, url, metodo;
+    if (editando) {
+      payload = {
+        nome: nome, categoria: categoria, estado: estado, marca: marca, observacao: obs,
+        quantidade: qtd === '' ? null : Number(qtd),
+      };
+      url = WORKER + '/api/equipamento/' + encodeURIComponent(editando);
+      metodo = 'PATCH';
+    } else {
+      payload = { casa: casaSel(), nome: nome, categoria: categoria, estado: estado, marca: marca, observacao: obs };
+      if (qtd !== '') payload.quantidade = Number(qtd);
+      url = WORKER + '/api/equipamento';
+      metodo = 'POST';
+    }
     bt.disabled = true; aviso.textContent = 'Salvando…';
-    fetch(WORKER + '/api/equipamento', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+    fetch(url, {
+      method: metodo, headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
       body: JSON.stringify(payload),
     }).then(function (r) {
       if (r.status === 401) { trata401(); return; }
       return r.json().then(function (d) {
         if (r.ok && d.ok) {
-          aviso.className = 'eq-aviso ok'; aviso.textContent = 'Equipamento adicionado.';
-          document.getElementById('eqf-nome').value = '';
-          document.getElementById('eqf-qtd').value = '';
-          document.getElementById('eqf-marca').value = '';
-          document.getElementById('eqf-obs').value = '';
+          aviso.className = 'eq-aviso ok';
+          aviso.textContent = editando ? 'Equipamento atualizado.' : 'Equipamento adicionado.';
+          if (editando) {
+            cancelarEdicao();
+          } else {
+            document.getElementById('eqf-nome').value = '';
+            document.getElementById('eqf-qtd').value = '';
+            document.getElementById('eqf-marca').value = '';
+            document.getElementById('eqf-obs').value = '';
+          }
           carregaEquip();
         } else {
           aviso.className = 'eq-aviso err'; aviso.textContent = (d && d.erro) || 'Não foi possível salvar.';
@@ -1324,7 +1497,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var selCasa = document.getElementById('eq-casa');
     Object.keys(CASAS).forEach(function (slug) { opt(selCasa, slug, CASAS[slug]); });
     if (casaFixa && CASAS[casaFixa]) { selCasa.value = casaFixa; selCasa.disabled = true; }
-    selCasa.onchange = function () { carregaEquip(); carregaMinimos(); };
+    selCasa.onchange = function () { cancelarEdicao(); cancelarExclusao(); carregaEquip(); carregaMinimos(); };
 
     // opções dos selects de formulário
     var selCat = document.getElementById('eqf-cat');
@@ -1348,6 +1521,9 @@ window.msgAcessoNegado = function (nomePagina) {
     });
 
     document.getElementById('eqf-salvar').onclick = salvaEquip;
+    document.getElementById('eqf-cancelar-edicao').onclick = cancelarEdicao;
+    document.getElementById('eqf-cancelar-del').onclick = cancelarExclusao;
+    document.getElementById('eqf-confirmar-del').onclick = confirmaExclusao;
     document.getElementById('minf-salvar').onclick = salvaMinimo;
 
     gate.style.display = 'none';
@@ -1466,7 +1642,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Portal dos Bares · Grupo IZ · atualizado em 20/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 20/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -1576,7 +1752,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     }).then(function (r) { return r.json(); }).then(function (d) {
       if (d.ok) libera();
       else overlay('Fora de área',
-        'O Portal dos Bares só funciona dentro das casas do Grupo IZ. '
+        'O Bar.IZ só funciona dentro das casas do Grupo IZ. '
         + 'Você precisa estar em uma delas para acessar.', true);
     }).catch(function () { libera(); }); // rede falhou: não tranca
   }
@@ -1835,7 +2011,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     if (!('mediaSession' in navigator)) return;
     try {
       var st = ST[s.idx] || {};
-      navigator.mediaSession.metadata = new MediaMetadata({ title: st.nome || 'Rádio', artist: 'Rádio Vice City', album: 'Portal dos Bares · Grupo IZ' });
+      navigator.mediaSession.metadata = new MediaMetadata({ title: st.nome || 'Rádio', artist: 'Rádio Vice City', album: 'Bar.IZ · Grupo IZ' });
       navigator.mediaSession.setActionHandler('play', function () { ativaSom(); });
       navigator.mediaSession.setActionHandler('pause', function () { silencia(); });
       navigator.mediaSession.setActionHandler('nexttrack', function () { proxima(); });
@@ -2019,7 +2195,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: NOMES[s.noise] || 'Ruído branco', artist: 'Modo Foco',
-        album: 'Portal dos Bares · Grupo IZ'
+        album: 'Bar.IZ · Grupo IZ'
       });
       navigator.mediaSession.setActionHandler('play', function () { s.somPausado = false; aplicaSom(); salvar(); });
       navigator.mediaSession.setActionHandler('pause', function () { s.somPausado = true; aplicaSom(); salvar(); });
