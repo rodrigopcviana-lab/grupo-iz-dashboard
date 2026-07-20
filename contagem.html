@@ -407,38 +407,45 @@ window.msgAcessoNegado = function (nomePagina) {
   .ct-status.erro { color: #e08585; }
   .ct-busca { width:100%; margin-top:8px; padding:10px 12px; font-size:16px; border-radius:10px;
               border:1px solid var(--border); background:var(--card); color:var(--text); }
-  .ct-cat { font-family:var(--serif); color:var(--acc); font-size:16px; margin:18px 0 6px; }
-  .ct-prod { background:var(--card); border:1px solid var(--border); border-radius:11px;
-             padding:8px 10px; margin-bottom:6px; }
-  .ct-linha1 { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
-  .ct-dot { width:7px; height:7px; border-radius:50%; flex:none; background:var(--text-3); opacity:.5; }
+  .ct-cat { font-family:var(--serif); color:var(--acc); font-size:14px; margin:14px 0 4px; }
+  /* Densidade máxima (2026-07-19, a pedido do Rodrigo): rótulo de coluna só
+     uma vez no cabeçalho (.ct-cab), cada produto vira uma única linha fina
+     (~30px) — ponto + nome + sem.passada + inputs + soma. Testado a 375px
+     no pior caso (6 colunas de local, IZ/Fulles) sem estourar. */
+  .ct-cab { display:flex; align-items:center; gap:4px; padding:0 9px 3px; }
+  .ct-cab span { font-size:8.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-3);
+                 text-align:center; flex:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ct-cab .cab-nome { flex:1 1 40px; min-width:40px; text-align:left; }
+  .ct-cab .cab-ant { width:26px; }
+  .ct-cab .cab-campo { width:30px; }
+  .ct-cab .cab-soma { width:30px; }
+  .ct-prod { background:var(--card); border:1px solid var(--border); border-radius:8px;
+             padding:4px 9px; margin-bottom:3px; }
+  .ct-l1 { display:flex; align-items:center; gap:4px; min-height:26px; }
+  .ct-dot { width:6px; height:6px; border-radius:50%; flex:none; background:var(--text-3); opacity:.5; }
   .ct-dot.ok { background:var(--verde); opacity:1; }
   .ct-dot.parcial { background:var(--amarelo); opacity:1; }
   .ct-dot.zero { background:var(--urg-urgente); opacity:1; }
-  .ct-ant { font-size:10px; color:var(--text-3); white-space:nowrap; flex:none; }
   #ct-prog.completa { color:var(--verde); font-weight:600; }
-  .ct-prod .nome { font-size:13.5px; font-weight:600; flex:1; min-width:0; }
-  .ct-min-toggle { background:none; border:1px solid var(--border); color:var(--text-3);
-                    font-size:10px; padding:3px 8px; border-radius:999px; cursor:pointer; font:inherit;
-                    flex:none; white-space:nowrap; }
-  .ct-min-toggle.aberto { border-color:var(--acc); color:var(--acc); }
-  .ct-min-detalhe { font-size:11px; color:var(--text-3); margin:-2px 0 7px; }
+  .ct-nomewrap { display:flex; align-items:center; gap:5px; flex:1 1 40px; min-width:40px; }
+  .ct-nomewrap.clic { cursor:pointer; }
+  .ct-nomewrap .nome { font-size:12px; font-weight:600; overflow:hidden; text-overflow:ellipsis;
+                       white-space:nowrap; }
+  .ct-ant { font-size:9.5px; color:var(--text-3); flex:none; width:26px; text-align:center; white-space:nowrap; }
+  .ct-min-detalhe { font-size:11px; color:var(--text-3); margin-top:4px; padding-top:4px;
+                    border-top:1px dashed var(--border); }
   .ct-min-detalhe[hidden] { display:none; }
-  .ct-campos { display:flex; gap:6px; flex-wrap:wrap; align-items:flex-end; }
-  .ct-campo { flex:1; min-width:64px; }
-  .ct-campo label { display:block; font-size:9px; letter-spacing:.05em; text-transform:uppercase;
-                    color:var(--text-3); margin-bottom:2px; white-space:nowrap; overflow:hidden; }
-  .ct-campo input { width:100%; padding:8px 4px; font-size:15px; text-align:center;
-                    border:1px solid var(--border); border-radius:8px;
+  .ct-campo { width:30px; flex:none; }
+  .ct-campo input { width:100%; padding:4px 1px; font-size:12px; text-align:center;
+                    border:1px solid var(--border); border-radius:6px;
                     background:var(--bg); color:var(--text); font-variant-numeric:tabular-nums; }
   .ct-campo input:focus { border-color:var(--acc); outline:none; }
   .ct-campo input.salvo { border-color:var(--verde); }
   .ct-campo input.pendente { border-color:var(--amarelo); }
   .ct-campo input.falhou { border-color:#e08585; }
-  .ct-soma { flex:none; min-width:52px; text-align:center; }
-  .ct-soma label { display:block; font-size:9px; letter-spacing:.05em; text-transform:uppercase;
-                    color:var(--text-3); margin-bottom:2px; }
-  .ct-soma .v { font-family:var(--serif); font-size:16px; color:var(--text); font-variant-numeric:tabular-nums; }
+  .ct-soma { flex:none; width:30px; text-align:center; font-family:var(--serif); font-size:13px;
+             color:var(--text); font-variant-numeric:tabular-nums; }
+  .ct-soma.vaz { color:var(--text-3); font-family:inherit; font-size:11px; }
   .ct-sair { background:none; border:1px solid var(--border); color:var(--text-3); padding:6px 14px;
              font-size:12px; border-radius:8px; cursor:pointer; }
 </style>
@@ -557,6 +564,19 @@ window.msgAcessoNegado = function (nomePagina) {
     return { soma: soma, algum: algum, completo: completo, estado: estado };
   }
 
+  // Cabeçalho de coluna (2026-07-19): rótulo de cada local aparece 1x aqui,
+  // não repetido em cada produto — é isso que deixa o card de 1 linha só.
+  function cabecalhoCols(camposLoc) {
+    var temMin = !!dados.campo_min;
+    var html = '<div class="ct-cab"><span class="cab-nome"></span>' +
+      '<span class="cab-ant" title="Contagem da semana passada">ant.</span>';
+    camposLoc.forEach(function (campo) {
+      html += '<span class="cab-campo" title="' + esc(campo) + '">' + esc(campo.slice(0, 5)) + '</span>';
+    });
+    if (camposLoc.length > 1) html += '<span class="cab-soma">Soma</span>';
+    return html + '</div>';
+  }
+
   function linhaProduto(p, camposLoc) {
     var temMin = !!dados.campo_min;
     var mostraSoma = camposLoc.length > 1;
@@ -565,14 +585,24 @@ window.msgAcessoNegado = function (nomePagina) {
 
     var html = '<div class="ct-prod" data-nome="' + esc(p.nome.toLowerCase()) +
       '" data-page="' + p.page_id + '" data-completo="' + (r.completo ? '1' : '0') + '">';
+    html += '<div class="ct-l1">';
 
-    html += '<div class="ct-linha1"><span class="ct-dot ' + dotClasse + '"></span>' +
-      '<span class="nome">' + esc(p.nome) + '</span>';
-    if (p.ant_contado != null) {
-      html += '<span class="ct-ant" title="Contagem da semana passada">sem. passada ' + p.ant_contado + '</span>';
-    }
-    if (temMin) {
-      html += '<button type="button" class="ct-min-toggle">Mín ' + (p.min != null ? '▸' : '(definir) ▸') + '</button>';
+    // nome+ponto: só quando existe mínimo cadastrado essa área vira tocável
+    // (abre/fecha o detalhe do mínimo) — em vez do antigo botão "Mín ▸" que
+    // não cabia mais numa linha com 6 colunas de input.
+    html += '<span class="ct-nomewrap' + (temMin ? ' clic' : '') + '">' +
+      '<span class="ct-dot ' + dotClasse + '"></span>' +
+      '<span class="nome">' + esc(p.nome) + '</span></span>';
+    html += '<span class="ct-ant">' + (p.ant_contado != null ? p.ant_contado : '—') + '</span>';
+
+    camposLoc.forEach(function (campo) {
+      var v = p.valores[campo];
+      html += '<span class="ct-campo"><input type="number" inputmode="decimal" step="any" min="0" class="ct-loc"' +
+        ' data-page="' + p.page_id + '" data-campo="' + esc(campo) + '"' +
+        (v === null || v === undefined ? '' : ' value="' + v + '"') + '></span>';
+    });
+    if (mostraSoma) {
+      html += '<span class="ct-soma ct-soma-v' + (r.algum ? '' : ' vaz') + '">' + (r.algum ? r.soma : '—') + '</span>';
     }
     html += '</div>';
 
@@ -580,20 +610,6 @@ window.msgAcessoNegado = function (nomePagina) {
       html += '<div class="ct-min-detalhe" hidden>Estoque mínimo cadastrado: ' +
         (p.min != null ? p.min : 'não definido') + '</div>';
     }
-
-    html += '<div class="ct-campos">';
-    camposLoc.forEach(function (campo) {
-      var v = p.valores[campo];
-      html += '<div class="ct-campo"><label>' + esc(campo) + '</label>' +
-        '<input type="number" inputmode="decimal" step="any" min="0" class="ct-loc"' +
-        ' data-page="' + p.page_id + '" data-campo="' + esc(campo) + '"' +
-        (v === null || v === undefined ? '' : ' value="' + v + '"') + '></div>';
-    });
-    if (mostraSoma) {
-      html += '<div class="ct-soma"><label>Soma</label><div class="v ct-soma-v">' +
-        (r.algum ? r.soma : '—') + '</div></div>';
-    }
-    html += '</div>';
 
     return html + '</div>';
   }
@@ -606,7 +622,7 @@ window.msgAcessoNegado = function (nomePagina) {
       return inp ? inp.value : null;
     });
     var somaEl = cardEl.querySelector('.ct-soma-v');
-    if (somaEl) somaEl.textContent = r.algum ? r.soma : '—';
+    if (somaEl) { somaEl.textContent = r.algum ? r.soma : '—'; somaEl.classList.toggle('vaz', !r.algum); }
     var dot = cardEl.querySelector('.ct-dot');
     if (dot) dot.className = 'ct-dot' + (r.estado === 'vazio' ? '' : ' ' + r.estado);
     cardEl.dataset.completo = r.completo ? '1' : '0';
@@ -626,6 +642,7 @@ window.msgAcessoNegado = function (nomePagina) {
       '<button type="button" class="ct-pill' + (soFaltando ? ' on' : '') + '" id="ct-so-faltando">Só faltando</button>' +
       '</div></div>';
 
+    html += cabecalhoCols(campos);
     if (AGRUPA_CATEGORIA) {
       var porCat = {};
       dados.produtos.forEach(function (p) {
@@ -665,12 +682,10 @@ window.msgAcessoNegado = function (nomePagina) {
         if (ehLoc) recalcCard(inp.closest('.ct-prod'));  // soma/sugestão/bolinha reagem na hora, sem esperar o debounce de salvar
       };
     });
-    elTela.querySelectorAll('.ct-min-toggle').forEach(function (btn) {
-      btn.onclick = function () {
-        var detalhe = btn.closest('.ct-prod').querySelector('.ct-min-detalhe');
-        var aberto = !detalhe.hidden;
-        detalhe.hidden = aberto;
-        btn.classList.toggle('aberto', !aberto);
+    elTela.querySelectorAll('.ct-nomewrap.clic').forEach(function (wrap) {
+      wrap.onclick = function () {
+        var detalhe = wrap.closest('.ct-prod').querySelector('.ct-min-detalhe');
+        if (detalhe) detalhe.hidden = !detalhe.hidden;
       };
     });
     progresso(); status_();
