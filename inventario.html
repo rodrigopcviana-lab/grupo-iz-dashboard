@@ -1092,9 +1092,10 @@ window.msgAcessoNegado = function (nomePagina) {
       background:var(--card); border:1px solid var(--border); border-radius:10px;
       max-height:220px; overflow-y:auto; z-index:10; }
   .eq-combo-lista.show { display:block; }
-  .eq-combo-item { padding:9px 12px; font-size:13.5px; cursor:pointer; border-bottom:1px solid var(--border); }
+  .eq-combo-item { display:block; width:100%; text-align:left; background:none; border:none; border-radius:0;
+      padding:9px 12px; font:inherit; font-size:13.5px; color:inherit; cursor:pointer; border-bottom:1px solid var(--border); }
   .eq-combo-item:last-child { border-bottom:none; }
-  .eq-combo-item:hover { background:var(--bg); }
+  .eq-combo-item:hover, .eq-combo-item:focus-visible { background:var(--bg); outline:none; }
   .eq-combo-item .nome { color:var(--text); font-weight:600; }
   .eq-combo-item .meta { color:var(--text-3); font-size:11.5px; }
   .eq-catalogo-info { display:none; background:var(--bg); border:1px solid var(--border); border-radius:10px;
@@ -1305,7 +1306,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var itens = t ? CATALOGO.filter(function (c) { return c.nome.toLowerCase().indexOf(t) !== -1; }) : CATALOGO;
     if (!itens.length) { lista.classList.remove('show'); return; }
     itens.slice(0, 30).forEach(function (c) {
-      var div = document.createElement('div'); div.className = 'eq-combo-item';
+      var div = document.createElement('button'); div.type = 'button'; div.className = 'eq-combo-item';
       var nome = document.createElement('div'); nome.className = 'nome'; nome.textContent = c.nome;
       var meta = document.createElement('div'); meta.className = 'meta';
       meta.textContent = (c.categoria || '—') + ' · ' + fmtPreco(c.preco);
