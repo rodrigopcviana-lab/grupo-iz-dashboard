@@ -1087,6 +1087,26 @@ window.msgAcessoNegado = function (nomePagina) {
   .farol .pt.baixo { background:#e08585; }
   table.eq-tab td.tem-ok { color:var(--verde); font-weight:600; }
   table.eq-tab td.tem-baixo { color:#e08585; font-weight:600; }
+  .eq-combo { position:relative; }
+  .eq-combo-lista { display:none; position:absolute; left:0; right:0; top:100%; margin-top:4px;
+      background:var(--card); border:1px solid var(--border); border-radius:10px;
+      max-height:220px; overflow-y:auto; z-index:10; }
+  .eq-combo-lista.show { display:block; }
+  .eq-combo-item { padding:9px 12px; font-size:13.5px; cursor:pointer; border-bottom:1px solid var(--border); }
+  .eq-combo-item:last-child { border-bottom:none; }
+  .eq-combo-item:hover { background:var(--bg); }
+  .eq-combo-item .nome { color:var(--text); font-weight:600; }
+  .eq-combo-item .meta { color:var(--text-3); font-size:11.5px; }
+  .eq-catalogo-info { display:none; background:var(--bg); border:1px solid var(--border); border-radius:10px;
+      padding:10px 12px; font-size:12.5px; color:var(--text-2); margin:2px 0 12px; }
+  .eq-catalogo-info.show { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; }
+  .eq-catalogo-info b { color:var(--text); display:block; }
+  .eq-novo-item-link { background:none; border:none; color:var(--acc); cursor:pointer; font:inherit;
+      font-size:12.5px; text-decoration:underline; padding:0; margin:-4px 0 14px; display:inline-block; }
+  .eq-novo-item-form { display:none; background:var(--bg); border:1px dashed var(--acc); border-radius:10px;
+      padding:12px 14px; margin:0 0 14px; }
+  .eq-novo-item-form.show { display:block; }
+  .eq-novo-item-form h4 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--acc); }
 </style>
 
 <div class="eq-top">
@@ -1106,15 +1126,36 @@ window.msgAcessoNegado = function (nomePagina) {
     <p class="eq-editando" id="eqf-editando">Editando <b id="eqf-editando-nome"></b>
       <button type="button" class="eq-cancelar" id="eqf-cancelar-edicao">cancelar edição</button>
     </p>
+    <div id="eqf-secao-catalogo">
+      <div class="eq-campo eq-combo">
+        <label for="eqf-busca">Equipamento *</label>
+        <input id="eqf-busca" type="text" maxlength="160" autocomplete="off" placeholder="Buscar no catálogo…">
+        <div class="eq-combo-lista" id="eqf-combo-lista"></div>
+      </div>
+      <button type="button" class="eq-novo-item-link" id="eqf-abrir-novo-item">+ Não encontrou? Cadastrar novo item no catálogo</button>
+      <div class="eq-novo-item-form" id="eqf-novo-item-form">
+        <h4>Novo item do catálogo</h4>
+        <div class="eq-campo">
+          <label for="ni-nome">Nome *</label>
+          <input id="ni-nome" type="text" maxlength="160" placeholder="Ex.: Freezer horizontal Metalfrio VF50">
+        </div>
+        <div class="eq-grid dois">
+          <div class="eq-campo"><label for="ni-cat">Categoria</label><select id="ni-cat"></select></div>
+          <div class="eq-campo"><label for="ni-preco">Preço (R$)</label><input id="ni-preco" type="number" min="0" step="0.01" placeholder="Ex.: 4200"></div>
+        </div>
+        <div class="eq-grid dois">
+          <div class="eq-campo"><label for="ni-dim">Dimensões (A x L x P)</label><input id="ni-dim" type="text" maxlength="120" placeholder="Ex.: 90 x 60 x 200 cm"></div>
+          <div class="eq-campo"><label for="ni-forn">Fornecedor</label><input id="ni-forn" type="text" maxlength="120" placeholder="Ex.: Metalfrio Distribuidora"></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="eq-salvar" id="ni-salvar" style="width:auto;padding:9px 16px;margin-top:0">Salvar no catálogo</button>
+          <button type="button" class="eq-cancelar" id="ni-cancelar" style="margin-left:0">cancelar</button>
+        </div>
+        <p class="eq-aviso" id="ni-aviso" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+    <div class="eq-catalogo-info" id="eqf-catalogo-info"></div>
     <div class="eq-grid dois">
-      <div class="eq-campo" style="grid-column:1/-1">
-        <label for="eqf-nome">Equipamento *</label>
-        <input id="eqf-nome" type="text" maxlength="120" placeholder="Ex.: Freezer horizontal, liquidificador…">
-      </div>
-      <div class="eq-campo">
-        <label for="eqf-cat">Categoria</label>
-        <select id="eqf-cat"></select>
-      </div>
       <div class="eq-campo">
         <label for="eqf-qtd">Quantidade</label>
         <input id="eqf-qtd" type="number" min="0" step="1" inputmode="numeric" placeholder="1">
@@ -1122,10 +1163,6 @@ window.msgAcessoNegado = function (nomePagina) {
       <div class="eq-campo">
         <label for="eqf-estado">Estado</label>
         <select id="eqf-estado"></select>
-      </div>
-      <div class="eq-campo">
-        <label for="eqf-marca">Marca / modelo</label>
-        <input id="eqf-marca" type="text" maxlength="120" placeholder="Opcional">
       </div>
       <div class="eq-campo" style="grid-column:1/-1">
         <label for="eqf-obs">Observação</label>
@@ -1229,14 +1266,116 @@ window.msgAcessoNegado = function (nomePagina) {
   // ---- token 401 comum ----
   function trata401() { window.sessaoLimpar(); window.irParaLogin(SLUG); }
 
-  // ---- edição de equipamento (reusa o form de cadastro) ----
+  // ---- catálogo (busca + escolha + cadastro de item novo) ----
+  var CATALOGO = [];
+  var catalogoEscolhidoId = null; // id do item escolhido no catálogo (modo criar)
+
+  function fmtPreco(v) {
+    return (v == null) ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function carregaCatalogo() {
+    return fetch(WORKER + '/api/catalogo-equipamentos', { headers: { 'X-Token': TOKEN } })
+      .then(function (r) {
+        if (r.status === 401) { trata401(); return null; }
+        return r.ok ? r.json() : null;
+      })
+      .then(function (d) { CATALOGO = (d && d.itens) || []; })
+      .catch(function () { CATALOGO = []; });
+  }
+
+  function mostraInfoCatalogo(item) {
+    var info = document.getElementById('eqf-catalogo-info');
+    info.innerHTML = '';
+    if (!item) { info.classList.remove('show'); return; }
+    [['Categoria', item.categoria], ['Preço', fmtPreco(item.preco)], ['Dimensões', item.dimensoes], ['Fornecedor', item.fornecedor]].forEach(function (par) {
+      var div = document.createElement('div');
+      var lbl = document.createElement('span'); lbl.textContent = par[0] + ': ';
+      var val = document.createElement('b'); val.textContent = (par[1] == null || par[1] === '') ? '—' : String(par[1]);
+      div.appendChild(lbl); div.appendChild(val);
+      info.appendChild(div);
+    });
+    info.classList.add('show');
+  }
+
+  function buscaCatalogo(termo) {
+    var lista = document.getElementById('eqf-combo-lista');
+    lista.innerHTML = '';
+    var t = (termo || '').trim().toLowerCase();
+    var itens = t ? CATALOGO.filter(function (c) { return c.nome.toLowerCase().indexOf(t) !== -1; }) : CATALOGO;
+    if (!itens.length) { lista.classList.remove('show'); return; }
+    itens.slice(0, 30).forEach(function (c) {
+      var div = document.createElement('div'); div.className = 'eq-combo-item';
+      var nome = document.createElement('div'); nome.className = 'nome'; nome.textContent = c.nome;
+      var meta = document.createElement('div'); meta.className = 'meta';
+      meta.textContent = (c.categoria || '—') + ' · ' + fmtPreco(c.preco);
+      div.appendChild(nome); div.appendChild(meta);
+      div.onclick = function () { escolheCatalogo(c); };
+      lista.appendChild(div);
+    });
+    lista.classList.add('show');
+  }
+
+  function escolheCatalogo(c) {
+    catalogoEscolhidoId = c.id;
+    document.getElementById('eqf-busca').value = c.nome;
+    document.getElementById('eqf-combo-lista').classList.remove('show');
+    mostraInfoCatalogo(c);
+  }
+
+  function toggleNovoItem(mostrar) {
+    document.getElementById('eqf-novo-item-form').classList.toggle('show', mostrar);
+    document.getElementById('ni-aviso').className = 'eq-aviso';
+    document.getElementById('ni-aviso').textContent = '';
+  }
+
+  function salvarNovoItem() {
+    var aviso = document.getElementById('ni-aviso');
+    var nome = document.getElementById('ni-nome').value.trim();
+    aviso.className = 'eq-aviso';
+    if (!nome) { aviso.className = 'eq-aviso err'; aviso.textContent = 'Informe o nome.'; return; }
+    var bt = document.getElementById('ni-salvar');
+    bt.disabled = true; aviso.textContent = 'Salvando…';
+    fetch(WORKER + '/api/catalogo-equipamento', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify({
+        nome: nome,
+        categoria: document.getElementById('ni-cat').value,
+        preco: document.getElementById('ni-preco').value,
+        dimensoes: document.getElementById('ni-dim').value.trim(),
+        fornecedor: document.getElementById('ni-forn').value.trim(),
+      }),
+    }).then(function (r) {
+      if (r.status === 401) { trata401(); return; }
+      return r.json().then(function (d) {
+        if (r.ok && d.ok) {
+          var novo = { id: d.id, nome: d.nome, categoria: d.categoria, preco: d.preco, dimensoes: d.dimensoes, fornecedor: d.fornecedor };
+          CATALOGO.unshift(novo);
+          escolheCatalogo(novo);
+          toggleNovoItem(false);
+          document.getElementById('ni-nome').value = '';
+          document.getElementById('ni-preco').value = '';
+          document.getElementById('ni-dim').value = '';
+          document.getElementById('ni-forn').value = '';
+        } else {
+          aviso.className = 'eq-aviso err'; aviso.textContent = (d && d.erro) || 'Não foi possível salvar.';
+        }
+      });
+    }).catch(function () {
+      aviso.className = 'eq-aviso err'; aviso.textContent = 'Sem conexão. Tente de novo.';
+    }).finally(function () { bt.disabled = false; });
+  }
+
+  // ---- edição de equipamento (reusa o form de cadastro; nome/categoria/
+  // preço/dimensões/fornecedor vêm do catálogo e não são editáveis aqui —
+  // pra trocar de item, excluir e recadastrar) ----
   function abrirEdicao(it) {
     editandoId = it.id;
-    document.getElementById('eqf-nome').value = it.nome || '';
+    catalogoEscolhidoId = null;
+    document.getElementById('eqf-secao-catalogo').style.display = 'none';
+    mostraInfoCatalogo({ categoria: it.categoria, preco: it.preco, dimensoes: it.dimensoes, fornecedor: it.fornecedor });
     document.getElementById('eqf-qtd').value = it.quantidade == null ? '' : String(it.quantidade);
-    document.getElementById('eqf-cat').value = it.categoria || '';
     document.getElementById('eqf-estado').value = it.estado || '';
-    document.getElementById('eqf-marca').value = it.marca || '';
     document.getElementById('eqf-obs').value = it.observacao || '';
     document.getElementById('eqf-editando-nome').textContent = it.nome || '';
     document.getElementById('eqf-editando').classList.add('on');
@@ -1247,11 +1386,12 @@ window.msgAcessoNegado = function (nomePagina) {
   }
   function cancelarEdicao() {
     editandoId = null;
-    document.getElementById('eqf-nome').value = '';
+    catalogoEscolhidoId = null;
+    document.getElementById('eqf-secao-catalogo').style.display = '';
+    document.getElementById('eqf-busca').value = '';
+    mostraInfoCatalogo(null);
     document.getElementById('eqf-qtd').value = '';
-    document.getElementById('eqf-cat').value = '';
     document.getElementById('eqf-estado').value = '';
-    document.getElementById('eqf-marca').value = '';
     document.getElementById('eqf-obs').value = '';
     document.getElementById('eqf-editando').classList.remove('on');
     document.getElementById('eqf-salvar').textContent = 'Adicionar equipamento';
@@ -1409,25 +1549,21 @@ window.msgAcessoNegado = function (nomePagina) {
   function salvaEquip() {
     var bt = document.getElementById('eqf-salvar');
     var aviso = document.getElementById('eqf-aviso');
-    var nome = document.getElementById('eqf-nome').value.trim();
     aviso.className = 'eq-aviso';
-    if (!nome) { aviso.className = 'eq-aviso err'; aviso.textContent = 'Informe o nome do equipamento.'; return; }
     var qtd = document.getElementById('eqf-qtd').value;
-    var categoria = document.getElementById('eqf-cat').value;
     var estado = document.getElementById('eqf-estado').value;
-    var marca = document.getElementById('eqf-marca').value.trim();
     var obs = document.getElementById('eqf-obs').value.trim();
     var editando = editandoId;
     var payload, url, metodo;
     if (editando) {
-      payload = {
-        nome: nome, categoria: categoria, estado: estado, marca: marca, observacao: obs,
-        quantidade: qtd === '' ? null : Number(qtd),
-      };
+      payload = { estado: estado, observacao: obs, quantidade: qtd === '' ? null : Number(qtd) };
       url = WORKER + '/api/equipamento/' + encodeURIComponent(editando);
       metodo = 'PATCH';
     } else {
-      payload = { casa: casaSel(), nome: nome, categoria: categoria, estado: estado, marca: marca, observacao: obs };
+      if (!catalogoEscolhidoId) {
+        aviso.className = 'eq-aviso err'; aviso.textContent = 'Escolha um item do catálogo (ou cadastre um novo).'; return;
+      }
+      payload = { casa: casaSel(), catalogo_id: catalogoEscolhidoId, estado: estado, observacao: obs };
       if (qtd !== '') payload.quantidade = Number(qtd);
       url = WORKER + '/api/equipamento';
       metodo = 'POST';
@@ -1445,9 +1581,10 @@ window.msgAcessoNegado = function (nomePagina) {
           if (editando) {
             cancelarEdicao();
           } else {
-            document.getElementById('eqf-nome').value = '';
+            catalogoEscolhidoId = null;
+            document.getElementById('eqf-busca').value = '';
+            mostraInfoCatalogo(null);
             document.getElementById('eqf-qtd').value = '';
-            document.getElementById('eqf-marca').value = '';
             document.getElementById('eqf-obs').value = '';
           }
           carregaEquip();
@@ -1500,14 +1637,25 @@ window.msgAcessoNegado = function (nomePagina) {
     selCasa.onchange = function () { cancelarEdicao(); cancelarExclusao(); carregaEquip(); carregaMinimos(); };
 
     // opções dos selects de formulário
-    var selCat = document.getElementById('eqf-cat');
-    opt(selCat, '', '—');
-    CATEGORIAS.forEach(function (c) { opt(selCat, c, c); });
     var selEstado = document.getElementById('eqf-estado');
     opt(selEstado, '', '—');
     ESTADOS.forEach(function (e) { opt(selEstado, e, e); });
     var selTipo = document.getElementById('minf-tipo');
     TIPOS.forEach(function (t) { opt(selTipo, t, t); });
+    var selNiCat = document.getElementById('ni-cat');
+    opt(selNiCat, '', '—');
+    CATEGORIAS.forEach(function (c) { opt(selNiCat, c, c); });
+
+    // busca no catálogo
+    var buscaEl = document.getElementById('eqf-busca');
+    buscaEl.oninput = function () { catalogoEscolhidoId = null; mostraInfoCatalogo(null); buscaCatalogo(this.value); };
+    buscaEl.onfocus = function () { buscaCatalogo(this.value); };
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('#eqf-secao-catalogo')) document.getElementById('eqf-combo-lista').classList.remove('show');
+    });
+    document.getElementById('eqf-abrir-novo-item').onclick = function () { toggleNovoItem(true); };
+    document.getElementById('ni-cancelar').onclick = function () { toggleNovoItem(false); };
+    document.getElementById('ni-salvar').onclick = salvarNovoItem;
 
     // abas
     document.querySelectorAll('#eq-abas .chip').forEach(function (chip) {
@@ -1528,6 +1676,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
     gate.style.display = 'none';
     wrap.style.display = '';
+    carregaCatalogo();
     carregaEquip();
     carregaMinimos();
   }
@@ -1642,7 +1791,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 20/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 21/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -2343,6 +2492,76 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
   });
 }
+</script>
+
+
+<style>
+  .atualiza-atalho { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40;
+    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+  .atualiza-atalho.on { display: block; }
+  .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
+  .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }
+  .aa-txt { flex: 1; font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+  .aa-txt b { color: var(--text); }
+  .aa-botoes { display: flex; gap: 8px; margin-top: 10px; }
+  .aa-botoes button { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
+    border-radius: 999px; cursor: pointer; }
+  #aa-como { background: none; border: 1px solid var(--border); color: var(--text-2); }
+  #aa-ok { background: var(--acc); border: none; color: var(--acc-txt); }
+  .aa-passos { display: none; margin: 10px 0 0; padding-left: 18px; font-size: 12px;
+    color: var(--text-2); line-height: 1.6; }
+  .aa-passos.on { display: block; }
+</style>
+<div class="atualiza-atalho" id="atualiza-atalho">
+  <div class="aa-topo">
+    <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg>
+    <div class="aa-txt"><b>Atualizamos o ícone e o nome do app</b> (agora é Bar.IZ). Seu atalho na
+    tela de início ficou com o visual antigo — o celular só atualiza isso se você reinstalar.</div>
+  </div>
+  <ol class="aa-passos" id="aa-passos"></ol>
+  <div class="aa-botoes">
+    <button type="button" id="aa-como">Como fazer</button>
+    <button type="button" id="aa-ok">Entendi</button>
+  </div>
+</div>
+<script>
+(function () {
+  var STANDALONE = window.navigator.standalone === true
+    || window.matchMedia('(display-mode: standalone)').matches;
+  if (!STANDALONE) return;
+  var V = 'bariz-1';
+  if (localStorage.getItem('atalho_icone_v') === V) return;
+  var box = document.getElementById('atualiza-atalho');
+  var passos = document.getElementById('aa-passos');
+  var ehIOS = window.navigator.standalone !== undefined;
+  var PASSOS_IOS = [
+    'Feche este app e volte pra tela de início.',
+    'Toque e segure o ícone antigo até aparecer o menu.',
+    '"Remover App" (ou "Excluir Atalho").',
+    'Abra o link do Bar.IZ no Safari (não pelo atalho antigo).',
+    'Toque em Compartilhar e depois em "Adicionar à Tela de Início".',
+  ];
+  var PASSOS_ANDROID = [
+    'Toque e segure o ícone antigo até aparecer o menu.',
+    '"Remover" ou "Desinstalar".',
+    'Abra o link do Bar.IZ no Chrome.',
+    'Menu (⋮) → "Adicionar à tela inicial" ou "Instalar app".',
+  ];
+  (ehIOS ? PASSOS_IOS : PASSOS_ANDROID).forEach(function (texto) {
+    var li = document.createElement('li');
+    li.textContent = texto;
+    passos.appendChild(li);
+  });
+  document.getElementById('aa-como').addEventListener('click', function () {
+    passos.classList.toggle('on');
+  });
+  document.getElementById('aa-ok').addEventListener('click', function () {
+    localStorage.setItem('atalho_icone_v', V);
+    box.classList.remove('on');
+  });
+  box.classList.add('on');
+})();
 </script>
 
 </body>

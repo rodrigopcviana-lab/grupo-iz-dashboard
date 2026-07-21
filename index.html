@@ -236,17 +236,21 @@ window.msgAcessoNegado = function (nomePagina) {
   .ac-op .ac-saiba { flex: none; margin-left: auto; font-size: 11px; color: var(--text-3);
                text-decoration: none; padding: 4px 6px; white-space: nowrap; }
   .ac-op .ac-saiba:hover { color: var(--oc, var(--acc)); text-decoration: underline; }
-  .tut-banner { display: flex; align-items: center; gap: 14px; margin: 14px 0 0; padding: 16px 18px;
+  /* Afinado em 1/3 (2026-07-20) quando o banner subiu pra acima do seletor de
+     nível — antes vinha depois do .acesso e podia ser mais alto sem competir
+     por atenção com o botão principal da home. */
+  .tut-banner { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 11px 13px;
                  background: color-mix(in srgb, var(--acc) 10%, var(--card)); border: 1.5px solid var(--acc);
-                 border-radius: 14px; text-decoration: none; color: var(--text); }
+                 border-radius: 12px; text-decoration: none; color: var(--text); }
   .tut-banner:hover { background: color-mix(in srgb, var(--acc) 18%, var(--card)); }
-  .tut-banner .ico { flex: none; width: 42px; height: 42px; border-radius: 10px;
+  .tut-banner .ico { flex: none; width: 28px; height: 28px; border-radius: 8px;
                        background: color-mix(in srgb, var(--acc) 22%, transparent);
                        display: flex; align-items: center; justify-content: center; color: var(--acc); }
+  .tut-banner .ico svg { width: 15px; height: 15px; }
   .tut-banner .txt { min-width: 0 }
-  .tut-banner .txt b { display: block; font-family: var(--serif); font-size: 15.5px; }
-  .tut-banner .txt span { display: block; font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
-  .tut-banner .go { flex: none; margin-left: auto; font-size: 20px; color: var(--acc); }
+  .tut-banner .txt b { display: block; font-family: var(--serif); font-size: 13px; }
+  .tut-banner .txt span { display: block; font-size: 11px; color: var(--text-2); margin-top: 1px; }
+  .tut-banner .go { flex: none; margin-left: auto; font-size: 16px; color: var(--acc); }
   @media (max-width: 480px) { .tut-banner .txt span { display: none } }
   .ac-explica { margin: 8px 2px 2px; }
   .ac-explica summary { list-style: none; cursor: pointer; padding: 9px 6px; display: flex; align-items: center;
@@ -294,6 +298,12 @@ window.msgAcessoNegado = function (nomePagina) {
   .balao-casa-lista li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .balao-casa-vazio { color: var(--text-3); font-style: italic; }
 </style>
+
+<a class="tut-banner" href="tutorial.html">
+<div class="ico"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+<div class="txt"><b>Entenda o funcionamento do Portal</b><span>Tutorial completo de cada nível de acesso — sem precisar de senha</span></div>
+<div class="go">&rarr;</div>
+</a>
 
 <div class="acesso" id="acesso">
 <div class="ac-cab" id="ac-cab" role="button" tabindex="0" aria-expanded="false" aria-controls="ac-lista nivel-gate">
@@ -351,12 +361,6 @@ window.msgAcessoNegado = function (nomePagina) {
 <p class="ac-msg" id="nivel-msg" role="status" aria-live="polite"></p>
 </div>
 </div>
-
-<a class="tut-banner" href="tutorial.html">
-<div class="ico"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-<div class="txt"><b>Entenda o funcionamento do Portal</b><span>Tutorial completo de cada nível de acesso — sem precisar de senha</span></div>
-<div class="go">&rarr;</div>
-</a>
 
 <div id="home-conteudo-topo" style="display:none">
 
@@ -1327,7 +1331,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 20/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 21/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -2028,6 +2032,76 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
   });
 }
+</script>
+
+
+<style>
+  .atualiza-atalho { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40;
+    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+  .atualiza-atalho.on { display: block; }
+  .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
+  .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }
+  .aa-txt { flex: 1; font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+  .aa-txt b { color: var(--text); }
+  .aa-botoes { display: flex; gap: 8px; margin-top: 10px; }
+  .aa-botoes button { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
+    border-radius: 999px; cursor: pointer; }
+  #aa-como { background: none; border: 1px solid var(--border); color: var(--text-2); }
+  #aa-ok { background: var(--acc); border: none; color: var(--acc-txt); }
+  .aa-passos { display: none; margin: 10px 0 0; padding-left: 18px; font-size: 12px;
+    color: var(--text-2); line-height: 1.6; }
+  .aa-passos.on { display: block; }
+</style>
+<div class="atualiza-atalho" id="atualiza-atalho">
+  <div class="aa-topo">
+    <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg>
+    <div class="aa-txt"><b>Atualizamos o ícone e o nome do app</b> (agora é Bar.IZ). Seu atalho na
+    tela de início ficou com o visual antigo — o celular só atualiza isso se você reinstalar.</div>
+  </div>
+  <ol class="aa-passos" id="aa-passos"></ol>
+  <div class="aa-botoes">
+    <button type="button" id="aa-como">Como fazer</button>
+    <button type="button" id="aa-ok">Entendi</button>
+  </div>
+</div>
+<script>
+(function () {
+  var STANDALONE = window.navigator.standalone === true
+    || window.matchMedia('(display-mode: standalone)').matches;
+  if (!STANDALONE) return;
+  var V = 'bariz-1';
+  if (localStorage.getItem('atalho_icone_v') === V) return;
+  var box = document.getElementById('atualiza-atalho');
+  var passos = document.getElementById('aa-passos');
+  var ehIOS = window.navigator.standalone !== undefined;
+  var PASSOS_IOS = [
+    'Feche este app e volte pra tela de início.',
+    'Toque e segure o ícone antigo até aparecer o menu.',
+    '"Remover App" (ou "Excluir Atalho").',
+    'Abra o link do Bar.IZ no Safari (não pelo atalho antigo).',
+    'Toque em Compartilhar e depois em "Adicionar à Tela de Início".',
+  ];
+  var PASSOS_ANDROID = [
+    'Toque e segure o ícone antigo até aparecer o menu.',
+    '"Remover" ou "Desinstalar".',
+    'Abra o link do Bar.IZ no Chrome.',
+    'Menu (⋮) → "Adicionar à tela inicial" ou "Instalar app".',
+  ];
+  (ehIOS ? PASSOS_IOS : PASSOS_ANDROID).forEach(function (texto) {
+    var li = document.createElement('li');
+    li.textContent = texto;
+    passos.appendChild(li);
+  });
+  document.getElementById('aa-como').addEventListener('click', function () {
+    passos.classList.toggle('on');
+  });
+  document.getElementById('aa-ok').addEventListener('click', function () {
+    localStorage.setItem('atalho_icone_v', V);
+    box.classList.remove('on');
+  });
+  box.classList.add('on');
+})();
 </script>
 
 </body>
