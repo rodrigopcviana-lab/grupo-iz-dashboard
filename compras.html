@@ -2184,7 +2184,11 @@ if ('serviceWorker' in navigator) {
 
 
 <style>
-  .atualiza-atalho { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40;
+  /* bottom: acima do radio-mini/pomo-mini (pills fixas nos cantos, ~44px de
+     altura a partir de 14px do rodapé, z-index 94) — não competir por
+     z-index com eles, só não ocupar o mesmo espaço na tela. */
+  .atualiza-atalho { position: fixed; left: 12px; right: 12px;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
     background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
     box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
   .atualiza-atalho.on { display: block; }
