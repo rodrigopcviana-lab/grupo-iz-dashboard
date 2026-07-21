@@ -2099,17 +2099,17 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   var elKbcol = document.getElementById('dm-kbcol');
   var elFilasBox = document.getElementById('dm-filas');
   var VISTA_OK = ['fila', 'galeria', 'kanban', 'tabela'];
-  // Padrão = Fila (a view segura/existente) até o Rodrigo validar as views
-  // novas com dado real no site (decisão 2026-07-19: publicar com padrão Fila,
-  // virar pra Kanban depois do OK). Quem escolher outra view fica com ela
-  // (localStorage). Trocar o fallback pra 'kanban' quando validado.
-  var vistaDem = 'fila', agrupoDem = 'urgencia', kbColDem = 'casa';
+  // Padrão = Kanban por casa (decisão do Rodrigo na aprovação do mockup).
+  // Ficou temporariamente em 'fila' entre 2026-07-19 e 2026-07-21, até ele
+  // validar as views novas com dado real no login coord — validado, fallback
+  // de volta pra 'kanban'. Quem já escolheu outra view mantém (localStorage).
+  var vistaDem = 'kanban', agrupoDem = 'urgencia', kbColDem = 'casa';
   try {
-    vistaDem = localStorage.getItem('demandas_vista') || 'fila';
+    vistaDem = localStorage.getItem('demandas_vista') || 'kanban';
     agrupoDem = localStorage.getItem('demandas_agrupo') || 'urgencia';
     kbColDem = localStorage.getItem('demandas_kbcol') || 'casa';
   } catch (e) {}
-  if (VISTA_OK.indexOf(vistaDem) < 0) vistaDem = 'fila';
+  if (VISTA_OK.indexOf(vistaDem) < 0) vistaDem = 'kanban';
   var URG_RANK_V = { 'Hoje': 0, 'Uma semana': 1, 'Um mês': 2, '3 meses+': 3, 'Urgente': -1, 'Pode aguardar': 3 };
   var STATUS_RANK_V = {}; STATUS_OPCOES.forEach(function (s, i) { STATUS_RANK_V[s] = i; });
 
