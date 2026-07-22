@@ -416,6 +416,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-item .nome { flex:1; }
   .orev-item .custo { color:var(--text-3); font-size:12.5px; font-variant-numeric:tabular-nums; }
   .orev-item.sem-custo { opacity:.5; }
+  .orev-item .orev-un { width:66px; padding:5px 6px; border-radius:8px; border:1px solid var(--border);
+      background:var(--card); color:var(--text); font:inherit; font-size:12.5px; box-sizing:border-box; }
+  .orev-item .orev-un:disabled { opacity:.3; }
   .orev-resumo { position:sticky; top:12px; }
   .orev-total { font-size:22px; font-weight:700; margin:4px 0 2px; }
   .orev-sub { font-size:12.5px; color:var(--text-3); }
@@ -458,12 +461,9 @@ window.msgAcessoNegado = function (nomePagina) {
 <div class="orev-grid">
   <div>
     <div class="panel">
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orev-convidados">Convidados</label>
-          <input type="number" id="orev-convidados" min="0" placeholder="0"></div>
-        <div class="orev-campo"><label for="orev-consumo">Drinks / convidado</label>
-          <input type="number" id="orev-consumo" min="0" step="0.5" placeholder="0"></div>
-      </div>
+      <div class="orev-campo"><label for="orev-convidados">Convidados</label>
+        <input type="number" id="orev-convidados" min="0" placeholder="0"></div>
+      <p class="orev-sub" style="margin:-4px 0 10px">Marque os itens do cardápio e defina quantas unidades cada convidado consome de cada um — o custo de insumo vem desse mix, não de uma média.</p>
       <div class="orev-linha2">
         <div class="orev-campo"><label for="orev-duracao">Duração do evento (horas)</label>
           <input type="number" id="orev-duracao" min="1" value="4"></div>
@@ -518,7 +518,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
       <h3>Dias do evento</h3>
       <table class="orev-dias">
-        <thead><tr><th>Convidados</th><th>Drinks/convid.</th><th>Duração (h)</th><th>Pré (h)</th><th>Pós (h)</th><th>Estações</th><th></th></tr></thead>
+        <thead><tr><th>Convidados</th><th>Duração (h)</th><th>Pré (h)</th><th>Pós (h)</th><th>Estações</th><th></th></tr></thead>
         <tbody id="orme-dias-corpo"></tbody>
       </table>
       <button type="button" class="orev-tab" id="orme-add-dia">+ Adicionar dia</button>
@@ -624,14 +624,30 @@ window.msgAcessoNegado = function (nomePagina) {
         linha.className = 'orev-item' + (semCusto ? ' sem-custo' : '');
         var chk = document.createElement('input');
         chk.type = 'checkbox'; chk.disabled = semCusto;
-        chk.onchange = function () {
-          if (chk.checked) selecao[item.nome] = item; else delete selecao[item.nome];
-          onChange();
-        };
         var nome = document.createElement('span'); nome.className = 'nome'; nome.textContent = item.nome;
+        var un = document.createElement('input');
+        un.type = 'number'; un.min = '0'; un.step = '0.1'; un.value = '1';
+        un.className = 'orev-un'; un.disabled = true; un.title = 'Unidades por convidado';
+        un.onclick = function (e) { e.preventDefault(); e.stopPropagation(); };
+        un.oninput = function () {
+          if (selecao[item.nome]) {
+            selecao[item.nome].porConvidado = Math.max(0, parseFloat(un.value) || 0);
+            onChange();
+          }
+        };
         var custo = document.createElement('span'); custo.className = 'custo';
         custo.textContent = semCusto ? 'sem custo cadastrado' : fmtBRL(item.custo) + '/un.';
-        linha.appendChild(chk); linha.appendChild(nome); linha.appendChild(custo);
+        chk.onchange = function () {
+          if (chk.checked) {
+            selecao[item.nome] = Object.assign({}, item, { porConvidado: Math.max(0, parseFloat(un.value) || 0) });
+            un.disabled = false;
+          } else {
+            delete selecao[item.nome];
+            un.disabled = true;
+          }
+          onChange();
+        };
+        linha.appendChild(chk); linha.appendChild(nome); linha.appendChild(un); linha.appendChild(custo);
         wrapCard.appendChild(linha);
       });
     });
@@ -639,7 +655,6 @@ window.msgAcessoNegado = function (nomePagina) {
 
   function calcula() {
     var convidados = num('orev-convidados');
-    var consumo = num('orev-consumo');
     var duracao = Math.max(1, num('orev-duracao'));
     var preEvento = num('orev-pre');
     var posEvento = num('orev-pos');
@@ -647,14 +662,14 @@ window.msgAcessoNegado = function (nomePagina) {
     var markup = Math.max(1, num('orev-markup'));
 
     var itensSel = Object.keys(selecionados).map(function (k) { return selecionados[k]; });
-    var totalDrinks = convidados * consumo;
-    var custoInsumos = itensSel.length
-      ? (totalDrinks / itensSel.length) * itensSel.reduce(function (s, i) { return s + i.custo; }, 0)
-      : 0;
+    var unidPorConv = itensSel.reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
+    var custoPorConv = itensSel.reduce(function (s, i) { return s + (i.porConvidado || 0) * i.custo; }, 0);
+    var totalDrinks = convidados * unidPorConv;
+    var custoInsumos = convidados * custoPorConv;
 
     var tempoTotalMin = totalDrinks * CONFIG.tempoMedioPorDrinkMin;
     var duracaoMin = duracao * 60;
-    var bartenders = Math.max(1, Math.ceil(tempoTotalMin / duracaoMin));
+    var bartenders = totalDrinks > 0 ? Math.max(1, Math.ceil(tempoTotalMin / duracaoMin)) : 0;
     var horasTrabalhadas = duracao + preEvento + posEvento;
     var horasBase = Math.min(horasTrabalhadas, CONFIG.jornadaPadraoHoras);
     var horasExtra = Math.max(horasTrabalhadas - CONFIG.jornadaPadraoHoras, 0);
@@ -664,7 +679,8 @@ window.msgAcessoNegado = function (nomePagina) {
     var totalCobrar = custoTotal * markup;
 
     document.getElementById('orev-total').textContent = fmtBRL(totalCobrar);
-    document.getElementById('orev-custo-sub').textContent = 'Custo: ' + fmtBRL(custoTotal) + ' · ' + bartenders
+    document.getElementById('orev-custo-sub').textContent = 'Custo: ' + fmtBRL(custoTotal) + ' · '
+      + unidPorConv.toFixed(1).replace('.', ',') + ' un./convidado · ' + bartenders
       + ' bartender(s) · ' + horasTrabalhadas + 'h/bartender';
 
     var det = document.getElementById('orev-det');
@@ -679,21 +695,20 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orev-wpp').href = 'https://wa.me/?text=' + encodeURIComponent(texto);
   }
 
-  ['orev-convidados', 'orev-consumo', 'orev-duracao', 'orev-pre', 'orev-pos', 'orev-desloc', 'orev-markup'].forEach(function (id) {
+  ['orev-convidados', 'orev-duracao', 'orev-pre', 'orev-pos', 'orev-desloc', 'orev-markup'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calcula);
   });
 
   // --- Meus Eventos: dias dinâmicos ---
   function linhaDia() {
     var tr = document.createElement('tr');
-    ['convidados', 'consumo', 'duracao', 'pre', 'pos', 'estacoes'].forEach(function (campo) {
+    ['convidados', 'duracao', 'pre', 'pos', 'estacoes'].forEach(function (campo) {
       var td = document.createElement('td');
       var inp = document.createElement('input');
       inp.type = 'number'; inp.min = '0';
       inp.className = 'orme-campo-' + campo;
       if (campo === 'duracao') { inp.value = '4'; }
       if (campo === 'pre' || campo === 'pos') { inp.value = '2'; inp.step = '0.5'; }
-      if (campo === 'consumo') { inp.step = '0.5'; }
       inp.addEventListener('input', calculaEvento);
       td.appendChild(inp);
       tr.appendChild(td);
@@ -716,7 +731,7 @@ window.msgAcessoNegado = function (nomePagina) {
     return Array.prototype.map.call(linhas, function (tr) {
       function v(campo) { return Math.max(0, parseFloat(tr.querySelector('.orme-campo-' + campo).value) || 0); }
       return {
-        convidados: v('convidados'), consumoMedio: v('consumo'),
+        convidados: v('convidados'),
         duracaoHoras: Math.max(1, v('duracao')), preEvento: v('pre'), posEvento: v('pos'),
         estacoesCocktail: v('estacoes'),
       };
@@ -729,12 +744,13 @@ window.msgAcessoNegado = function (nomePagina) {
     var custoEstacao = num('orme-custo-estacao');
     var markup = Math.max(1, num('orme-markup'));
     var itensSel = Object.keys(selecionadosEvento).map(function (k) { return selecionadosEvento[k]; });
-    var somaCustoCardapio = itensSel.reduce(function (s, i) { return s + i.custo; }, 0);
+    var unidPorConv = itensSel.reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
+    var custoPorConv = itensSel.reduce(function (s, i) { return s + (i.porConvidado || 0) * i.custo; }, 0);
 
     var custoInsumosTotal = 0, custoMaoObraTotal = 0, custoEstacoesTotal = 0;
     dias.forEach(function (d) {
-      var totalDrinks = d.convidados * d.consumoMedio;
-      var custoInsumos = itensSel.length ? (totalDrinks / itensSel.length) * somaCustoCardapio : 0;
+      var totalDrinks = d.convidados * unidPorConv;
+      var custoInsumos = d.convidados * custoPorConv;
       var tempoTotalMin = totalDrinks * CONFIG.tempoMedioPorDrinkMin;
       var duracaoMin = d.duracaoHoras * 60;
       var bartenders = totalDrinks > 0 ? Math.max(1, Math.ceil(tempoTotalMin / duracaoMin)) : 0;
@@ -745,6 +761,7 @@ window.msgAcessoNegado = function (nomePagina) {
       var custoEstacoesDia = d.estacoesCocktail * custoEstacao;
       d.custoDia = custoInsumos + custoMaoObra + custoEstacoesDia;
       d.bartenders = bartenders;
+      d.consumoMedio = unidPorConv;
       custoInsumosTotal += custoInsumos; custoMaoObraTotal += custoMaoObra; custoEstacoesTotal += custoEstacoesDia;
     });
 
@@ -753,7 +770,8 @@ window.msgAcessoNegado = function (nomePagina) {
     dias.forEach(function (d) { d.valorDia = (d.custoDia || 0) * markup; });
 
     document.getElementById('orme-total').textContent = fmtBRL(valorTotal);
-    document.getElementById('orme-custo-sub').textContent = 'Custo: ' + fmtBRL(custoTotal) + ' · ' + dias.length + ' dia(s)';
+    document.getElementById('orme-custo-sub').textContent = 'Custo: ' + fmtBRL(custoTotal) + ' · ' + dias.length
+      + ' dia(s) · ' + unidPorConv.toFixed(1).replace('.', ',') + ' un./convidado';
     var det = document.getElementById('orme-det');
     det.innerHTML = '';
     det.appendChild(detLinha('Insumos', custoInsumosTotal));
@@ -787,7 +805,7 @@ window.msgAcessoNegado = function (nomePagina) {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
       body: JSON.stringify({
         nome: nomeEvento, casa: selCasa.value, dias: calc.dias,
-        cardapio: calc.itensSel.map(function (i) { return i.nome; }),
+        cardapio: calc.itensSel.map(function (i) { return { nome: i.nome, porConvidado: i.porConvidado || 0 }; }),
         deslocamento: calc.deslocamento, custoEstacao: calc.custoEstacao, markup: calc.markup,
         custoTotal: calc.custoTotal, valorTotal: calc.valorTotal,
       }),
