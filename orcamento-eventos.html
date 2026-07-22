@@ -1561,6 +1561,51 @@ window.msgAcessoNegado = function (nomePagina) {
     });
   }
 
+  // Agenda (data/horário/duração/convidados por dia) + cardápio detalhado
+  // (item, unidades por convidado, custo unitário), tudo READ-ONLY, dentro do
+  // card do evento salvo — o Rodrigo quer ver o evento inteiro sem editar.
+  function montaAgendaCardapioLeitura(container, ev) {
+    var det = ev.detalhe || {};
+    var dias = det.dias || [];
+    container.innerHTML = '';
+
+    var secAg = document.createElement('p'); secAg.className = 'orz-sec'; secAg.textContent = 'Agenda dos dias'; container.appendChild(secAg);
+    var tabAg = document.createElement('table'); tabAg.className = 'orev-diasver';
+    tabAg.innerHTML = '<thead><tr><th>Dia</th><th>Data</th><th>Início</th><th>Duração</th><th>Convidados</th><th>Bartenders</th></tr></thead>';
+    var corpoAg = document.createElement('tbody');
+    dias.forEach(function (d, idx) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + (idx + 1) + '</td>'
+        + '<td>' + (d.data || '—') + '</td>'
+        + '<td>' + (d.horaInicio || '—') + '</td>'
+        + '<td>' + (d.duracaoHoras || 0) + 'h</td>'
+        + '<td>' + (d.convidados || 0) + '</td>'
+        + '<td>' + (d.bartenders || 0) + (d.turnos > 1 ? ' (' + d.turnos + ' turnos)' : '') + '</td>';
+      corpoAg.appendChild(tr);
+    });
+    tabAg.appendChild(corpoAg); container.appendChild(tabAg);
+
+    var secCard = document.createElement('p'); secCard.className = 'orz-sec'; secCard.textContent = 'Cardápio do evento'; container.appendChild(secCard);
+    var itens = det.cardapio || [];
+    if (!itens.length) {
+      var vazio = document.createElement('p'); vazio.className = 'orev-sub'; vazio.textContent = 'Nenhum item no cardápio deste evento.';
+      container.appendChild(vazio);
+    } else {
+      var tabC = document.createElement('table'); tabC.className = 'orev-diasver';
+      tabC.innerHTML = '<thead><tr><th>Item</th><th>Un./convidado</th><th>Custo un.</th></tr></thead>';
+      var corpoC = document.createElement('tbody');
+      itens.forEach(function (it) {
+        var c = custoDoItem(it.nome);
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + esc(it.nome) + '</td>'
+          + '<td>' + (it.porConvidado != null ? it.porConvidado : 1) + '</td>'
+          + '<td>' + fmtBRL(c) + '</td>';
+        corpoC.appendChild(tr);
+      });
+      tabC.appendChild(corpoC); container.appendChild(tabC);
+    }
+  }
+
   function carregaEventos() {
     var lista = document.getElementById('orme-lista');
     var vazio = document.getElementById('orme-lista-vazio');
@@ -1595,12 +1640,18 @@ window.msgAcessoNegado = function (nomePagina) {
           corpo.appendChild(meta);
 
           var resumoBox = document.createElement('div'); resumoBox.style.marginTop = '12px';
+          var agendaBox = document.createElement('div');
           var roteiroBox = document.createElement('div'); roteiroBox.className = 'orev-ev-roteiro';
           var montado = false;
           tit.onclick = function () {
             var abrindo = !card.classList.contains('aberto');
             card.classList.toggle('aberto', abrindo);
-            if (abrindo && !montado) { montaResumoLeitura(resumoBox, ev); montaRoteiroLeitura(roteiroBox, ev); montado = true; }
+            if (abrindo && !montado) {
+              montaResumoLeitura(resumoBox, ev);
+              montaAgendaCardapioLeitura(agendaBox, ev);
+              montaRoteiroLeitura(roteiroBox, ev);
+              montado = true;
+            }
           };
 
           var acoes = document.createElement('div'); acoes.className = 'acoes';
@@ -1617,7 +1668,7 @@ window.msgAcessoNegado = function (nomePagina) {
           btnDel.onclick = function () { apagaEvento(ev); };
           acoes.appendChild(btnEd); acoes.appendChild(btnDel);
 
-          corpo.appendChild(resumoBox); corpo.appendChild(roteiroBox); corpo.appendChild(acoes);
+          corpo.appendChild(resumoBox); corpo.appendChild(agendaBox); corpo.appendChild(roteiroBox); corpo.appendChild(acoes);
           card.appendChild(tit); card.appendChild(corpo);
           lista.appendChild(card);
         });
