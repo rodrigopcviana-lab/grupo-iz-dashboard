@@ -1203,7 +1203,7 @@ function iniciaRanking() {
 </script></div>
 <div id="perf-panel-cmv" class="perf-panel" hidden>
 <h1>CMV Mensal</h1>
-<p class="sub">CMV do grupo por casa e por mês (compras ÷ faturamento). Faturamento vem das vendas já ingeridas; compras entra assim que a fonte for conectada.</p>
+<p class="sub">CMV do grupo por casa (compras ÷ faturamento). Faturamento vem das vendas já ingeridas; compras entra assim que a fonte for conectada.</p>
 
 <div class="panel" id="cmv-gate">
   <h2>Acesso restrito</h2>
@@ -1211,20 +1211,38 @@ function iniciaRanking() {
 </div>
 
 <div id="cmv-corpo" style="display:none">
+<style>
+  .cmv-controles { display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom:6px; }
+  .cmv-controles .rt-tabs { margin-bottom:0; }
+  table.rt th.cmv-tot, table.rt td.cmv-tot { font-weight:700; border-left:2px solid var(--border); background:rgba(255,255,255,.02); }
+  td.cmv-parcial { color:var(--text-3); }
+  td.cmv-parcial sup { color:var(--amarelo); font-weight:700; margin-left:2px; }
+  .cmv-legenda { font-size:11.5px; color:var(--text-3); margin:8px 2px 0; }
+  .cmv-legenda b { color:var(--amarelo); }
+</style>
+
 <div class="rk" id="cmv-kpis"></div>
 
-<div class="rt-tabs" id="cmv-vista">
-  <button class="rt-tab on" type="button" data-v="cmv">CMV %</button>
-  <button class="rt-tab" type="button" data-v="fat">Faturamento</button>
-  <button class="rt-tab" type="button" data-v="compra">Compras</button>
+<div class="cmv-controles">
+  <div class="rt-tabs" id="cmv-periodo">
+    <button class="rt-tab on" type="button" data-p="tri">Por trimestre</button>
+    <button class="rt-tab" type="button" data-p="mes">Mês a mês</button>
+  </div>
+  <div class="rt-tabs" id="cmv-vista">
+    <button class="rt-tab on" type="button" data-v="cmv">CMV %</button>
+    <button class="rt-tab" type="button" data-v="fat">Faturamento</button>
+    <button class="rt-tab" type="button" data-v="compra">Compras</button>
+  </div>
 </div>
 
 <p class="sub" id="cmv-aviso" style="display:none;margin:0 0 10px"></p>
+<p class="sub" id="cmv-nota-mensal" style="display:none;margin:0 0 10px"></p>
 
 <div class="panel" style="padding:8px 10px;overflow-x:auto">
 <table class="rt" id="cmv-tabela"><thead><tr id="cmv-cab"></tr></thead><tbody id="cmv-corpo-tab"></tbody></table>
 </div>
 
+<p class="cmv-legenda" id="cmv-legenda" style="display:none"><b>†</b> mês com faturamento muito abaixo da mediana da casa — provavelmente ingestão parcial; leia com ressalva.</p>
 <p class="rt-foot" id="cmv-foot"></p>
 </div><!-- cmv-corpo -->
 
@@ -1255,6 +1273,7 @@ function iniciaRanking() {
 
   function inicia(D) {
     var vista = 'cmv';
+    var periodo = 'tri';  // acumulado (trimestre) é a leitura confiável — mês a mês é indicativo
     var slugs = Object.keys(D.casas);
 
     if (!D.compras_ligado) {
@@ -1263,25 +1282,48 @@ function iniciaRanking() {
       aviso.textContent = 'Compras ainda não tem fonte conectada — CMV aparece como "—" até esse dado entrar.';
     }
 
-    function totalCasa(campo, slug) {
-      var vals = D.meses.map(function (m) { return D.casas[slug][campo][m]; }).filter(function (v) { return v != null; });
+    // ---- Colunas por período ----
+    // Trimestre = blocos de 3 meses na ordem da janela (Jun→Mai): compra de
+    // um mês não é o consumo dele, então o acumulado (compra ≈ consumo)
+    // é a leitura confiável; o mês a mês é só tendência.
+    function colunasTri() {
+      var cols = [];
+      for (var i = 0; i < D.meses.length; i += 3) {
+        var bloco = D.meses.slice(i, i + 3);
+        cols.push({ rotulo: bloco[0] + '–' + bloco[bloco.length - 1], meses: bloco });
+      }
+      return cols;
+    }
+    function colunas() {
+      return periodo === 'tri' ? colunasTri()
+        : D.meses.map(function (m) { return { rotulo: m, meses: [m] }; });
+    }
+
+    // Agrega um campo (faturamento/compras) sobre um conjunto de meses.
+    function agrega(campo, slug, meses) {
+      var vals = meses.map(function (m) { return D.casas[slug][campo][m]; }).filter(function (v) { return v != null; });
       if (!vals.length) return null;
       return vals.reduce(function (a, b) { return a + b; }, 0);
     }
-    function cmvTotal(slug) {
-      var fat = totalCasa('faturamento', slug), compra = totalCasa('compras', slug);
+    function cmvDe(slug, meses) {
+      var fat = agrega('faturamento', slug, meses), compra = agrega('compras', slug, meses);
       if (!D.compras_ligado || fat == null || compra == null || !fat) return null;
       return Math.round((compra / fat) * 1000) / 10;
     }
+    // Um bloco é "parcial" se ALGUM mês dele é parcial (só marca no mês a mês).
+    function blocoParcial(slug, meses) {
+      var p = D.casas[slug].parcial || {};
+      return meses.some(function (m) { return p[m]; });
+    }
 
-    // ---- KPIs (grupo, 12 meses) ----
-    var fatGrupo = slugs.reduce(function (s, slug) { return s + (totalCasa('faturamento', slug) || 0); }, 0);
-    var compraGrupo = D.compras_ligado ? slugs.reduce(function (s, slug) { return s + (totalCasa('compras', slug) || 0); }, 0) : null;
+    // ---- KPIs (grupo, acumulado da janela toda) ----
+    var fatGrupo = slugs.reduce(function (s, slug) { return s + (agrega('faturamento', slug, D.meses) || 0); }, 0);
+    var compraGrupo = D.compras_ligado ? slugs.reduce(function (s, slug) { return s + (agrega('compras', slug, D.meses) || 0); }, 0) : null;
     var cmvGrupo = (D.compras_ligado && fatGrupo) ? Math.round((compraGrupo / fatGrupo) * 1000) / 10 : null;
     var kpis = [
-      ['Faturamento (12m)', fmtBRL(fatGrupo)],
-      ['Compras (12m)', fmtBRL(compraGrupo)],
-      ['CMV médio do grupo', fmtPct(cmvGrupo)],
+      ['Faturamento acumulado', fmtBRL(fatGrupo)],
+      ['Compras acumuladas', fmtBRL(compraGrupo)],
+      ['CMV do grupo (acumulado)', fmtPct(cmvGrupo)],
     ];
     var elKpis = document.getElementById('cmv-kpis');
     kpis.forEach(function (kv) {
@@ -1291,45 +1333,65 @@ function iniciaRanking() {
       c.appendChild(v); c.appendChild(l); elKpis.appendChild(c);
     });
 
-    // ---- Seletor de vista ----
+    // ---- Seletores ----
     document.querySelectorAll('#cmv-vista .rt-tab').forEach(function (b) {
       b.onclick = function () {
         document.querySelectorAll('#cmv-vista .rt-tab').forEach(function (x) { x.classList.remove('on'); });
         b.classList.add('on'); vista = b.dataset.v; desenha();
       };
     });
-
-    // ---- Cabeçalho: Casa + 12 meses + Total ----
-    var cab = document.getElementById('cmv-cab');
-    cab.innerHTML = '';
-    var thCasa = document.createElement('th'); thCasa.textContent = 'Casa'; cab.appendChild(thCasa);
-    D.meses.forEach(function (m) {
-      var th = document.createElement('th'); th.className = 'n'; th.textContent = m; cab.appendChild(th);
+    document.querySelectorAll('#cmv-periodo .rt-tab').forEach(function (b) {
+      b.onclick = function () {
+        document.querySelectorAll('#cmv-periodo .rt-tab').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on'); periodo = b.dataset.p; desenha();
+      };
     });
-    var thTotal = document.createElement('th'); thTotal.className = 'n'; thTotal.textContent = 'Total'; cab.appendChild(thTotal);
 
     function campoDaVista() { return vista === 'fat' ? 'faturamento' : vista === 'compra' ? 'compras' : null; }
     function fmtDaVista() { return vista === 'cmv' ? fmtPct : fmtBRL; }
 
     function desenha() {
+      var cols = colunas();
+      var campo = campoDaVista(), fmt = fmtDaVista();
+      var ehMes = periodo === 'mes';
+
+      // Nota "mensal é indicativo" só aparece no mês a mês.
+      var nota = document.getElementById('cmv-nota-mensal');
+      if (ehMes) {
+        nota.style.display = '';
+        nota.textContent = 'Mês a mês é indicativo: a compra de um mês não é o consumo dele (compra em bloco infla um mês e esvazia o seguinte). A leitura confiável é Por trimestre e a coluna Acumulado.';
+      } else {
+        nota.style.display = 'none';
+      }
+      document.getElementById('cmv-legenda').style.display = ehMes ? '' : 'none';
+
+      // Cabeçalho
+      var cab = document.getElementById('cmv-cab');
+      cab.innerHTML = '';
+      var thCasa = document.createElement('th'); thCasa.textContent = 'Casa'; cab.appendChild(thCasa);
+      cols.forEach(function (col) {
+        var th = document.createElement('th'); th.className = 'n'; th.textContent = col.rotulo; cab.appendChild(th);
+      });
+      var thTotal = document.createElement('th'); thTotal.className = 'n cmv-tot'; thTotal.textContent = 'Acumulado'; cab.appendChild(thTotal);
+
+      // Linhas
       var corpo = document.getElementById('cmv-corpo-tab');
       corpo.innerHTML = '';
-      var campo = campoDaVista(), fmt = fmtDaVista();
       slugs.forEach(function (slug) {
         var c = D.casas[slug];
         var tr = document.createElement('tr');
         tr.appendChild(td(c.nome));
-        D.meses.forEach(function (m) {
-          var v;
-          if (vista === 'cmv') {
-            var fat = c.faturamento[m], compra = c.compras[m];
-            v = (D.compras_ligado && fat) ? Math.round((compra / fat) * 1000) / 10 : null;
-          } else {
-            v = c[campo][m];
+        cols.forEach(function (col) {
+          var v = vista === 'cmv' ? cmvDe(slug, col.meses) : agrega(campo, slug, col.meses);
+          var cel = td(fmt(v), 'n');
+          if (ehMes && blocoParcial(slug, col.meses) && v != null) {
+            cel.className = 'n cmv-parcial';
+            var sup = document.createElement('sup'); sup.textContent = '†'; cel.appendChild(sup);
           }
-          tr.appendChild(td(fmt(v), 'n'));
+          tr.appendChild(cel);
         });
-        tr.appendChild(td(vista === 'cmv' ? fmtPct(cmvTotal(slug)) : fmt(totalCasa(campo, slug)), 'n'));
+        var vt = vista === 'cmv' ? cmvDe(slug, D.meses) : agrega(campo, slug, D.meses);
+        tr.appendChild(td(fmt(vt), 'n cmv-tot'));
         corpo.appendChild(tr);
       });
     }
