@@ -413,8 +413,23 @@ window.msgAcessoNegado = function (nomePagina) {
   @media (max-width: 480px) { .orev-linha3 { grid-template-columns:1fr; } }
   .orev-busca { width:100%; padding:9px 10px; font-size:14px; border-radius:8px; border:1px solid var(--border);
       background:var(--card); color:var(--text); font:inherit; box-sizing:border-box; margin-bottom:10px; }
+  .orev-casa-pills { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
+  .orev-casa-pill { padding:7px 14px; border-radius:999px; border:1px solid var(--border); background:var(--card);
+      color:var(--text-2); font:inherit; font-size:13px; cursor:pointer; }
+  .orev-casa-pill.on { color:var(--acc-txt,#241a06); background:var(--accent,#c9a24b); border-color:var(--accent,#c9a24b);
+      font-weight:600; }
   .orev-cardapio-cat { font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em;
       margin:12px 0 6px; }
+  .orev-cat-bloco { border-bottom:1px solid var(--border); }
+  .orev-cat-bloco:last-child { border-bottom:none; }
+  .orev-cat-cab { display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer;
+      padding:10px 2px; user-select:none; }
+  .orev-cat-cab .orev-cardapio-cat { margin:0; }
+  .orev-cat-cab .cnt { font-size:10.5px; color:var(--text-3); font-variant-numeric:tabular-nums; }
+  .orev-cat-chev { color:var(--text-3); font-size:11px; margin-left:auto; transition:transform .15s; }
+  .orev-cat-bloco.colapsado .orev-cat-chev { transform:rotate(-90deg); }
+  .orev-cat-itens { padding-bottom:6px; }
+  .orev-cat-bloco.colapsado .orev-cat-itens { display:none; }
   .orev-item { display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid var(--border); }
   .orev-item:last-child { border-bottom:none; }
   .orev-item .nome { flex:1; }
@@ -443,12 +458,27 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-status-tab.on { color:var(--text); border-color:var(--accent, #c9a24b); }
   .orev-evento { border:1px solid var(--border); border-left:4px solid var(--sc, var(--text-3)); border-radius:12px;
       padding:12px 14px; margin-bottom:10px; background:var(--card); }
-  .orev-evento .tit { font-weight:600; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .orev-evento .tit { font-weight:600; display:flex; justify-content:space-between; align-items:center; gap:10px;
+      flex-wrap:wrap; cursor:pointer; }
   .orev-evento .tit .nome { display:flex; align-items:center; gap:8px; }
+  .orev-evento .tit .dir { display:flex; align-items:center; gap:8px; }
+  .orev-evento .ev-chev { color:var(--text-3); font-size:12px; transition:transform .15s; }
+  .orev-evento.aberto .ev-chev { transform:rotate(180deg); }
   .orev-evento .status-chip { font-size:10.5px; letter-spacing:.02em; border-radius:999px; padding:2.5px 9px;
       border:1px solid var(--sc, var(--border)); color:var(--sc, var(--text-3)); white-space:nowrap; }
   .orev-evento .meta { font-size:12.5px; color:var(--text-3); margin-top:4px; }
-  .orev-evento .acoes { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+  .orev-evento-corpo { display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+  .orev-evento.aberto .orev-evento-corpo { display:block; }
+  .orev-ev-roteiro { margin-top:6px; }
+  .orev-ev-diarot { margin-bottom:8px; }
+  .orev-ev-diarot > .dia-tit { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-3);
+      font-weight:700; margin:8px 0 4px; }
+  .orev-ev-fase { display:flex; gap:10px; padding:5px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .orev-ev-fase:last-child { border-bottom:none; }
+  .orev-ev-fase .quando { color:var(--accent,#c9a24b); font-variant-numeric:tabular-nums; white-space:nowrap; min-width:96px; }
+  .orev-ev-fase .oquê { color:var(--text-2); }
+  .orev-ev-fase .oquê b { color:var(--text); font-weight:600; }
+  .orev-evento .acoes { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
   .orev-evento button { padding:7px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg);
       color:var(--text); font:inherit; font-size:12.5px; cursor:pointer; }
   .orme-galeria-topo { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
@@ -531,17 +561,20 @@ window.msgAcessoNegado = function (nomePagina) {
 <div class="orev-grid">
   <div>
     <div class="panel">
-      <p class="orz-sec" style="margin-top:0">Quando e quantos</p>
+      <p class="orz-sec" style="margin-top:0">Casa que recebe o evento</p>
+      <div class="orev-casa-pills" id="orev-casa-pills"></div>
+
+      <p class="orz-sec">Quando e quantos</p>
       <div class="orev-campo"><label for="orev-convidados">Convidados</label>
         <input type="number" id="orev-convidados" min="0" placeholder="0"></div>
       <div class="orev-linha2">
         <div class="orev-campo"><label for="orev-duracao">Duração do evento (horas)</label>
           <input type="number" id="orev-duracao" min="1" value="4"></div>
-        <div class="orev-campo"><label for="orev-pre">Pré-evento — montagem (h)</label>
-          <input type="number" id="orev-pre" min="0" step="0.5" value="2"></div>
+        <div class="orev-campo"><label for="orev-pos">Pós-evento — desmontagem (h)</label>
+          <input type="number" id="orev-pos" min="0" step="0.5" value="2"></div>
       </div>
-      <div class="orev-campo"><label for="orev-pos">Pós-evento — desmontagem (h)</label>
-        <input type="number" id="orev-pos" min="0" step="0.5" value="2"></div>
+      <div class="orev-campo"><label for="orev-pre">Pré-evento — montagem (h)</label>
+        <input type="number" id="orev-pre" min="0" step="0.5" value="2"></div>
 
       <p class="orz-sec">Parâmetros financeiros</p>
       <div class="orev-linha2">
@@ -819,9 +852,15 @@ window.msgAcessoNegado = function (nomePagina) {
       (porCategoria[cat] = porCategoria[cat] || []).push(i);
     });
     Object.keys(porCategoria).sort().forEach(function (cat) {
+      var bloco = document.createElement('div'); bloco.className = 'orev-cat-bloco';
+      var cab = document.createElement('div'); cab.className = 'orev-cat-cab';
       var titulo = document.createElement('div');
       titulo.className = 'orev-cardapio-cat'; titulo.textContent = cat;
-      wrapCard.appendChild(titulo);
+      var cnt = document.createElement('span'); cnt.className = 'cnt'; cnt.textContent = porCategoria[cat].length + ' itens';
+      var chev = document.createElement('span'); chev.className = 'orev-cat-chev'; chev.textContent = '▾';
+      cab.appendChild(titulo); cab.appendChild(cnt); cab.appendChild(chev);
+      cab.onclick = function () { bloco.classList.toggle('colapsado'); };
+      var itensWrap = document.createElement('div'); itensWrap.className = 'orev-cat-itens';
       porCategoria[cat].forEach(function (item) {
         var semCusto = item.custo == null;
         var linha = document.createElement('label');
@@ -852,26 +891,30 @@ window.msgAcessoNegado = function (nomePagina) {
           onChange();
         };
         linha.appendChild(chk); linha.appendChild(nome); linha.appendChild(un); linha.appendChild(custo);
-        wrapCard.appendChild(linha);
+        itensWrap.appendChild(linha);
       });
+      bloco.appendChild(cab); bloco.appendChild(itensWrap);
+      wrapCard.appendChild(bloco);
     });
   }
 
   function ligaBusca(inputId, containerId) {
     document.getElementById(inputId).addEventListener('input', function () {
       var termo = this.value.trim().toLowerCase();
-      var itens = document.querySelectorAll('#' + containerId + ' .orev-item');
-      itens.forEach(function (el) {
-        var nome = (el.querySelector('.nome').textContent || '').toLowerCase();
-        el.style.display = (!termo || nome.indexOf(termo) > -1) ? '' : 'none';
-      });
-      document.querySelectorAll('#' + containerId + ' .orev-cardapio-cat').forEach(function (catEl) {
-        var next = catEl.nextElementSibling, any = false;
-        while (next && !next.classList.contains('orev-cardapio-cat')) {
-          if (next.classList.contains('orev-item') && next.style.display !== 'none') any = true;
-          next = next.nextElementSibling;
-        }
-        catEl.style.display = any ? '' : 'none';
+      var blocos = document.querySelectorAll('#' + containerId + ' .orev-cat-bloco');
+      blocos.forEach(function (bloco) {
+        var any = false;
+        bloco.querySelectorAll('.orev-item').forEach(function (el) {
+          var nome = (el.querySelector('.nome').textContent || '').toLowerCase();
+          var match = !termo || nome.indexOf(termo) > -1;
+          el.style.display = match ? '' : 'none';
+          if (match) any = true;
+        });
+        // Busca sempre EXPANDE o bloco que tem match (senão o item achado
+        // ficaria escondido pelo colapso); sem termo, restaura pro estado
+        // expandido padrão. O bloco todo some se nenhum item casa.
+        if (termo) bloco.classList.remove('colapsado');
+        bloco.style.display = any ? '' : 'none';
       });
     });
   }
@@ -1074,6 +1117,15 @@ window.msgAcessoNegado = function (nomePagina) {
     });
 
     document.getElementById('orev-tab-btn-eventos').click();
+    // Abre o formulário de "Meus Eventos" (fica escondido atrás da galeria por
+    // padrão) já preenchido com o cálculo — não usa o botão "Novo evento" pra
+    // não resetar o que estamos transferindo.
+    editandoId = null; overrides.orme = null;
+    document.getElementById('orme-form-titulo').textContent = 'Novo evento';
+    document.getElementById('orme-form-secao').style.display = '';
+    document.getElementById('orme-cancelar-edicao').style.display = 'none';
+    document.getElementById('orme-salvar').textContent = 'Salvar orçamento';
+    if (casaCalc) selCasa.value = casaCalc;
     document.getElementById('orme-markup').value = markup;
     document.getElementById('orme-desloc').value = deslocamento;
     document.getElementById('orme-buffer').value = document.getElementById('orev-buffer').value;
@@ -1084,6 +1136,7 @@ window.msgAcessoNegado = function (nomePagina) {
     }));
     preencheCardapioEvento(itensCalc);
     calculaEvento();
+    document.getElementById('orme-form-secao').scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById('orme-salvar-msg').textContent = 'Cálculo transferido — dê um nome ao evento e clique em Salvar orçamento.';
     document.getElementById('orme-nome').focus();
   };
@@ -1202,6 +1255,22 @@ window.msgAcessoNegado = function (nomePagina) {
     var o = document.createElement('option'); o.value = slug; o.textContent = CASA_NOME[slug];
     selCasa.appendChild(o);
     CASA_SLUG_POR_LABEL[CASA_NOME[slug]] = slug;
+  });
+
+  // --- Calculadora: seleção rápida de casa (pills) ---
+  // Não recalcula nada (casa não entra na fórmula) — só marca qual casa vai
+  // receber o evento, pra "Salvar como projeto" já ir com ela preenchida.
+  var casaCalc = '';
+  var pillsWrap = document.getElementById('orev-casa-pills');
+  Object.keys(CASA_NOME).forEach(function (slug) {
+    var pill = document.createElement('button');
+    pill.type = 'button'; pill.className = 'orev-casa-pill'; pill.textContent = CASA_NOME[slug];
+    pill.onclick = function () {
+      casaCalc = (casaCalc === slug) ? '' : slug;
+      pillsWrap.querySelectorAll('.orev-casa-pill').forEach(function (p) { p.classList.remove('on'); });
+      if (casaCalc) pill.classList.add('on');
+    };
+    pillsWrap.appendChild(pill);
   });
 
   // Marca no cardápio do formulário exatamente os itens salvos (registros
@@ -1389,21 +1458,107 @@ window.msgAcessoNegado = function (nomePagina) {
     }).catch(function () { window.alert('Sem conexão. Tente de novo.'); });
   }
 
-  function toggleDiasVer(ev, container) {
-    if (container.querySelector('table')) { container.innerHTML = ''; return; }
+  // Custo unitário de um item pelo nome (o cardápio salvo guarda só
+  // {nome, porConvidado}, sem custo — busca no cardápio vivo carregado do KV).
+  function custoDoItem(nome) {
+    for (var i = 0; i < cardapioItens.length; i++) {
+      if (cardapioItens[i].nome === nome) return cardapioItens[i].custo;
+    }
+    return 0;
+  }
+
+  // Linha expansível do "Como o preço se forma" — versão LOCAL (sem ids
+  // globais) pra funcionar dentro de vários cards ao mesmo tempo.
+  function linhaCustoLocal(label, valor, detalheHtml) {
+    var div = document.createElement('div'); div.className = 'orz-linha';
+    var cab = document.createElement('div'); cab.className = 'orz-linha-cab';
+    var aberto = false;
+    cab.innerHTML = '<span>' + esc(label) + '</span><span class="v">' + fmtBRL(valor)
+      + '<span class="orz-linha-chev">▸</span></span>';
+    var det = document.createElement('div'); det.className = 'orz-linha-det'; det.innerHTML = detalheHtml;
+    cab.onclick = function () { aberto = !aberto; det.classList.toggle('on', aberto); cab.querySelector('.orz-linha-chev').textContent = aberto ? '▾' : '▸'; };
+    div.appendChild(cab); div.appendChild(det);
+    return div;
+  }
+
+  // Resumo READ-ONLY reconstruído do evento salvo (ev.detalhe já tem os
+  // valores por dia calculados; reusa o mesmo visual orz-* do painel vivo).
+  function montaResumoLeitura(container, ev) {
     var det = ev.detalhe || {};
     var dias = det.dias || [];
-    var tabela = document.createElement('table'); tabela.className = 'orev-diasver';
-    tabela.innerHTML = '<thead><tr><th>Dia</th><th>Convidados</th><th>Bartenders</th><th>Custo</th><th>Valor</th></tr></thead>';
-    var corpo = document.createElement('tbody');
-    dias.forEach(function (d, idx) {
-      var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + (idx + 1) + '</td><td>' + (d.convidados || 0) + '</td><td>' + (d.bartenders || 0)
-        + (d.turnos > 1 ? ' (' + d.turnos + ' turnos)' : '') + '</td><td>' + fmtBRL(d.custoDia) + '</td><td>' + fmtBRL(d.valorDia) + '</td>';
-      corpo.appendChild(tr);
+    var valorFinal = ev.valor_total || 0, custoTotal = ev.custo_total || 0, convidados = ev.convidados_totais || 0;
+    var lucro = valorFinal - custoTotal;
+    var margem = valorFinal > 0 ? (lucro / valorFinal) * 100 : 0;
+    var custoPct = valorFinal > 0 ? Math.max(0, Math.min(100, (custoTotal / valorFinal) * 100)) : 0;
+    var insumos = dias.reduce(function (s, d) { return s + (d.custoInsumos || 0); }, 0);
+    var insumosBase = dias.reduce(function (s, d) { return s + (d.custoInsumosBase || 0); }, 0);
+    var mdo = dias.reduce(function (s, d) { return s + (d.custoMaoObra || 0); }, 0);
+    var estacoes = dias.reduce(function (s, d) { return s + (d.custoEstacoesDia || 0); }, 0);
+    var deslocamento = det.deslocamento || 0;
+    var bufferPct = det.bufferPct || 0;
+
+    container.innerHTML = '';
+    var klabel = document.createElement('p'); klabel.className = 'orz-klabel'; klabel.textContent = 'Preço ao cliente'; container.appendChild(klabel);
+    var hero = document.createElement('div'); hero.className = 'orz-hero'; hero.textContent = fmtBRL(valorFinal); container.appendChild(hero);
+    var pc = document.createElement('p'); pc.className = 'orz-porconv';
+    pc.textContent = convidados > 0 ? (fmtBRL(valorFinal / convidados) + ' por convidado · custo ' + fmtBRL(custoTotal / convidados) + '/convidado') : '';
+    container.appendChild(pc);
+    var bar = document.createElement('div'); bar.className = 'orz-bar';
+    bar.innerHTML = '<div class="c" style="width:' + custoPct + '%"></div><div class="l" style="width:' + (100 - custoPct) + '%"></div>';
+    container.appendChild(bar);
+    var split = document.createElement('div'); split.className = 'orz-split';
+    split.innerHTML = '<span>Custo <b>' + fmtBRL(custoTotal) + '</b> (' + custoPct.toFixed(0) + '%)</span>'
+      + '<span class="l">Lucro <b>' + fmtBRL(lucro) + '</b> (' + margem.toFixed(0) + '%)</span>';
+    container.appendChild(split);
+
+    var secForma = document.createElement('p'); secForma.className = 'orz-sec'; secForma.textContent = 'Como o preço se forma'; container.appendChild(secForma);
+    var forma = document.createElement('div'); container.appendChild(forma);
+    var detIns = (det.cardapio || []).map(function (it) {
+      var c = custoDoItem(it.nome);
+      var sub = convidados * (it.porConvidado || 0) * c;
+      return esc(it.nome) + ' · ' + (it.porConvidado || 0) + ' un./convidado × ' + fmtBRL(c) + ' = ' + fmtBRL(sub);
+    }).join('<br>');
+    if (bufferPct > 0 && (det.cardapio || []).length) detIns += '<br>+ ' + bufferPct + '% de perda = ' + fmtBRL(insumos - insumosBase);
+    forma.appendChild(linhaCustoLocal('Insumos', insumos, detIns || 'Nenhum item marcado.'));
+    var detMdo = dias.map(function (d, idx) {
+      var linha = (dias.length > 1 ? '<b>Dia ' + (idx + 1) + ':</b> ' : '') + (d.bartenders || 0) + ' bartender(s)';
+      if (d.bartendersPiso > d.bartendersVazao) linha += ' (piso de cobertura)';
+      if (d.turnos > 1) linha += ' · ' + d.turnos + ' turnos (limite legal 10h/dia)';
+      return linha;
+    }).join('<br>');
+    forma.appendChild(linhaCustoLocal('Mão de obra', mdo, detMdo || '—'));
+    if (estacoes > 0) forma.appendChild(linhaCustoLocal('Estações de cocktail (repasse)', estacoes, 'Repassado a custo, sem markup.'));
+    if (deslocamento > 0) forma.appendChild(linhaCustoLocal('Deslocamento (repasse)', deslocamento, 'Repassado a custo, sem markup.'));
+    var totalDiv = document.createElement('div'); totalDiv.className = 'orz-linha total';
+    totalDiv.innerHTML = '<div class="orz-linha-cab"><span>Preço ao cliente</span><span class="v">' + fmtBRL(valorFinal) + '</span></div>';
+    forma.appendChild(totalDiv);
+  }
+
+  // Roteiro READ-ONLY por dia (usa o salvo ou o sugerido de geraFasesSugeridas).
+  function montaRoteiroLeitura(container, ev) {
+    var det = ev.detalhe || {};
+    var dias = det.dias || [];
+    container.innerHTML = '';
+    var sec = document.createElement('p'); sec.className = 'orz-sec'; sec.textContent = 'Roteiro do evento'; container.appendChild(sec);
+    dias.forEach(function (dia, idx) {
+      var bloco = document.createElement('div'); bloco.className = 'orev-ev-diarot';
+      if (dias.length > 1) {
+        var dt = document.createElement('div'); dt.className = 'dia-tit';
+        dt.textContent = 'Dia ' + (idx + 1) + (dia.data ? ' — ' + dia.data : '');
+        bloco.appendChild(dt);
+      }
+      var fases = (dia.roteiro && dia.roteiro.length) ? dia.roteiro : geraFasesSugeridas(dia);
+      fases.forEach(function (f) {
+        var linha = document.createElement('div'); linha.className = 'orev-ev-fase';
+        var quando = document.createElement('span'); quando.className = 'quando';
+        quando.textContent = (f.data ? f.data.slice(5) + ' ' : '') + (f.hora || '—');
+        var oque = document.createElement('span'); oque.className = 'oquê';
+        oque.innerHTML = '<b>' + esc(f.fase) + '</b>' + (f.descricao ? ' — ' + esc(f.descricao) : '');
+        linha.appendChild(quando); linha.appendChild(oque);
+        bloco.appendChild(linha);
+      });
+      container.appendChild(bloco);
     });
-    tabela.appendChild(corpo);
-    container.appendChild(tabela);
   }
 
   function carregaEventos() {
@@ -1425,16 +1580,29 @@ window.msgAcessoNegado = function (nomePagina) {
           var nomeSpan = document.createElement('span'); nomeSpan.textContent = ev.nome;
           var statusChip = document.createElement('span'); statusChip.className = 'status-chip'; statusChip.textContent = ev.status;
           nomeWrap.appendChild(nomeSpan); nomeWrap.appendChild(statusChip);
+          var dir = document.createElement('span'); dir.className = 'dir';
           var valorSpan = document.createElement('span'); valorSpan.textContent = fmtBRL(ev.valor_total);
-          tit.appendChild(nomeWrap); tit.appendChild(valorSpan);
+          var chev = document.createElement('span'); chev.className = 'ev-chev'; chev.textContent = '▾';
+          dir.appendChild(valorSpan); dir.appendChild(chev);
+          tit.appendChild(nomeWrap); tit.appendChild(dir);
+
+          var corpo = document.createElement('div'); corpo.className = 'orev-evento-corpo';
           var lucroEv = (ev.valor_total || 0) - (ev.custo_total || 0);
           var margemEv = ev.valor_total ? (lucroEv / ev.valor_total) * 100 : 0;
           var meta = document.createElement('div'); meta.className = 'meta';
           meta.textContent = (ev.casa || '—') + ' · ' + (ev.dias || 0) + ' dia(s) · '
-            + (ev.convidados_totais || 0) + ' convidados · custo ' + fmtBRL(ev.custo_total)
-            + ' · lucro ' + fmtBRL(lucroEv) + ' (' + margemEv.toFixed(0) + '%)'
-            + (ev.criado_por ? ' · por ' + ev.criado_por : '');
-          var diasVer = document.createElement('div');
+            + (ev.convidados_totais || 0) + ' convidados' + (ev.criado_por ? ' · por ' + ev.criado_por : '');
+          corpo.appendChild(meta);
+
+          var resumoBox = document.createElement('div'); resumoBox.style.marginTop = '12px';
+          var roteiroBox = document.createElement('div'); roteiroBox.className = 'orev-ev-roteiro';
+          var montado = false;
+          tit.onclick = function () {
+            var abrindo = !card.classList.contains('aberto');
+            card.classList.toggle('aberto', abrindo);
+            if (abrindo && !montado) { montaResumoLeitura(resumoBox, ev); montaRoteiroLeitura(roteiroBox, ev); montado = true; }
+          };
+
           var acoes = document.createElement('div'); acoes.className = 'acoes';
           var prox = avancaStatus(ev.status);
           if (prox) {
@@ -1443,14 +1611,14 @@ window.msgAcessoNegado = function (nomePagina) {
             btn.onclick = function () { mudaStatus(ev.id, prox); };
             acoes.appendChild(btn);
           }
-          var btnVer = document.createElement('button'); btnVer.type = 'button'; btnVer.textContent = 'Ver dias';
-          btnVer.onclick = function () { toggleDiasVer(ev, diasVer); };
           var btnEd = document.createElement('button'); btnEd.type = 'button'; btnEd.textContent = 'Editar';
           btnEd.onclick = function () { entraModoEdicao(ev); };
           var btnDel = document.createElement('button'); btnDel.type = 'button'; btnDel.textContent = 'Apagar';
           btnDel.onclick = function () { apagaEvento(ev); };
-          acoes.appendChild(btnVer); acoes.appendChild(btnEd); acoes.appendChild(btnDel);
-          card.appendChild(tit); card.appendChild(meta); card.appendChild(acoes); card.appendChild(diasVer);
+          acoes.appendChild(btnEd); acoes.appendChild(btnDel);
+
+          corpo.appendChild(resumoBox); corpo.appendChild(roteiroBox); corpo.appendChild(acoes);
+          card.appendChild(tit); card.appendChild(corpo);
           lista.appendChild(card);
         });
       });
