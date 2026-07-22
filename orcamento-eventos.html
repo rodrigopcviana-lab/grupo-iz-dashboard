@@ -493,6 +493,9 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="orev-sub" id="orev-custo-sub">Custo: —</div>
     <table class="orev-det" id="orev-det"></table>
     <a class="orev-wpp" id="orev-wpp" href="#" target="_blank" rel="noopener">Abrir no WhatsApp</a>
+    <button type="button" id="orev-enviar-eventos" style="margin-top:8px;width:100%;padding:11px 16px;
+      border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);
+      font-weight:600;cursor:pointer">Salvar como projeto</button>
   </div>
 </div>
 </div><!-- orev-tab-calc -->
@@ -728,6 +731,35 @@ window.msgAcessoNegado = function (nomePagina) {
   ['orev-convidados', 'orev-duracao', 'orev-pre', 'orev-pos', 'orev-desloc', 'orev-markup'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calcula);
   });
+
+  // Leva o cálculo pronto da Calculadora pra aba Meus Eventos como 1 dia —
+  // evita remontar convidados/cardápio na mão pra salvar (achado do
+  // Rodrigo: as duas abas eram "ilhas"). linhaDia/preencheCardapioEvento/
+  // calculaEvento são declarados mais abaixo, mas function declaration é
+  // hoisted — ok chamar daqui.
+  document.getElementById('orev-enviar-eventos').onclick = function () {
+    var convidados = num('orev-convidados');
+    var duracao = Math.max(1, num('orev-duracao'));
+    var preEvento = num('orev-pre');
+    var posEvento = num('orev-pos');
+    var deslocamento = num('orev-desloc');
+    var markup = Math.max(1, num('orev-markup'));
+    var itensCalc = Object.keys(selecionados).map(function (k) {
+      return { nome: selecionados[k].nome, porConvidado: selecionados[k].porConvidado || 0 };
+    });
+
+    document.getElementById('orev-tab-btn-eventos').click();
+    document.getElementById('orme-markup').value = markup;
+    document.getElementById('orme-desloc').value = deslocamento;
+    document.getElementById('orme-dias-corpo').innerHTML = '';
+    document.getElementById('orme-dias-corpo').appendChild(linhaDia({
+      convidados: convidados, duracao: duracao, pre: preEvento, pos: posEvento, estacoes: 0,
+    }));
+    preencheCardapioEvento(itensCalc);
+    calculaEvento();
+    document.getElementById('orme-salvar-msg').textContent = 'Cálculo transferido — dê um nome ao evento e clique em Salvar orçamento.';
+    document.getElementById('orme-nome').focus();
+  };
 
   // --- Meus Eventos: dias dinâmicos ---
   var editandoId = null;
