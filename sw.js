@@ -4,7 +4,7 @@
  * Só GET — escrita (contagem/turno/registro) NÃO passa por aqui; a fila
  * offline durável entra na Fase 3. Caminhos relativos: funciona em localhost
  * e em /grupo-iz-dashboard/ (Pages). */
-const CACHE = "iz-portal-v2";
+const CACHE = "iz-portal-v3";
 const CORE = [
   "index.html",
   "portal.css",
