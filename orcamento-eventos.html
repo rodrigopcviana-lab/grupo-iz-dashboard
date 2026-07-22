@@ -441,16 +441,36 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-status-tab { padding:7px 13px; border-radius:999px; border:1px solid var(--border); background:var(--card);
       color:var(--text-3); font:inherit; font-size:12.5px; cursor:pointer; }
   .orev-status-tab.on { color:var(--text); border-color:var(--accent, #c9a24b); }
-  .orev-evento { border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
-  .orev-evento .tit { font-weight:600; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-  .orev-evento .meta { font-size:12.5px; color:var(--text-3); margin-top:2px; }
-  .orev-evento .acoes { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
-  .orev-evento button { padding:7px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card);
+  .orev-evento { border:1px solid var(--border); border-left:4px solid var(--sc, var(--text-3)); border-radius:12px;
+      padding:12px 14px; margin-bottom:10px; background:var(--card); }
+  .orev-evento .tit { font-weight:600; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .orev-evento .tit .nome { display:flex; align-items:center; gap:8px; }
+  .orev-evento .status-chip { font-size:10.5px; letter-spacing:.02em; border-radius:999px; padding:2.5px 9px;
+      border:1px solid var(--sc, var(--border)); color:var(--sc, var(--text-3)); white-space:nowrap; }
+  .orev-evento .meta { font-size:12.5px; color:var(--text-3); margin-top:4px; }
+  .orev-evento .acoes { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+  .orev-evento button { padding:7px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg);
       color:var(--text); font:inherit; font-size:12.5px; cursor:pointer; }
+  .orme-galeria-topo { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+      margin-bottom:10px; }
+  .orz-novo-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border-radius:999px;
+      border:1px solid var(--accent, #c9a24b); background:none; color:var(--accent, #c9a24b); font:inherit;
+      font-size:13.5px; font-weight:600; cursor:pointer; }
+  #orme-form-secao { margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
+  .orme-form-cab { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
   table.orev-diasver { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:10px; }
   table.orev-diasver th { text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.05em;
       color:var(--text-3); padding:4px 6px; border-bottom:1px solid var(--border); }
   table.orev-diasver td { padding:5px 6px; border-bottom:1px solid var(--border); font-variant-numeric:tabular-nums; }
+  .orot-fase { border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; }
+  .orot-fase h3 { margin:0 0 8px; font-size:15px; }
+  .orot-fase .orot-horarios { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; align-items:center; }
+  .orot-fase .orot-horarios label { font-size:11px; color:var(--text-3); }
+  .orot-fase input[type=date], .orot-fase input[type=time] { padding:8px; border-radius:8px; border:1px solid var(--border);
+      background:var(--card); color:var(--text); font:inherit; }
+  .orot-fase textarea { width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border);
+      background:var(--card); color:var(--text); font:inherit; box-sizing:border-box; resize:vertical; min-height:56px; }
+  .orot-sugestao { font-size:11px; color:var(--text-3); margin:0 0 8px; }
 
   /* --- painel de resumo (mockup aprovado 2026-07-22) --- */
   .orz-klabel { font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--text-3);
@@ -504,30 +524,33 @@ window.msgAcessoNegado = function (nomePagina) {
 <div class="orev-tabs">
   <button type="button" class="orev-tab on" id="orev-tab-btn-calc">Calculadora</button>
   <button type="button" class="orev-tab" id="orev-tab-btn-eventos">Meus Eventos</button>
+  <button type="button" class="orev-tab" id="orev-tab-btn-roteiro">Roteiro do Evento</button>
 </div>
 
 <div id="orev-tab-calc">
 <div class="orev-grid">
   <div>
     <div class="panel">
+      <p class="orz-sec" style="margin-top:0">Quando e quantos</p>
       <div class="orev-campo"><label for="orev-convidados">Convidados</label>
         <input type="number" id="orev-convidados" min="0" placeholder="0"></div>
-      <p class="orev-sub" style="margin:-4px 0 10px">Marque os itens do cardápio e defina quantas unidades cada convidado consome de cada um — o custo de insumo vem desse mix, não de uma média.</p>
       <div class="orev-linha2">
         <div class="orev-campo"><label for="orev-duracao">Duração do evento (horas)</label>
           <input type="number" id="orev-duracao" min="1" value="4"></div>
-        <div class="orev-campo"><label for="orev-desloc">Custo de deslocamento (R$)</label>
+        <div class="orev-campo"><label for="orev-pre">Pré-evento — montagem (h)</label>
+          <input type="number" id="orev-pre" min="0" step="0.5" value="2"></div>
+      </div>
+      <div class="orev-campo"><label for="orev-pos">Pós-evento — desmontagem (h)</label>
+        <input type="number" id="orev-pos" min="0" step="0.5" value="2"></div>
+
+      <p class="orz-sec">Parâmetros financeiros</p>
+      <div class="orev-linha2">
+        <div class="orev-campo"><label for="orev-markup">Markup (insumo + mão de obra)</label>
+          <input type="number" id="orev-markup" min="1" step="0.1" value="2.0"></div>
+        <div class="orev-campo"><label for="orev-desloc">Deslocamento (R$)</label>
           <input type="number" id="orev-desloc" min="0" step="0.01" value="0"></div>
       </div>
       <div class="orev-linha2">
-        <div class="orev-campo"><label for="orev-pre">Horas pré-evento (montagem)</label>
-          <input type="number" id="orev-pre" min="0" step="0.5" value="2"></div>
-        <div class="orev-campo"><label for="orev-pos">Horas pós-evento (desmontagem)</label>
-          <input type="number" id="orev-pos" min="0" step="0.5" value="2"></div>
-      </div>
-      <div class="orev-linha3">
-        <div class="orev-campo"><label for="orev-markup">Markup (insumo + mão de obra)</label>
-          <input type="number" id="orev-markup" min="1" step="0.1" value="2.0"></div>
         <div class="orev-campo"><label for="orev-buffer">Buffer de perda de insumo (%)</label>
           <input type="number" id="orev-buffer" min="0" step="1" value="10"></div>
         <div class="orev-campo"><label for="orev-piso">Piso — convidados/bartender</label>
@@ -537,6 +560,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
     <div class="panel" style="margin-top:14px">
       <h3 style="margin-top:0">Cardápio do evento</h3>
+      <p class="orev-sub" style="margin:-4px 0 10px">Marque os itens e defina quantas unidades cada convidado consome de cada um — o custo de insumo vem desse mix, não de uma média.</p>
       <input type="text" class="orev-busca" id="orev-busca" placeholder="Buscar item do cardápio…">
       <div id="orev-cardapio"></div>
       <p class="orev-vazio" id="orev-cardapio-vazio" style="display:none">Cardápio de custo ainda não disponível.</p>
@@ -574,40 +598,55 @@ window.msgAcessoNegado = function (nomePagina) {
 </div><!-- orev-tab-calc -->
 
 <div id="orev-tab-eventos" style="display:none">
+
+<div class="orme-galeria-topo">
+  <h2 style="margin:0">Orçamentos salvos</h2>
+  <button type="button" class="orz-novo-btn" id="orme-novo-btn"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Novo evento</button>
+</div>
+<div class="orev-status-tabs" id="orme-status-tabs"></div>
+<div id="orme-lista"></div>
+<p class="orev-vazio" id="orme-lista-vazio" style="display:none">Nenhum orçamento salvo com esse status ainda.</p>
+
+<div id="orme-form-secao" style="display:none">
+<div class="orme-form-cab">
+  <h2 id="orme-form-titulo" style="margin:0">Novo evento</h2>
+  <button type="button" class="orz-edit-btn" id="orme-fechar-form">fechar sem salvar</button>
+</div>
 <div class="orev-grid">
   <div>
     <div class="panel">
+      <p class="orz-sec" style="margin-top:0">Identificação</p>
       <div class="orev-campo"><label for="orme-nome">Nome do evento</label>
         <input type="text" id="orme-nome" placeholder="Ex.: Festival Tal — 3 dias"></div>
+      <div class="orev-campo"><label for="orme-casa">Casa</label>
+        <select id="orme-casa"></select></div>
+
+      <p class="orz-sec">Parâmetros financeiros</p>
       <div class="orev-linha2">
-        <div class="orev-campo"><label for="orme-casa">Casa</label>
-          <select id="orme-casa"></select></div>
         <div class="orev-campo"><label for="orme-markup">Markup (insumo + mão de obra)</label>
           <input type="number" id="orme-markup" min="1" step="0.1" value="2.0"></div>
+        <div class="orev-campo"><label for="orme-buffer">Buffer de perda de insumo (%)</label>
+          <input type="number" id="orme-buffer" min="0" step="1" value="10"></div>
       </div>
       <div class="orev-linha2">
-        <div class="orev-campo"><label for="orme-desloc">Custo de deslocamento (R$, evento inteiro)</label>
+        <div class="orev-campo"><label for="orme-desloc">Deslocamento (R$, evento inteiro)</label>
           <input type="number" id="orme-desloc" min="0" step="0.01" value="0"></div>
         <div class="orev-campo"><label for="orme-custo-estacao">Custo por estação de cocktail (R$)</label>
           <input type="number" id="orme-custo-estacao" min="0" step="0.01" value="0" placeholder="a definir"></div>
       </div>
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orme-buffer">Buffer de perda de insumo (%)</label>
-          <input type="number" id="orme-buffer" min="0" step="1" value="10"></div>
-        <div class="orev-campo"><label for="orme-piso">Piso — convidados/bartender</label>
-          <input type="number" id="orme-piso" min="0" step="1" value="60"></div>
-      </div>
+      <div class="orev-campo"><label for="orme-piso">Piso — convidados por bartender</label>
+        <input type="number" id="orme-piso" min="0" step="1" value="60"></div>
 
-      <h3>Dias do evento</h3>
+      <p class="orz-sec">Dias do evento</p>
       <table class="orev-dias">
-        <thead><tr><th>Convidados</th><th>Duração (h)</th><th>Pré (h)</th><th>Pós (h)</th><th>Estações</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Início</th><th>Convidados</th><th>Duração (h)</th><th>Pré (h)</th><th>Pós (h)</th><th>Estações</th><th></th></tr></thead>
         <tbody id="orme-dias-corpo"></tbody>
       </table>
       <button type="button" class="orev-tab" id="orme-add-dia">+ Adicionar dia</button>
     </div>
 
     <div class="panel" style="margin-top:14px">
-      <h3 style="margin-top:0">Cardápio do evento</h3>
+      <p class="orz-sec" style="margin-top:0">Cardápio do evento</p>
       <input type="text" class="orev-busca" id="orme-busca" placeholder="Buscar item do cardápio…">
       <div id="orme-cardapio"></div>
       <p class="orev-vazio" id="orme-cardapio-vazio" style="display:none">Cardápio de custo ainda não disponível.</p>
@@ -646,12 +685,22 @@ window.msgAcessoNegado = function (nomePagina) {
     <p class="orev-sub" id="orme-salvar-msg" style="margin-top:6px"></p>
   </div>
 </div>
-
-<h2 style="margin-top:24px">Orçamentos salvos</h2>
-<div class="orev-status-tabs" id="orme-status-tabs"></div>
-<div id="orme-lista"></div>
-<p class="orev-vazio" id="orme-lista-vazio" style="display:none">Nenhum orçamento salvo com esse status ainda.</p>
+</div><!-- orme-form-secao -->
 </div><!-- orev-tab-eventos -->
+
+<div id="orev-tab-roteiro" style="display:none">
+<div class="panel">
+  <div class="orev-linha2">
+    <div class="orev-campo"><label for="orot-evento">Evento salvo</label><select id="orot-evento"></select></div>
+    <div class="orev-campo"><label for="orot-dia">Dia</label><select id="orot-dia"></select></div>
+  </div>
+  <p class="orev-sub" id="orot-aviso" style="display:none"></p>
+</div>
+<div id="orot-fases"></div>
+<button type="button" id="orot-salvar" style="margin-top:4px;padding:11px 16px;border-radius:10px;
+  border:none;background:var(--accent,#c9a24b);color:#1a1408;font-weight:600;cursor:pointer;display:none">Salvar roteiro</button>
+<p class="orev-sub" id="orot-msg" style="margin-top:6px"></p>
+</div><!-- orev-tab-roteiro -->
 
 </div><!-- orev-corpo -->
 <div id="orz-print-area"></div>
@@ -746,19 +795,18 @@ window.msgAcessoNegado = function (nomePagina) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // --- abas Calculadora / Meus Eventos ---
-  document.getElementById('orev-tab-btn-calc').onclick = function () {
-    document.getElementById('orev-tab-btn-calc').classList.add('on');
-    document.getElementById('orev-tab-btn-eventos').classList.remove('on');
-    document.getElementById('orev-tab-calc').style.display = '';
-    document.getElementById('orev-tab-eventos').style.display = 'none';
-  };
-  document.getElementById('orev-tab-btn-eventos').onclick = function () {
-    document.getElementById('orev-tab-btn-eventos').classList.add('on');
-    document.getElementById('orev-tab-btn-calc').classList.remove('on');
-    document.getElementById('orev-tab-eventos').style.display = '';
-    document.getElementById('orev-tab-calc').style.display = 'none';
-  };
+  // --- abas Calculadora / Meus Eventos / Roteiro ---
+  var ABAS = ['calc', 'eventos', 'roteiro'];
+  function mostraAba(aba) {
+    ABAS.forEach(function (a) {
+      document.getElementById('orev-tab-btn-' + a).classList.toggle('on', a === aba);
+      document.getElementById('orev-tab-' + a).style.display = a === aba ? '' : 'none';
+    });
+    if (aba === 'roteiro') carregaEventosParaRoteiro();
+  }
+  ABAS.forEach(function (a) {
+    document.getElementById('orev-tab-btn-' + a).onclick = function () { mostraAba(a); };
+  });
 
   function montaCardapio(itens, containerId, vazioId, selecao, onChange) {
     var wrapCard = document.getElementById(containerId);
@@ -1042,9 +1090,24 @@ window.msgAcessoNegado = function (nomePagina) {
 
   // --- Meus Eventos: dias dinâmicos ---
   var editandoId = null;
+  // Preserva o roteiro (Roteiro do Evento, salvo por dia) através de um
+  // ciclo editar+salvar no formulário principal — calculaEvento() reconstrói
+  // os dias do zero a partir dos campos, então sem isso um "Salvar edição"
+  // comum apagaria silenciosamente o roteiro já preenchido. Casado por
+  // ÍNDICE do dia (sem id próprio por dia) — se o nº de dias mudar no meio
+  // da edição, a associação pode desalinhar; risco aceito, não é o caso comum.
+  var diasOriginaisEditando = null;
   function linhaDia(vals) {
     vals = vals || {};
     var tr = document.createElement('tr');
+    [['data', 'date'], ['horaInicio', 'time']].forEach(function (par) {
+      var td = document.createElement('td');
+      var inp = document.createElement('input');
+      inp.type = par[1]; inp.className = 'orme-campo-' + par[0];
+      if (vals[par[0]] != null) { inp.value = vals[par[0]]; }
+      td.appendChild(inp);
+      tr.appendChild(td);
+    });
     ['convidados', 'duracao', 'pre', 'pos', 'estacoes'].forEach(function (campo) {
       var td = document.createElement('td');
       var inp = document.createElement('input');
@@ -1074,7 +1137,9 @@ window.msgAcessoNegado = function (nomePagina) {
     var linhas = document.querySelectorAll('#orme-dias-corpo tr');
     return Array.prototype.map.call(linhas, function (tr) {
       function v(campo) { return Math.max(0, parseFloat(tr.querySelector('.orme-campo-' + campo).value) || 0); }
+      function s(campo) { var el = tr.querySelector('.orme-campo-' + campo); return el ? el.value : ''; }
       return {
+        data: s('data'), horaInicio: s('horaInicio'),
         convidados: v('convidados'),
         duracaoHoras: Math.max(1, v('duracao')), preEvento: v('pre'), posEvento: v('pos'),
         estacoesCocktail: v('estacoes'),
@@ -1092,10 +1157,14 @@ window.msgAcessoNegado = function (nomePagina) {
     var itensSel = Object.keys(selecionadosEvento).map(function (k) { return selecionadosEvento[k]; });
 
     var custoInsumosTotal = 0, custoInsumosBaseTotal = 0, custoMaoObraTotal = 0, custoEstacoesTotal = 0;
-    var dias = diasIn.map(function (di) {
+    var dias = diasIn.map(function (di, idx) {
       var d = calculaDia(di.convidados, itensSel, di.duracaoHoras, di.preEvento, di.posEvento, di.estacoesCocktail, custoEstacao, pisoCobertura, bufferPct);
       d.duracaoHoras = di.duracaoHoras; d.preEvento = di.preEvento; d.posEvento = di.posEvento; d.estacoesCocktail = di.estacoesCocktail;
+      d.data = di.data; d.horaInicio = di.horaInicio;
       d.custoServicoDia = d.custoServico;
+      if (diasOriginaisEditando && diasOriginaisEditando[idx] && diasOriginaisEditando[idx].roteiro) {
+        d.roteiro = diasOriginaisEditando[idx].roteiro;
+      }
       custoInsumosTotal += d.custoInsumos; custoInsumosBaseTotal += d.custoInsumosBase;
       custoMaoObraTotal += d.custoMaoObra; custoEstacoesTotal += d.custoEstacoesDia;
       return d;
@@ -1165,6 +1234,7 @@ window.msgAcessoNegado = function (nomePagina) {
   function saiModoEdicao() {
     editandoId = null;
     overrides.orme = null;
+    diasOriginaisEditando = null;
     document.getElementById('orme-nome').value = '';
     document.getElementById('orme-dias-corpo').innerHTML = '';
     document.getElementById('orme-dias-corpo').appendChild(linhaDia());
@@ -1178,13 +1248,33 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-cancelar-edicao').style.display = 'none';
     document.getElementById('orme-salvar').textContent = 'Salvar orçamento';
     document.getElementById('orme-salvar-msg').textContent = '';
+    document.getElementById('orme-form-secao').style.display = 'none';
   }
   document.getElementById('orme-cancelar-edicao').onclick = saiModoEdicao;
+  document.getElementById('orme-fechar-form').onclick = saiModoEdicao;
+  document.getElementById('orme-novo-btn').onclick = function () {
+    saiModoEdicao();
+    document.getElementById('orme-form-titulo').textContent = 'Novo evento';
+    document.getElementById('orme-form-secao').style.display = '';
+    document.getElementById('orme-form-secao').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('orme-nome').focus();
+  };
 
   function entraModoEdicao(ev) {
+    var det0 = ev.detalhe || {};
+    // Guarda: um evento salvo NUNCA deveria ter 0 dias — se acontecer (ex.:
+    // ev veio de um card desatualizado, fetch incompleto), abrir o form em
+    // branco e permitir "Salvar edição" sobrescreveria o evento real com
+    // dados vazios. Recarrega a lista e recusa entrar em edição.
+    if (!det0.dias || !det0.dias.length) {
+      window.alert('Este evento carregou sem dias salvos (dado desatualizado) — recarregando a lista antes de editar, tente de novo.');
+      carregaEventos();
+      return;
+    }
     editandoId = ev.id;
     overrides.orme = null;
-    var det = ev.detalhe || {};
+    var det = det0;
+    diasOriginaisEditando = det.dias || null;
     document.getElementById('orme-nome').value = ev.nome || '';
     var slugCasa = CASA_SLUG_POR_LABEL[ev.casa] || '';
     if (slugCasa) selCasa.value = slugCasa;
@@ -1199,7 +1289,7 @@ window.msgAcessoNegado = function (nomePagina) {
       diasSalvos.forEach(function (d) {
         document.getElementById('orme-dias-corpo').appendChild(linhaDia({
           convidados: d.convidados, duracao: d.duracaoHoras, pre: d.preEvento, pos: d.posEvento,
-          estacoes: d.estacoesCocktail,
+          estacoes: d.estacoesCocktail, data: d.data, horaInicio: d.horaInicio,
         }));
       });
     } else {
@@ -1217,7 +1307,9 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-cancelar-edicao').style.display = '';
     document.getElementById('orme-salvar').textContent = 'Salvar edição';
     document.getElementById('orme-salvar-msg').textContent = 'Editando "' + (ev.nome || '') + '" — altere os campos e salve, ou cancele.';
-    document.getElementById('orme-nome').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('orme-form-titulo').textContent = 'Editando: ' + (ev.nome || '');
+    document.getElementById('orme-form-secao').style.display = '';
+    document.getElementById('orme-form-secao').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // --- Meus Eventos: salvar ---
@@ -1228,6 +1320,15 @@ window.msgAcessoNegado = function (nomePagina) {
     var calc = calculaEvento();
     if (!calc.dias.length) { msgSalvar.textContent = 'Adicione ao menos 1 dia.'; return; }
     var editando = editandoId;
+    // Proteção contra sobrescrever um evento existente com dado esvaziado
+    // (achado real: um evento de 3 dias com 4.200 convidados virou 1 dia com
+    // 0 convidados numa sessão de teste — nada nos impedia de salvar por
+    // cima). Só pergunta ao EDITAR (criar do zero com 0 convidados é normal
+    // — formulário vazio inicial).
+    var totalConv = calc.dias.reduce(function (s, d) { return s + (d.convidados || 0); }, 0);
+    if (editando && totalConv === 0) {
+      if (!window.confirm('Salvar este evento com 0 convidados no total? Se não era essa a intenção, cancele e recarregue a lista antes de editar de novo.')) return;
+    }
     msgSalvar.textContent = editando ? 'Salvando edição…' : 'Salvando…';
     var url = editando ? (WORKER + '/api/orcamento-eventos/' + editando) : (WORKER + '/api/orcamento-eventos');
     fetch(url, {
@@ -1315,12 +1416,17 @@ window.msgAcessoNegado = function (nomePagina) {
         var itens = d.itens || [];
         lista.innerHTML = '';
         vazio.style.display = itens.length ? 'none' : '';
+        var STATUS_COR = { 'Em orçamento': 'var(--amarelo)', 'Fechado': 'var(--accent, #c9a24b)', 'Concluído': 'var(--verde)' };
         itens.forEach(function (ev) {
           var card = document.createElement('div'); card.className = 'orev-evento';
+          card.style.setProperty('--sc', STATUS_COR[ev.status] || 'var(--text-3)');
           var tit = document.createElement('div'); tit.className = 'tit';
+          var nomeWrap = document.createElement('span'); nomeWrap.className = 'nome';
           var nomeSpan = document.createElement('span'); nomeSpan.textContent = ev.nome;
+          var statusChip = document.createElement('span'); statusChip.className = 'status-chip'; statusChip.textContent = ev.status;
+          nomeWrap.appendChild(nomeSpan); nomeWrap.appendChild(statusChip);
           var valorSpan = document.createElement('span'); valorSpan.textContent = fmtBRL(ev.valor_total);
-          tit.appendChild(nomeSpan); tit.appendChild(valorSpan);
+          tit.appendChild(nomeWrap); tit.appendChild(valorSpan);
           var lucroEv = (ev.valor_total || 0) - (ev.custo_total || 0);
           var margemEv = ev.valor_total ? (lucroEv / ev.valor_total) * 100 : 0;
           var meta = document.createElement('div'); meta.className = 'meta';
@@ -1349,6 +1455,179 @@ window.msgAcessoNegado = function (nomePagina) {
         });
       });
   }
+
+  // --- Roteiro do Evento (2026-07-22, pedido do Rodrigo): timeline
+  // operacional (compra de insumo → produção → serviço → controle →
+  // fechamento) por dia de um evento salvo, com horários sugeridos a partir
+  // de Data + Horário de início do dia (campos novos na tabela de dias) e
+  // editáveis livremente. Persistido como dia.roteiro dentro do MESMO
+  // Detalhamento do evento (PATCH reenvia dias/cardápio/etc. inalterados +
+  // o roteiro do dia editado) — sem endpoint novo no Worker.
+  var FASES_ROTEIRO = ['Compra de insumo', 'Produção de ingredientes', 'Serviço', 'Controle', 'Fechamento'];
+  var eventosRoteiro = [];
+  var eventoRoteiroAtual = null;
+
+  function somaMinutos(dataStr, horaStr, deltaMin) {
+    if (!dataStr || !horaStr) return null;
+    var d = new Date(dataStr + 'T' + horaStr + ':00');
+    if (isNaN(d.getTime())) return null;
+    d.setMinutes(d.getMinutes() + deltaMin);
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return {
+      data: d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()),
+      hora: pad(d.getHours()) + ':' + pad(d.getMinutes()),
+    };
+  }
+
+  function geraFasesSugeridas(dia) {
+    var temHorario = !!(dia.data && dia.horaInicio);
+    var inicio = temHorario ? { data: dia.data, hora: dia.horaInicio } : null;
+    var fimServico = temHorario ? somaMinutos(dia.data, dia.horaInicio, (dia.duracaoHoras || 0) * 60) : null;
+    var inicioMontagem = temHorario ? somaMinutos(dia.data, dia.horaInicio, -((dia.preEvento || 0) * 60)) : null;
+    var compra = temHorario ? somaMinutos(dia.data, dia.horaInicio, -2 * 24 * 60) : null;
+    return FASES_ROTEIRO.map(function (fase) {
+      var base = { fase: fase, data: '', hora: '', descricao: '' };
+      if (!temHorario) return base;
+      if (fase === 'Compra de insumo') {
+        base.data = compra.data; base.hora = '09:00';
+        base.descricao = 'Sugestão — compra dos itens do cardápio deste dia (ver aba Meus Eventos). Ajuste a data conforme prazo do fornecedor.';
+      } else if (fase === 'Produção de ingredientes') {
+        base.data = inicioMontagem.data; base.hora = inicioMontagem.hora;
+        base.descricao = 'Pré-preparo de xaropes/guarnições, organização de estações, montagem do bar.';
+      } else if (fase === 'Serviço') {
+        base.data = inicio.data; base.hora = inicio.hora;
+        base.descricao = (dia.bartenders || '—') + ' bartender(s) — atendimento ao vivo até ' + (fimServico ? fimServico.hora : '—') + '.';
+      } else if (fase === 'Controle') {
+        base.data = inicio.data; base.hora = inicio.hora;
+        base.descricao = 'Checagem de estoque a cada 1-2h, reposição de gelo/insumos, monitorar fila e tempo de espera.';
+      } else if (fase === 'Fechamento') {
+        base.data = fimServico.data; base.hora = fimServico.hora;
+        base.descricao = 'Desmontagem, contagem de sobra, fechamento de caixa/comandas.';
+      }
+      return base;
+    });
+  }
+
+  function renderFasesRoteiro(dia) {
+    var fases = (dia.roteiro && dia.roteiro.length) ? dia.roteiro : geraFasesSugeridas(dia);
+    var wrapFases = document.getElementById('orot-fases');
+    wrapFases.innerHTML = '';
+    var aviso = document.getElementById('orot-aviso');
+    if (!dia.data || !dia.horaInicio) {
+      aviso.style.display = '';
+      aviso.textContent = 'Este dia não tem Data/Horário de início definidos (edite o evento em Meus Eventos) — os horários abaixo ficam em branco, mas dá pra preencher na mão.';
+    } else {
+      aviso.style.display = 'none';
+    }
+    fases.forEach(function (f) {
+      var card = document.createElement('div'); card.className = 'orot-fase';
+      var h3 = document.createElement('h3'); h3.textContent = f.fase;
+      var horarios = document.createElement('div'); horarios.className = 'orot-horarios';
+      var inpData = document.createElement('input'); inpData.type = 'date'; inpData.value = f.data || ''; inpData.className = 'orot-campo-data';
+      var inpHora = document.createElement('input'); inpHora.type = 'time'; inpHora.value = f.hora || ''; inpHora.className = 'orot-campo-hora';
+      horarios.appendChild(inpData); horarios.appendChild(inpHora);
+      var textarea = document.createElement('textarea'); textarea.className = 'orot-campo-desc'; textarea.value = f.descricao || '';
+      card.appendChild(h3); card.appendChild(horarios); card.appendChild(textarea);
+      wrapFases.appendChild(card);
+    });
+    document.getElementById('orot-salvar').style.display = fases.length ? '' : 'none';
+  }
+
+  function selecionaDiaRoteiro() {
+    var idx = parseInt(document.getElementById('orot-dia').value, 10);
+    if (!eventoRoteiroAtual || !eventoRoteiroAtual.detalhe || isNaN(idx)) {
+      document.getElementById('orot-fases').innerHTML = '';
+      document.getElementById('orot-salvar').style.display = 'none';
+      return;
+    }
+    var dia = (eventoRoteiroAtual.detalhe.dias || [])[idx];
+    if (dia) renderFasesRoteiro(dia);
+  }
+
+  function selecionaEventoRoteiro() {
+    var id = document.getElementById('orot-evento').value;
+    eventoRoteiroAtual = eventosRoteiro.find(function (e) { return e.id === id; }) || null;
+    var selDia = document.getElementById('orot-dia');
+    selDia.innerHTML = '';
+    if (!eventoRoteiroAtual) { document.getElementById('orot-fases').innerHTML = ''; return; }
+    var dias = (eventoRoteiroAtual.detalhe && eventoRoteiroAtual.detalhe.dias) || [];
+    dias.forEach(function (d, idx) {
+      var o = document.createElement('option'); o.value = idx;
+      o.textContent = 'Dia ' + (idx + 1) + (d.data ? ' — ' + d.data : '') + ' (' + (d.convidados || 0) + ' convidados)';
+      selDia.appendChild(o);
+    });
+    selecionaDiaRoteiro();
+  }
+
+  function carregaEventosParaRoteiro() {
+    var selEvento = document.getElementById('orot-evento');
+    document.getElementById('orot-msg').textContent = 'Carregando eventos…';
+    Promise.all(STATUS_ORDEM.map(function (s) {
+      return fetch(WORKER + '/api/orcamento-eventos?status=' + encodeURIComponent(s), { headers: { 'X-Token': TOKEN } })
+        .then(function (r) { return r.ok ? r.json() : { itens: [] }; })
+        .then(function (d) { return d.itens || []; });
+    })).then(function (listas) {
+      eventosRoteiro = [].concat.apply([], listas);
+      var valorAntes = selEvento.value;
+      selEvento.innerHTML = '';
+      if (!eventosRoteiro.length) {
+        var o = document.createElement('option'); o.value = ''; o.textContent = 'Nenhum evento salvo ainda';
+        selEvento.appendChild(o);
+        document.getElementById('orot-msg').textContent = 'Salve um evento em "Meus Eventos" primeiro.';
+        eventoRoteiroAtual = null;
+        document.getElementById('orot-fases').innerHTML = '';
+        return;
+      }
+      eventosRoteiro.forEach(function (ev) {
+        var o = document.createElement('option'); o.value = ev.id;
+        o.textContent = ev.nome + ' (' + ev.status + ')';
+        selEvento.appendChild(o);
+      });
+      if (valorAntes && eventosRoteiro.some(function (e) { return e.id === valorAntes; })) selEvento.value = valorAntes;
+      document.getElementById('orot-msg').textContent = '';
+      selecionaEventoRoteiro();
+    }).catch(function () { document.getElementById('orot-msg').textContent = 'Sem conexão. Tente de novo.'; });
+  }
+  document.getElementById('orot-evento').addEventListener('change', selecionaEventoRoteiro);
+  document.getElementById('orot-dia').addEventListener('change', selecionaDiaRoteiro);
+
+  document.getElementById('orot-salvar').onclick = function () {
+    if (!eventoRoteiroAtual) return;
+    var idx = parseInt(document.getElementById('orot-dia').value, 10);
+    var det = eventoRoteiroAtual.detalhe || {};
+    var dias = det.dias || [];
+    if (isNaN(idx) || !dias[idx]) return;
+    var cards = document.querySelectorAll('#orot-fases .orot-fase');
+    var fases = Array.prototype.map.call(cards, function (card, i) {
+      return {
+        fase: FASES_ROTEIRO[i],
+        data: card.querySelector('.orot-campo-data').value,
+        hora: card.querySelector('.orot-campo-hora').value,
+        descricao: card.querySelector('.orot-campo-desc').value,
+      };
+    });
+    dias[idx].roteiro = fases;
+    var msgEl = document.getElementById('orot-msg');
+    msgEl.textContent = 'Salvando…';
+    fetch(WORKER + '/api/orcamento-eventos/' + eventoRoteiroAtual.id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify({
+        nome: eventoRoteiroAtual.nome, casa: CASA_SLUG_POR_LABEL[eventoRoteiroAtual.casa] || '', dias: dias,
+        cardapio: det.cardapio || [], deslocamento: det.deslocamento || 0, custoEstacao: det.custoEstacao || 0,
+        markup: det.markup || 1, bufferPct: det.bufferPct || 0, pisoCobertura: det.pisoCobertura || 0,
+        overrideValor: det.overrideValor != null ? det.overrideValor : null,
+        custoTotal: eventoRoteiroAtual.custo_total, valorTotal: eventoRoteiroAtual.valor_total,
+      }),
+    }).then(function (r) {
+      if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
+      if (!r.ok) { msgEl.textContent = 'Erro ao salvar (' + r.status + ').'; return; }
+      msgEl.textContent = 'Roteiro salvo!';
+      // Espera um instante antes de recarregar a lista — carregaEventosParaRoteiro()
+      // limpa esta mensagem assim que troca pra "Carregando…", e sem o atraso
+      // ela pisca e some rápido demais pra alguém ler.
+      setTimeout(carregaEventosParaRoteiro, 900);
+    }).catch(function () { msgEl.textContent = 'Sem conexão. Tente de novo.'; });
+  };
 
   function buscaDados(token) {
     TOKEN = token;
