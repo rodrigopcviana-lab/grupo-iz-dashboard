@@ -449,6 +449,8 @@ bartender com senha própria), marcar um item grava de verdade — não só no s
   .rh-pend-row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0;
                  border-top: 1px dashed var(--border); font-size: 13.5px; }
   .rh-pend-row:first-of-type { border-top: 0; }
+  .rot-status { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+  .rot-status.atrasada { color: #e0a94f; font-weight: 600; }
 </style>
 <div class="vtoggle" id="rot-vtoggle" hidden>
   <button id="rot-v-checklist" class="on">Checklist</button>
@@ -497,6 +499,13 @@ e se quiser cadastrar a da sua casa,
   Object.keys(CASAS_META).forEach(function (s) { WORKER_SLUG[CASAS_META[s].worker] = s; });
   var CASAS_COM_DADO = Object.keys(CASAS_META).filter(function (s) { return Object.keys(CASAS_META[s].itens).length; });
   var FREQ_DIAS = { 'Semanal': 7, 'Quinzenal': 14, 'Mensal': 30, 'Trimestral': 91, 'Semestral': 182, 'Anual': 365 };
+  // "dia de trabalho" com corte às 6h (fechamento de madrugada conta como o
+  // mesmo dia) — usado tanto pro reset do localStorage quanto pra saber se
+  // uma conclusão real (D1) caiu "hoje", pra sincronizar entre aparelhos.
+  function diaTrabalhoKey(ms) {
+    var d = new Date(ms - 6 * 3600 * 1000);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
 
   var gate = document.getElementById('rot-gate');
   var msg = document.getElementById('rot-msg');
@@ -536,9 +545,7 @@ e se quiser cadastrar a da sua casa,
   // Liga o checklist local (independe de dado real — funciona offline/sem
   // fetch, mesmo comportamento de sempre).
   function wireChecklist() {
-    // "dia de trabalho" local com corte às 6h — fechamento de madrugada conta como o mesmo dia
-    var d = new Date(Date.now() - 6 * 3600 * 1000);
-    var hoje = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    var hoje = diaTrabalhoKey(Date.now());
     Object.keys(localStorage).forEach(function (k) {
       if (k.indexOf('rot_') === 0 && k.indexOf('_' + hoje) === -1) localStorage.removeItem(k);
     });
@@ -589,12 +596,12 @@ e se quiser cadastrar a da sua casa,
         if (!linhas.length) return;
         var visiveis = 0;
         linhas.forEach(function (linha) {
-          var freq = linha.dataset.freq, mostra;
+          var freq = linha.dataset.freq, mostra, dias = null, ts = null;
+          if (ultima) ts = ultima[linha.querySelector('input').dataset.key] || null;
           if (freq === 'Diário') {
             mostra = true;
           } else if (ultima) {
-            var ts = ultima[linha.querySelector('input').dataset.key];
-            var dias = ts ? Math.floor((agora - new Date(ts).getTime()) / 86400000) : null;
+            dias = ts ? Math.floor((agora - new Date(ts).getTime()) / 86400000) : null;
             mostra = (dias === null) || (dias >= (FREQ_DIAS[freq] || 7));
           } else {
             mostra = freqVenceHoje(freq);
@@ -603,6 +610,28 @@ e se quiser cadastrar a da sua casa,
           var desc = linha.nextElementSibling;
           if (desc && desc.classList.contains('desc')) desc.style.display = mostra ? '' : 'none';
           if (mostra) visiveis++;
+
+          // Selo de status real — "não se sabe quando deve ser feita" era a
+          // reclamação: mostrar aqui, junto do item, não só na aba de
+          // auditoria (chefe/coord). Só dá pra calcular com `ultima`
+          // disponível (senão fica em branco, nunca chuta).
+          var badge = linha.querySelector('.rot-status');
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'rot-status';
+            var wrap = linha.querySelector(':scope > span') || linha;
+            wrap.appendChild(badge);
+          }
+          if (freq === 'Diário' || !ultima) {
+            badge.textContent = '';
+            badge.classList.remove('atrasada');
+          } else {
+            var atrasada = dias === null || dias >= (FREQ_DIAS[freq] || 7);
+            badge.textContent = dias === null
+              ? 'nunca feita — atrasada'
+              : (dias === 0 ? 'feita hoje' : ('feita há ' + dias + ' dia' + (dias === 1 ? '' : 's') + (atrasada ? ' — atrasada' : '')));
+            badge.classList.toggle('atrasada', atrasada);
+          }
         });
         var vazio = painel.querySelector('.rot-per-vazio');
         if (vazio) vazio.hidden = visiveis > 0;
@@ -629,6 +658,28 @@ e se quiser cadastrar a da sua casa,
       var out = {};
       pares.forEach(function (p) { if (p[1]) out[p[0]] = p[1]; });
       return out;
+    });
+  }
+
+  // Sincroniza o check visual com o dado real: se ALGUÉM (em qualquer
+  // aparelho) já concluiu o item hoje, marca aqui também — sem isso, um
+  // segundo aparelho via o item como "não feito" mesmo já tendo sido feito
+  // por outra pessoa (o check antigo só refletia o localStorage do PRÓPRIO
+  // aparelho). Só marca; nunca desmarca (evita brigar com um clique local
+  // que ainda não terminou de sincronizar com o servidor).
+  function sincronizaFeitos(ultimaPorCasa) {
+    var hoje = diaTrabalhoKey(Date.now());
+    document.querySelectorAll('.rot-casa').forEach(function (casaEl) {
+      var ultima = ultimaPorCasa[casaEl.dataset.casa];
+      if (!ultima) return;
+      casaEl.querySelectorAll('label.check input').forEach(function (cb) {
+        if (cb.checked) return;
+        var ts = ultima[cb.dataset.key];
+        if (ts && diaTrabalhoKey(new Date(ts).getTime()) === hoje) {
+          cb.checked = true;
+          localStorage.setItem('rot_' + cb.dataset.key + '_' + hoje, '1');
+        }
+      });
     });
   }
 
@@ -659,10 +710,7 @@ e se quiser cadastrar a da sua casa,
     var DIAS = ['dom','seg','ter','qua','qui','sex','sáb'];
 
     function pad(n) { return String(n).padStart(2, '0'); }
-    function diaTrabalho(iso) {
-      var dt = new Date(new Date(iso).getTime() - 6 * 3600 * 1000);
-      return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
-    }
+    function diaTrabalho(iso) { return diaTrabalhoKey(new Date(iso).getTime()); }
     function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
     function fmtHora(iso) { var dt = new Date(iso); return pad(dt.getHours()) + ':' + pad(dt.getMinutes()); }
 
@@ -823,7 +871,10 @@ e se quiser cadastrar a da sua casa,
     wireChecklist();
     var casasAlvo = casaSessao ? (slugPortal ? [slugPortal] : []) : CASAS_COM_DADO;
     aplicaPeriodicas({}); // mostra algo já (convenção) enquanto o dado real chega
-    buscaUltimaPorCasa(casasAlvo).then(aplicaPeriodicas);
+    buscaUltimaPorCasa(casasAlvo).then(function (ultimaPorCasa) {
+      aplicaPeriodicas(ultimaPorCasa);
+      sincronizaFeitos(ultimaPorCasa);
+    });
 
     if (sessao.nivel === 'chefe' || sessao.nivel === 'coord') {
       ativaHistorico(slugPortal, !!casaSessao);
