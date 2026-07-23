@@ -503,10 +503,11 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
 <div id="es-view-padrao" style="display:none">
   <p class="sub" style="margin-bottom:10px">Padrão fixo da equipe. Entrada/Saída valem pra todo dia trabalhado, exceto
   onde "Horários por dia" tiver um horário próprio pra aquele dia da semana (ex.: sexta e sábado diferentes, ou um
-  dia com dois intervalos). "Aplicar a partir de" regenera a grade dali pra frente — dias já editados pontualmente
-  (ex.: freelancer num domingo) não são sobrescritos.</p>
+  dia com dois intervalos). "Rodízio" é só uma nota livre (não entra em nenhum cálculo nem regra de CLT) — use pra
+  registrar, por exemplo, com quem essa pessoa se reveza num turno. "Aplicar a partir de" regenera a grade dali pra
+  frente — dias já editados pontualmente (ex.: freelancer num domingo) não são sobrescritos.</p>
   <table class="es-padrao-tab" id="es-padrao-tab">
-    <thead><tr><th>Pessoa</th><th>Sexo</th><th>Turno base</th><th>Entrada</th><th>Saída</th><th>Folga fixa</th><th>Rodízio</th><th>Ativo</th><th>Horários por dia</th></tr></thead>
+    <thead><tr><th>Pessoa</th><th>Sexo</th><th>Turno base</th><th>Entrada</th><th>Saída</th><th>Folga fixa</th><th title="Nota livre — não é calculada nem validada pelo sistema, só fica salva pra referência de quem monta a escala.">Rodízio</th><th>Ativo</th><th>Horários por dia</th></tr></thead>
     <tbody></tbody>
   </table>
   <button type="button" class="es-btn" id="es-padrao-add">+ Adicionar pessoa</button>
@@ -853,7 +854,7 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
         + '<td><input type="time" class="ep-entrada" value="' + (p.entradaBase || '') + '"></td>'
         + '<td><input type="time" class="ep-saida" value="' + (p.saidaBase || '') + '"></td>'
         + '<td><select class="ep-folga">' + DIAS_SEMANA.map(function (d) { return '<option value="' + d + '"' + (d === p.folgaFixa ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></td>'
-        + '<td><input class="ep-rodizio" value="' + esc(p.rodizio || '') + '"></td>'
+        + '<td><input class="ep-rodizio" placeholder="ex.: reveza com Fulano aos sábados" value="' + esc(p.rodizio || '') + '"></td>'
         + '<td style="text-align:center"><input type="checkbox" class="ep-ativo"' + (p.ativo ? ' checked' : '') + '></td>'
         + '<td><button type="button" class="es-btn es-pd-toggle' + (temOverride ? ' tem-override' : '') + '" data-idx="' + i + '">' + (temOverride ? 'Dias diferentes ✓' : 'Horários por dia') + '</button></td>'
         + '</tr>'
