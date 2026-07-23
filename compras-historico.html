@@ -422,6 +422,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .hcp-foot { font-size:11.5px; color:var(--text-3); margin-top:16px; }
   .hcp-sec { font-size:15px; font-weight:700; margin:26px 0 4px; }
   .hcp-sec-sub { font-size:12.5px; color:var(--text-3); margin:0 0 12px; }
+  .hcp-alerta { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600;
+      color:var(--amarelo); margin-top:3px; }
+  .hcp-alerta svg { width:12px; height:12px; flex:none; }
 </style>
 
 <div class="hcp-controles">
@@ -461,6 +464,7 @@ window.msgAcessoNegado = function (nomePagina) {
   var NIVEIS_OK = ['chefe', 'coord', 'controladoria'];
   var SLUG = 'compras-historico.html';
   var CASA_NOME = {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "fulles": "Fulles", "nip": "NIP"};
+  var ICONE_ALERTA = "<svg class=\"ic\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3.5l9 15.5H3z\"/><path d=\"M12 10v4M12 16.5h.01\"/></svg>";
   var msg = document.getElementById('hcp-msg');
   var gate = document.getElementById('hcp-gate');
   var wrap = document.getElementById('hcp-corpo');
@@ -506,6 +510,30 @@ window.msgAcessoNegado = function (nomePagina) {
     var referencia = lista.reduce(function (max, c) {
       return (c.data && c.data > max) ? c.data : max;
     }, '');
+
+    // Grupos de TODO o histórico (não a janela do seletor) por casa+produto,
+    // só com registros que têm quantidade — base pro selo "acima do
+    // histórico" na lista principal (independe do período escolhido pro
+    // comparativo, porque "maior preço já pago" é uma referência de sempre).
+    var gruposHistorico = {};
+    lista.forEach(function (c) {
+      if (typeof c.quantidade !== 'number' || c.quantidade <= 0 || typeof c.valor !== 'number') return;
+      var chave = (c.casa || '—') + '|' + (c.produto || '—');
+      (gruposHistorico[chave] = gruposHistorico[chave] || []).push(c);
+    });
+    function precoAcimaDoHistorico(c) {
+      if (typeof c.quantidade !== 'number' || c.quantidade <= 0 || typeof c.valor !== 'number') return false;
+      var grupo = gruposHistorico[(c.casa || '—') + '|' + (c.produto || '—')] || [];
+      if (grupo.length < 2) return false;
+      var unit = c.valor / c.quantidade;
+      var maxOutros = -Infinity;
+      grupo.forEach(function (o) {
+        if (o === c) return;
+        var u = o.valor / o.quantidade;
+        if (u > maxOutros) maxOutros = u;
+      });
+      return unit > maxOutros;
+    }
 
     var selPeriodo = document.getElementById('hcp-periodo');
     for (var m = 1; m <= 12; m++) {
@@ -574,6 +602,13 @@ window.msgAcessoNegado = function (nomePagina) {
         if (c.categoria) {
           var catEl = document.createElement('div'); catEl.className = 'hcp-categoria'; catEl.textContent = c.categoria;
           tdProd.appendChild(catEl);
+        }
+        if (precoAcimaDoHistorico(c)) {
+          var alertaEl = document.createElement('div'); alertaEl.className = 'hcp-alerta';
+          alertaEl.innerHTML = ICONE_ALERTA;
+          var alertaTxt = document.createElement('span'); alertaTxt.textContent = 'Acima do histórico';
+          alertaEl.appendChild(alertaTxt);
+          tdProd.appendChild(alertaEl);
         }
         tr.appendChild(tdProd);
         tr.appendChild(td(fmtBRL(c.valor), 'n'));
