@@ -433,6 +433,8 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
                                               border: 1px solid var(--border); border-radius: 6px; padding: 3px 5px; width: 100%; }
   .es-cel.dirty { outline: 2px solid var(--acc); border-radius: 8px; }
   .es-horas { display: flex; gap: 3px; }
+  .es-horas-2 { padding-top: 2px; border-top: 1px dashed var(--border); }
+  .es-cel-2i { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--text-3); }
   .es-cel-extra { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--text-3); }
   .es-cel-obs { font-size: 11px; padding: 3px 5px; border: 1px solid var(--border); border-radius: 6px;
                 background: var(--bg); color: var(--text); width: 100%; resize: vertical; min-height: 26px; }
@@ -444,6 +446,13 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
   .es-padrao-tab th { background: var(--card); color: var(--text-2); text-align: left; }
   .es-padrao-tab input, .es-padrao-tab select { font: inherit; font-size: 12.5px; background: var(--bg); color: var(--text);
                                                  border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; width: 100%; }
+  .es-pd-toggle.tem-override { border-color: var(--acc); color: var(--acc); font-weight: 600; }
+  .es-pd-detalhe td { background: var(--bg); }
+  .es-pd-mini { border-collapse: collapse; width: 100%; max-width: 480px; }
+  .es-pd-mini th, .es-pd-mini td { border: 1px solid var(--border); padding: 4px 5px; font-size: 12px; }
+  .es-pd-mini th { background: var(--card); color: var(--text-2); text-align: left; font-weight: 600; }
+  .es-pd-mini input { font: inherit; font-size: 12px; background: var(--card); color: var(--text);
+                       border: 1px solid var(--border); border-radius: 6px; padding: 3px 4px; width: 100%; }
   .es-acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
   .es-acoes input[type=text] { font: inherit; font-size: 13px; background: var(--bg); color: var(--text);
                                 border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; }
@@ -492,10 +501,12 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
 </div>
 
 <div id="es-view-padrao" style="display:none">
-  <p class="sub" style="margin-bottom:10px">Padrão fixo da equipe. "Aplicar a partir de" regenera a grade dali pra
-  frente — dias já editados pontualmente (ex.: freelancer num domingo) não são sobrescritos.</p>
+  <p class="sub" style="margin-bottom:10px">Padrão fixo da equipe. Entrada/Saída valem pra todo dia trabalhado, exceto
+  onde "Horários por dia" tiver um horário próprio pra aquele dia da semana (ex.: sexta e sábado diferentes, ou um
+  dia com dois intervalos). "Aplicar a partir de" regenera a grade dali pra frente — dias já editados pontualmente
+  (ex.: freelancer num domingo) não são sobrescritos.</p>
   <table class="es-padrao-tab" id="es-padrao-tab">
-    <thead><tr><th>Pessoa</th><th>Sexo</th><th>Turno base</th><th>Entrada</th><th>Saída</th><th>Folga fixa</th><th>Rodízio</th><th>Ativo</th></tr></thead>
+    <thead><tr><th>Pessoa</th><th>Sexo</th><th>Turno base</th><th>Entrada</th><th>Saída</th><th>Folga fixa</th><th>Rodízio</th><th>Ativo</th><th>Horários por dia</th></tr></thead>
     <tbody></tbody>
   </table>
   <button type="button" class="es-btn" id="es-padrao-add">+ Adicionar pessoa</button>
@@ -598,7 +609,7 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
       if (estado.dias[i].pessoa === pessoa && estado.dias[i].data === data) return estado.dias[i];
     }
     var diaSemana = DIAS_SEMANA[(new Date(data + 'T00:00:00').getDay() + 6) % 7];
-    return { pessoa: pessoa, sexo: sexoDaPessoa(pessoa), data: data, diaSemana: diaSemana, turno: 'Folga', entrada: '', saida: '', origem: 'Padrão', aprovadoDiretoria: false, observacao: '' };
+    return { pessoa: pessoa, sexo: sexoDaPessoa(pessoa), data: data, diaSemana: diaSemana, turno: 'Folga', entrada: '', saida: '', entrada2: '', saida2: '', origem: 'Padrão', aprovadoDiretoria: false, observacao: '' };
   }
 
   function conjuntoMesclado() {
@@ -649,12 +660,19 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
     var d = diaAtual(pessoa, data);
     var k = chave(pessoa, data);
     var dirty = !!estado.dirty[k];
+    var folga = d.turno === 'Folga';
+    var tem2 = !!(d.entrada2 || d.saida2);
     var opcoesT = TURNOS.map(function (t) { return '<option value="' + t + '"' + (t === d.turno ? ' selected' : '') + '>' + t + '</option>'; }).join('');
     return '<div class="es-cel' + (dirty ? ' dirty' : '') + '" data-pessoa="' + esc(pessoa) + '" data-data="' + data + '">'
       + '<select class="es-turno">' + opcoesT + '</select>'
       + '<div class="es-horas">'
-      + '<input type="time" class="es-entrada" value="' + (d.entrada || '') + '"' + (d.turno === 'Folga' ? ' disabled' : '') + '>'
-      + '<input type="time" class="es-saida" value="' + (d.saida || '') + '"' + (d.turno === 'Folga' ? ' disabled' : '') + '>'
+      + '<input type="time" class="es-entrada" value="' + (d.entrada || '') + '"' + (folga ? ' disabled' : '') + '>'
+      + '<input type="time" class="es-saida" value="' + (d.saida || '') + '"' + (folga ? ' disabled' : '') + '>'
+      + '</div>'
+      + '<label class="es-cel-2i"><input type="checkbox" class="es-2i-toggle"' + (tem2 ? ' checked' : '') + (folga ? ' disabled' : '') + '> 2º intervalo</label>'
+      + '<div class="es-horas es-horas-2" style="display:' + (tem2 && !folga ? 'flex' : 'none') + '">'
+      + '<input type="time" class="es-entrada2" value="' + (d.entrada2 || '') + '"' + (folga ? ' disabled' : '') + '>'
+      + '<input type="time" class="es-saida2" value="' + (d.saida2 || '') + '"' + (folga ? ' disabled' : '') + '>'
       + '</div>'
       + '<label class="es-cel-extra"><input type="checkbox" class="es-aprovado"' + (d.aprovadoDiretoria ? ' checked' : '') + '> extra aprovada</label>'
       + '<textarea class="es-cel-obs" placeholder="observação" rows="1">' + esc(d.observacao || '') + '</textarea>'
@@ -666,7 +684,7 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
     var k = chave(pessoa, data);
     var base = estado.dirty[k] || Object.assign({}, diaAtual(pessoa, data));
     base[campo] = valor;
-    if (campo === 'turno' && valor === 'Folga') { base.entrada = ''; base.saida = ''; }
+    if (campo === 'turno' && valor === 'Folga') { base.entrada = ''; base.saida = ''; base.entrada2 = ''; base.saida2 = ''; }
     estado.dirty[k] = base;
     agendaValidacao();
   }
@@ -706,18 +724,41 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
       var turnoSel = cel.querySelector('.es-turno');
       var entradaEl = cel.querySelector('.es-entrada');
       var saidaEl = cel.querySelector('.es-saida');
+      var toggle2El = cel.querySelector('.es-2i-toggle');
+      var horas2El = cel.querySelector('.es-horas-2');
+      var entrada2El = cel.querySelector('.es-entrada2');
+      var saida2El = cel.querySelector('.es-saida2');
       var aprovadoEl = cel.querySelector('.es-aprovado');
       var obsEl = cel.querySelector('.es-cel-obs');
       turnoSel.addEventListener('change', function () {
         var folga = turnoSel.value === 'Folga';
         entradaEl.disabled = folga; saidaEl.disabled = folga;
+        toggle2El.disabled = folga; entrada2El.disabled = folga; saida2El.disabled = folga;
         cel.classList.add('dirty');
         marcaDirty(pessoa, data, 'turno', turnoSel.value);
+        if (folga) {
+          toggle2El.checked = false;
+          horas2El.style.display = 'none';
+        }
       });
       [entradaEl, saidaEl].forEach(function (el, idx) {
         el.addEventListener('change', function () {
           cel.classList.add('dirty');
           marcaDirty(pessoa, data, idx === 0 ? 'entrada' : 'saida', el.value);
+        });
+      });
+      toggle2El.addEventListener('change', function () {
+        horas2El.style.display = toggle2El.checked ? 'flex' : 'none';
+        cel.classList.add('dirty');
+        if (!toggle2El.checked) {
+          marcaDirty(pessoa, data, 'entrada2', '');
+          marcaDirty(pessoa, data, 'saida2', '');
+        }
+      });
+      [entrada2El, saida2El].forEach(function (el, idx) {
+        el.addEventListener('change', function () {
+          cel.classList.add('dirty');
+          marcaDirty(pessoa, data, idx === 0 ? 'entrada2' : 'saida2', el.value);
         });
       });
       aprovadoEl.addEventListener('change', function () {
@@ -784,9 +825,27 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
     }).catch(function () { toast('Sem conexão — tente de novo', true); });
   }
 
+  // Mini-tabela de 7 dias por pessoa (override do padrão): em branco = usa
+  // Entrada/Saída da linha principal, sem 2º intervalo. Preencher Entrada 2/
+  // Saída 2 só no dia que tiver turno partido.
+  function pdMiniHtml(idx, horariosPorDia) {
+    var h = horariosPorDia || {};
+    return DIAS_SEMANA.map(function (dia) {
+      var v = h[dia] || {};
+      return '<tr>'
+        + '<td>' + dia + '</td>'
+        + '<td><input type="time" class="es-pd-e" data-idx="' + idx + '" data-dia="' + dia + '" value="' + (v.entrada || '') + '"></td>'
+        + '<td><input type="time" class="es-pd-s" data-idx="' + idx + '" data-dia="' + dia + '" value="' + (v.saida || '') + '"></td>'
+        + '<td><input type="time" class="es-pd-e2" data-idx="' + idx + '" data-dia="' + dia + '" value="' + (v.entrada2 || '') + '"></td>'
+        + '<td><input type="time" class="es-pd-s2" data-idx="' + idx + '" data-dia="' + dia + '" value="' + (v.saida2 || '') + '"></td>'
+        + '</tr>';
+    }).join('');
+  }
+
   function renderPadrao() {
     var tbody = document.querySelector('#es-padrao-tab tbody');
     tbody.innerHTML = estado.padrao.map(function (p, i) {
+      var temOverride = Object.keys(p.horariosPorDia || {}).length > 0;
       return '<tr data-idx="' + i + '">'
         + '<td><input class="ep-pessoa" value="' + esc(p.pessoa || '') + '"></td>'
         + '<td><select class="ep-sexo"><option value="F"' + (p.sexo === 'F' ? ' selected' : '') + '>F</option><option value="M"' + (p.sexo === 'M' ? ' selected' : '') + '>M</option></select></td>'
@@ -796,13 +855,38 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
         + '<td><select class="ep-folga">' + DIAS_SEMANA.map(function (d) { return '<option value="' + d + '"' + (d === p.folgaFixa ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></td>'
         + '<td><input class="ep-rodizio" value="' + esc(p.rodizio || '') + '"></td>'
         + '<td style="text-align:center"><input type="checkbox" class="ep-ativo"' + (p.ativo ? ' checked' : '') + '></td>'
-        + '</tr>';
+        + '<td><button type="button" class="es-btn es-pd-toggle' + (temOverride ? ' tem-override' : '') + '" data-idx="' + i + '">' + (temOverride ? 'Dias diferentes ✓' : 'Horários por dia') + '</button></td>'
+        + '</tr>'
+        + '<tr class="es-pd-detalhe" data-idx-detalhe="' + i + '" style="display:none"><td colspan="9">'
+        + '<table class="es-pd-mini"><thead><tr><th>Dia</th><th>Entrada</th><th>Saída</th><th>Entrada 2</th><th>Saída 2</th></tr></thead><tbody>'
+        + pdMiniHtml(i, p.horariosPorDia)
+        + '</tbody></table>'
+        + '<p class="sub" style="margin:6px 0 0">Deixe em branco pra usar Entrada/Saída da linha acima. Preencha Entrada 2/Saída 2 só no dia com dois intervalos.</p>'
+        + '</td></tr>';
     }).join('');
+    tbody.querySelectorAll('.es-pd-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = btn.getAttribute('data-idx');
+        var det = tbody.querySelector('.es-pd-detalhe[data-idx-detalhe="' + idx + '"]');
+        det.style.display = det.style.display === 'none' ? 'table-row' : 'none';
+      });
+    });
   }
 
   function lePadraoDaTela() {
+    var tbody = document.querySelector('#es-padrao-tab tbody');
     var linhas = [];
-    document.querySelectorAll('#es-padrao-tab tbody tr').forEach(function (tr) {
+    tbody.querySelectorAll('tr[data-idx]').forEach(function (tr) {
+      var idx = tr.getAttribute('data-idx');
+      var horariosPorDia = {};
+      DIAS_SEMANA.forEach(function (dia) {
+        var sel = '[data-idx="' + idx + '"][data-dia="' + dia + '"]';
+        var e = tbody.querySelector('.es-pd-e' + sel).value;
+        var s = tbody.querySelector('.es-pd-s' + sel).value;
+        var e2 = tbody.querySelector('.es-pd-e2' + sel).value;
+        var s2 = tbody.querySelector('.es-pd-s2' + sel).value;
+        if (e || s || e2 || s2) horariosPorDia[dia] = { entrada: e, saida: s, entrada2: e2, saida2: s2 };
+      });
       linhas.push({
         pessoa: tr.querySelector('.ep-pessoa').value.trim(),
         sexo: tr.querySelector('.ep-sexo').value,
@@ -812,6 +896,7 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
         folgaFixa: tr.querySelector('.ep-folga').value,
         rodizio: tr.querySelector('.ep-rodizio').value,
         ativo: tr.querySelector('.ep-ativo').checked,
+        horariosPorDia: horariosPorDia,
       });
     });
     return linhas.filter(function (p) { return p.pessoa; });
@@ -865,7 +950,7 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
   });
   document.getElementById('es-salvar-tudo').addEventListener('click', salvaTodasPontuais);
   document.getElementById('es-padrao-add').addEventListener('click', function () {
-    estado.padrao.push({ pessoa: '', sexo: 'M', turnoBase: 'Dia', entradaBase: '', saidaBase: '', folgaFixa: 'Segunda', rodizio: '', ativo: true });
+    estado.padrao.push({ pessoa: '', sexo: 'M', turnoBase: 'Dia', entradaBase: '', saidaBase: '', folgaFixa: 'Segunda', rodizio: '', ativo: true, horariosPorDia: {} });
     renderPadrao();
   });
   document.getElementById('es-padrao-salvar').addEventListener('click', function () {
