@@ -629,6 +629,14 @@ window.msgAcessoNegado = function (nomePagina) {
         <div class="orev-campo"><label for="orev-min-servido">Min./drink servido
           <span class="orz-help" title="Garrafa/lata/pré-batch — só abrir e entregar, não infla o nº de bartenders como um cocktail.">?</span></label>
           <input type="number" id="orev-min-servido" min="0" step="0.1" value="0.5"></div>
+        <div class="orev-linha2">
+          <div class="orev-campo"><label for="orev-taxa-cocktail">Cocktails/convidado/hora
+            <span class="orz-help" title="Referência de mercado para estimar quantos cocktails por convidado o evento consome (ex.: 3 num evento de 4h = 0,75/h) — só sugere, o mix real do cardápio continua sendo o que você marcar abaixo.">?</span></label>
+            <input type="number" id="orev-taxa-cocktail" min="0" step="0.05" value="0.75"></div>
+          <div class="orev-campo"><label for="orev-ml-agua">Água/outro (ml/convidado/hora)
+            <span class="orz-help" title="Referência de mercado de catering de eventos para água + não-alcoólicos combinados (faixa usual ~250-350ml/convidado/hora) — só sugere, não converte automaticamente em unidades do cardápio.">?</span></label>
+            <input type="number" id="orev-ml-agua" min="0" step="10" value="300"></div>
+        </div>
       </details>
     </div>
 
@@ -739,6 +747,12 @@ window.msgAcessoNegado = function (nomePagina) {
         </div>
         <div class="orev-campo"><label for="orme-min-servido">Min./drink servido</label>
           <input type="number" id="orme-min-servido" min="0" step="0.1" value="0.5"></div>
+        <div class="orev-linha2">
+          <div class="orev-campo"><label for="orme-taxa-cocktail">Cocktails/convidado/hora</label>
+            <input type="number" id="orme-taxa-cocktail" min="0" step="0.05" value="0.75"></div>
+          <div class="orev-campo"><label for="orme-ml-agua">Água/outro (ml/convidado/hora)</label>
+            <input type="number" id="orme-ml-agua" min="0" step="10" value="300"></div>
+        </div>
       </details>
 
       <p class="orz-sec">Dias do evento</p>
@@ -837,6 +851,17 @@ window.msgAcessoNegado = function (nomePagina) {
     precoGeloKg: 2.5,
     custoDiariaBarback: 150,
     custoDiariaCoordenador: 0,
+    // Referência de consumo por convidado (2026-07-23, pedido do Rodrigo —
+    // cardápio de evento não é "1 unidade/convidado" igual pra tudo).
+    // Cocktail (tipo 'preparado'): 3 drinks/convidado num evento de 4h,
+    // confirmado com o Rodrigo -> 0,75 drink/convidado/hora.
+    taxaCocktailConvHora: 0.75,
+    // Água/outro (tipo 'servido'): ~250-350ml de água+não-alcoólico por
+    // convidado/hora é a faixa usual em referências de catering de evento
+    // (ex.: 1L de água a cada 2h = 500ml/h no limite alto de clima quente/
+    // dança; ~8-12oz/h ≈ 250-350ml/h combinando água+outros). 300ml/h fica
+    // no meio da faixa como default, editável.
+    mlAguaConvHora: 300,
   };
   // Dado um nº de bartenders "de vazão" (calculado por volume de preparo) e as
   // horas totais do turno (evento+pré+pós), devolve quantas pessoas são
@@ -1152,19 +1177,41 @@ window.msgAcessoNegado = function (nomePagina) {
     return valorFinal;
   }
 
-  // Guia de consumo (didática, 2026-07-22): regra de mercado ~1 drink por
-  // convidado por hora de evento — só SUGERE, nunca força um valor no
-  // cardápio (cada casa/evento tem seu mix real). Compara com o que já foi
-  // marcado (soma de porConvidado) só como referência.
-  function atualizaSugestaoConsumo(prefix, convidados, duracaoHoras, itensSel) {
+  // Guia de consumo (didática, revisão 2026-07-23 — antes era 1 referência
+  // única de "1 drink/convidado/hora" pra QUALQUER item do cardápio; agora
+  // separa por tipo, porque cocktail e água/refrigerante seguem métricas de
+  // mercado bem diferentes): só SUGERE, nunca força um valor no cardápio
+  // (cada casa/evento tem seu mix real, os campos abaixo continuam livres).
+  // Cocktail (tipo 'preparado'): taxa de drinks/convidado/hora (default
+  // 0,75 = 3 num evento de 4h, confirmado com o Rodrigo), sugestão travada
+  // entre 1 e 10 por convidado no evento inteiro (faixa pedida por ele).
+  // Água/outro (tipo 'servido'): ml/convidado/hora (default 300ml, faixa de
+  // mercado de catering de evento ~250-350ml/convidado/hora) — mostrado em
+  // ml porque a unidade de cardápio (garrafinha/lata) varia de tamanho, não
+  // dá pra comparar direto com "quantas unidades marcadas".
+  function atualizaSugestaoConsumo(prefix, convidados, duracaoHoras, itensSel, p) {
     var el = document.getElementById(prefix + '-sugestao-consumo');
     if (!el) return;
-    if (!duracaoHoras) { el.textContent = ''; return; }
-    var sugestao = duracaoHoras * 1;
-    var marcado = itensSel.reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
-    el.textContent = 'Referência de mercado: ~1 drink/convidado/hora × ' + duracaoHoras.toFixed(1).replace('.', ',')
-      + 'h ≈ ' + sugestao.toFixed(1).replace('.', ',') + ' un./convidado no total'
-      + (itensSel.length ? ' (você marcou ' + marcado.toFixed(1).replace('.', ',') + ').' : '.');
+    if (!duracaoHoras) { el.innerHTML = ''; return; }
+    p = p || {};
+    var cocktails = itensSel.filter(function (i) { return i.tipo !== 'servido'; });
+    var servidos = itensSel.filter(function (i) { return i.tipo === 'servido'; });
+    var marcadoCocktail = cocktails.reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
+    var marcadoServido = servidos.reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
+    var taxaCocktail = p.taxaCocktailConvHora != null ? p.taxaCocktailConvHora : PREMISSAS_DEFAULT.taxaCocktailConvHora;
+    var mlAgua = p.mlAguaConvHora != null ? p.mlAguaConvHora : PREMISSAS_DEFAULT.mlAguaConvHora;
+    var sugestaoCocktail = Math.min(10, Math.max(1, duracaoHoras * taxaCocktail));
+    var sugestaoMlAgua = duracaoHoras * mlAgua;
+    var linhas = [
+      'Cocktails — referência de mercado: ' + taxaCocktail.toFixed(2).replace('.', ',') + '/convidado/hora × '
+        + duracaoHoras.toFixed(1).replace('.', ',') + 'h ≈ ' + sugestaoCocktail.toFixed(1).replace('.', ',')
+        + ' un./convidado no evento (entre 1 e 10)'
+        + (cocktails.length ? ' — você marcou ' + marcadoCocktail.toFixed(1).replace('.', ',') + '.' : '.'),
+      'Água/outro — referência de mercado: ' + mlAgua.toFixed(0) + 'ml/convidado/hora × '
+        + duracaoHoras.toFixed(1).replace('.', ',') + 'h ≈ ' + sugestaoMlAgua.toFixed(0) + 'ml/convidado no total'
+        + (servidos.length ? ' — você marcou ' + marcadoServido.toFixed(1).replace('.', ',') + ' un. (confira o volume de cada item).' : '.'),
+    ];
+    el.innerHTML = linhas.map(function (t) { return '<div>' + t + '</div>'; }).join('');
   }
 
   // Avisos de sanidade (didática, 2026-07-22): sinaliza situações que quase
@@ -1247,6 +1294,8 @@ window.msgAcessoNegado = function (nomePagina) {
       precoGeloKg: num(prefix + '-gelo-preco'),
       custoDiariaBarback: num(prefix + '-diaria-barback'),
       custoDiariaCoordenador: num(prefix + '-diaria-coord'),
+      taxaCocktailConvHora: num(prefix + '-taxa-cocktail') || PREMISSAS_DEFAULT.taxaCocktailConvHora,
+      mlAguaConvHora: num(prefix + '-ml-agua') || PREMISSAS_DEFAULT.mlAguaConvHora,
     };
   }
 
@@ -1276,7 +1325,7 @@ window.msgAcessoNegado = function (nomePagina) {
       custoApoioTotal: d.custoApoio, deslocamento: deslocamento,
       custoTotal: custoTotal, valorCalculado: valorCalculado,
     });
-    atualizaSugestaoConsumo('orev', convidados, duracao, itensSel);
+    atualizaSugestaoConsumo('orev', convidados, duracao, itensSel, p);
     atualizaAvisos('orev', convidados, itensSel, d);
   }
   ligaEdicaoHero('orev', calcula);
@@ -1285,6 +1334,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
   ['orev-convidados', 'orev-duracao', 'orev-pre', 'orev-pos', 'orev-coordenadores', 'orev-desloc', 'orev-markup',
     'orev-buffer', 'orev-piso', 'orev-taxa-hora', 'orev-min-preparado', 'orev-min-servido',
+    'orev-taxa-cocktail', 'orev-ml-agua',
     'orev-gelo-kg', 'orev-gelo-preco', 'orev-diaria-barback', 'orev-diaria-coord'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calcula);
   });
@@ -1319,7 +1369,7 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-markup').value = markup;
     document.getElementById('orme-desloc').value = deslocamento;
     ['buffer', 'piso', 'gelo-kg', 'gelo-preco', 'diaria-barback', 'diaria-coord',
-      'taxa-hora', 'min-preparado', 'min-servido'].forEach(function (campo) {
+      'taxa-hora', 'min-preparado', 'min-servido', 'taxa-cocktail', 'ml-agua'].forEach(function (campo) {
       document.getElementById('orme-' + campo).value = document.getElementById('orev-' + campo).value;
     });
     document.getElementById('orme-dias-corpo').innerHTML = '';
@@ -1433,7 +1483,7 @@ window.msgAcessoNegado = function (nomePagina) {
       custoGeloTotal: custoGeloTotal, custoApoioTotal: custoApoioTotal, deslocamento: deslocamento,
       custoTotal: custoTotal, valorCalculado: valorCalculado,
     });
-    atualizaSugestaoConsumo('orme', totalConvidados, dias.length ? dias[0].duracaoHoras : 0, itensSel);
+    atualizaSugestaoConsumo('orme', totalConvidados, dias.length ? dias[0].duracaoHoras : 0, itensSel, p);
     atualizaAvisos('orme', totalConvidados, itensSel, dias[0] || {});
 
     return { dias: dias, custoTotal: custoTotal, valorTotal: overrides.orme != null ? overrides.orme : valorCalculado,
@@ -1445,7 +1495,8 @@ window.msgAcessoNegado = function (nomePagina) {
   ligaBusca('orme-busca', 'orme-cardapio');
 
   ['orme-desloc', 'orme-custo-estacao', 'orme-markup', 'orme-buffer', 'orme-piso', 'orme-taxa-hora',
-    'orme-min-preparado', 'orme-min-servido', 'orme-gelo-kg', 'orme-gelo-preco',
+    'orme-min-preparado', 'orme-min-servido', 'orme-taxa-cocktail', 'orme-ml-agua',
+    'orme-gelo-kg', 'orme-gelo-preco',
     'orme-diaria-barback', 'orme-diaria-coord'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calculaEvento);
   });
@@ -1522,6 +1573,8 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-taxa-hora').value = PREMISSAS_DEFAULT.taxaHoraBase;
     document.getElementById('orme-min-preparado').value = PREMISSAS_DEFAULT.tempoPreparadoMin;
     document.getElementById('orme-min-servido').value = PREMISSAS_DEFAULT.tempoServidoMin;
+    document.getElementById('orme-taxa-cocktail').value = PREMISSAS_DEFAULT.taxaCocktailConvHora;
+    document.getElementById('orme-ml-agua').value = PREMISSAS_DEFAULT.mlAguaConvHora;
     calculaEvento();
     document.getElementById('orme-cancelar-edicao').style.display = 'none';
     document.getElementById('orme-salvar').textContent = 'Salvar orçamento';
@@ -1568,6 +1621,8 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-taxa-hora').value = det.taxaHoraBase || PREMISSAS_DEFAULT.taxaHoraBase;
     document.getElementById('orme-min-preparado').value = det.tempoPreparadoMin || PREMISSAS_DEFAULT.tempoPreparadoMin;
     document.getElementById('orme-min-servido').value = det.tempoServidoMin || PREMISSAS_DEFAULT.tempoServidoMin;
+    document.getElementById('orme-taxa-cocktail').value = det.taxaCocktailConvHora || PREMISSAS_DEFAULT.taxaCocktailConvHora;
+    document.getElementById('orme-ml-agua').value = det.mlAguaConvHora || PREMISSAS_DEFAULT.mlAguaConvHora;
     document.getElementById('orme-dias-corpo').innerHTML = '';
     var diasSalvos = det.dias || [];
     if (diasSalvos.length) {
@@ -1627,6 +1682,7 @@ window.msgAcessoNegado = function (nomePagina) {
         custoDiariaBarback: calc.premissas.custoDiariaBarback, custoDiariaCoordenador: calc.premissas.custoDiariaCoordenador,
         taxaHoraBase: calc.premissas.taxaHoraBase, tempoPreparadoMin: calc.premissas.tempoPreparadoMin,
         tempoServidoMin: calc.premissas.tempoServidoMin,
+        taxaCocktailConvHora: calc.premissas.taxaCocktailConvHora, mlAguaConvHora: calc.premissas.mlAguaConvHora,
         custoTotal: calc.custoTotal, valorTotal: calc.valorTotal,
       }),
     }).then(function (r) {

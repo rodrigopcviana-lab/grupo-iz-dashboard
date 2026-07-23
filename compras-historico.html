@@ -420,6 +420,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .hcp-categoria { color:var(--text-3); font-size:12px; }
   .hcp-vazio { text-align:center; color:var(--text-3); padding:30px 10px; }
   .hcp-foot { font-size:11.5px; color:var(--text-3); margin-top:16px; }
+  .hcp-sec { font-size:15px; font-weight:700; margin:26px 0 4px; }
+  .hcp-sec-sub { font-size:12.5px; color:var(--text-3); margin:0 0 12px; }
 </style>
 
 <div class="hcp-controles">
@@ -439,6 +441,18 @@ window.msgAcessoNegado = function (nomePagina) {
 <p class="hcp-vazio" id="hcp-vazio" style="display:none">Nenhuma compra registrada ainda.</p>
 </div>
 <p class="hcp-foot" id="hcp-foot"></p>
+
+<p class="hcp-sec">Comparativo de preço por período</p>
+<p class="hcp-sec-sub">Menor, maior e médio preço unitário pago por produto, dentro do período selecionado. Considera só registros com quantidade informada (o comparativo mensal da Famu traz; o relatório item-a-item do Suprimentos, não).</p>
+<div class="hcp-controles">
+  <select id="hcp-periodo"></select>
+</div>
+<div class="panel" style="padding:8px 10px;overflow-x:auto">
+<table class="hcp"><thead><tr><th>Produto</th><th>Casa</th><th class="n">Períodos</th><th class="n">Mín.</th><th class="n">Média</th><th class="n">Máx.</th></tr></thead>
+<tbody id="hcp-cmp-lista"></tbody></table>
+<p class="hcp-vazio" id="hcp-cmp-vazio" style="display:none">Nenhum produto com quantidade registrada no período selecionado.</p>
+</div>
+<p class="hcp-foot" id="hcp-cmp-foot"></p>
 </div><!-- hcp-corpo -->
 
 <script>
@@ -471,8 +485,37 @@ window.msgAcessoNegado = function (nomePagina) {
     return e;
   }
 
+  function fmtNum(v) {
+    return v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  // Subtrai N meses de uma data ISO "AAAA-MM-DD", devolve ISO — comparável
+  // lexicograficamente com as datas do dado (mesmo formato), sem depender
+  // do relógio do navegador.
+  function subtraiMeses(iso, n) {
+    var d = new Date(iso + 'T00:00:00');
+    d.setMonth(d.getMonth() - n);
+    return d.toISOString().slice(0, 10);
+  }
+
   function inicia(lista) {
-    var estado = { casa: '', cat: '', busca: '' };
+    var estado = { casa: '', cat: '', busca: '', meses: 3 };
+
+    // Âncora do período do comparativo: a data mais recente do dado (não
+    // "hoje" real — um comparativo mensal pode ficar semanas atrás do
+    // relógio do navegador).
+    var referencia = lista.reduce(function (max, c) {
+      return (c.data && c.data > max) ? c.data : max;
+    }, '');
+
+    var selPeriodo = document.getElementById('hcp-periodo');
+    for (var m = 1; m <= 12; m++) {
+      var o = document.createElement('option');
+      o.value = String(m);
+      o.textContent = 'Últimos ' + m + (m === 1 ? ' mês' : ' meses');
+      if (m === estado.meses) o.selected = true;
+      selPeriodo.appendChild(o);
+    }
+    selPeriodo.onchange = function () { estado.meses = parseInt(selPeriodo.value, 10) || 1; desenha(); };
 
     var casasPresentes = [];
     lista.forEach(function (c) { if (c.casa && casasPresentes.indexOf(c.casa) < 0) casasPresentes.push(c.casa); });
@@ -541,7 +584,61 @@ window.msgAcessoNegado = function (nomePagina) {
       document.getElementById('hcp-kpi-n').textContent = visiveis.length;
       document.getElementById('hcp-foot').textContent =
         lista.length + ' compra(s) registrada(s) — dado ao vivo do Notion, sem cache além dos ~45s do Worker.';
+
+      desenhaComparativo(visiveis);
     }
+
+    // Comparativo de preço: agrupa por casa+produto os registros do filtro
+    // atual (casa/categoria/busca já aplicados em "visiveis") que caem
+    // dentro da janela de N meses e têm quantidade — sem quantidade não dá
+    // pra derivar preço unitário (valor ÷ quantidade), então fica de fora
+    // em vez de aparecer com número inventado.
+    function desenhaComparativo(visiveis) {
+      var cmpLista = document.getElementById('hcp-cmp-lista');
+      var cmpVazio = document.getElementById('hcp-cmp-vazio');
+      var cmpFoot = document.getElementById('hcp-cmp-foot');
+      cmpLista.innerHTML = '';
+
+      if (!referencia) { cmpVazio.style.display = ''; cmpFoot.textContent = ''; return; }
+      var cutoff = subtraiMeses(referencia, estado.meses);
+
+      var grupos = {};
+      var ordemGrupos = [];
+      visiveis.forEach(function (c) {
+        if (typeof c.quantidade !== 'number' || c.quantidade <= 0) return;
+        if (typeof c.valor !== 'number') return;
+        if (!c.data || c.data < cutoff) return;
+        var chave = (c.casa || '—') + '|' + (c.produto || '—');
+        if (!grupos[chave]) {
+          grupos[chave] = { produto: c.produto || '—', casa: c.casa || '—', precos: [] };
+          ordemGrupos.push(chave);
+        }
+        grupos[chave].precos.push(c.valor / c.quantidade);
+      });
+
+      ordemGrupos.sort(function (a, b) { return grupos[a].produto.localeCompare(grupos[b].produto); });
+
+      ordemGrupos.forEach(function (chave) {
+        var g = grupos[chave];
+        var min = Math.min.apply(null, g.precos);
+        var max = Math.max.apply(null, g.precos);
+        var media = g.precos.reduce(function (s, v) { return s + v; }, 0) / g.precos.length;
+        var tr = document.createElement('tr');
+        tr.appendChild(td(g.produto));
+        tr.appendChild(td(g.casa));
+        tr.appendChild(td(String(g.precos.length), 'n'));
+        tr.appendChild(td(fmtNum(min), 'n'));
+        tr.appendChild(td(fmtNum(media), 'n'));
+        tr.appendChild(td(fmtNum(max), 'n'));
+        cmpLista.appendChild(tr);
+      });
+
+      cmpVazio.style.display = ordemGrupos.length ? 'none' : '';
+      cmpFoot.textContent = ordemGrupos.length
+        ? ordemGrupos.length + ' produto(s) no comparativo, janela até ' + fmtData(cutoff) + ' (âncora: ' + fmtData(referencia) + ').'
+        : 'Nenhum registro com quantidade dentro da janela selecionada.';
+    }
+
     desenha();
   }
 
