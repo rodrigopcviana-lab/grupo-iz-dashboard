@@ -786,18 +786,22 @@ window.msgAcessoNegado = function (nomePagina) {
      Rápido acima). Continua clicável; perdeu só as sub-linhas. Público
      desde E3 (PLANO_LOGIN_COMPACTO.md): Demandas/Online mostram "—" sem
      sessão. */
-  .hg-cab { display: flex; justify-content: flex-end; font-size: 11px; letter-spacing: .04em;
-             color: var(--text-3); margin: -2px 0 8px; }
-  .hg-strip { display: grid; grid-template-columns: repeat(4, 1fr);
-               background: rgba(0,0,0,.22); border: 1px solid #3a3126; border-radius: 12px; overflow: hidden; }
-  a.hg-cell { position: relative; padding: 9px 6px; text-align: center; text-decoration: none;
-               color: var(--text); }
-  a.hg-cell:hover { background: rgba(208,163,82,.08); }
-  a.hg-cell + a.hg-cell::before { content: ""; position: absolute; left: 0; top: 22%; bottom: 22%;
+  .hg-cab { display: flex; justify-content: flex-end; font-size: 10px; letter-spacing: .04em;
+             color: var(--text-3); margin: -2px 0 6px; }
+  /* Afinado 2026-07-23: faixa fina sem caixinhas — ícone + número lado a lado,
+     rótulo miúdo, só divisórias. */
+  .hg-strip { display: flex; }
+  a.hg-cell { position: relative; flex: 1; display: flex; align-items: center; justify-content: center;
+               gap: 6px; padding: 4px 2px; text-decoration: none; color: var(--text); }
+  a.hg-cell:hover { background: rgba(208,163,82,.06); border-radius: 8px; }
+  a.hg-cell + a.hg-cell::before { content: ""; position: absolute; left: 0; top: 20%; bottom: 20%;
                                    width: 1px; background: #3a3126; }
-  .hg-n { font-family: var(--serif); font-size: 19px; font-weight: 600; color: var(--acc);
-           line-height: 1; font-variant-numeric: tabular-nums; }
-  .hg-t { font-size: 10px; color: var(--text-2); margin-top: 4px; }
+  .hg-ic { color: var(--acc); opacity: .8; display: flex; flex: none; }
+  .hg-ic svg { width: 15px; height: 15px; }
+  .hg-txt { display: flex; flex-direction: column; line-height: 1; }
+  .hg-n { font-family: var(--serif); font-size: 17px; font-weight: 600; color: var(--acc);
+           font-variant-numeric: tabular-nums; }
+  .hg-t { font-size: 9px; color: var(--text-3); margin-top: 2px; }
   .hg-prox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2);
               margin-top: 10px; padding-top: 10px; border-top: 1px dashed #3a3126; }
   .hg-prox[hidden] { display: none; }
@@ -810,10 +814,10 @@ window.msgAcessoNegado = function (nomePagina) {
 <summary class="k">HOJE NO GRUPO<span class="seta" aria-hidden="true">▾</span></summary>
 <div class="hg-cab" id="hg-data"></div>
 <div class="hg-strip">
-  <a class="hg-cell" href="eventos.html"><div class="hg-n" id="hg-ev-n">—</div><div class="hg-t">Eventos</div></a>
-  <a class="hg-cell" href="demandas.html"><div class="hg-n" id="hg-dm-n">—</div><div class="hg-t">Demandas</div></a>
-  <a class="hg-cell" href="presenca.html"><div class="hg-n" id="hg-on-n">—</div><div class="hg-t">Online</div></a>
-  <a class="hg-cell" href="cocktails.html"><div class="hg-n">212</div><div class="hg-t">Receitas</div></a>
+  <a class="hg-cell" href="eventos.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg></span><span class="hg-txt"><span class="hg-n" id="hg-ev-n">—</span><span class="hg-t">Eventos</span></span></a>
+  <a class="hg-cell" href="demandas.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><span class="hg-txt"><span class="hg-n" id="hg-dm-n">—</span><span class="hg-t">Demandas</span></span></a>
+  <a class="hg-cell" href="presenca.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg></span><span class="hg-txt"><span class="hg-n" id="hg-on-n">—</span><span class="hg-t">Online</span></span></a>
+  <a class="hg-cell" href="cocktails.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="hg-txt"><span class="hg-n">212</span><span class="hg-t">Receitas</span></span></a>
 </div>
 <div class="hg-prox" id="hg-prox" hidden><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Próximo: <b id="hg-prox-txt"></b></span><a class="go" href="eventos.html" aria-label="Ver o mural">›</a></div>
 </details>
@@ -898,12 +902,42 @@ window.msgAcessoNegado = function (nomePagina) {
      ou em falha, o card fica escondido (nunca quebra o mural). display:none
      INLINE de propósito: o reveal via el.style.display='' só volta ao default
      se o none for inline (lição de CSS do CLAUDE.md). -->
-<details class="hero-hoje" id="hero-cocktail-mes" style="display:none" open>
-<summary class="k">COCKTAIL DO MÊS<span class="seta" aria-hidden="true">▾</span></summary>
-<div class="row"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg>
-  <span><b id="cm-nome">—</b><span id="cm-sub" style="display:block;color:var(--text-2);font-size:12.5px;margin-top:2px"></span></span>
-  <a class="go" href="performance.html" aria-label="Ver o ranking de cocktails">›</a></div>
-</details>
+<!-- Top Cocktails (2026-07-23): substitui o antigo card de campeão único.
+     Card PLANO (sem <details>/seta), com botões de casa (Grupo + 6 casas) e
+     top 5 lado a lado. Tudo client-side a partir do payload de equipe (já traz
+     grupo.top + casas[*].itens), nenhuma chamada extra. display:none INLINE
+     (revela só quando o dado carrega). Sem R$ — só unidades (regra do payload
+     de equipe). -->
+<style>
+  .tcm { background: linear-gradient(135deg,#241d13,#1a1610); border: 1px solid #4a3f2a;
+          border-radius: 14px; padding: 10px 11px; margin-bottom: 12px; }
+  .tcm-cab { display: flex; align-items: baseline; gap: 6px; margin-bottom: 7px; }
+  .tcm-cab .k { font-size: 10.5px; letter-spacing: .09em; color: var(--text-3); text-transform: uppercase; }
+  .tcm-cab .mes { font-size: 10.5px; color: var(--acc); font-weight: 600; }
+  .tcm-cab .ver { margin-left: auto; font-size: 11px; color: var(--acc); text-decoration: none; }
+  .tcm-pills { display: flex; gap: 5px; margin-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 1px; }
+  .tcm-pills::-webkit-scrollbar { display: none; }
+  .tcm-pill { flex: none; font: inherit; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+               border: 1px solid var(--border); background: transparent; color: var(--text-2); cursor: pointer; white-space: nowrap; }
+  .tcm-pill.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); }
+  .tcm5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .tcm5 .it { position: relative; background: rgba(0,0,0,.22); border: 1px solid #3a3126; border-radius: 9px; padding: 16px 3px 6px; text-align: center; min-width: 0; }
+  .tcm5 .it .rk { position: absolute; top: 3px; left: 4px; font-size: 10px; color: var(--text-3); font-family: var(--serif); line-height: 1; }
+  .tcm5 .it .rk svg { width: 12px; height: 12px; color: var(--acc); vertical-align: top; }
+  .tcm5 .it .nm { font-size: 9px; color: var(--text-2); line-height: 1.12; height: 20px; overflow: hidden;
+                   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 2px; }
+  .tcm5 .it .qt { font-family: var(--serif); font-size: 14px; font-weight: 600; color: var(--acc); line-height: 1; font-variant-numeric: tabular-nums; }
+  .tcm5 .it.r1 { background: linear-gradient(135deg,rgba(208,163,82,.18),rgba(208,163,82,.03)); border-color: rgba(208,163,82,.5); }
+  .tcm5 .it.r1 .nm { color: var(--text); font-family: var(--serif); }
+  .tcm-meta { font-size: 10px; color: var(--text-3); margin-top: 6px; }
+  .tcm-meta b { color: var(--text-2); }
+</style>
+<div class="tcm" id="hero-cocktail-mes" style="display:none">
+  <div class="tcm-cab"><span class="k">TOP COCKTAILS</span><span class="mes" id="tcm-mes"></span><a class="ver" href="performance.html" aria-label="Ver o ranking de cocktails">ver ›</a></div>
+  <div class="tcm-pills" id="tcm-pills"></div>
+  <div class="tcm5" id="tcm5"></div>
+  <div class="tcm-meta" id="tcm-meta"></div>
+</div>
 
 <style>
   .hero-hoje .coq-ico { color: var(--acc); flex: none; display: flex; }
@@ -917,7 +951,7 @@ window.msgAcessoNegado = function (nomePagina) {
 <summary class="k">MUNDO DA COQUETELARIA<span class="seta" aria-hidden="true">▾</span></summary>
 <div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span><b>Sustentabilidade operacional ganha peso concreto</b> — Batching pra reduzir desperdício por drink, reaproveitamento de cascas/sobras, compostagem com hortas urbanas e fim de descartáveis viram diferencial competitivo citado por múltiplas casas em 2026. (diageobaracademy.com)</span><a class="go" href="https://diageobaracademy.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Dandelion (Nova York)</b> — Bar do West Village pela equipe do Zero Bond e do reformado White Horse Tavern, com serviço dedicado de Martini e cozinha assinada por chef estrelado Michelin. (wwd.com)</span><a class="go" href="https://wwd.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Diageo World Class 2026</b> — Campeões regionais definidos (EUA: Alexis Ortega, Static Bar, Filadélfia; Hong Kong, Tailândia, Líbano, Cingapura já têm campeões); final global em outubro/2026 na Escócia. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Cato (Londres)</b> — Bar de cinco andares do bartender Angelos Bafas em Covent Garden, dedicado ao clássico Julep; toda a produção e destilados são de origem britânica. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Spirited Awards 2026 (Tales of the Cocktail)</b> — 20ª edição; cerimônia marcada para 23/jul/2026 em Nova Orleans. Finalistas Top 4 e vencedores de prêmios especiais (Helen David Lifetime Achievement, Tales Visionary Award) já anunciados. (talesofthecocktail.org)</span><a class="go" href="https://talesofthecocktail.org/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Destilados sem álcool atraem investimento pesado</b> — Lyre&#x27;s é hoje a mais capitalizada do setor (US$53 milhões levantados); previsão de crescimento de 36,7% em valor no segmento entre 2024-2028. (tracxn.com)</span><a class="go" href="https://tracxn.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Asia&#x27;s 50 Best Bars 2026</b> — Cerimônia em Macau em 28/jul/2026. Smoke &amp; Bitters (Sri Lanka) já venceu o Michter&#x27;s Art of Hospitality Award; Shelley Tai (Mius, Hong Kong) o prêmio Altos Bartenders&#x27; Bartender. (ttrweekly.com)</span><a class="go" href="https://ttrweekly.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Agave em transição: mezcal e reposado sobem sobre o blanco</b> — Mercado de agave se estabiliza após colapso de preço (pico ~32 pesos/kg para ~5 pesos/kg); oferta mais previsível, mas replantio baixo pode gerar novo aperto futuro. (theiwsr.com)</span><a class="go" href="https://theiwsr.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Sabor &quot;savory&quot;/umami dominando os menus</b> — Bartenders reportam alta de miso, shoyu, MSG e maior salinidade em coquetéis, criando perfis mais food-forward e complexos. (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Elderflower é eleito &quot;sabor do ano&quot; de 2026</b> — Floral/botânico domina cardápios, puxando também ervas nativas e infusões naturais como categoria em crescimento. (mrsipps.nl)</span><a class="go" href="https://mrsipps.nl/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Volta à simplicidade técnica</b> — Reação contra coquetéis de 5+ componentes e guarnições excessivas; foco em clássicos revisitados com ingredientes melhores (clarificação, soluções salinas, yuzu). (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Low/no-álcool vira parte estrutural do menu</b> — &quot;Zebra striping&quot; (alternar drink alcoólico e não-alcoólico) já é hábito de 78% da Gen Z; spritzes e clássicos com ABV reduzido seguem como base fixa de carta. (tastingtable.com)</span><a class="go" href="https://tastingtable.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div>
 <div class="coq-historico"><p class="titulo">🏆 World&#39;s 50 Best Bars — últimos vencedores</p><ul><li>World&#x27;s 50 Best Bars 2024 — Handshake Speakeasy (Cidade do México)</li><li>World&#x27;s 50 Best Bars 2025 — Bar Leone (Hong Kong)</li><li>World&#x27;s 50 Best Bars 2023 — Sips (Barcelona)</li><li>World&#x27;s 50 Best Bars 2021 — Connaught Bar (Londres)</li><li>World&#x27;s 50 Best Bars 2022 — Paradiso (Barcelona)</li></ul></div>
-<p class="coq-foot">Atualizado em 23/07/2026 13:58.</p>
+<p class="coq-foot">Atualizado em 23/07/2026 14:10.</p>
 </details>
 <script>
 // Cocktail do mês (PLANO_RANKING_COCKTAILS.md §5) — mesmo Worker da presença
@@ -929,8 +963,54 @@ window.msgAcessoNegado = function (nomePagina) {
 // com o Painel Rápido e #home-conteudo-fim aqui — ordem do mockup v2).
 (function () {
   var PRES_WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  // Ordem/rótulo curto das casas (slug do payload -> label do botão). Grupo é
+  // sintético (usa d.grupo.top). Só entram no seletor as casas presentes no
+  // payload (todas, mas fica robusto se faltar uma).
+  var CASAS = [['iz','IZ'],['gra-bistro','Grá'],['1929','1929'],['famu','FAMU'],['fulles','Fulles'],['nip','NIP']];
+  var TROFEU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg>';
+  var DADOS = null;
   function sessao() { try { return window.sessaoLer && window.sessaoLer(); } catch (e) { return null; } }
   function fmtN(n) { return n == null ? '—' : Number(n).toLocaleString('pt-BR'); }
+
+  // (itens[], meta) da casa/grupo selecionado — top 5. Grupo usa grupo.top
+  // (qtde); casa usa itens (qtde_ref, já ordenado desc no gerador).
+  function selecao(k) {
+    if (k === 'grupo') {
+      var t = (DADOS.grupo && DADOS.grupo.top) || [];
+      return { itens: t.slice(0, 5).map(function (x) { return [x.nome, x.qtde]; }),
+                meta: DADOS.grupo && DADOS.grupo.meta_mes };
+    }
+    var c = DADOS.casas && DADOS.casas[k];
+    if (!c) return { itens: [], meta: null };
+    return { itens: (c.itens || []).slice(0, 5).map(function (x) { return [x.nome, x.qtde_ref]; }),
+              meta: c.meta && c.meta.valor };
+  }
+
+  function render(k) {
+    var sel = selecao(k);
+    document.getElementById('tcm5').innerHTML = sel.itens.map(function (x, i) {
+      var nm = String(x[0] == null ? '' : x[0]).replace(/[<>&]/g, '');
+      return '<div class="it' + (i === 0 ? ' r1' : '') + '"><span class="rk">' +
+        (i === 0 ? TROFEU : (i + 1)) + '</span><span class="nm">' + nm +
+        '</span><span class="qt">' + fmtN(x[1]) + '</span></div>';
+    }).join('');
+    document.getElementById('tcm-meta').innerHTML =
+      'Meta de ' + (DADOS.mes_meta || '—') + ': <b>' + fmtN(sel.meta) + '</b> drinks';
+    var ps = document.getElementById('tcm-pills').children;
+    for (var i = 0; i < ps.length; i++) ps[i].classList.toggle('on', ps[i].dataset.k === k);
+  }
+
+  function montaPills() {
+    var wrap = document.getElementById('tcm-pills'), html = '';
+    html += '<button type="button" class="tcm-pill on" data-k="grupo">Grupo</button>';
+    CASAS.forEach(function (c) {
+      if (DADOS.casas && DADOS.casas[c[0]]) html += '<button type="button" class="tcm-pill" data-k="' + c[0] + '">' + c[1] + '</button>';
+    });
+    wrap.innerHTML = html;
+    wrap.addEventListener('click', function (e) {
+      var b = e.target.closest('.tcm-pill'); if (b) render(b.dataset.k);
+    });
+  }
 
   function carregaCocktailMes() {
     var card = document.getElementById('hero-cocktail-mes');
@@ -941,11 +1021,10 @@ window.msgAcessoNegado = function (nomePagina) {
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || !d.grupo || !d.grupo.top || !d.grupo.top.length) return;
-        var camp = d.grupo.top[0];
-        document.getElementById('cm-nome').textContent = 'Cocktail do mês — ' + camp.nome;
-        document.getElementById('cm-sub').textContent =
-          fmtN(camp.qtde) + ' vendidos no grupo em ' + d.mes_ref + ' · meta de ' +
-          d.mes_meta + ': ' + fmtN(d.grupo.meta_mes) + ' drinks';
+        DADOS = d;
+        document.getElementById('tcm-mes').textContent = d.mes_ref || '';
+        montaPills();
+        render('grupo');
         card.style.display = '';
       })
       .catch(function () {});
