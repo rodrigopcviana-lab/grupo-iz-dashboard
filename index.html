@@ -300,9 +300,12 @@ window.msgAcessoNegado = function (nomePagina) {
   .balao-casa-vazio { color: var(--text-3); font-style: italic; }
 </style>
 
-<a class="tut-banner" href="tutorial.html">
+<!-- Banner do tutorial (deslogado): renomeado "Entenda o portal" (2026-07-23).
+     Logado, ele é escondido (abrePortal) — o topo logado tem o próprio botão
+     "Entenda o portal" na linha de 3 (ver _painel_rapido_corpo/prv-top3). -->
+<a class="tut-banner" id="tut-banner" href="tutorial.html">
 <div class="ico"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-<div class="txt"><b>Entenda o funcionamento do Portal</b><span>Tutorial completo de cada nível de acesso — sem precisar de senha</span></div>
+<div class="txt"><b>Entenda o portal</b><span>Tutorial completo de cada nível de acesso — sem precisar de senha</span></div>
 <div class="go">&rarr;</div>
 </a>
 
@@ -475,62 +478,68 @@ window.msgAcessoNegado = function (nomePagina) {
   #pr-master-body[hidden] { display: none; }
   #pr-master-body { margin-top: 10px; }
 </style>
-<div class="pr-master-wrap">
-  <button type="button" class="pr-master-btn" id="pr-master-btn" aria-expanded="false" aria-controls="pr-master-body">
-    <span class="pr-master-chip"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12z"/></svg></span>
-    <span class="pr-master-tt"><b>Painel Rápido</b><span>Criar · Demandas · Notas · atalhos</span></span>
-    <span class="pr-master-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
-  </button>
-  <div id="pr-master-body" hidden>
-    <div class="pr-toggle-wrap">
-      <div class="pr-tabs-row">
-        <button type="button" class="pr-toggle-btn pr-tab-p" id="pr-toggle-btn" aria-expanded="false" aria-controls="pr-conteudo">
-          <span class="pr-pega"></span>
-          <span class="pr-rot">Criar <span class="pr-toggle-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></span>
-        </button>
-        <a href="demandas.html" class="pr-toggle-btn pr-tab-c">
-          <span class="pr-pega"></span>
-          <span class="pr-rot">Central de Demandas</span>
-        </a>
-        <button type="button" class="pr-toggle-btn pr-tab-n" id="np-toggle-btn" aria-expanded="false" aria-controls="np-painel">
-          <span class="np-pega"></span>
-          <span class="pr-rot">Notas <span class="np-toggle-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg></span></span>
-        </button>
-      </div>
-    </div>
-    <div class="pr-fixos">
-      <button type="button" class="pr-fx pr-fx-avarias" id="pr-avarias-btn" aria-expanded="false" aria-controls="pr-avarias-sub">
-        <span class="pr-fx-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span>
-        <span>Avarias</span>
-      </button>
-      <a class="pr-fx pr-fx-nova" href="registro.html">
-        <span class="pr-fx-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
-        <span>Nova demanda</span>
-      </a>
-      <a class="pr-fx pr-fx-dose" id="pr-dose-card" href="dose.html" style="display:none">
-        <span class="pr-fx-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span>
-        <span>Dose</span>
-      </a>
-    </div>
-    <div class="pr-avarias-sub" id="pr-avarias-sub" hidden>
-      <p class="pr-avarias-cab">O que avariou?</p>
-      <div class="pr-avarias-grid"><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Copos%20e%20ta%C3%A7as%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Copos e taças</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Mob%C3%ADlia%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Mobília</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Equipamentos%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Equipamentos</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Estrutural%20%28pintura%2C%20tomadas%E2%80%A6%29%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Estrutural (pintura, tomadas…)</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Utens%C3%ADlios%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Utensílios</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Vestu%C3%A1rio%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Vestuário</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Outra avaria — escrever</span></a></div>
-    </div>
-    <div class="painel-rapido" id="pr-conteudo" hidden>
-      <a class="pr-card pr-receita" id="pr-receita-card" href="cocktails.html#nova" style="display:none">
-        <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span>
-        <span class="pr-tt"><span class="t">Nova receita</span><span class="d">ficha técnica direto no banco</span></span>
-      </a>
-      <a class="pr-card pr-3d" id="pr-3d-card" href="planejador-3d.html" style="display:none">
-        <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg></span>
-        <span class="pr-tt"><span class="t">Projeto 3D</span><span class="d">planejador da bancada</span></span>
-      </a>
-      <a class="pr-card pr-ideia" id="pr-ideia-card" href="ideia.html">
-        <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg></span>
-        <span class="pr-tt"><span class="t">Ideia</span><span class="d">desenho e colagem livre</span></span>
-      </a>
-    </div>
-  </div>
+<!-- v7 (2026-07-23): Painel Rápido DESDOBRADO — sem a gaveta-mãe (pr-master).
+     Linha 1: 3 botões simétricos (Entenda o portal · Nova demanda · Central de
+     Demandas). Linha 2: 4 ações (Criar · Avarias · Dose · Notas). Os drawers
+     (pr-conteudo do Criar, np-painel das Notas, pr-avarias-sub) e seus ids
+     seguem iguais — só a casca dos botões mudou. -->
+<style>
+  .prv-top3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 9px; }
+  .prv-tb { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+             border: 1px solid var(--border); border-radius: 13px; padding: 11px 5px; text-decoration: none;
+             color: var(--text); background: var(--card); }
+  .prv-tb .ic { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center;
+                 justify-content: center; background: rgba(208,163,82,.14); color: var(--acc); flex: none; }
+  .prv-tb .ic svg { width: 17px; height: 17px; }
+  .prv-tb b { font-size: 11px; font-weight: 600; line-height: 1.2; }
+  .prv-tb.prv-nova { background: linear-gradient(135deg,#3d2420,#241713); border-color: #e07a52; }
+  .prv-tb.prv-nova .ic { background: rgba(224,122,82,.18); color: #f0a58f; }
+  .prv-tb.prv-dem { background: linear-gradient(135deg,#2f2016,#20140f); border-color: #e07a52; }
+  .prv-tb.prv-dem .ic { background: rgba(224,122,82,.16); color: #f0a58f; }
+  .prv-q4 { display: flex; gap: 7px; margin-bottom: 12px; }
+  .prv-q { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px;
+            text-align: center; border: 1.5px solid var(--border); border-radius: 12px; padding: 9px 3px;
+            text-decoration: none; color: var(--text); background: var(--card); font: inherit; font-size: 10.5px; cursor: pointer; }
+  .prv-q .ic { color: var(--acc); display: flex; } .prv-q .ic svg { width: 17px; height: 17px; }
+  .prv-q-criar { border-color: rgba(208,163,82,.5); }
+  .prv-q-criar.aberto { border-color: var(--acc); }
+  .prv-q-criar .pr-toggle-ic { display: inline-flex; transition: transform .18s; }
+  .prv-q-criar.aberto .pr-toggle-ic { transform: rotate(180deg); }
+  .prv-q-avaria { border-color: #cf7089; } .prv-q-avaria .ic { color: #e192a6; }
+  .prv-q-avaria.aberto { border-color: #e192a6; }
+  .prv-q-dose { border-color: #6fa8dc; } .prv-q-dose .ic { color: #8ec0ea; }
+  .prv-q-notas { border-color: #9b8dcc; } .prv-q-notas .ic { color: #c4b8e8; }
+  .prv-q-notas.aberto { border-color: #c4b8e8; }
+  @media (max-width: 380px) { .prv-tb b { font-size: 10px; } .prv-q { font-size: 10px; } }
+</style>
+<div class="prv-top3">
+  <a class="prv-tb" href="tutorial.html"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><b>Entenda o portal</b></a>
+  <a class="prv-tb prv-nova" href="registro.html"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><b>Nova demanda</b></a>
+  <a class="prv-tb prv-dem" href="demandas.html"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><b>Central de Demandas</b></a>
+</div>
+<div class="prv-q4">
+  <button type="button" class="prv-q prv-q-criar" id="pr-toggle-btn" aria-expanded="false" aria-controls="pr-conteudo"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>Criar <span class="pr-toggle-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></button>
+  <button type="button" class="prv-q prv-q-avaria" id="pr-avarias-btn" aria-expanded="false" aria-controls="pr-avarias-sub"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span>Avarias</button>
+  <a class="prv-q prv-q-dose" id="pr-dose-card" href="dose.html" style="display:none"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span>Dose</a>
+  <button type="button" class="prv-q prv-q-notas" id="np-toggle-btn" aria-expanded="false" aria-controls="np-painel"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg></span>Notas</button>
+</div>
+<div class="pr-avarias-sub" id="pr-avarias-sub" hidden>
+  <p class="pr-avarias-cab">O que avariou?</p>
+  <div class="pr-avarias-grid"><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Copos%20e%20ta%C3%A7as%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Copos e taças</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Mob%C3%ADlia%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Mobília</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Equipamentos%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Equipamentos</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Estrutural%20%28pintura%2C%20tomadas%E2%80%A6%29%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Estrutural (pintura, tomadas…)</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Utens%C3%ADlios%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Utensílios</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Vestu%C3%A1rio%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Vestuário</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Outra avaria — escrever</span></a></div>
+</div>
+<div class="painel-rapido" id="pr-conteudo" hidden>
+  <a class="pr-card pr-receita" id="pr-receita-card" href="cocktails.html#nova" style="display:none">
+    <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span>
+    <span class="pr-tt"><span class="t">Nova receita</span><span class="d">ficha técnica direto no banco</span></span>
+  </a>
+  <a class="pr-card pr-3d" id="pr-3d-card" href="planejador-3d.html" style="display:none">
+    <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg></span>
+    <span class="pr-tt"><span class="t">Projeto 3D</span><span class="d">planejador da bancada</span></span>
+  </a>
+  <a class="pr-card pr-ideia" id="pr-ideia-card" href="ideia.html">
+    <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg></span>
+    <span class="pr-tt"><span class="t">Ideia</span><span class="d">desenho e colagem livre</span></span>
+  </a>
 </div>
 
 <!-- Prévia das Notas (camada 1 do PLANO_NOTAS_RAPIDAS.md) — captura rápida +
@@ -601,18 +610,10 @@ window.msgAcessoNegado = function (nomePagina) {
     if (okCoord && el3d) el3d.style.display = '';
   } catch (e) {}
 
-  // --- Painel Rápido inteiro: recolhido por padrão, uma seta só ---
-  var masterBtn = document.getElementById('pr-master-btn');
-  var masterBody = document.getElementById('pr-master-body');
-  masterBtn.onclick = function () {
-    var abrir = masterBody.hidden;
-    masterBody.hidden = !abrir;
-    masterBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
-    masterBtn.classList.toggle('aberto', abrir);
-  };
-
+  // v7 (2026-07-23): Painel Rápido desdobrado — não há mais gaveta-mãe
+  // (pr-master removido). Criar/Notas seguem como abas mutuamente exclusivas.
   // --- Abrir/fechar abas (Criar, Notas — mutuamente exclusivas; Central de
-  // Demandas virou link direto, não abre mais gaveta) ---
+  // Demandas é botão do topo agora, link direto) ---
   var btn = document.getElementById('pr-toggle-btn');
   var conteudo = document.getElementById('pr-conteudo');
   var npBtn = document.getElementById('np-toggle-btn');
@@ -650,12 +651,10 @@ window.msgAcessoNegado = function (nomePagina) {
     avBtn.classList.toggle('aberto', abrir);
   };
 
-  // Abre direto em ?np=1 (link do mini-painel em outras páginas)
+  // Abre direto em ?np=1 (link do mini-painel em outras páginas) — sem
+  // gaveta-mãe agora (v7), só abre a aba Notas.
   try {
     if (new URLSearchParams(location.search).get('np') === '1') {
-      masterBody.hidden = false;
-      masterBtn.setAttribute('aria-expanded', 'true');
-      masterBtn.classList.add('aberto');
       abreAba(abas[1]);
     }
   } catch (e) {}
@@ -951,7 +950,7 @@ window.msgAcessoNegado = function (nomePagina) {
 <summary class="k">MUNDO DA COQUETELARIA<span class="seta" aria-hidden="true">▾</span></summary>
 <div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span><b>Sustentabilidade operacional ganha peso concreto</b> — Batching pra reduzir desperdício por drink, reaproveitamento de cascas/sobras, compostagem com hortas urbanas e fim de descartáveis viram diferencial competitivo citado por múltiplas casas em 2026. (diageobaracademy.com)</span><a class="go" href="https://diageobaracademy.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Dandelion (Nova York)</b> — Bar do West Village pela equipe do Zero Bond e do reformado White Horse Tavern, com serviço dedicado de Martini e cozinha assinada por chef estrelado Michelin. (wwd.com)</span><a class="go" href="https://wwd.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Diageo World Class 2026</b> — Campeões regionais definidos (EUA: Alexis Ortega, Static Bar, Filadélfia; Hong Kong, Tailândia, Líbano, Cingapura já têm campeões); final global em outubro/2026 na Escócia. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Cato (Londres)</b> — Bar de cinco andares do bartender Angelos Bafas em Covent Garden, dedicado ao clássico Julep; toda a produção e destilados são de origem britânica. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Spirited Awards 2026 (Tales of the Cocktail)</b> — 20ª edição; cerimônia marcada para 23/jul/2026 em Nova Orleans. Finalistas Top 4 e vencedores de prêmios especiais (Helen David Lifetime Achievement, Tales Visionary Award) já anunciados. (talesofthecocktail.org)</span><a class="go" href="https://talesofthecocktail.org/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Destilados sem álcool atraem investimento pesado</b> — Lyre&#x27;s é hoje a mais capitalizada do setor (US$53 milhões levantados); previsão de crescimento de 36,7% em valor no segmento entre 2024-2028. (tracxn.com)</span><a class="go" href="https://tracxn.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Asia&#x27;s 50 Best Bars 2026</b> — Cerimônia em Macau em 28/jul/2026. Smoke &amp; Bitters (Sri Lanka) já venceu o Michter&#x27;s Art of Hospitality Award; Shelley Tai (Mius, Hong Kong) o prêmio Altos Bartenders&#x27; Bartender. (ttrweekly.com)</span><a class="go" href="https://ttrweekly.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Agave em transição: mezcal e reposado sobem sobre o blanco</b> — Mercado de agave se estabiliza após colapso de preço (pico ~32 pesos/kg para ~5 pesos/kg); oferta mais previsível, mas replantio baixo pode gerar novo aperto futuro. (theiwsr.com)</span><a class="go" href="https://theiwsr.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Sabor &quot;savory&quot;/umami dominando os menus</b> — Bartenders reportam alta de miso, shoyu, MSG e maior salinidade em coquetéis, criando perfis mais food-forward e complexos. (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Elderflower é eleito &quot;sabor do ano&quot; de 2026</b> — Floral/botânico domina cardápios, puxando também ervas nativas e infusões naturais como categoria em crescimento. (mrsipps.nl)</span><a class="go" href="https://mrsipps.nl/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Volta à simplicidade técnica</b> — Reação contra coquetéis de 5+ componentes e guarnições excessivas; foco em clássicos revisitados com ingredientes melhores (clarificação, soluções salinas, yuzu). (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Low/no-álcool vira parte estrutural do menu</b> — &quot;Zebra striping&quot; (alternar drink alcoólico e não-alcoólico) já é hábito de 78% da Gen Z; spritzes e clássicos com ABV reduzido seguem como base fixa de carta. (tastingtable.com)</span><a class="go" href="https://tastingtable.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div>
 <div class="coq-historico"><p class="titulo">🏆 World&#39;s 50 Best Bars — últimos vencedores</p><ul><li>World&#x27;s 50 Best Bars 2024 — Handshake Speakeasy (Cidade do México)</li><li>World&#x27;s 50 Best Bars 2025 — Bar Leone (Hong Kong)</li><li>World&#x27;s 50 Best Bars 2023 — Sips (Barcelona)</li><li>World&#x27;s 50 Best Bars 2021 — Connaught Bar (Londres)</li><li>World&#x27;s 50 Best Bars 2022 — Paradiso (Barcelona)</li></ul></div>
-<p class="coq-foot">Atualizado em 23/07/2026 14:10.</p>
+<p class="coq-foot">Atualizado em 23/07/2026 14:18.</p>
 </details>
 <script>
 // Cocktail do mês (PLANO_RANKING_COCKTAILS.md §5) — mesmo Worker da presença
@@ -1193,10 +1192,14 @@ window.msgAcessoNegado = function (nomePagina) {
     msg.textContent = '';
   }
 
+  // Banner "Entenda o portal" (deslogado): logado ele some, porque o topo
+  // logado (prv-top3) já tem o próprio botão Entenda o portal (v7, 2026-07-23).
+  var tutBanner = document.getElementById('tut-banner');
   // Portal aberto (logado): o seletor inteiro some, mostra o conteúdo.
   function abrePortal() {
     acesso.style.display = 'none';
     ajuda.style.display = 'none';
+    if (tutBanner) tutBanner.style.display = 'none';
     mostraPortal();
   }
 
@@ -1206,6 +1209,7 @@ window.msgAcessoNegado = function (nomePagina) {
     escondePortal();
     acesso.style.display = '';
     ajuda.style.display = '';
+    if (tutBanner) tutBanner.style.display = '';
     resetAcesso();
   }
 
