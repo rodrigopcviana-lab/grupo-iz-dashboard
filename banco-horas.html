@@ -468,9 +468,9 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <div class="bh-plano" id="bh-plano-wrap" style="display:none">
   <h2>Plano pra zerar horas extras</h2>
-  <p class="sub">Quem tem saldo a favor precisa zerar antes do fechamento, senão vira pagamento em dinheiro. Sugestão: liberar a pessoa mais cedo nos dias de trabalho até lá — combinar com folgas inteiras fica a critério do chefe, não é calculado aqui.</p>
+  <p class="sub">Quem tem saldo a favor precisa zerar antes do fechamento, senão vira pagamento em dinheiro. Duas formas de zerar — liberação diária ou folga(s) inteira(s) — escolha a que fizer mais sentido pra operação de cada casa.</p>
   <div class="panel" style="padding:8px 10px;overflow-x:auto">
-  <table class="bh-plano-tb"><thead><tr><th>Casa</th><th>Bartender</th><th class="n">Saldo</th><th class="n">Dias úteis restantes</th><th>Ação sugerida</th></tr></thead>
+  <table class="bh-plano-tb"><thead><tr><th>Casa</th><th>Bartender</th><th class="n">Saldo</th><th>Opção 1 — liberar mais cedo</th><th>Opção 2 — folga(s) inteira(s)</th><th class="n">Custo se não abater</th></tr></thead>
   <tbody id="bh-plano-lista"></tbody></table>
   </div>
 </div>
@@ -551,8 +551,11 @@ window.msgAcessoNegado = function (nomePagina) {
         if (b.plano_zerar_horas && b.plano_zerar_horas.minutos_por_dia) {
           planoPessoas.push({
             casa: c.bar || slug, nome: b.nome, saldo_texto: b.saldo_atual_texto,
+            saldo_minutos: b.saldo_atual_minutos,
             dias_uteis: b.plano_zerar_horas.dias_uteis,
             minutos_por_dia: b.plano_zerar_horas.minutos_por_dia,
+            dias_folga_necessarios: b.plano_zerar_horas.dias_folga_necessarios,
+            custo_se_nao_abater: b.plano_zerar_horas.custo_se_nao_abater,
           });
         }
       });
@@ -575,7 +578,7 @@ window.msgAcessoNegado = function (nomePagina) {
     if (planoPessoas.length) {
       document.getElementById('bh-plano-wrap').style.display = '';
       var planoLista = document.getElementById('bh-plano-lista');
-      planoPessoas.sort(function (a, b) { return b.minutos_por_dia - a.minutos_por_dia; });
+      planoPessoas.sort(function (a, b) { return b.saldo_minutos - a.saldo_minutos; });
       planoPessoas.forEach(function (pl) {
         var tr = document.createElement('tr');
         tr.appendChild(td(pl.casa));
@@ -584,13 +587,29 @@ window.msgAcessoNegado = function (nomePagina) {
         tdNome.appendChild(nomeEl);
         tr.appendChild(tdNome);
         tr.appendChild(td(pl.saldo_texto, 'n'));
-        tr.appendChild(td(pl.dias_uteis, 'n'));
-        var tdAcao = document.createElement('td');
-        var acaoEl = document.createElement('span'); acaoEl.className = 'bh-plano-acao';
-        acaoEl.textContent = 'Nos próximos ' + pl.dias_uteis + ' dias úteis, liberar ' +
+
+        var tdOpcao1 = document.createElement('td');
+        var op1El = document.createElement('span'); op1El.className = 'bh-plano-acao';
+        op1El.textContent = 'Em ' + pl.dias_uteis + ' dias úteis, liberar ' +
           fmtMinutos(pl.minutos_por_dia) + ' mais cedo por dia';
-        tdAcao.appendChild(acaoEl);
-        tr.appendChild(tdAcao);
+        tdOpcao1.appendChild(op1El);
+        tr.appendChild(tdOpcao1);
+
+        var tdOpcao2 = document.createElement('td');
+        if (pl.dias_folga_necessarios) {
+          var op2El = document.createElement('span'); op2El.className = 'bh-plano-acao';
+          op2El.textContent = pl.dias_folga_necessarios + (pl.dias_folga_necessarios === 1 ? ' folga inteira' : ' folgas inteiras');
+          tdOpcao2.appendChild(op2El);
+        } else {
+          tdOpcao2.textContent = '—';
+        }
+        tr.appendChild(tdOpcao2);
+
+        var tdCusto = document.createElement('td'); tdCusto.className = 'n';
+        tdCusto.textContent = (pl.custo_se_nao_abater != null)
+          ? pl.custo_se_nao_abater.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+          : '—';
+        tr.appendChild(tdCusto);
         planoLista.appendChild(tr);
       });
     }
