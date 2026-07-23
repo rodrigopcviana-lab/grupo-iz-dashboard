@@ -392,10 +392,12 @@ window.msgAcessoNegado = function (nomePagina) {
 
 
 <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg> Escala</h1>
-<p class="sub">Grade da equipe com regras de CLT — a edição só salva se a escala
-continuar dentro das regras (cobertura mínima, 44h semanais, 11h de intervalo,
-folga semanal, folga de domingo por sexo e folga compensatória — a cobertura
-mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria casa; coordenação vê todas.</p>
+<p class="sub">Grade da equipe conferida contra as regras de CLT (cobertura mínima, 44h
+semanais, 11h de intervalo, folga semanal, folga de domingo por sexo e folga
+compensatória — a cobertura mínima é só aviso em casas com equipe pequena).
+Se a escala real precisar estourar uma regra (dia de hóspede, evento, cobertura
+de folga), dá pra <b>salvar mesmo assim registrando o motivo</b> — o alerta continua
+visível e o motivo fica gravado no dia. Chefe de bar vê a própria casa; coordenação vê todas.</p>
 
 <div class="panel" id="es-gate">
   <h2>Acesso restrito</h2>
@@ -468,6 +470,22 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
               transition: opacity .18s, transform .18s; }
   .es-toast.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
   .es-toast.erro { border-color: rgba(226,75,74,.5); color: #f09b9b; }
+  .es-modal { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center;
+              background: rgba(0,0,0,.5); padding: 18px; }
+  .es-modal.on { display: flex; }
+  .es-modal-cx { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px;
+                 max-width: 440px; width: 100%; }
+  .es-modal-cx h3 { margin: 0 0 4px; font-size: 16px; display: flex; align-items: center; gap: 7px; }
+  .es-modal-cx h3 svg { color: #f09b9b; }
+  .es-modal-cx .sub { margin: 0 0 10px; font-size: 12.5px; }
+  .es-modal-viol { background: rgba(226,75,74,.1); border: 1px solid rgba(226,75,74,.35); border-radius: 9px;
+                   padding: 9px 12px; margin-bottom: 12px; font-size: 12.5px; color: #f0a19b; }
+  .es-modal-viol ul { margin: 0; padding-left: 17px; }
+  .es-modal-viol li { margin-bottom: 3px; }
+  .es-modal-cx label { display: block; font-size: 12.5px; color: var(--text-2); margin-bottom: 5px; }
+  .es-modal-cx textarea { width: 100%; font: inherit; font-size: 13px; background: var(--bg); color: var(--text);
+                          border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; resize: vertical; min-height: 62px; }
+  .es-modal-acoes { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
 </style>
 
 <div class="es-top">
@@ -496,16 +514,18 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
   </div>
   <div class="es-acoes">
     <button type="button" class="es-btn pri" id="es-salvar-tudo" disabled>Salvar alterações pontuais</button>
-    <span style="font-size:12px;color:var(--text-3)">Cada célula editada precisa passar na validação antes de salvar.</span>
+    <span style="font-size:12px;color:var(--text-3)">Dia "todos os horários" (abre e fecha): escolha o turno e ligue o <b>2º intervalo</b> — ex.: 06:00–15:00 e 18:00–23:00. Se a CLT travar, dá pra salvar registrando o motivo.</span>
   </div>
 </div>
 
 <div id="es-view-padrao" style="display:none">
-  <p class="sub" style="margin-bottom:10px">Padrão fixo da equipe. Entrada/Saída valem pra todo dia trabalhado, exceto
-  onde "Horários por dia" tiver um horário próprio pra aquele dia da semana (ex.: sexta e sábado diferentes, ou um
-  dia com dois intervalos). "Rodízio" é só uma nota livre (não entra em nenhum cálculo nem regra de CLT) — use pra
-  registrar, por exemplo, com quem essa pessoa se reveza num turno. "Aplicar a partir de" regenera a grade dali pra
-  frente — dias já editados pontualmente (ex.: freelancer num domingo) não são sobrescritos.</p>
+  <p class="sub" style="margin-bottom:10px">Padrão fixo da equipe — o gabarito que se repete toda semana. Entrada/Saída valem
+  pra todo dia trabalhado. <b>Um dia da semana com horário diferente</b> (ex.: domingo e segunda por causa das folgas,
+  ou sexta/sábado) vai no botão <b>"Horários por dia"</b> de cada pessoa — lá dá pra pôr entrada/saída próprios e até um
+  turno partido (2 intervalos). Cada pessoa tem <b>uma</b> folga fixa; um dia que só acontece às vezes (ex.: "trabalha
+  domingo caso tenha hóspede") não é do Padrão — monte esse dia direto na aba <b>Grade</b>. "Rodízio" é só uma nota livre
+  (não entra em cálculo nem em CLT). "Aplicar a partir de" regenera a grade dali pra frente — dias já editados na Grade
+  não são sobrescritos.</p>
   <table class="es-padrao-tab" id="es-padrao-tab">
     <thead><tr><th>Pessoa</th><th>Sexo</th><th>Turno base</th><th>Entrada</th><th>Saída</th><th>Folga fixa</th><th title="Nota livre — não é calculada nem validada pelo sistema, só fica salva pra referência de quem monta a escala.">Rodízio</th><th>Ativo</th><th>Horários por dia</th></tr></thead>
     <tbody></tbody>
@@ -520,6 +540,21 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
 </div><!-- es-corpo -->
 
 <div class="es-toast" id="es-toast"></div>
+
+<div class="es-modal" id="es-forcar">
+  <div class="es-modal-cx">
+    <h3><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg> Fora das regras de CLT</h3>
+    <p class="sub">Esta escala estoura uma ou mais regras. Você pode salvar assim mesmo registrando o motivo —
+    ele fica gravado no dia (auditoria). Se preferir, cancele e ajuste os horários.</p>
+    <div class="es-modal-viol"><ul id="es-forcar-lista"></ul></div>
+    <label for="es-forcar-motivo">Motivo (ex.: dia de hóspede, evento, cobertura de folga)</label>
+    <textarea id="es-forcar-motivo" placeholder="Escreva por que esta escala precisa ficar assim…"></textarea>
+    <div class="es-modal-acoes">
+      <button type="button" class="es-btn" id="es-forcar-cancelar">Cancelar</button>
+      <button type="button" class="es-btn pri" id="es-forcar-ok">Salvar mesmo assim</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -776,19 +811,66 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
     document.getElementById('es-salvar-tudo').disabled = travado || !Object.keys(estado.dirty).length;
   }
 
-  function salvaCelula(pessoa, data) {
-    var k = chave(pessoa, data);
-    var d = estado.dirty[k];
-    if (!d) return;
-    fetch(WORKER + '/api/escala/dia', {
+  // POST de uma célula. `extra` carrega { forcar, justificativa } quando o
+  // chefe decidiu salvar fora da CLT. Resolve { status, corpo } (ou null no 401).
+  function postDia(pessoa, data, extra) {
+    var d = estado.dirty[chave(pessoa, data)];
+    if (!d) return Promise.resolve(null);
+    return fetch(WORKER + '/api/escala/dia', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
-      body: JSON.stringify(Object.assign({ casa: casaSel() }, d)),
+      body: JSON.stringify(Object.assign({ casa: casaSel() }, d, extra || {})),
     }).then(function (r) {
       if (r.status === 401) { trata401(); return null; }
       return r.json().then(function (j) { return { status: r.status, corpo: j }; });
-    }).then(function (res) {
+    });
+  }
+
+  // Abre o diálogo "salvar mesmo assim" e resolve com o motivo digitado (ou
+  // null se o chefe cancelou). Um diálogo por vez — reusa os mesmos elementos.
+  function pedeJustificativa(bloqueios) {
+    return new Promise(function (resolve) {
+      var dlg = document.getElementById('es-forcar');
+      var lista = document.getElementById('es-forcar-lista');
+      var ta = document.getElementById('es-forcar-motivo');
+      var btnOk = document.getElementById('es-forcar-ok');
+      var btnCancel = document.getElementById('es-forcar-cancelar');
+      lista.innerHTML = (bloqueios || []).map(function (v) { return '<li>' + esc(v.mensagem) + '</li>'; }).join('');
+      ta.value = '';
+      dlg.classList.add('on');
+      setTimeout(function () { ta.focus(); }, 30);
+      function fecha(motivo) {
+        dlg.classList.remove('on');
+        btnOk.removeEventListener('click', ok);
+        btnCancel.removeEventListener('click', cancel);
+        resolve(motivo);
+      }
+      function ok() { var m = ta.value.trim(); if (!m) { ta.focus(); return; } fecha(m); }
+      function cancel() { fecha(null); }
+      btnOk.addEventListener('click', ok);
+      btnCancel.addEventListener('click', cancel);
+    });
+  }
+
+  function salvaCelula(pessoa, data) {
+    var k = chave(pessoa, data);
+    if (!estado.dirty[k]) return;
+    postDia(pessoa, data).then(function (res) {
       if (!res) return;
-      if (res.status === 422) { renderViolacoes(res.corpo.violacoes || []); toast('Bloqueado — veja as violações acima', true); return; }
+      if (res.status === 422) {
+        renderViolacoes(res.corpo.violacoes || []);
+        if (res.corpo.podeForcar) {
+          pedeJustificativa(res.corpo.violacoes || []).then(function (motivo) {
+            if (!motivo) { toast('Não salvo — fora da CLT', true); return; }
+            postDia(pessoa, data, { forcar: true, justificativa: motivo }).then(function (r2) {
+              if (!r2) return;
+              if (!r2.corpo || !r2.corpo.ok) { toast((r2.corpo && r2.corpo.erro) || 'Falha ao salvar', true); return; }
+              delete estado.dirty[k]; toast('Salvo fora da CLT — motivo registrado.'); carregaEscala();
+            }).catch(function () { toast('Sem conexão — tente de novo', true); });
+          });
+          return;
+        }
+        toast('Bloqueado — veja as violações acima', true); return;
+      }
       if (!res.corpo.ok) { toast((res.corpo && res.corpo.erro) || 'Falha ao salvar', true); return; }
       delete estado.dirty[k];
       toast('Salvo.');
@@ -810,17 +892,24 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
   }
   function salvaCelulaEncadeada(pessoa, data, cont) {
     var k = chave(pessoa, data);
-    var d = estado.dirty[k];
-    if (!d) { cont(); return; }
-    fetch(WORKER + '/api/escala/dia', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
-      body: JSON.stringify(Object.assign({ casa: casaSel() }, d)),
-    }).then(function (r) {
-      if (r.status === 401) { trata401(); return null; }
-      return r.json().then(function (j) { return { status: r.status, corpo: j }; });
-    }).then(function (res) {
+    if (!estado.dirty[k]) { cont(); return; }
+    postDia(pessoa, data).then(function (res) {
       if (!res) return;
-      if (res.status === 422) { renderViolacoes(res.corpo.violacoes || []); toast('Bloqueado em ' + pessoa + ' (' + data + ') — pare e ajuste', true); return; }
+      if (res.status === 422) {
+        renderViolacoes(res.corpo.violacoes || []);
+        if (res.corpo.podeForcar) {
+          pedeJustificativa(res.corpo.violacoes || []).then(function (motivo) {
+            if (!motivo) { toast('Parou em ' + pessoa + ' (' + data + ') — fora da CLT', true); return; }
+            postDia(pessoa, data, { forcar: true, justificativa: motivo }).then(function (r2) {
+              if (!r2) return;
+              if (!r2.corpo || !r2.corpo.ok) { toast((r2.corpo && r2.corpo.erro) || 'Falha ao salvar', true); return; }
+              delete estado.dirty[k]; cont();
+            }).catch(function () { toast('Sem conexão — tente de novo', true); });
+          });
+          return;
+        }
+        toast('Bloqueado em ' + pessoa + ' (' + data + ') — pare e ajuste', true); return;
+      }
       delete estado.dirty[k];
       cont();
     }).catch(function () { toast('Sem conexão — tente de novo', true); });
@@ -954,22 +1043,40 @@ mínima é só aviso em casas com equipe pequena). Chefe de bar vê a própria c
     estado.padrao.push({ pessoa: '', sexo: 'M', turnoBase: 'Dia', entradaBase: '', saidaBase: '', folgaFixa: 'Segunda', rodizio: '', ativo: true, horariosPorDia: {} });
     renderPadrao();
   });
+  function postPadrao(padrao, aplicarDesde, extra) {
+    return fetch(WORKER + '/api/escala/padrao', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify(Object.assign({ casa: casaSel(), padrao: padrao, aplicarDesde: aplicarDesde }, extra || {})),
+    }).then(function (r) {
+      if (r.status === 401) { trata401(); return null; }
+      return r.json().then(function (j) { return { status: r.status, corpo: j }; });
+    });
+  }
+  function padraoAplicado(res) {
+    if (!res) return;
+    if (!res.corpo || !res.corpo.ok) { toast((res.corpo && res.corpo.erro) || 'Falha ao salvar padrão', true); return; }
+    toast('Padrão aplicado — ' + (res.corpo.diasAtualizados || 0) + ' dia(s) atualizado(s).');
+    carregaEscala();
+  }
   document.getElementById('es-padrao-salvar').addEventListener('click', function () {
     var padrao = lePadraoDaTela();
     var aplicarDesde = document.getElementById('es-aplicar-desde').value;
     if (!padrao.length || !aplicarDesde) { toast('Preencha ao menos uma pessoa e a data', true); return; }
-    fetch(WORKER + '/api/escala/padrao', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
-      body: JSON.stringify({ casa: casaSel(), padrao: padrao, aplicarDesde: aplicarDesde }),
-    }).then(function (r) {
-      if (r.status === 401) { trata401(); return null; }
-      return r.json().then(function (j) { return { status: r.status, corpo: j }; });
-    }).then(function (res) {
+    postPadrao(padrao, aplicarDesde).then(function (res) {
       if (!res) return;
-      if (res.status === 422) { renderViolacoes(res.corpo.violacoes || []); toast('Padrão bloqueado — veja as violações acima', true); return; }
-      if (!res.corpo.ok) { toast((res.corpo && res.corpo.erro) || 'Falha ao salvar padrão', true); return; }
-      toast('Padrão aplicado — ' + (res.corpo.diasAtualizados || 0) + ' dia(s) atualizado(s).');
-      carregaEscala();
+      if (res.status === 422) {
+        renderViolacoes(res.corpo.violacoes || []);
+        if (res.corpo.podeForcar) {
+          pedeJustificativa(res.corpo.violacoes || []).then(function (motivo) {
+            if (!motivo) { toast('Padrão não aplicado — fora da CLT', true); return; }
+            postPadrao(padrao, aplicarDesde, { forcar: true, justificativa: motivo }).then(padraoAplicado)
+              .catch(function () { toast('Sem conexão — tente de novo', true); });
+          });
+          return;
+        }
+        toast('Padrão bloqueado — veja as violações acima', true); return;
+      }
+      padraoAplicado(res);
     }).catch(function () { toast('Sem conexão — tente de novo', true); });
   });
 
