@@ -432,7 +432,22 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-tend.piorando { color:var(--verm); }
   .bh-vazio { text-align:center; color:var(--text-3); padding:30px 10px; }
   .bh-foot { font-size:11.5px; color:var(--text-3); margin-top:16px; }
+  .bh-fechamento { background:var(--card); border:1px solid var(--border); border-radius:12px;
+      padding:12px 14px; margin-bottom:14px; font-size:13.5px; display:none; }
+  .bh-fechamento b { color:var(--text); }
+  .bh-plano { margin:22px 0 14px; }
+  .bh-plano h2 { font-size:16px; margin:0 0 4px; }
+  .bh-plano .sub { margin:0 0 12px; }
+  table.bh-plano-tb { width:100%; border-collapse:collapse; font-size:13px; }
+  table.bh-plano-tb th { text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+      color:var(--text-3); padding:8px 8px; border-bottom:1px solid var(--border); }
+  table.bh-plano-tb td { padding:10px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  table.bh-plano-tb tbody tr:last-child td { border-bottom:none; }
+  table.bh-plano-tb td.n, table.bh-plano-tb th.n { text-align:right; font-variant-numeric:tabular-nums; }
+  .bh-plano-acao { font-weight:600; color:var(--acc); }
 </style>
+
+<p class="bh-fechamento" id="bh-fechamento"></p>
 
 <div class="bh-controles">
   <div class="chips" id="bh-casas"></div>
@@ -450,6 +465,16 @@ window.msgAcessoNegado = function (nomePagina) {
 <tbody id="bh-corpo-lista"></tbody></table>
 <p class="bh-vazio" id="bh-vazio" style="display:none">Nenhum bartender com dado ainda.</p>
 </div>
+
+<div class="bh-plano" id="bh-plano-wrap" style="display:none">
+  <h2>Plano pra zerar horas extras</h2>
+  <p class="sub">Quem tem saldo a favor precisa zerar antes do fechamento, senão vira pagamento em dinheiro. Sugestão: liberar a pessoa mais cedo nos dias de trabalho até lá — combinar com folgas inteiras fica a critério do chefe, não é calculado aqui.</p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+  <table class="bh-plano-tb"><thead><tr><th>Casa</th><th>Bartender</th><th class="n">Saldo</th><th class="n">Dias úteis restantes</th><th>Ação sugerida</th></tr></thead>
+  <tbody id="bh-plano-lista"></tbody></table>
+  </div>
+</div>
+
 <p class="bh-foot" id="bh-foot"></p>
 </div><!-- bh-corpo -->
 
@@ -496,10 +521,24 @@ window.msgAcessoNegado = function (nomePagina) {
     return null;
   }
 
+  function fmtDataBR(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
+  }
+
+  function fmtMinutos(min) {
+    if (min == null) return '—';
+    if (min < 60) return min + ' min';
+    var h = Math.floor(min / 60), m = min % 60;
+    return h + 'h' + (m ? ' ' + m + 'min' : '');
+  }
+
   function inicia(payload) {
     var casasObj = payload.casas || {};
     var pendenciasCasa = [];
     var pessoas = [];
+    var planoPessoas = [];
     Object.keys(casasObj).forEach(function (slug) {
       var c = casasObj[slug];
       if (c.pendencia) pendenciasCasa.push((c.bar || slug) + ': ' + c.pendencia);
@@ -509,6 +548,13 @@ window.msgAcessoNegado = function (nomePagina) {
           saldo_texto: b.saldo_atual_texto, saldo_minutos: b.saldo_atual_minutos,
           situacao: b.situacao, tendencia: tendenciaDe(b.historico),
         });
+        if (b.plano_zerar_horas && b.plano_zerar_horas.minutos_por_dia) {
+          planoPessoas.push({
+            casa: c.bar || slug, nome: b.nome, saldo_texto: b.saldo_atual_texto,
+            dias_uteis: b.plano_zerar_horas.dias_uteis,
+            minutos_por_dia: b.plano_zerar_horas.minutos_por_dia,
+          });
+        }
       });
     });
     if (pendenciasCasa.length) {
@@ -516,6 +562,37 @@ window.msgAcessoNegado = function (nomePagina) {
       pend.className = 'bh-pendencia';
       pend.textContent = 'Pendência de configuração — ' + pendenciasCasa.join(' · ');
       wrap.insertBefore(pend, wrap.firstChild);
+    }
+
+    if (payload.fechamento_pagamento) {
+      var fech = document.getElementById('bh-fechamento');
+      fech.style.display = '';
+      fech.innerHTML = 'Banco de Horas fecha para pagamento de horas extras em <b>' +
+        fmtDataBR(payload.fechamento_pagamento) + '</b>. Quem tiver saldo positivo precisa ' +
+        'zerar até lá (ver "Plano pra zerar horas extras" abaixo) — senão vira pagamento em dinheiro.';
+    }
+
+    if (planoPessoas.length) {
+      document.getElementById('bh-plano-wrap').style.display = '';
+      var planoLista = document.getElementById('bh-plano-lista');
+      planoPessoas.sort(function (a, b) { return b.minutos_por_dia - a.minutos_por_dia; });
+      planoPessoas.forEach(function (pl) {
+        var tr = document.createElement('tr');
+        tr.appendChild(td(pl.casa));
+        var tdNome = document.createElement('td');
+        var nomeEl = document.createElement('div'); nomeEl.className = 'bh-nome'; nomeEl.textContent = pl.nome;
+        tdNome.appendChild(nomeEl);
+        tr.appendChild(tdNome);
+        tr.appendChild(td(pl.saldo_texto, 'n'));
+        tr.appendChild(td(pl.dias_uteis, 'n'));
+        var tdAcao = document.createElement('td');
+        var acaoEl = document.createElement('span'); acaoEl.className = 'bh-plano-acao';
+        acaoEl.textContent = 'Nos próximos ' + pl.dias_uteis + ' dias úteis, liberar ' +
+          fmtMinutos(pl.minutos_por_dia) + ' mais cedo por dia';
+        tdAcao.appendChild(acaoEl);
+        tr.appendChild(tdAcao);
+        planoLista.appendChild(tr);
+      });
     }
 
     var estado = { casa: '', busca: '' };
