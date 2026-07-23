@@ -513,26 +513,37 @@ window.msgAcessoNegado = function (nomePagina) {
 
     // Grupos de TODO o histórico (não a janela do seletor) por casa+produto,
     // só com registros que têm quantidade — base pro selo "acima do
-    // histórico" na lista principal (independe do período escolhido pro
-    // comparativo, porque "maior preço já pago" é uma referência de sempre).
+    // histórico" na lista principal. A referência é sempre o que já foi pago
+    // ANTES daquela compra (não inclui o futuro), comparado contra a MEDIANA
+    // dos unitários anteriores — não o máximo, que um único registro sujo
+    // decide sozinho e deixaria o pico marcado pra sempre.
     var gruposHistorico = {};
     lista.forEach(function (c) {
       if (typeof c.quantidade !== 'number' || c.quantidade <= 0 || typeof c.valor !== 'number') return;
       var chave = (c.casa || '—') + '|' + (c.produto || '—');
       (gruposHistorico[chave] = gruposHistorico[chave] || []).push(c);
     });
+    function mediana(arr) {
+      if (!arr.length) return null;
+      var s = arr.slice().sort(function (a, b) { return a - b; });
+      var meio = Math.floor(s.length / 2);
+      return s.length % 2 ? s[meio] : (s[meio - 1] + s[meio]) / 2;
+    }
     function precoAcimaDoHistorico(c) {
       if (typeof c.quantidade !== 'number' || c.quantidade <= 0 || typeof c.valor !== 'number') return false;
+      if (!c.data) return false;
       var grupo = gruposHistorico[(c.casa || '—') + '|' + (c.produto || '—')] || [];
-      if (grupo.length < 2) return false;
-      var unit = c.valor / c.quantidade;
-      var maxOutros = -Infinity;
+      // Só registros ANTERIORES a esta compra (data estritamente menor) —
+      // sem isso o primeiro pico ficaria marcado pra sempre e uma alta
+      // recente sobre a média passaria batida.
+      var unitAnteriores = [];
       grupo.forEach(function (o) {
-        if (o === c) return;
-        var u = o.valor / o.quantidade;
-        if (u > maxOutros) maxOutros = u;
+        if (o === c || !o.data || o.data >= c.data) return;
+        unitAnteriores.push(o.valor / o.quantidade);
       });
-      return unit > maxOutros;
+      if (!unitAnteriores.length) return false;
+      var med = mediana(unitAnteriores);
+      return med != null && (c.valor / c.quantidade) > med;
     }
 
     var selPeriodo = document.getElementById('hcp-periodo');
@@ -998,14 +1009,20 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   // Estação padrão (a transmissão que todo mundo pega ao abrir): a marcada
   // com "default" no config, senão a primeira.
   var DEF = 0; for (var k = 0; k < ST.length; k++) { if (ST[k]['default']) { DEF = k; break; } }
-  // som:true = o usuário QUER ouvir (o padrão) — mas a página sempre abre no
-  // MUDO (regra de autoplay dos navegadores) e desmuta no 1º gesto. Se o
-  // usuário silenciar de propósito, som:false e aí NÃO desmuta sozinho.
-  var def = { idx: DEF, vol: 70, som: true };
+  // A rádio SEMPRE abre muda (pedido do Rodrigo, 2026-07-23) — antes, som:true
+  // era o padrão e o 1º gesto na página desmutava sozinha, inclusive ao
+  // navegar de página em página. Agora o som só liga por ação explícita (botão
+  // do player / "A rádio está no mudo") e esse estado NÃO atravessa a página:
+  // som fica fora do que é persistido (ver salvar()).
+  var def = { idx: DEF, vol: 70, som: false };
   var s;
   try { s = Object.assign({}, def, JSON.parse(localStorage.getItem(CH) || '{}')); }
   catch (e) { s = Object.assign({}, def); }
   if (typeof s.idx !== 'number' || s.idx < 0 || s.idx >= ST.length) s.idx = DEF;
+  // Força MUDO em toda carga: mesmo que uma sessão anterior tenha salvo
+  // som:true, a página nova abre muda. É isso que faz o som NÃO atravessar
+  // de página em página — só liga por ação explícita nesta página.
+  s.som = false;
   function salvar() { try { localStorage.setItem(CH, JSON.stringify(s)); } catch (e) {} }
   var $ = function (id) { return document.getElementById(id); };
   var btn = $('radio-btn'), pop = $('radio-pop'), list = $('radio-list'),

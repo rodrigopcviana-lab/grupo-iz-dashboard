@@ -1355,14 +1355,20 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   // Estação padrão (a transmissão que todo mundo pega ao abrir): a marcada
   // com "default" no config, senão a primeira.
   var DEF = 0; for (var k = 0; k < ST.length; k++) { if (ST[k]['default']) { DEF = k; break; } }
-  // som:true = o usuário QUER ouvir (o padrão) — mas a página sempre abre no
-  // MUDO (regra de autoplay dos navegadores) e desmuta no 1º gesto. Se o
-  // usuário silenciar de propósito, som:false e aí NÃO desmuta sozinho.
-  var def = { idx: DEF, vol: 70, som: true };
+  // A rádio SEMPRE abre muda (pedido do Rodrigo, 2026-07-23) — antes, som:true
+  // era o padrão e o 1º gesto na página desmutava sozinha, inclusive ao
+  // navegar de página em página. Agora o som só liga por ação explícita (botão
+  // do player / "A rádio está no mudo") e esse estado NÃO atravessa a página:
+  // som fica fora do que é persistido (ver salvar()).
+  var def = { idx: DEF, vol: 70, som: false };
   var s;
   try { s = Object.assign({}, def, JSON.parse(localStorage.getItem(CH) || '{}')); }
   catch (e) { s = Object.assign({}, def); }
   if (typeof s.idx !== 'number' || s.idx < 0 || s.idx >= ST.length) s.idx = DEF;
+  // Força MUDO em toda carga: mesmo que uma sessão anterior tenha salvo
+  // som:true, a página nova abre muda. É isso que faz o som NÃO atravessar
+  // de página em página — só liga por ação explícita nesta página.
+  s.som = false;
   function salvar() { try { localStorage.setItem(CH, JSON.stringify(s)); } catch (e) {} }
   var $ = function (id) { return document.getElementById(id); };
   var btn = $('radio-btn'), pop = $('radio-pop'), list = $('radio-list'),

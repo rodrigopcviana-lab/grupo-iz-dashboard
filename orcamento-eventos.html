@@ -561,7 +561,6 @@ window.msgAcessoNegado = function (nomePagina) {
 <div class="orev-tabs">
   <button type="button" class="orev-tab on" id="orev-tab-btn-calc">Calculadora</button>
   <button type="button" class="orev-tab" id="orev-tab-btn-eventos">Meus Eventos</button>
-  <button type="button" class="orev-tab" id="orev-tab-btn-roteiro">Roteiro do Evento</button>
 </div>
 
 <div id="orev-tab-calc">
@@ -808,20 +807,6 @@ window.msgAcessoNegado = function (nomePagina) {
 </div><!-- orme-form-secao -->
 </div><!-- orev-tab-eventos -->
 
-<div id="orev-tab-roteiro" style="display:none">
-<div class="panel">
-  <div class="orev-linha2">
-    <div class="orev-campo"><label for="orot-evento">Evento salvo</label><select id="orot-evento"></select></div>
-    <div class="orev-campo"><label for="orot-dia">Dia</label><select id="orot-dia"></select></div>
-  </div>
-  <p class="orev-sub" id="orot-aviso" style="display:none"></p>
-</div>
-<div id="orot-fases"></div>
-<button type="button" id="orot-salvar" style="margin-top:4px;padding:11px 16px;border-radius:10px;
-  border:none;background:var(--accent,#c9a24b);color:#1a1408;font-weight:600;cursor:pointer;display:none">Salvar roteiro</button>
-<p class="orev-sub" id="orot-msg" style="margin-top:6px"></p>
-</div><!-- orev-tab-roteiro -->
-
 </div><!-- orev-corpo -->
 <div id="orz-print-area"></div>
 
@@ -958,14 +943,15 @@ window.msgAcessoNegado = function (nomePagina) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // --- abas Calculadora / Meus Eventos / Roteiro ---
-  var ABAS = ['calc', 'eventos', 'roteiro'];
+  // --- abas Calculadora / Meus Eventos (Roteiro deixou de ser aba própria em
+  // 2026-07-23, pedido do Rodrigo — passou a viver editável dentro de cada
+  // card de evento salvo, ver montaRoteiroEditavel()) ---
+  var ABAS = ['calc', 'eventos'];
   function mostraAba(aba) {
     ABAS.forEach(function (a) {
       document.getElementById('orev-tab-btn-' + a).classList.toggle('on', a === aba);
       document.getElementById('orev-tab-' + a).style.display = a === aba ? '' : 'none';
     });
-    if (aba === 'roteiro') carregaEventosParaRoteiro();
   }
   ABAS.forEach(function (a) {
     document.getElementById('orev-tab-btn-' + a).onclick = function () { mostraAba(a); };
@@ -1823,11 +1809,24 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   // Roteiro READ-ONLY por dia (usa o salvo ou o sugerido de geraFasesSugeridas).
-  function montaRoteiroLeitura(container, ev) {
+  // Roteiro EDITÁVEL dentro do próprio card (2026-07-23, pedido do Rodrigo —
+  // antes era uma aba própria "Roteiro do Evento" com 2 dropdowns pra
+  // escolher evento+dia; virou seção do card, direto nos dias já salvos do
+  // orçamento). 1 bloco por dia (sugestão de geraFasesSugeridas se o dia
+  // ainda não tem roteiro salvo) + 1 botão "Salvar roteiro" que envia TODOS
+  // os dias de uma vez (mesmo PATCH que o resto do evento usa — reenviar
+  // dias/cardápio/premissas inalterados, só o array roteiro de cada dia
+  // muda, mesma lógica que já existia na aba antiga).
+  function montaRoteiroEditavel(container, ev) {
     var det = ev.detalhe || {};
     var dias = det.dias || [];
     container.innerHTML = '';
     var sec = document.createElement('p'); sec.className = 'orz-sec'; sec.textContent = 'Roteiro do evento'; container.appendChild(sec);
+    if (!dias.length) {
+      var vazio = document.createElement('p'); vazio.className = 'orev-sub'; vazio.textContent = 'Nenhum dia salvo ainda.';
+      container.appendChild(vazio);
+      return;
+    }
     dias.forEach(function (dia, idx) {
       var bloco = document.createElement('div'); bloco.className = 'orev-ev-diarot';
       if (dias.length > 1) {
@@ -1835,18 +1834,66 @@ window.msgAcessoNegado = function (nomePagina) {
         dt.textContent = 'Dia ' + (idx + 1) + (dia.data ? ' — ' + dia.data : '');
         bloco.appendChild(dt);
       }
+      if (!dia.data || !dia.horaInicio) {
+        var aviso = document.createElement('p'); aviso.className = 'orev-sub';
+        aviso.textContent = 'Este dia não tem Data/Horário de início definidos (edite em "Editar") — os horários abaixo ficam em branco, preencha na mão.';
+        bloco.appendChild(aviso);
+      }
       var fases = (dia.roteiro && dia.roteiro.length) ? dia.roteiro : geraFasesSugeridas(dia);
       fases.forEach(function (f) {
-        var linha = document.createElement('div'); linha.className = 'orev-ev-fase';
-        var quando = document.createElement('span'); quando.className = 'quando';
-        quando.textContent = (f.data ? f.data.slice(5) + ' ' : '') + (f.hora || '—');
-        var oque = document.createElement('span'); oque.className = 'oquê';
-        oque.innerHTML = '<b>' + esc(f.fase) + '</b>' + (f.descricao ? ' — ' + esc(f.descricao) : '');
-        linha.appendChild(quando); linha.appendChild(oque);
-        bloco.appendChild(linha);
+        var faseCard = document.createElement('div'); faseCard.className = 'orot-fase';
+        var h3 = document.createElement('h3'); h3.textContent = f.fase;
+        var horarios = document.createElement('div'); horarios.className = 'orot-horarios';
+        var inpData = document.createElement('input'); inpData.type = 'date'; inpData.value = f.data || ''; inpData.className = 'orot-campo-data';
+        var inpHora = document.createElement('input'); inpHora.type = 'time'; inpHora.value = f.hora || ''; inpHora.className = 'orot-campo-hora';
+        horarios.appendChild(inpData); horarios.appendChild(inpHora);
+        var textarea = document.createElement('textarea'); textarea.className = 'orot-campo-desc'; textarea.value = f.descricao || '';
+        faseCard.appendChild(h3); faseCard.appendChild(horarios); faseCard.appendChild(textarea);
+        bloco.appendChild(faseCard);
       });
       container.appendChild(bloco);
     });
+
+    var msgEl = document.createElement('p'); msgEl.className = 'orev-sub'; msgEl.style.marginTop = '8px';
+    var btnSalvar = document.createElement('button'); btnSalvar.type = 'button'; btnSalvar.textContent = 'Salvar roteiro';
+    btnSalvar.style.cssText = 'margin-top:4px;padding:11px 16px;border-radius:10px;border:none;'
+      + 'background:var(--accent,#c9a24b);color:#1a1408;font-weight:600;cursor:pointer';
+    btnSalvar.onclick = function () {
+      var blocosDia = container.querySelectorAll('.orev-ev-diarot');
+      var diasAtualizados = dias.map(function (dia, idx) {
+        var cards = blocosDia[idx].querySelectorAll('.orot-fase');
+        var fasesNovas = Array.prototype.map.call(cards, function (card, i) {
+          return {
+            fase: FASES_ROTEIRO[i],
+            data: card.querySelector('.orot-campo-data').value,
+            hora: card.querySelector('.orot-campo-hora').value,
+            descricao: card.querySelector('.orot-campo-desc').value,
+          };
+        });
+        return Object.assign({}, dia, { roteiro: fasesNovas });
+      });
+      msgEl.textContent = 'Salvando…';
+      fetch(WORKER + '/api/orcamento-eventos/' + ev.id, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+        body: JSON.stringify({
+          nome: ev.nome, casa: CASA_SLUG_POR_LABEL[ev.casa] || '', dias: diasAtualizados,
+          cardapio: det.cardapio || [], deslocamento: det.deslocamento || 0, custoEstacao: det.custoEstacao || 0,
+          markup: det.markup || 1, bufferPct: det.bufferPct || 0, pisoCobertura: det.pisoCobertura || 0,
+          kgGeloConv: det.kgGeloConv || 0, precoGeloKg: det.precoGeloKg || 0,
+          custoDiariaBarback: det.custoDiariaBarback || 0, custoDiariaCoordenador: det.custoDiariaCoordenador || 0,
+          taxaHoraBase: det.taxaHoraBase || 0, tempoPreparadoMin: det.tempoPreparadoMin || 0, tempoServidoMin: det.tempoServidoMin || 0,
+          taxaCocktailConvHora: det.taxaCocktailConvHora || 0, mlAguaConvHora: det.mlAguaConvHora || 0,
+          overrideValor: det.overrideValor != null ? det.overrideValor : null,
+          custoTotal: ev.custo_total, valorTotal: ev.valor_total,
+        }),
+      }).then(function (r) {
+        if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
+        if (!r.ok) { msgEl.textContent = 'Erro ao salvar (' + r.status + ').'; return; }
+        det.dias = diasAtualizados; // mantém local em sincronia sem recarregar a galeria toda
+        msgEl.textContent = 'Roteiro salvo!';
+      }).catch(function () { msgEl.textContent = 'Sem conexão. Tente de novo.'; });
+    };
+    container.appendChild(btnSalvar); container.appendChild(msgEl);
   }
 
   // Agenda (data/horário/duração/convidados por dia) + cardápio detalhado
@@ -1919,13 +1966,32 @@ window.msgAcessoNegado = function (nomePagina) {
           dir.appendChild(valorSpan); dir.appendChild(chev);
           tit.appendChild(nomeWrap); tit.appendChild(dir);
 
-          var corpo = document.createElement('div'); corpo.className = 'orev-evento-corpo';
+          // Linha de resumo SEMPRE visível (2026-07-23, pedido do Rodrigo —
+          // antes só aparecia nome/status/valor total fechado, achado "muito
+          // resumido"; casa/data/convidados/por quem já existia mas ficava
+          // escondida dentro do corpo colapsado). Data do evento vem do
+          // primeiro dia salvo (det.dias já chega completo na listagem, sem
+          // fetch extra); se o último dia tiver data diferente do primeiro,
+          // mostra o intervalo.
+          var det0 = ev.detalhe || {};
+          var dias0 = det0.dias || [];
+          var dataEvento = '—';
+          if (dias0.length && dias0[0].data) {
+            var dUlt = dias0[dias0.length - 1].data;
+            dataEvento = (dUlt && dUlt !== dias0[0].data) ? (dias0[0].data + ' – ' + dUlt) : dias0[0].data;
+          }
+          var meta = document.createElement('div'); meta.className = 'meta';
+          meta.textContent = (ev.casa || '—') + ' · ' + dataEvento + ' · ' + (ev.dias || 0) + ' dia(s) · '
+            + (ev.convidados_totais || 0) + ' convidados' + (ev.criado_por ? ' · por ' + ev.criado_por : '');
+
           var lucroEv = (ev.valor_total || 0) - (ev.custo_total || 0);
           var margemEv = ev.valor_total ? (lucroEv / ev.valor_total) * 100 : 0;
-          var meta = document.createElement('div'); meta.className = 'meta';
-          meta.textContent = (ev.casa || '—') + ' · ' + (ev.dias || 0) + ' dia(s) · '
-            + (ev.convidados_totais || 0) + ' convidados' + (ev.criado_por ? ' · por ' + ev.criado_por : '');
-          corpo.appendChild(meta);
+          var porConvEv = ev.convidados_totais ? ev.valor_total / ev.convidados_totais : 0;
+          var rapido = document.createElement('div'); rapido.className = 'orz-chips'; rapido.style.marginTop = '6px';
+          rapido.innerHTML = '<span class="orz-chip">' + fmtBRL(porConvEv) + '/convidado</span>'
+            + '<span class="orz-chip ' + (margemEv >= 0 ? 'ok' : 'aviso') + '">margem ' + margemEv.toFixed(0) + '%</span>';
+
+          var corpo = document.createElement('div'); corpo.className = 'orev-evento-corpo';
 
           var resumoBox = document.createElement('div'); resumoBox.style.marginTop = '12px';
           var agendaBox = document.createElement('div');
@@ -1937,7 +2003,7 @@ window.msgAcessoNegado = function (nomePagina) {
             if (abrindo && !montado) {
               montaResumoLeitura(resumoBox, ev);
               montaAgendaCardapioLeitura(agendaBox, ev);
-              montaRoteiroLeitura(roteiroBox, ev);
+              montaRoteiroEditavel(roteiroBox, ev);
               montado = true;
             }
           };
@@ -1957,7 +2023,7 @@ window.msgAcessoNegado = function (nomePagina) {
           acoes.appendChild(btnEd); acoes.appendChild(btnDel);
 
           corpo.appendChild(resumoBox); corpo.appendChild(agendaBox); corpo.appendChild(roteiroBox); corpo.appendChild(acoes);
-          card.appendChild(tit); card.appendChild(corpo);
+          card.appendChild(tit); card.appendChild(meta); card.appendChild(rapido); card.appendChild(corpo);
           lista.appendChild(card);
         });
       });
@@ -1971,8 +2037,6 @@ window.msgAcessoNegado = function (nomePagina) {
   // Detalhamento do evento (PATCH reenvia dias/cardápio/etc. inalterados +
   // o roteiro do dia editado) — sem endpoint novo no Worker.
   var FASES_ROTEIRO = ['Compra de insumo', 'Produção de ingredientes', 'Serviço', 'Controle', 'Fechamento'];
-  var eventosRoteiro = [];
-  var eventoRoteiroAtual = null;
 
   function somaMinutos(dataStr, horaStr, deltaMin) {
     if (!dataStr || !horaStr) return null;
@@ -2014,130 +2078,6 @@ window.msgAcessoNegado = function (nomePagina) {
       return base;
     });
   }
-
-  function renderFasesRoteiro(dia) {
-    var fases = (dia.roteiro && dia.roteiro.length) ? dia.roteiro : geraFasesSugeridas(dia);
-    var wrapFases = document.getElementById('orot-fases');
-    wrapFases.innerHTML = '';
-    var aviso = document.getElementById('orot-aviso');
-    if (!dia.data || !dia.horaInicio) {
-      aviso.style.display = '';
-      aviso.textContent = 'Este dia não tem Data/Horário de início definidos (edite o evento em Meus Eventos) — os horários abaixo ficam em branco, mas dá pra preencher na mão.';
-    } else {
-      aviso.style.display = 'none';
-    }
-    fases.forEach(function (f) {
-      var card = document.createElement('div'); card.className = 'orot-fase';
-      var h3 = document.createElement('h3'); h3.textContent = f.fase;
-      var horarios = document.createElement('div'); horarios.className = 'orot-horarios';
-      var inpData = document.createElement('input'); inpData.type = 'date'; inpData.value = f.data || ''; inpData.className = 'orot-campo-data';
-      var inpHora = document.createElement('input'); inpHora.type = 'time'; inpHora.value = f.hora || ''; inpHora.className = 'orot-campo-hora';
-      horarios.appendChild(inpData); horarios.appendChild(inpHora);
-      var textarea = document.createElement('textarea'); textarea.className = 'orot-campo-desc'; textarea.value = f.descricao || '';
-      card.appendChild(h3); card.appendChild(horarios); card.appendChild(textarea);
-      wrapFases.appendChild(card);
-    });
-    document.getElementById('orot-salvar').style.display = fases.length ? '' : 'none';
-  }
-
-  function selecionaDiaRoteiro() {
-    var idx = parseInt(document.getElementById('orot-dia').value, 10);
-    if (!eventoRoteiroAtual || !eventoRoteiroAtual.detalhe || isNaN(idx)) {
-      document.getElementById('orot-fases').innerHTML = '';
-      document.getElementById('orot-salvar').style.display = 'none';
-      return;
-    }
-    var dia = (eventoRoteiroAtual.detalhe.dias || [])[idx];
-    if (dia) renderFasesRoteiro(dia);
-  }
-
-  function selecionaEventoRoteiro() {
-    var id = document.getElementById('orot-evento').value;
-    eventoRoteiroAtual = eventosRoteiro.find(function (e) { return e.id === id; }) || null;
-    var selDia = document.getElementById('orot-dia');
-    selDia.innerHTML = '';
-    if (!eventoRoteiroAtual) { document.getElementById('orot-fases').innerHTML = ''; return; }
-    var dias = (eventoRoteiroAtual.detalhe && eventoRoteiroAtual.detalhe.dias) || [];
-    dias.forEach(function (d, idx) {
-      var o = document.createElement('option'); o.value = idx;
-      o.textContent = 'Dia ' + (idx + 1) + (d.data ? ' — ' + d.data : '') + ' (' + (d.convidados || 0) + ' convidados)';
-      selDia.appendChild(o);
-    });
-    selecionaDiaRoteiro();
-  }
-
-  function carregaEventosParaRoteiro() {
-    var selEvento = document.getElementById('orot-evento');
-    document.getElementById('orot-msg').textContent = 'Carregando eventos…';
-    Promise.all(STATUS_ORDEM.map(function (s) {
-      return fetch(WORKER + '/api/orcamento-eventos?status=' + encodeURIComponent(s), { headers: { 'X-Token': TOKEN } })
-        .then(function (r) { return r.ok ? r.json() : { itens: [] }; })
-        .then(function (d) { return d.itens || []; });
-    })).then(function (listas) {
-      eventosRoteiro = [].concat.apply([], listas);
-      var valorAntes = selEvento.value;
-      selEvento.innerHTML = '';
-      if (!eventosRoteiro.length) {
-        var o = document.createElement('option'); o.value = ''; o.textContent = 'Nenhum evento salvo ainda';
-        selEvento.appendChild(o);
-        document.getElementById('orot-msg').textContent = 'Salve um evento em "Meus Eventos" primeiro.';
-        eventoRoteiroAtual = null;
-        document.getElementById('orot-fases').innerHTML = '';
-        return;
-      }
-      eventosRoteiro.forEach(function (ev) {
-        var o = document.createElement('option'); o.value = ev.id;
-        o.textContent = ev.nome + ' (' + ev.status + ')';
-        selEvento.appendChild(o);
-      });
-      if (valorAntes && eventosRoteiro.some(function (e) { return e.id === valorAntes; })) selEvento.value = valorAntes;
-      document.getElementById('orot-msg').textContent = '';
-      selecionaEventoRoteiro();
-    }).catch(function () { document.getElementById('orot-msg').textContent = 'Sem conexão. Tente de novo.'; });
-  }
-  document.getElementById('orot-evento').addEventListener('change', selecionaEventoRoteiro);
-  document.getElementById('orot-dia').addEventListener('change', selecionaDiaRoteiro);
-
-  document.getElementById('orot-salvar').onclick = function () {
-    if (!eventoRoteiroAtual) return;
-    var idx = parseInt(document.getElementById('orot-dia').value, 10);
-    var det = eventoRoteiroAtual.detalhe || {};
-    var dias = det.dias || [];
-    if (isNaN(idx) || !dias[idx]) return;
-    var cards = document.querySelectorAll('#orot-fases .orot-fase');
-    var fases = Array.prototype.map.call(cards, function (card, i) {
-      return {
-        fase: FASES_ROTEIRO[i],
-        data: card.querySelector('.orot-campo-data').value,
-        hora: card.querySelector('.orot-campo-hora').value,
-        descricao: card.querySelector('.orot-campo-desc').value,
-      };
-    });
-    dias[idx].roteiro = fases;
-    var msgEl = document.getElementById('orot-msg');
-    msgEl.textContent = 'Salvando…';
-    fetch(WORKER + '/api/orcamento-eventos/' + eventoRoteiroAtual.id, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
-      body: JSON.stringify({
-        nome: eventoRoteiroAtual.nome, casa: CASA_SLUG_POR_LABEL[eventoRoteiroAtual.casa] || '', dias: dias,
-        cardapio: det.cardapio || [], deslocamento: det.deslocamento || 0, custoEstacao: det.custoEstacao || 0,
-        markup: det.markup || 1, bufferPct: det.bufferPct || 0, pisoCobertura: det.pisoCobertura || 0,
-        kgGeloConv: det.kgGeloConv || 0, precoGeloKg: det.precoGeloKg || 0,
-        custoDiariaBarback: det.custoDiariaBarback || 0, custoDiariaCoordenador: det.custoDiariaCoordenador || 0,
-        taxaHoraBase: det.taxaHoraBase || 0, tempoPreparadoMin: det.tempoPreparadoMin || 0, tempoServidoMin: det.tempoServidoMin || 0,
-        overrideValor: det.overrideValor != null ? det.overrideValor : null,
-        custoTotal: eventoRoteiroAtual.custo_total, valorTotal: eventoRoteiroAtual.valor_total,
-      }),
-    }).then(function (r) {
-      if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
-      if (!r.ok) { msgEl.textContent = 'Erro ao salvar (' + r.status + ').'; return; }
-      msgEl.textContent = 'Roteiro salvo!';
-      // Espera um instante antes de recarregar a lista — carregaEventosParaRoteiro()
-      // limpa esta mensagem assim que troca pra "Carregando…", e sem o atraso
-      // ela pisca e some rápido demais pra alguém ler.
-      setTimeout(carregaEventosParaRoteiro, 900);
-    }).catch(function () { msgEl.textContent = 'Sem conexão. Tente de novo.'; });
-  };
 
   function buscaDados(token) {
     TOKEN = token;
@@ -2467,14 +2407,20 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   // Estação padrão (a transmissão que todo mundo pega ao abrir): a marcada
   // com "default" no config, senão a primeira.
   var DEF = 0; for (var k = 0; k < ST.length; k++) { if (ST[k]['default']) { DEF = k; break; } }
-  // som:true = o usuário QUER ouvir (o padrão) — mas a página sempre abre no
-  // MUDO (regra de autoplay dos navegadores) e desmuta no 1º gesto. Se o
-  // usuário silenciar de propósito, som:false e aí NÃO desmuta sozinho.
-  var def = { idx: DEF, vol: 70, som: true };
+  // A rádio SEMPRE abre muda (pedido do Rodrigo, 2026-07-23) — antes, som:true
+  // era o padrão e o 1º gesto na página desmutava sozinha, inclusive ao
+  // navegar de página em página. Agora o som só liga por ação explícita (botão
+  // do player / "A rádio está no mudo") e esse estado NÃO atravessa a página:
+  // som fica fora do que é persistido (ver salvar()).
+  var def = { idx: DEF, vol: 70, som: false };
   var s;
   try { s = Object.assign({}, def, JSON.parse(localStorage.getItem(CH) || '{}')); }
   catch (e) { s = Object.assign({}, def); }
   if (typeof s.idx !== 'number' || s.idx < 0 || s.idx >= ST.length) s.idx = DEF;
+  // Força MUDO em toda carga: mesmo que uma sessão anterior tenha salvo
+  // som:true, a página nova abre muda. É isso que faz o som NÃO atravessar
+  // de página em página — só liga por ação explícita nesta página.
+  s.som = false;
   function salvar() { try { localStorage.setItem(CH, JSON.stringify(s)); } catch (e) {} }
   var $ = function (id) { return document.getElementById(id); };
   var btn = $('radio-btn'), pop = $('radio-pop'), list = $('radio-list'),
