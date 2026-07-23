@@ -970,6 +970,11 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     var d = new Date(iso); if(isNaN(d.getTime())){ var m=String(iso).slice(0,10).split('-'); if(m.length===3) return (+m[2])+' '+MESES[(+m[1])-1]; return ''; }
     return d.getDate()+' '+MESES[d.getMonth()];
   }
+  function dataHoraCheia(iso){
+    if(!iso) return '';
+    var d = new Date(iso); if(isNaN(d.getTime())) return '';
+    return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
 
   var ICO = {
     demanda:'<path d="M5 4h14v16l-7-3-7 3z"/>',
@@ -990,7 +995,9 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
         + '<span class="sino-tx">'
         +   '<span class="sino-t"><span class="sino-tag">'+esc(tag(x.tipo))+'</span>'+esc(x.titulo)+'</span>'
         +   '<span class="sino-d">'+esc(x.descricao)+'</span>'
-        +   '<span class="sino-m">'+esc(tempo(x.quando))+'</span>'
+        // 2026-07-23: "há 3 dias"/"ontem" é calculado uma vez no render e nunca
+        // mais — o title carrega a data/hora exata pra nunca ficar só o relativo.
+        +   '<span class="sino-m" title="'+esc(dataHoraCheia(x.quando))+'">'+esc(tempo(x.quando))+'</span>'
         + '</span></a>';
     }).join('');
   }

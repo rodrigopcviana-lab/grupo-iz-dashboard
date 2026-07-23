@@ -404,7 +404,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .perf-panel[hidden] { display:none; }
 </style>
 
-<div class="perf-tabs"><button class="perf-tab on" type="button" data-tab="contagem" data-niveis="equipe chefe coord">Contagem</button><button class="perf-tab" type="button" data-tab="compras" data-niveis="equipe chefe coord">Pedido de Compras</button><button class="perf-tab" type="button" data-tab="cotacoes" data-niveis="coord controladoria">Cotações</button><button class="perf-tab" type="button" data-tab="historico" data-niveis="chefe coord controladoria">Histórico</button><button class="perf-tab" type="button" data-tab="conferencia" data-niveis="chefe coord controladoria">Conferência</button><button class="perf-tab" type="button" data-tab="everloja" data-niveis="coord">Everloja</button><button class="perf-tab" type="button" data-tab="consumo" data-niveis="chefe coord">Consumo</button></div>
+<div class="perf-tabs"><button class="perf-tab on" type="button" data-tab="contagem" data-niveis="equipe chefe coord">Contagem</button><button class="perf-tab" type="button" data-tab="compras" data-niveis="equipe chefe coord">Pedido de Compras</button><button class="perf-tab" type="button" data-tab="cotacoes" data-niveis="coord controladoria">Cotações</button><button class="perf-tab" type="button" data-tab="historico" data-niveis="chefe coord controladoria">Histórico</button><button class="perf-tab" type="button" data-tab="precos" data-niveis="chefe coord controladoria">Preços</button><button class="perf-tab" type="button" data-tab="conferencia" data-niveis="chefe coord controladoria">Conferência</button><button class="perf-tab" type="button" data-tab="everloja" data-niveis="coord">Everloja</button><button class="perf-tab" type="button" data-tab="consumo" data-niveis="chefe coord">Consumo</button></div>
 <div id="perf-panel-contagem" class="perf-panel">
 <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg> Contagem de insumos</h1>
 <p class="sub">Contagem de bebidas de geladeira, direto do celular. Escolha sua casa e preencha andando pelo estoque — cada número é salvo sozinho. Veja também a <a href="inventario.html?tab=copos">contagem de copos e taças</a>.</p>
@@ -2384,37 +2384,103 @@ window.msgAcessoNegado = function (nomePagina) {
   .hcp-alerta { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600;
       color:var(--amarelo); margin-top:3px; }
   .hcp-alerta svg { width:12px; height:12px; flex:none; }
+  .hcp-alerta .num { color:var(--text-3); font-weight:400; }
+  .hcp-kpi .delta { font-size:11px; font-weight:600; margin-left:6px; }
+  .hcp-kpi .delta.up { color:#dc9a8e; }
+  .hcp-kpi .delta.down { color:var(--verde); }
+  .hcp-unit { color:var(--text-2); }
+  .hcp-guia { display:flex; gap:8px 10px; flex-wrap:wrap; align-items:center; background:var(--card);
+      border:1px solid var(--border); border-radius:12px; padding:9px 14px; margin-bottom:14px;
+      font-size:12.5px; color:var(--text-2); }
+  .hcp-guia .p b { color:var(--text); }
+  .hcp-guia .p.aqui { color:var(--acc); }
+  .hcp-guia .seta { color:var(--text-3); }
+  .hcp-cov { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:16px; }
+  .hcp-cov-item { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 11px; }
+  .hcp-cov-item .casa { font-weight:700; font-size:13px; }
+  .hcp-cov-item .st { font-size:10.5px; margin-top:2px; }
+  .hcp-cov-item.ok { border-color:#2f5a49; }
+  .hcp-cov-item.ok .st { color:var(--verde); }
+  .hcp-cov-item.falta .st { color:var(--text-3); }
+  .hcp-btn { padding:11px 14px; font-size:13px; border-radius:10px; border:1px solid var(--border);
+      background:var(--card); color:var(--text); cursor:pointer; font:inherit; }
+  .hcp-btn:hover { border-color:var(--acc); color:var(--acc); }
+  .hcp-btn:disabled { opacity:.5; cursor:not-allowed; }
+  .hcp-rank-row { display:flex; align-items:center; gap:12px; padding:9px 4px; border-bottom:1px solid var(--border); font-size:13px; }
+  .hcp-rank-row:last-child { border-bottom:none; }
+  .hcp-rank-row .nm { flex:1; min-width:0; font-weight:600; }
+  .hcp-rank-row .nm .cat { display:block; color:var(--text-3); font-size:11px; font-weight:400; }
+  .hcp-rank-bar { width:110px; height:7px; background:var(--bg); border-radius:999px; overflow:hidden; flex:none; }
+  .hcp-rank-bar span { display:block; height:100%; background:var(--acc); }
+  .hcp-rank-row .val { width:104px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
+  .hcp-dup { font-size:11px; font-weight:600; color:#dc9a8e; margin-top:3px; }
+  /* Celular: o comparativo (6 colunas) vira um card por produto — a lista
+     principal continua com a rolagem horizontal do .panel. Depende do
+     data-label posto em td().
+     NOME ESCOPADO de propósito (.hcp-cards, não .cards): existe uma grade
+     GLOBAL ".cards { display:grid }" no CSS do portal — usar o nome genérico
+     virava a tabela inteira em grid e desalinhava cabeçalho x células em
+     TODAS as larguras (não só no celular). */
+  @media (max-width:700px) {
+    table.hcp.hcp-cards thead { display:none; }
+    table.hcp.hcp-cards, table.hcp.hcp-cards tbody, table.hcp.hcp-cards tr, table.hcp.hcp-cards td { display:block; width:100%; }
+    table.hcp.hcp-cards tr { border:1px solid var(--border); border-radius:10px; margin-bottom:8px; padding:8px 10px; }
+    table.hcp.hcp-cards td { border:none; padding:2px 0; text-align:left !important; }
+    table.hcp.hcp-cards td[data-label]::before { content:attr(data-label) ": "; color:var(--text-3); font-size:11px; }
+    table.hcp.hcp-cards td:first-child { font-weight:700; font-size:14px; margin-bottom:3px; }
+    /* Ranking: a barra + o valor de largura fixa espremiam o nome em 3 linhas
+       num celular estreito. No mobile a barra sai (é enfeite comparativo) e o
+       valor solta a largura — o nome fica legível. */
+    .hcp-rank-bar { display:none; }
+    .hcp-rank-row .val { width:auto; }
+  }
 </style>
+
+<div class="hcp-guia">
+  <span class="p"><b>Cotações</b> — orçado</span><span class="seta">→</span>
+  <span class="p"><b>Pedido</b> — sugerido da contagem</span><span class="seta">→</span>
+  <span class="p aqui"><b>Histórico</b> — o que foi pago (aqui)</span><span class="seta">→</span>
+  <span class="p"><b>Conferência</b> — pedido × comprado</span>
+</div>
+
+<div class="hcp-cov" id="hcp-cov"></div>
 
 <div class="hcp-controles">
   <div class="chips" id="hcp-casas"></div>
   <select id="hcp-cat"><option value="">Todas as categorias</option></select>
+  <select id="hcp-periodo"></select>
   <input type="text" id="hcp-busca" placeholder="Buscar produto ou fornecedor…">
+  <button type="button" class="hcp-btn" id="hcp-csv">Exportar CSV</button>
 </div>
 
 <div class="hcp-resumo">
-  <div class="hcp-kpi"><div class="v" id="hcp-kpi-total">—</div><div class="l">Total no filtro</div></div>
+  <div class="hcp-kpi"><div class="v"><span id="hcp-kpi-total">—</span><span class="delta" id="hcp-kpi-delta"></span></div><div class="l">Total no período</div></div>
   <div class="hcp-kpi"><div class="v" id="hcp-kpi-n">—</div><div class="l">Itens</div></div>
 </div>
 
 <div class="panel" style="padding:8px 10px;overflow-x:auto">
-<table class="hcp"><thead><tr><th>Data</th><th>Casa</th><th>Fornecedor</th><th>Produto</th><th class="n">Valor</th></tr></thead>
+<table class="hcp"><thead><tr><th>Data</th><th>Casa</th><th>Fornecedor</th><th>Produto</th><th class="n">Qtde</th><th class="n">Unit.</th><th class="n">Valor</th></tr></thead>
 <tbody id="hcp-corpo-lista"></tbody></table>
 <p class="hcp-vazio" id="hcp-vazio" style="display:none">Nenhuma compra registrada ainda.</p>
 </div>
 <p class="hcp-foot" id="hcp-foot"></p>
 
 <p class="hcp-sec">Comparativo de preço por período</p>
-<p class="hcp-sec-sub">Menor, maior e médio preço unitário pago por produto, dentro do período selecionado. Considera só registros com quantidade informada (o comparativo mensal da Famu traz; o relatório item-a-item do Suprimentos, não).</p>
-<div class="hcp-controles">
-  <select id="hcp-periodo"></select>
-</div>
+<p class="hcp-sec-sub">Menor, maior e médio (ponderado pela quantidade) preço unitário pago por produto, no mesmo período do filtro acima. Considera só registros com quantidade informada (o comparativo mensal da Famu traz; o relatório item-a-item do Suprimentos, não).</p>
 <div class="panel" style="padding:8px 10px;overflow-x:auto">
-<table class="hcp"><thead><tr><th>Produto</th><th>Casa</th><th class="n">Períodos</th><th class="n">Mín.</th><th class="n">Média</th><th class="n">Máx.</th></tr></thead>
+<table class="hcp hcp-cards"><thead><tr><th>Produto</th><th>Casa</th><th class="n">Compras</th><th class="n">Mín.</th><th class="n">Méd. pond.</th><th class="n">Máx.</th></tr></thead>
 <tbody id="hcp-cmp-lista"></tbody></table>
 <p class="hcp-vazio" id="hcp-cmp-vazio" style="display:none">Nenhum produto com quantidade registrada no período selecionado.</p>
 </div>
 <p class="hcp-foot" id="hcp-cmp-foot"></p>
+
+<p class="hcp-sec">Onde negociar rende mais</p>
+<p class="hcp-sec-sub">Amplitude de preço (máx − mín do unitário) × volume comprado no período — prioriza o produto onde a inconsistência de preço vale mais dinheiro, não o que só variou mais em %. Precisa de 2+ compras com quantidade e preços diferentes.</p>
+<div class="panel" style="padding:8px 12px">
+  <div id="hcp-rank"></div>
+  <p class="hcp-vazio" id="hcp-rank-vazio" style="display:none">Sem produto com 2+ compras de preços diferentes no período.</p>
+</div>
+<p class="hcp-foot" id="hcp-rank-foot"></p>
 </div><!-- hcp-corpo -->
 
 <script type="text/plain" id="perf-src-historico">
@@ -2441,9 +2507,12 @@ window.msgAcessoNegado = function (nomePagina) {
     var p = iso.split('-');
     return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
   }
-  function td(texto, classe) {
+  function td(texto, classe, rotulo) {
     var e = document.createElement('td');
     if (classe) e.className = classe;
+    // data-label alimenta o modo card no celular (CSS ::before) — sem ele a
+    // tabela de 6 colunas do comparativo vira uma pilha de números sem nome.
+    if (rotulo) e.setAttribute('data-label', rotulo);
     e.textContent = texto;
     return e;
   }
@@ -2461,7 +2530,28 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   function inicia(lista) {
-    var estado = { casa: '', cat: '', busca: '', meses: 3 };
+    // Estado inicial vem da URL (?casa=&cat=&q=&meses=) pra um recorte
+    // filtrado poder ser mandado no WhatsApp e abrir igual do outro lado.
+    // Preserva os parâmetros que já existem (ex.: ?tab=historico da Gestão de
+    // Produto) — nunca reescreve a query inteira.
+    var paramsUrl = new URLSearchParams(location.search);
+    var buscaRaw = paramsUrl.get('q') || '';
+    var estado = {
+      casa: paramsUrl.get('casa') || '',
+      cat: paramsUrl.get('cat') || '',
+      busca: buscaRaw.trim().toLowerCase(),
+      meses: parseInt(paramsUrl.get('meses'), 10) || 3
+    };
+    if (estado.meses < 1 || estado.meses > 12) estado.meses = 3;
+    function gravaUrl() {
+      var p = new URLSearchParams(location.search);
+      estado.casa ? p.set('casa', estado.casa) : p.delete('casa');
+      estado.cat ? p.set('cat', estado.cat) : p.delete('cat');
+      buscaRaw ? p.set('q', buscaRaw) : p.delete('q');
+      estado.meses !== 3 ? p.set('meses', String(estado.meses)) : p.delete('meses');
+      var qs = p.toString();
+      history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+    }
 
     // Âncora do período do comparativo: a data mais recente do dado (não
     // "hoje" real — um comparativo mensal pode ficar semanas atrás do
@@ -2476,11 +2566,20 @@ window.msgAcessoNegado = function (nomePagina) {
     // ANTES daquela compra (não inclui o futuro), comparado contra a MEDIANA
     // dos unitários anteriores — não o máximo, que um único registro sujo
     // decide sozinho e deixaria o pico marcado pra sempre.
+    // Chave normalizada (sem acento, espaço colapsado, minúsculo) — mesma
+    // chaveProduto da aba Cotações irmã, pra "Gin Tanqueray 750ml" e
+    // "GIN TANQUERAY 750 ML" caírem no mesmo produto no comparativo E no
+    // histórico do selo. A casa entra na chave só pelo slug (não normaliza).
+    function chaveProduto(nome) {
+      return (nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+    function chaveCasaProduto(c) { return (c.casa || '—') + '|' + chaveProduto(c.produto); }
+
     var gruposHistorico = {};
     lista.forEach(function (c) {
       if (typeof c.quantidade !== 'number' || c.quantidade <= 0 || typeof c.valor !== 'number') return;
-      var chave = (c.casa || '—') + '|' + (c.produto || '—');
-      (gruposHistorico[chave] = gruposHistorico[chave] || []).push(c);
+      (gruposHistorico[chaveCasaProduto(c)] = gruposHistorico[chaveCasaProduto(c)] || []).push(c);
     });
     function mediana(arr) {
       if (!arr.length) return null;
@@ -2488,22 +2587,41 @@ window.msgAcessoNegado = function (nomePagina) {
       var meio = Math.floor(s.length / 2);
       return s.length % 2 ? s[meio] : (s[meio - 1] + s[meio]) / 2;
     }
-    function precoAcimaDoHistorico(c) {
-      if (typeof c.quantidade !== 'number' || c.quantidade <= 0 || typeof c.valor !== 'number') return false;
-      if (!c.data) return false;
-      var grupo = gruposHistorico[(c.casa || '—') + '|' + (c.produto || '—')] || [];
-      // Só registros ANTERIORES a esta compra (data estritamente menor) —
-      // sem isso o primeiro pico ficaria marcado pra sempre e uma alta
-      // recente sobre a média passaria batida.
+    // Devolve { med, unit } quando o unitário desta compra ficou acima da
+    // MEDIANA do que já se pagou pelo mesmo casa+produto em compras ANTERIORES
+    // (data estritamente menor), senão null. Só o passado (não o futuro) e
+    // contra a mediana — não o máximo, que um único registro sujo decide
+    // sozinho e deixaria o pico marcado pra sempre.
+    function acimaDoHistorico(c) {
+      if (typeof c.quantidade !== 'number' || c.quantidade <= 0 || typeof c.valor !== 'number') return null;
+      if (!c.data) return null;
+      var grupo = gruposHistorico[chaveCasaProduto(c)] || [];
       var unitAnteriores = [];
       grupo.forEach(function (o) {
         if (o === c || !o.data || o.data >= c.data) return;
         unitAnteriores.push(o.valor / o.quantidade);
       });
-      if (!unitAnteriores.length) return false;
+      if (!unitAnteriores.length) return null;
       var med = mediana(unitAnteriores);
-      return med != null && (c.valor / c.quantidade) > med;
+      var unit = c.valor / c.quantidade;
+      return (med != null && unit > med) ? { med: med, unit: unit } : null;
     }
+
+    // Possível duplicata de importação: o mesmo relatório reenviado com OUTRO
+    // nome de arquivo re-importa tudo (a idempotência do importador é por
+    // "Chave = <arquivo>|<linha>", então trocar o nome do arquivo escapa dela).
+    // Sinaliza quando casa+produto+data+valor+qtde se repetem — é SINAL, não
+    // veredito: comprar o mesmo item duas vezes no mesmo dia é possível.
+    function chaveDuplicata(c) {
+      return chaveCasaProduto(c) + '|' + (c.data || '') + '|' +
+        (typeof c.valor === 'number' ? c.valor : '') + '|' +
+        (typeof c.quantidade === 'number' ? c.quantidade : '');
+    }
+    var contagemIguais = {};
+    lista.forEach(function (c) {
+      var k = chaveDuplicata(c);
+      contagemIguais[k] = (contagemIguais[k] || 0) + 1;
+    });
 
     var selPeriodo = document.getElementById('hcp-periodo');
     for (var m = 1; m <= 12; m++) {
@@ -2529,8 +2647,8 @@ window.msgAcessoNegado = function (nomePagina) {
       chipsWrap.appendChild(b);
     }
     if (casasPresentes.length > 1) {
-      addChip('', 'Todas as casas', true);
-      casasPresentes.forEach(function (c) { addChip(c, CASA_NOME[c] || c, false); });
+      addChip('', 'Todas as casas', !estado.casa);
+      casasPresentes.forEach(function (c) { addChip(c, CASA_NOME[c] || c, estado.casa === c); });
     }
 
     var selCat = document.getElementById('hcp-cat');
@@ -2541,27 +2659,103 @@ window.msgAcessoNegado = function (nomePagina) {
       var o = document.createElement('option'); o.value = c; o.textContent = c;
       selCat.appendChild(o);
     });
+    selCat.value = estado.cat;
     selCat.onchange = function () { estado.cat = selCat.value; desenha(); };
-    document.getElementById('hcp-busca').oninput = function (e) { estado.busca = e.target.value.trim().toLowerCase(); desenha(); };
+    var inputBusca = document.getElementById('hcp-busca');
+    inputBusca.value = buscaRaw;
+    inputBusca.oninput = function (e) {
+      buscaRaw = e.target.value;
+      estado.busca = buscaRaw.trim().toLowerCase();
+      desenha();
+    };
+
+    // Cobertura de dado por casa — TODAS as casas do grupo (CASA_NOME) contra
+    // quais têm relatório (casasPresentes). Deixa explícito que "sem linha" é
+    // "sem relatório ainda", não "sem compra".
+    (function () {
+      var cov = document.getElementById('hcp-cov');
+      if (!cov) return;
+      var presentes = {};
+      casasPresentes.forEach(function (c) { presentes[String(c).toLowerCase()] = true; });
+      Object.keys(CASA_NOME).forEach(function (slug) {
+        var nome = CASA_NOME[slug];
+        var tem = !!(presentes[String(nome).toLowerCase()] || presentes[String(slug).toLowerCase()]);
+        var it = document.createElement('div'); it.className = 'hcp-cov-item ' + (tem ? 'ok' : 'falta');
+        var n = document.createElement('div'); n.className = 'casa'; n.textContent = nome;
+        var s = document.createElement('div'); s.className = 'st'; s.textContent = tem ? 'com relatório' : 'sem relatório';
+        it.appendChild(n); it.appendChild(s); cov.appendChild(it);
+      });
+    })();
+
+    // Export CSV do filtro atual (ultimaVisivel — atualizado a cada desenha()).
+    // Separador ';' + BOM pro Excel pt-BR abrir com acento. Só o que já está
+    // na tela; nenhum dado extra sai daqui.
+    var ultimaVisivel = [];
+    var btnCsv = document.getElementById('hcp-csv');
+    function csvCampo(v) {
+      var s = (v == null ? '' : String(v));
+      return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    btnCsv.onclick = function () {
+      if (!ultimaVisivel.length) return;
+      var linhas = [['Data', 'Casa', 'Fornecedor', 'Produto', 'Categoria', 'Quantidade', 'Unitario', 'Valor'].join(';')];
+      ultimaVisivel.forEach(function (c) {
+        var temQ = typeof c.quantidade === 'number' && c.quantidade > 0;
+        var unit = temQ && typeof c.valor === 'number' ? (c.valor / c.quantidade).toFixed(2) : '';
+        linhas.push([
+          c.data || '', c.casa || '', c.fornecedor || '', c.produto || '', c.categoria || '',
+          temQ ? c.quantidade : '', unit, typeof c.valor === 'number' ? c.valor.toFixed(2) : ''
+        ].map(csvCampo).join(';'));
+      });
+      var blob = new Blob(['\ufeff' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'compras_historico.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    };
 
     var ordenada = lista.slice().sort(function (a, b) { return (b.data || '').localeCompare(a.data || ''); });
     var corpoLista = document.getElementById('hcp-corpo-lista');
     var vazio = document.getElementById('hcp-vazio');
 
+    function passaBase(c) {
+      if (estado.cat && c.categoria !== estado.cat) return false;
+      if (estado.casa && c.casa !== estado.casa) return false;
+      if (estado.busca) {
+        var alvo = ((c.produto || '') + ' ' + (c.fornecedor || '')).toLowerCase();
+        if (alvo.indexOf(estado.busca) < 0) return false;
+      }
+      return true;
+    }
+
     function desenha() {
-      var visiveis = ordenada.filter(function (c) {
-        if (estado.cat && c.categoria !== estado.cat) return false;
-        if (estado.casa && c.casa !== estado.casa) return false;
-        if (estado.busca) {
-          var alvo = ((c.produto || '') + ' ' + (c.fornecedor || '')).toLowerCase();
-          if (alvo.indexOf(estado.busca) < 0) return false;
-        }
-        return true;
-      });
+      gravaUrl();
+      // Janela de período (âncora = data mais recente do dado, não o relógio).
+      // Registro sem data nunca é escondido — não dá pra situar no tempo.
+      var cutoff = referencia ? subtraiMeses(referencia, estado.meses) : null;
+      var cutoffAnt = referencia ? subtraiMeses(referencia, estado.meses * 2) : null;
+      function noPeriodo(c) { return !cutoff || !c.data || c.data >= cutoff; }
+
+      var visiveis = ordenada.filter(function (c) { return passaBase(c) && noPeriodo(c); });
+      ultimaVisivel = visiveis;
+      btnCsv.disabled = !visiveis.length;
+
+      // Total do período ANTERIOR de igual duração — base do Δ% (mesmos
+      // filtros de casa/categoria/busca, só a janela muda).
+      var totalAnterior = 0;
+      if (cutoff && cutoffAnt) {
+        ordenada.forEach(function (c) {
+          if (!passaBase(c) || !c.data) return;
+          if (c.data < cutoff && c.data >= cutoffAnt && typeof c.valor === 'number') totalAnterior += c.valor;
+        });
+      }
+
       corpoLista.innerHTML = '';
       var total = 0;
       visiveis.forEach(function (c) {
         if (typeof c.valor === 'number') total += c.valor;
+        var temQtde = typeof c.quantidade === 'number' && c.quantidade > 0;
         var tr = document.createElement('tr');
         tr.appendChild(td(fmtData(c.data)));
         tr.appendChild(td(c.casa || '—'));
@@ -2573,22 +2767,45 @@ window.msgAcessoNegado = function (nomePagina) {
           var catEl = document.createElement('div'); catEl.className = 'hcp-categoria'; catEl.textContent = c.categoria;
           tdProd.appendChild(catEl);
         }
-        if (precoAcimaDoHistorico(c)) {
+        var info = acimaDoHistorico(c);
+        if (info) {
           var alertaEl = document.createElement('div'); alertaEl.className = 'hcp-alerta';
           alertaEl.innerHTML = ICONE_ALERTA;
           var alertaTxt = document.createElement('span'); alertaTxt.textContent = 'Acima do histórico';
           alertaEl.appendChild(alertaTxt);
+          var numEl = document.createElement('span'); numEl.className = 'num';
+          numEl.textContent = ' (mediana ' + fmtBRL(info.med) + ' → ' + fmtBRL(info.unit) + ')';
+          alertaEl.appendChild(numEl);
           tdProd.appendChild(alertaEl);
         }
+        var nIguais = contagemIguais[chaveDuplicata(c)] || 0;
+        if (nIguais > 1) {
+          var dupEl = document.createElement('div'); dupEl.className = 'hcp-dup';
+          dupEl.textContent = 'possível duplicata — ' + nIguais + ' registros idênticos';
+          tdProd.appendChild(dupEl);
+        }
         tr.appendChild(tdProd);
+        tr.appendChild(td(temQtde ? c.quantidade.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—', 'n'));
+        tr.appendChild(td(temQtde && typeof c.valor === 'number' ? fmtBRL(c.valor / c.quantidade) : '—', 'n hcp-unit'));
         tr.appendChild(td(fmtBRL(c.valor), 'n'));
         corpoLista.appendChild(tr);
       });
       vazio.style.display = visiveis.length ? 'none' : '';
       document.getElementById('hcp-kpi-total').textContent = fmtBRL(total);
       document.getElementById('hcp-kpi-n').textContent = visiveis.length;
+
+      var elDelta = document.getElementById('hcp-kpi-delta');
+      elDelta.textContent = ''; elDelta.className = 'delta';
+      if (totalAnterior > 0) {
+        var pct = (total - totalAnterior) / totalAnterior * 100;
+        if (Math.abs(pct) >= 0.5) {
+          elDelta.classList.add(pct > 0 ? 'up' : 'down');
+          elDelta.textContent = (pct > 0 ? '↑ ' : '↓ ') + Math.abs(pct).toFixed(0) + '% vs. período anterior';
+        }
+      }
+
       document.getElementById('hcp-foot').textContent =
-        lista.length + ' compra(s) registrada(s) — dado ao vivo do Notion, sem cache além dos ~45s do Worker.';
+        lista.length + ' compra(s) no total — dado ao vivo do Notion, sem cache além dos ~45s do Worker.';
 
       desenhaComparativo(visiveis);
     }
@@ -2607,18 +2824,25 @@ window.msgAcessoNegado = function (nomePagina) {
       if (!referencia) { cmpVazio.style.display = ''; cmpFoot.textContent = ''; return; }
       var cutoff = subtraiMeses(referencia, estado.meses);
 
+      // Chave normalizada por casa+produto (não nome cru) — duas grafias do
+      // mesmo item caem no mesmo grupo. precos[] alimenta mín/máx; somaValor/
+      // somaQtde alimentam a média PONDERADA (Σvalor÷Σqtde), não a média
+      // simples dos unitários (que dá peso igual a 1 garrafa e a 100 caixas).
       var grupos = {};
       var ordemGrupos = [];
       visiveis.forEach(function (c) {
         if (typeof c.quantidade !== 'number' || c.quantidade <= 0) return;
         if (typeof c.valor !== 'number') return;
         if (!c.data || c.data < cutoff) return;
-        var chave = (c.casa || '—') + '|' + (c.produto || '—');
+        var chave = chaveCasaProduto(c);
         if (!grupos[chave]) {
-          grupos[chave] = { produto: c.produto || '—', casa: c.casa || '—', precos: [] };
+          grupos[chave] = { produto: c.produto || '—', casa: c.casa || '—', categoria: c.categoria || '', precos: [], somaValor: 0, somaQtde: 0 };
           ordemGrupos.push(chave);
         }
-        grupos[chave].precos.push(c.valor / c.quantidade);
+        var g = grupos[chave];
+        g.precos.push(c.valor / c.quantidade);
+        g.somaValor += c.valor;
+        g.somaQtde += c.quantidade;
       });
 
       ordemGrupos.sort(function (a, b) { return grupos[a].produto.localeCompare(grupos[b].produto); });
@@ -2627,14 +2851,14 @@ window.msgAcessoNegado = function (nomePagina) {
         var g = grupos[chave];
         var min = Math.min.apply(null, g.precos);
         var max = Math.max.apply(null, g.precos);
-        var media = g.precos.reduce(function (s, v) { return s + v; }, 0) / g.precos.length;
+        var media = g.somaQtde > 0 ? g.somaValor / g.somaQtde : null;
         var tr = document.createElement('tr');
         tr.appendChild(td(g.produto));
-        tr.appendChild(td(g.casa));
-        tr.appendChild(td(String(g.precos.length), 'n'));
-        tr.appendChild(td(fmtNum(min), 'n'));
-        tr.appendChild(td(fmtNum(media), 'n'));
-        tr.appendChild(td(fmtNum(max), 'n'));
+        tr.appendChild(td(g.casa, '', 'Casa'));
+        tr.appendChild(td(String(g.precos.length), 'n', 'Compras'));
+        tr.appendChild(td(fmtNum(min), 'n', 'Mín.'));
+        tr.appendChild(td(fmtNum(media), 'n', 'Méd. pond.'));
+        tr.appendChild(td(fmtNum(max), 'n', 'Máx.'));
         cmpLista.appendChild(tr);
       });
 
@@ -2642,6 +2866,41 @@ window.msgAcessoNegado = function (nomePagina) {
       cmpFoot.textContent = ordemGrupos.length
         ? ordemGrupos.length + ' produto(s) no comparativo, janela até ' + fmtData(cutoff) + ' (âncora: ' + fmtData(referencia) + ').'
         : 'Nenhum registro com quantidade dentro da janela selecionada.';
+
+      // Ranking "onde negociar rende mais": amplitude (máx−mín do unitário) ×
+      // volume comprado, só grupos com 2+ compras e preços diferentes. Prioriza
+      // dinheiro em jogo, não % de variação de um item de baixo volume.
+      var rankEl = document.getElementById('hcp-rank');
+      var rankVazio = document.getElementById('hcp-rank-vazio');
+      var rankFoot = document.getElementById('hcp-rank-foot');
+      rankEl.innerHTML = '';
+      var ranking = ordemGrupos.map(function (chave) {
+        var g = grupos[chave];
+        if (g.precos.length < 2) return null;
+        var mn = Math.min.apply(null, g.precos), mx = Math.max.apply(null, g.precos);
+        if (mx <= mn) return null;
+        return { produto: g.produto, casa: g.casa, categoria: g.categoria, impacto: (mx - mn) * g.somaQtde };
+      }).filter(Boolean).sort(function (a, b) { return b.impacto - a.impacto; });
+      var topRank = ranking.slice(0, 8);
+      var maxImpacto = topRank.length ? topRank[0].impacto : 0;
+      topRank.forEach(function (r) {
+        var row = document.createElement('div'); row.className = 'hcp-rank-row';
+        var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = r.produto;
+        var cat = document.createElement('span'); cat.className = 'cat';
+        cat.textContent = (CASA_NOME[r.casa] || r.casa) + (r.categoria ? ' · ' + r.categoria : '');
+        nm.appendChild(cat);
+        var barWrap = document.createElement('div'); barWrap.className = 'hcp-rank-bar';
+        var bar = document.createElement('span');
+        bar.style.width = (maxImpacto > 0 ? Math.max(4, r.impacto / maxImpacto * 100) : 0) + '%';
+        barWrap.appendChild(bar);
+        var val = document.createElement('div'); val.className = 'val'; val.textContent = fmtBRL(r.impacto);
+        row.appendChild(nm); row.appendChild(barWrap); row.appendChild(val);
+        rankEl.appendChild(row);
+      });
+      rankVazio.style.display = topRank.length ? 'none' : '';
+      rankFoot.textContent = ranking.length > topRank.length
+        ? 'Mostrando os ' + topRank.length + ' de ' + ranking.length + ' produtos com variação de preço no período.'
+        : '';
     }
 
     desenha();
@@ -2665,6 +2924,340 @@ window.msgAcessoNegado = function (nomePagina) {
   var r = window.exigirNivel(NIVEIS_OK, SLUG);
   if (r.ok) buscaDados(r.sessao.token);
   else if (!r.redirecionou) msg.innerHTML = window.msgAcessoNegado('o Histórico de Compras');
+})();
+</script></div><div id="perf-panel-precos" class="perf-panel" hidden>
+<h1>Conciliação de Preços</h1>
+<p class="sub">O preço anunciado no cardápio digital (Tagme) contra o preço efetivamente praticado no sistema de vendas. Quando os dois se separam, alguém vendeu por um valor que não era o combinado.</p>
+
+<style>
+  .cnc-guia { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 16px;
+    font-size:12.5px; color:var(--text-3); }
+  .cnc-guia .p { border:1px solid var(--border); border-radius:999px; padding:4px 11px; background:var(--card); }
+  .cnc-guia .p b { color:var(--text-2); }
+  .cnc-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:0 0 18px; }
+  .cnc-kpi { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+  .cnc-kpi .v { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .cnc-kpi .l { font-size:12px; color:var(--text-3); margin-top:2px; }
+  .cnc-chips { display:flex; gap:7px; flex-wrap:wrap; margin:0 0 16px; }
+  .cnc-chip { font:inherit; font-size:13px; font-weight:600; padding:6px 13px; border:1.5px solid var(--border);
+    border-radius:999px; background:var(--card); color:var(--text-2); cursor:pointer; }
+  .cnc-chip.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); }
+  .cnc-sec { font-size:15px; font-weight:700; margin:26px 0 3px; }
+  .cnc-sec-sub { font-size:12.5px; color:var(--text-3); margin:0 0 10px; }
+  table.cnc { width:100%; border-collapse:collapse; font-size:13.5px; }
+  table.cnc th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--text-3); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--border); }
+  table.cnc td { padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  table.cnc td.n, table.cnc th.n { text-align:right; font-variant-numeric:tabular-nums; }
+  table.cnc tr:last-child td { border-bottom:none; }
+  .cnc-tag { display:inline-block; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:999px;
+    text-transform:uppercase; letter-spacing:.03em; }
+  .cnc-tag.acima { background:#5b2230; color:#ffb9c4; }
+  .cnc-tag.abaixo { background:#5a3a1c; color:#ffd7a1; }
+  .cnc-tag.atencao { background:#4a4320; color:#f0e2a0; }
+  .cnc-tag.ok { background:var(--bg); color:var(--text-3); }
+  .cnc-nota { font-size:11.5px; color:var(--text-3); margin-top:3px; }
+  .cnc-serie { font-size:11px; color:var(--text-3); font-variant-numeric:tabular-nums; margin-top:3px; }
+  .cnc-vazio { font-size:13px; color:var(--text-3); margin:10px 2px; }
+  .cnc-cov { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px;
+    font-size:12.5px; color:var(--text-3); line-height:1.65; }
+  .cnc-cov b { color:var(--text-2); }
+  .cnc-foot { font-size:11.5px; color:var(--text-3); margin-top:20px; line-height:1.6; }
+  /* Celular: as duas tabelas viram um card por linha. Nome ESCOPADO
+     (.cnc-cards) de propósito — existe uma grade global ".cards{display:grid}"
+     no CSS do portal, e usar o nome genérico desalinharia a tabela em toda
+     largura (armadilha já documentada em _corpo_compras_historico). */
+  @media (max-width:700px) {
+    table.cnc.cnc-cards thead { display:none; }
+    table.cnc.cnc-cards, table.cnc.cnc-cards tbody, table.cnc.cnc-cards tr, table.cnc.cnc-cards td { display:block; width:100%; }
+    table.cnc.cnc-cards tr { border:1px solid var(--border); border-radius:10px; margin-bottom:8px; padding:8px 10px; }
+    table.cnc.cnc-cards td { border:none; padding:2px 0; text-align:left !important; }
+    table.cnc.cnc-cards td[data-label]::before { content:attr(data-label) ": "; color:var(--text-3); font-size:11px; }
+    table.cnc.cnc-cards td:first-child { font-weight:700; font-size:14px; margin-bottom:3px; }
+  }
+</style>
+
+<div class="panel" id="cnc-gate">
+  <h2>Acesso restrito</h2>
+  <p class="sub" id="cnc-msg" style="margin:4px 0 0" role="status" aria-live="polite">Verificando seu acesso…</p>
+</div>
+
+<div id="cnc-wrap" style="display:none">
+
+  <div class="cnc-guia">
+    <span class="p"><b>Cardápio digital</b> — o que o cliente vê no Tagme</span>
+    <span class="p"><b>Sistema de vendas</b> — o que foi cobrado no mês</span>
+  </div>
+
+  <div class="cnc-chips" id="cnc-casas"></div>
+
+  <div class="cnc-kpis">
+    <div class="cnc-kpi"><div class="v" id="cnc-k-alertas">—</div><div class="l">Divergências de preço</div></div>
+    <div class="cnc-kpi"><div class="v" id="cnc-k-jogo">—</div><div class="l">Em jogo no mês</div></div>
+    <div class="cnc-kpi"><div class="v" id="cnc-k-fora">—</div><div class="l">Sumiram do cardápio</div></div>
+    <div class="cnc-kpi"><div class="v" id="cnc-k-conf">—</div><div class="l">Itens conferidos</div></div>
+  </div>
+
+  <p class="cnc-sec">Divergências de preço</p>
+  <p class="cnc-sec-sub" id="cnc-sub-div"></p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <table class="cnc cnc-cards"><thead><tr>
+      <th>Produto</th><th class="n">Cardápio</th><th class="n">Praticado</th>
+      <th class="n">Diferença</th><th class="n">Vendidos</th><th class="n">Em jogo</th>
+    </tr></thead><tbody id="cnc-lista-div"></tbody></table>
+    <p class="cnc-vazio" id="cnc-vazio-div" style="display:none"></p>
+  </div>
+
+  <p class="cnc-sec">Sumiram do cardápio digital</p>
+  <p class="cnc-sec-sub">Itens que estavam numa foto anterior do cardápio e não estão na atual. Pode ser pausa por falta de produto — que precisa ser religada quando regularizar — ou saída definitiva. O quanto vendia mostra o que está deixando de entrar.</p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <table class="cnc cnc-cards"><thead><tr>
+      <th>Produto</th><th class="n">Preço</th><th>Fora desde</th><th class="n">Vendia/mês</th><th class="n">Receita/mês</th>
+    </tr></thead><tbody id="cnc-lista-fora"></tbody></table>
+    <p class="cnc-vazio" id="cnc-vazio-fora" style="display:none"></p>
+  </div>
+
+  <p class="cnc-sec">O que esta página NÃO conseguiu conferir</p>
+  <p class="cnc-sec-sub">Silêncio se lê como "está tudo certo". Então o que ficou de fora aparece aqui, explicitamente.</p>
+  <div class="cnc-cov" id="cnc-cov"></div>
+
+  <p class="cnc-foot" id="cnc-foot"></p>
+</div>
+
+<script type="text/plain" id="perf-src-precos">
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var NIVEIS_OK = ['chefe', 'coord', 'controladoria'];
+  var SLUG = 'gestao-produto.html?tab=precos';
+  var msg = document.getElementById('cnc-msg');
+  var gate = document.getElementById('cnc-gate');
+  var wrap = document.getElementById('cnc-wrap');
+
+  if (!WORKER) {
+    gate.innerHTML = '<h2>Em configura&ccedil;&atilde;o</h2><p class="sub" style="margin:0">A concilia&ccedil;&atilde;o de pre&ccedil;os ainda n&atilde;o foi ativada.</p>';
+    return;
+  }
+
+  function rs(v) {
+    if (typeof v !== 'number' || !isFinite(v)) return '—';
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+  function td(texto, classe, rotulo) {
+    var e = document.createElement('td');
+    if (classe) e.className = classe;
+    // data-label alimenta o modo card no celular (CSS ::before) — sem ele a
+    // tabela vira uma pilha de números sem nome.
+    if (rotulo) e.setAttribute('data-label', rotulo);
+    e.textContent = texto;
+    return e;
+  }
+  function dias(n) {
+    if (n < 1) return 'hoje';
+    if (n === 1) return '1 dia';
+    if (n < 14) return n + ' dias';
+    var s = Math.round(n / 7);
+    return s + (s === 1 ? ' semana' : ' semanas');
+  }
+
+  function inicia(d) {
+    var casas = d.casas || {};
+    var slugs = Object.keys(casas).sort(function (a, b) {
+      return (casas[b].resumo || {}).em_jogo - (casas[a].resumo || {}).em_jogo;
+    });
+    if (!slugs.length) {
+      wrap.innerHTML = '';
+      var p = document.createElement('p');
+      p.className = 'cnc-vazio';
+      p.textContent = (d.sem_cobertura && d.sem_cobertura.length)
+        ? 'Sua casa ainda não tem conciliação: ' + d.sem_cobertura[0].motivo + '.'
+        : 'Nenhuma casa com conciliação disponível ainda.';
+      wrap.appendChild(p);
+      return;
+    }
+
+    var atual = slugs[0];
+    var chips = document.getElementById('cnc-casas');
+    if (slugs.length > 1) {
+      slugs.forEach(function (s) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cnc-chip' + (s === atual ? ' on' : '');
+        b.textContent = casas[s].nome || s;
+        b.onclick = function () {
+          atual = s;
+          Array.prototype.forEach.call(chips.children, function (c) { c.classList.remove('on'); });
+          b.classList.add('on');
+          desenha();
+        };
+        chips.appendChild(b);
+      });
+    }
+
+    function desenha() {
+      var c = casas[atual] || {};
+      var r = c.resumo || {}, cov = c.cobertura || {};
+      var divs = c.divergencias || [];
+      // "ok" não vira linha: são os itens que batem. Mostrar 60 linhas de
+      // diferença zero enterraria as 4 que importam.
+      var fora = divs.filter(function (x) { return x.classe !== 'ok'; });
+
+      document.getElementById('cnc-k-alertas').textContent = String(r.alertas || 0);
+      document.getElementById('cnc-k-jogo').textContent = rs(r.em_jogo || 0);
+      document.getElementById('cnc-k-fora').textContent = String(r.pausados || 0);
+      document.getElementById('cnc-k-conf').textContent =
+        (cov.conferidos || 0) + ' de ' + (cov.itens_bebida || 0);
+
+      document.getElementById('cnc-sub-div').textContent =
+        'Mês conferido: ' + (c.mes || '—') + '. Ordenado pelo dinheiro em jogo (diferença × quantidade vendida), não pelo percentual. '
+        + 'Itens que batem com o cardápio não aparecem aqui.';
+
+      var tb = document.getElementById('cnc-lista-div');
+      tb.textContent = '';
+      fora.forEach(function (x) {
+        var tr = document.createElement('tr');
+
+        var tdNome = document.createElement('td');
+        var nome = document.createElement('div');
+        nome.textContent = x.nome;
+        tdNome.appendChild(nome);
+
+        var tag = document.createElement('span');
+        tag.className = 'cnc-tag ' + x.classe;
+        tag.textContent = x.classe === 'acima' ? 'vendido acima'
+          : x.classe === 'abaixo' ? 'vendido abaixo' : 'atenção';
+        var linhaTag = document.createElement('div');
+        linhaTag.style.marginTop = '3px';
+        linhaTag.appendChild(tag);
+        if (x.promo) {
+          var pr = document.createElement('span');
+          pr.className = 'cnc-nota';
+          pr.style.marginLeft = '6px';
+          pr.textContent = 'preço promocional no cardápio';
+          linhaTag.appendChild(pr);
+        }
+        tdNome.appendChild(linhaTag);
+
+        if (x.mudou_em) {
+          var mu = document.createElement('div');
+          mu.className = 'cnc-nota';
+          mu.textContent = 'o praticado mudou em ' + x.mudou_em;
+          tdNome.appendChild(mu);
+        }
+        if (x.serie && x.serie.length > 1) {
+          var se = document.createElement('div');
+          se.className = 'cnc-serie';
+          se.textContent = x.serie.map(function (s) {
+            return s.mes + ' ' + s.preco.toFixed(2).replace('.', ',');
+          }).join('  ·  ');
+          tdNome.appendChild(se);
+        }
+        tr.appendChild(tdNome);
+
+        tr.appendChild(td(rs(x.cardapio), 'n', 'Cardápio'));
+        tr.appendChild(td(rs(x.praticado), 'n', 'Praticado'));
+        tr.appendChild(td((x.dif > 0 ? '+' : '') + rs(x.dif) + '  (' + (x.pct > 0 ? '+' : '')
+          + String(x.pct).replace('.', ',') + '%)', 'n', 'Diferença'));
+        tr.appendChild(td(String(x.qtde), 'n', 'Vendidos'));
+        tr.appendChild(td(rs(x.em_jogo), 'n', 'Em jogo'));
+        tb.appendChild(tr);
+      });
+      var vazioDiv = document.getElementById('cnc-vazio-div');
+      vazioDiv.style.display = fora.length ? 'none' : '';
+      vazioDiv.textContent = (cov.conferidos || 0) > 0
+        ? 'Nenhuma divergência: os ' + cov.conferidos + ' itens conferidos batem com o cardápio digital.'
+        : 'Nenhum item pôde ser conferido nesta casa ainda — veja a seção abaixo.';
+
+      var tf = document.getElementById('cnc-lista-fora');
+      tf.textContent = '';
+      (c.pausados || []).forEach(function (p) {
+        var tr = document.createElement('tr');
+        var tdn = document.createElement('td');
+        tdn.textContent = p.nome;
+        if (!p.tem_par) {
+          var n = document.createElement('div');
+          n.className = 'cnc-nota';
+          n.textContent = 'sem par no sistema de vendas — não dá pra dizer quanto vendia';
+          tdn.appendChild(n);
+        }
+        tr.appendChild(tdn);
+        tr.appendChild(td(rs(p.preco), 'n', 'Preço'));
+        tr.appendChild(td('há ' + dias(p.dias), '', 'Fora desde'));
+        tr.appendChild(td(p.tem_par ? String(p.qtde_mes) : '—', 'n', 'Vendia/mês'));
+        tr.appendChild(td(p.tem_par ? rs(p.receita_mes) : '—', 'n', 'Receita/mês'));
+        tf.appendChild(tr);
+      });
+      var vazioFora = document.getElementById('cnc-vazio-fora');
+      vazioFora.style.display = (c.pausados || []).length ? 'none' : '';
+      vazioFora.textContent = (d.fotos_na_serie || 0) < 2
+        ? 'Ainda só existe uma foto do cardápio — comparar exige duas. A próxima foto semanal habilita esta seção.'
+        : 'Nenhum item saiu do cardápio desde a foto anterior.';
+
+      var religados = (c.religados || []).filter(function (x) { return x.tipo === 'religado'; });
+      var cov_el = document.getElementById('cnc-cov');
+      cov_el.textContent = '';
+      function linha(txt) {
+        var p = document.createElement('p');
+        p.style.margin = '0';
+        p.textContent = txt;
+        cov_el.appendChild(p);
+      }
+      linha('Itens de bebida no cardápio digital: ' + (cov.itens_bebida || 0)
+        + ' — conferidos ' + (cov.conferidos || 0) + '.');
+      if (cov.sem_par) {
+        linha(cov.sem_par + ' item(ns) de bebida sem correspondente no sistema de vendas'
+          + ' — produto do cardápio que o relatório de vendas não traz (ou nome muito diferente entre os dois).');
+      }
+      if (cov.par_sem_venda_no_mes) {
+        linha(cov.par_sem_venda_no_mes + ' item(ns) com par mas sem nenhuma venda em ' + (c.mes || 'o mês')
+          + ' — sem venda não há preço praticado pra comparar.');
+      }
+      if (cov.aguardando_revisao) {
+        linha(cov.aguardando_revisao + ' item(ns) com correspondência duvidosa, aguardando confirmação manual'
+          + ' — o sistema não escolhe no chute.');
+      }
+      if ((cov.categorias_indefinidas || []).length) {
+        linha('Categorias do cardápio ainda não classificadas como bebida ou comida: '
+          + cov.categorias_indefinidas.join(', ') + '.');
+      }
+      if (religados.length) {
+        linha('Voltaram ao cardápio desde a foto anterior: '
+          + religados.map(function (x) { return x.nome; }).join(', ') + '.');
+      }
+      (d.sem_cobertura || []).forEach(function (s) {
+        linha(s.nome + ': sem conciliação — ' + s.motivo + '.');
+      });
+
+      document.getElementById('cnc-foot').textContent =
+        'Foto do cardápio digital: ' + (d.foto_cardapio || '—')
+        + ' (' + (d.fotos_na_serie || 0) + ' foto(s) na série). '
+        + 'O preço praticado é a média do mês (receita ÷ quantidade), porque o relatório de vendas é mensal, não venda a venda — '
+        + 'desconto e cortesia puxam essa média para baixo, então diferenças de até '
+        + String((d.tolerancias || {}).ok_pct || 1).replace('.', ',') + '% não são tratadas como divergência. '
+        + 'A foto do cardápio é de hoje e o mês conferido é anterior: se o preço mudou depois do fechamento do mês, a diferença aparece aqui sem ser erro de cadastro.';
+    }
+
+    desenha();
+  }
+
+  function buscaDados(token) {
+    msg.textContent = 'Carregando…';
+    fetch(WORKER + '/api/conciliacao-precos', { headers: { 'X-Token': token } })
+      .then(function (r) {
+        if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
+        if (r.status === 404) { msg.textContent = 'A conciliação ainda não foi publicada.'; return; }
+        if (!r.ok) { msg.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return; }
+        return r.json().then(function (d) {
+          gate.style.display = 'none';
+          wrap.style.display = '';
+          inicia(d);
+        });
+      })
+      .catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; });
+  }
+
+  var rr = window.exigirNivel(NIVEIS_OK, SLUG);
+  if (rr.ok) buscaDados(rr.sessao.token);
+  else if (!rr.redirecionou) msg.innerHTML = window.msgAcessoNegado('a Conciliação de Preços');
 })();
 </script></div><div id="perf-panel-conferencia" class="perf-panel" hidden>
 <h1>Conferência de Compras</h1>
@@ -3241,7 +3834,7 @@ a contagem daquela semana.</p>
 <script>
 (function () {
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.perf-tab'));
-  var panels = { contagem: document.getElementById('perf-panel-contagem'), compras: document.getElementById('perf-panel-compras'), cotacoes: document.getElementById('perf-panel-cotacoes'), historico: document.getElementById('perf-panel-historico'), conferencia: document.getElementById('perf-panel-conferencia'), everloja: document.getElementById('perf-panel-everloja'), consumo: document.getElementById('perf-panel-consumo') };
+  var panels = { contagem: document.getElementById('perf-panel-contagem'), compras: document.getElementById('perf-panel-compras'), cotacoes: document.getElementById('perf-panel-cotacoes'), historico: document.getElementById('perf-panel-historico'), precos: document.getElementById('perf-panel-precos'), conferencia: document.getElementById('perf-panel-conferencia'), everloja: document.getElementById('perf-panel-everloja'), consumo: document.getElementById('perf-panel-consumo') };
   var iniciados = {};
   function ativaScript(nome) {
     if (iniciados[nome]) return;
@@ -3608,6 +4201,11 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     var d = new Date(iso); if(isNaN(d.getTime())){ var m=String(iso).slice(0,10).split('-'); if(m.length===3) return (+m[2])+' '+MESES[(+m[1])-1]; return ''; }
     return d.getDate()+' '+MESES[d.getMonth()];
   }
+  function dataHoraCheia(iso){
+    if(!iso) return '';
+    var d = new Date(iso); if(isNaN(d.getTime())) return '';
+    return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
 
   var ICO = {
     demanda:'<path d="M5 4h14v16l-7-3-7 3z"/>',
@@ -3628,7 +4226,9 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
         + '<span class="sino-tx">'
         +   '<span class="sino-t"><span class="sino-tag">'+esc(tag(x.tipo))+'</span>'+esc(x.titulo)+'</span>'
         +   '<span class="sino-d">'+esc(x.descricao)+'</span>'
-        +   '<span class="sino-m">'+esc(tempo(x.quando))+'</span>'
+        // 2026-07-23: "há 3 dias"/"ontem" é calculado uma vez no render e nunca
+        // mais — o title carrega a data/hora exata pra nunca ficar só o relativo.
+        +   '<span class="sino-m" title="'+esc(dataHoraCheia(x.quando))+'">'+esc(tempo(x.quando))+'</span>'
         + '</span></a>';
     }).join('');
   }

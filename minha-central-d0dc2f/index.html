@@ -217,7 +217,19 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
       : u==='Um mês' ? 'var(--urg-um_mes)' : u==='3 meses+' ? 'var(--urg-tres_meses)'
       : u==='Urgente' ? 'var(--urg-urgente)' : 'var(--urg-aguardar)';
   }
-  function chipUrg(u) { var c = corUrg(u); return '<span class="mc-chip" style="color:'+c+';border-color:'+c+'">&#9679; '+esc(u)+'</span>'; }
+  // 2026-07-23: mesma correção de gera_demandas() — o rótulo cru "Hoje" de
+  // "Necessário desde" se lia como data de chegada num card de 13/07. Aqui a
+  // frase cobre os DOIS vocabulários (IZ novo e Bento legado), igual corUrg().
+  var URG_FRASE_MC = {
+    'Hoje': 'Necessário desde hoje', 'Uma semana': 'Necessário há 1 semana',
+    'Um mês': 'Necessário há 1 mês', '3 meses+': 'Necessário há 3+ meses',
+    'Urgente': 'Urgente', 'Pode aguardar': 'Pode aguardar'
+  };
+  function chipUrg(u) {
+    if (!u) return '';
+    var c = corUrg(u), txt = URG_FRASE_MC[u] || ('Necessário: ' + u);
+    return '<span class="mc-chip" style="color:'+c+';border-color:'+c+'">&#9679; '+esc(txt)+'</span>';
+  }
   function chipCasa(c) { var cor = 'var(--casa-'+(CASA_SLUG[c]||'iz')+')'; return '<span class="mc-chip" style="color:'+cor+';border-color:'+cor+'">'+esc(c)+'</span>'; }
   function chipOrigem(o) { return '<span class="mc-or '+o+'">'+(o==='bento'?'BENTO':'IZ')+'</span>'; }
 

@@ -8,6 +8,35 @@
 <title>Central de Demandas · Bar.IZ — Grupo IZ</title>
 <link rel="stylesheet" href="portal.css">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
+
+<script>
+(function(){
+  var ITENS = [{"chave": "g1", "casa": "Grá", "tipo": "Ocorrência", "categoria": "Manutenção de equipamento", "descricao": "Máquina de gelo do bar parou de gelar — precisamos de gelo comprado todo dia.", "urgencia": "Hoje", "status": "Novo", "setor": "Manutenção", "setor_confirmado": true, "solicitante": "Ana Paula", "registrado_por": "Ana Paula", "recebido_em": "2026-07-13T14:22:00-03:00", "data": "2026-07-13T14:22:00-03:00", "anexos": [], "msgs_n": 0}, {"chave": "i1", "casa": "IZ", "tipo": "Solicitação", "categoria": "Manutenção de equipamento", "descricao": "Faltou limão taiti para o serviço da noite.", "urgencia": "Hoje", "status": "Novo", "setor": "Compras e insumos", "setor_confirmado": true, "solicitante": "Fabio", "registrado_por": "Fabio", "recebido_em": "2026-07-23T09:05:00-03:00", "data": "2026-07-23T09:05:00-03:00", "anexos": [], "msgs_n": 0}, {"chave": "n1", "casa": "1929", "tipo": "Solicitação", "categoria": "Manutenção de equipamento", "descricao": "Coqueteleira boston amassada, vaza no shake.", "urgencia": "Uma semana", "status": "Em análise", "setor": "Compras e insumos", "setor_confirmado": true, "solicitante": "Welington", "registrado_por": "Welington", "recebido_em": "2026-07-19T18:40:00-03:00", "data": "2026-07-19T18:40:00-03:00", "anexos": [], "msgs_n": 0}, {"chave": "f1", "casa": "FAMU", "tipo": "Ocorrência", "categoria": "Manutenção de equipamento", "descricao": "Bancada do bar com rejunte solto desde a reforma.", "urgencia": "3 meses+", "status": "Em andamento", "setor": "Manutenção", "setor_confirmado": true, "solicitante": "Jorge", "registrado_por": "Jorge", "recebido_em": "2026-06-28T11:10:00-03:00", "data": "2026-06-28T11:10:00-03:00", "anexos": [], "msgs_n": 0}, {"chave": "u1", "casa": "Fulles", "tipo": "Solicitação", "categoria": "Manutenção de equipamento", "descricao": "Trocar as luminárias queimadas do balcão.", "urgencia": "Um mês", "status": "Novo", "setor": "Gerência da casa", "setor_confirmado": true, "solicitante": "Marcos", "registrado_por": "Marcos", "recebido_em": "2026-07-21T20:15:00-03:00", "data": "2026-07-21T20:15:00-03:00", "anexos": [], "msgs_n": 0}];
+  try { localStorage.setItem('portal_sessao', JSON.stringify({
+    nivel:'coord', casa:'*', pessoa:'Rodrigo Coelho Viana',
+    token:'harness', exp: Date.now()+36e5
+  })); } catch(e){}
+  try { localStorage.setItem('demandas_vista', new URLSearchParams(location.search).get('v') || 'kanban'); } catch(e){}
+  var real = window.fetch;
+  window.fetch = function(url, opt){
+    var u = String(url);
+    if (u.indexOf('/api/demandas') >= 0) {
+      var modo = /modo=enviadas/.test(u) ? 'enviadas' : 'recebidas';
+      var tipo = (u.match(/[?&]tipo=([^&]*)/)||[])[1] || '';
+      tipo = decodeURIComponent(tipo).toLowerCase();
+      var arr = ITENS.filter(function(d){
+        if (!tipo) return true;
+        return d.tipo.toLowerCase().indexOf(tipo.slice(0,9)) === 0;
+      });
+      return Promise.resolve(new Response(JSON.stringify({demandas:arr, itens:arr, tem_mais:false, has_more:false, escopo:{nivel:'coord'}}), {status:200, headers:{'Content-Type':'application/json'}}));
+    }
+    if (u.indexOf('/api/') >= 0) {
+      return Promise.resolve(new Response(JSON.stringify({itens:[], demandas:[], mensagens:[]}), {status:200, headers:{'Content-Type':'application/json'}}));
+    }
+    return real.apply(this, arguments);
+  };
+})();
+</script>
 </head>
 <body>
 <a class="volta-mural" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
