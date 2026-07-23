@@ -2995,6 +2995,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="cnc-kpi"><div class="v" id="cnc-k-alertas">—</div><div class="l">Divergências de preço</div></div>
     <div class="cnc-kpi"><div class="v" id="cnc-k-jogo">—</div><div class="l">Em jogo no mês</div></div>
     <div class="cnc-kpi"><div class="v" id="cnc-k-fora">—</div><div class="l">Sumiram do cardápio</div></div>
+    <div class="cnc-kpi"><div class="v" id="cnc-k-casas">—</div><div class="l">Preço diferente entre casas</div></div>
     <div class="cnc-kpi"><div class="v" id="cnc-k-conf">—</div><div class="l">Itens conferidos</div></div>
   </div>
 
@@ -3002,10 +3003,19 @@ window.msgAcessoNegado = function (nomePagina) {
   <p class="cnc-sec-sub" id="cnc-sub-div"></p>
   <div class="panel" style="padding:8px 10px;overflow-x:auto">
     <table class="cnc cnc-cards"><thead><tr>
-      <th>Produto</th><th class="n">Cardápio</th><th class="n">Praticado</th>
+      <th>Produto</th><th class="n">Cardápio</th><th class="n">Ficha</th><th class="n">Praticado</th>
       <th class="n">Diferença</th><th class="n">Vendidos</th><th class="n">Em jogo</th>
     </tr></thead><tbody id="cnc-lista-div"></tbody></table>
     <p class="cnc-vazio" id="cnc-vazio-div" style="display:none"></p>
+  </div>
+
+  <p class="cnc-sec">Mesmo produto, preço diferente entre casas</p>
+  <p class="cnc-sec-sub">O preço de venda deve ser igual em todas as casas — diferença aqui é indicativo de correção. Compara o praticado de cada casa no mês dela; só entra diferença acima do ruído de desconto.</p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <table class="cnc cnc-cards"><thead><tr>
+      <th>Produto</th><th class="n">Ficha</th><th>Por casa</th><th class="n">Diferença</th><th class="n">Em jogo</th>
+    </tr></thead><tbody id="cnc-lista-casas"></tbody></table>
+    <p class="cnc-vazio" id="cnc-vazio-casas" style="display:none"></p>
   </div>
 
   <p class="cnc-sec">Sumiram do cardápio digital</p>
@@ -3104,6 +3114,8 @@ window.msgAcessoNegado = function (nomePagina) {
       document.getElementById('cnc-k-alertas').textContent = String(r.alertas || 0);
       document.getElementById('cnc-k-jogo').textContent = rs(r.em_jogo || 0);
       document.getElementById('cnc-k-fora').textContent = String(r.pausados || 0);
+      // Contador de grupo, não da casa selecionada — a seção também é de grupo.
+      document.getElementById('cnc-k-casas').textContent = String((d.entre_casas || []).length);
       document.getElementById('cnc-k-conf').textContent =
         (cov.conferidos || 0) + ' de ' + (cov.itens_bebida || 0);
 
@@ -3154,6 +3166,20 @@ window.msgAcessoNegado = function (nomePagina) {
         tr.appendChild(tdNome);
 
         tr.appendChild(td(rs(x.cardapio), 'n', 'Cardápio'));
+        // Ficha = preço cadastrado no Notion. Só existe pra cocktail hoje
+        // (o B.D.1 não tem De-Para confirmado com o POS) — daí o "—".
+        var tdFicha = document.createElement('td');
+        tdFicha.className = 'n';
+        tdFicha.setAttribute('data-label', 'Ficha');
+        tdFicha.textContent = x.notion ? rs(x.notion) : '—';
+        if (x.classe_notion === 'acima' || x.classe_notion === 'abaixo') {
+          var av = document.createElement('div');
+          av.className = 'cnc-nota';
+          av.textContent = 'ficha ' + (x.pct_notion > 0 ? 'abaixo' : 'acima') + ' do praticado ('
+            + (x.pct_notion > 0 ? '+' : '') + String(x.pct_notion).replace('.', ',') + '%)';
+          tdFicha.appendChild(av);
+        }
+        tr.appendChild(tdFicha);
         tr.appendChild(td(rs(x.praticado), 'n', 'Praticado'));
         tr.appendChild(td((x.dif > 0 ? '+' : '') + rs(x.dif) + '  (' + (x.pct > 0 ? '+' : '')
           + String(x.pct).replace('.', ',') + '%)', 'n', 'Diferença'));
@@ -3166,6 +3192,35 @@ window.msgAcessoNegado = function (nomePagina) {
       vazioDiv.textContent = (cov.conferidos || 0) > 0
         ? 'Nenhuma divergência: os ' + cov.conferidos + ' itens conferidos batem com o cardápio digital.'
         : 'Nenhum item pôde ser conferido nesta casa ainda — veja a seção abaixo.';
+
+      // Mesmo produto, preço diferente entre casas. É análise de GRUPO —
+      // não filtra pela casa escolhida nos chips, senão a comparação perde
+      // o sentido. Chefe também vê (mesmo precedente do payload de gestão
+      // do Cocktails-Ranking, que já mostra todas as casas pra chefe).
+      var tc = document.getElementById('cnc-lista-casas');
+      tc.textContent = '';
+      (d.entre_casas || []).forEach(function (x) {
+        var tr = document.createElement('tr');
+        tr.appendChild(td(x.produto, '', null));
+        tr.appendChild(td(x.notion ? rs(x.notion) : '—', 'n', 'Ficha'));
+
+        var tdCasas = document.createElement('td');
+        tdCasas.setAttribute('data-label', 'Por casa');
+        x.casas.forEach(function (c, i) {
+          var linha = document.createElement('div');
+          linha.className = i === 0 ? '' : 'cnc-serie';
+          linha.textContent = c.nome + '  ' + rs(c.preco) + '  (' + c.qtde + ' un, ' + c.mes + ')';
+          tdCasas.appendChild(linha);
+        });
+        tr.appendChild(tdCasas);
+
+        tr.appendChild(td(rs(x.spread) + '  (' + String(x.pct).replace('.', ',') + '%)', 'n', 'Diferença'));
+        tr.appendChild(td(rs(x.em_jogo), 'n', 'Em jogo'));
+        tc.appendChild(tr);
+      });
+      var vazioCasas = document.getElementById('cnc-vazio-casas');
+      vazioCasas.style.display = (d.entre_casas || []).length ? 'none' : '';
+      vazioCasas.textContent = 'Nenhum produto com preço diferente entre casas — ou não há produto vendido em mais de uma casa com par confirmado.';
 
       var tf = document.getElementById('cnc-lista-fora');
       tf.textContent = '';
@@ -3211,6 +3266,11 @@ window.msgAcessoNegado = function (nomePagina) {
         linha(cov.par_sem_venda_no_mes + ' item(ns) com par mas sem nenhuma venda em ' + (c.mes || 'o mês')
           + ' — sem venda não há preço praticado pra comparar.');
       }
+      linha('Preço da ficha (Notion) disponível em ' + (r.com_notion || 0) + ' dos '
+        + (cov.conferidos || 0) + ' itens conferidos. A ficha só existe para cocktail: '
+        + 'cerveja, refrigerante e dose vivem no B.D.1, cujos nomes são de insumo e ainda '
+        + 'não têm De-Para confirmado com o sistema de vendas — por isso aparecem sem ficha, '
+        + 'e não como "sem divergência".');
       if (cov.aguardando_revisao) {
         linha(cov.aguardando_revisao + ' item(ns) com correspondência duvidosa, aguardando confirmação manual'
           + ' — o sistema não escolhe no chute.');

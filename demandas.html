@@ -1170,6 +1170,9 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     'Urgente': 'Urgente', 'Pode aguardar': 'Pode aguardar'
   };
   function fraseUrgencia(u) { return URG_FRASE[u] || (u ? 'Necessário: ' + u : ''); }
+  // Na Tabela o cabeçalho da coluna já diz "Necessário desde" — lá basta o
+  // complemento, sem repetir a palavra em toda linha.
+  function fraseUrgenciaCurta(u) { return fraseUrgencia(u).replace(/^Necessário /, ''); }
   function chipUrgencia(u) {
     if (!u) return '';
     var cor = URG_COR_LABEL[u] || 'var(--urg-tres_meses)';
@@ -1324,12 +1327,22 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     var agora = new Date();
     return dt.getFullYear() === agora.getFullYear() && dt.getMonth() === agora.getMonth() && dt.getDate() === agora.getDate();
   }
+  // 2026-07-23: "parada" é tempo SEM MOVIMENTO, não tempo desde a chegada — o
+  // worker passou a devolver `mexido_em` (last_edited_time do Notion). O
+  // fallback pra `recebido_em` cobre o intervalo entre publicar a página e
+  // implantar o worker; `paradasPorMovimento()` diz qual dos dois está valendo,
+  // pro rótulo na tela nunca prometer mais do que o dado entrega.
+  function chegadaDe(d) { return d.recebido_em || d.data; }
+  function paradaDe(d) { return d.mexido_em || chegadaDe(d); }
+  function paradasPorMovimento() {
+    return todasItens().some(function (d) { return !!d.mexido_em; });
+  }
 
   function itemVisivel(d) {
     if (statusAtivo && d.status !== statusAtivo) return false;
-    if (filtroRapido === 'hoje' && !mesmoDia(d.recebido_em || d.data)) return false;
+    if (filtroRapido === 'hoje' && !mesmoDia(chegadaDe(d))) return false;
     if (filtroRapido === 'paradas') {
-      var dd = diasDesde(d.recebido_em || d.data);
+      var dd = diasDesde(paradaDe(d));
       if (!(dd != null && dd > 7)) return false;
     }
     if (buscaTermo) {
@@ -2077,21 +2090,24 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     if (!total) { elResumoFrase.innerHTML = ''; return; }
     var hoje = 0, paradas = 0, novas = 0;
     todasItens().forEach(function (d) {
-      var iso = d.recebido_em || d.data;
+      var iso = chegadaDe(d);
       if (mesmoDia(iso)) hoje++;
-      var dd = diasDesde(iso);
+      var dd = diasDesde(paradaDe(d));
       if (dd != null && dd > 7) paradas++;
       if (ultimaVisitaAnterior && iso && new Date(iso).getTime() > new Date(ultimaVisitaAnterior).getTime()) novas++;
     });
+    // 2026-07-23: dizia "paradas" contando pela data de CHEGADA — uma demanda
+    // antiga respondida ontem entrava na conta. Agora conta pela última mexida
+    // (`mexido_em`); enquanto o worker novo não estiver implantado o rótulo cai
+    // pra "abertas", que é o que o dado antigo de fato mede.
+    var porMovimento = paradasPorMovimento();
+    var rotuloParadas = porMovimento ? ' paradas há mais de 7 dias' : ' abertas há mais de 7 dias';
+    var tituloParadas = porMovimento ? 'Sem nenhuma mexida há mais de 7 dias' : 'Contadas pela data de chegada';
     var sufixo = (FILAS.ocorrencia.hasMore || FILAS.solicitacao.hasMore) ? '+' : '';
     var partes = [
       '<b>' + total + sufixo + ' aberta' + (total === 1 ? '' : 's') + '</b>',
       '<span class="dm-resumo-hl' + (filtroRapido === 'hoje' ? ' on' : '') + '" data-filtro-rapido="hoje" role="button" tabindex="0">' + hoje + ' chegaram hoje</span>',
-      // 2026-07-23: dizia "paradas há mais de 7 dias", mas o que se mede é o
-      // tempo desde a CHEGADA (`recebido_em`) — a rota não devolve data de
-      // última mexida, então uma demanda de 10 dias respondida ontem também
-      // entrava aqui. Rótulo passou a dizer o que de fato é medido.
-      '<span class="dm-resumo-hl warn' + (filtroRapido === 'paradas' ? ' on' : '') + '" data-filtro-rapido="paradas" role="button" tabindex="0" title="Contadas pela data de chegada">' + paradas + ' abertas há mais de 7 dias</span>'
+      '<span class="dm-resumo-hl warn' + (filtroRapido === 'paradas' ? ' on' : '') + '" data-filtro-rapido="paradas" role="button" tabindex="0" title="' + tituloParadas + '">' + paradas + rotuloParadas + '</span>'
     ];
     if (ultimaVisitaAnterior) {
       partes.push('<span class="dm-resumo-novas">' + novas + ' nova' + (novas === 1 ? '' : 's') + ' desde a sua última visita (' + horaCurta(ultimaVisitaAnterior) + ')</span>');
@@ -2355,7 +2371,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
         '<td>' + esc(d.tipo || '') + '</td>' +
         '<td>' + esc(d.setor || d.categoria || '') + '</td>' +
         '<td><span class="td-desc">' + esc((d.descricao || '').slice(0, 140)) + '</span></td>' +
-        '<td><i class="dm-ubar" style="background:' + (URG_COR_LABEL[d.urgencia] || 'var(--border)') + '"></i>' + esc(fraseUrgencia(d.urgencia)) + '</td>' +
+        '<td><i class="dm-ubar" style="background:' + (URG_COR_LABEL[d.urgencia] || 'var(--border)') + '"></i>' + esc(fraseUrgenciaCurta(d.urgencia)) + '</td>' +
         '<td>' + esc(d.status || 'Novo') + '</td>' +
         '<td>' + esc(d.solicitante || d.registrado_por || 'anônimo') + '</td></tr>';
     });

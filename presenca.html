@@ -396,6 +396,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .ps-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
              padding: 14px 16px; margin-bottom: 14px; }
   .ps-card h2 { font-family: var(--serif); font-size: 17px; margin: 0 0 8px; }
+  /* Nota explicativa (não é uma lista de dados) — fica discreta no fim. */
+  .ps-nota { background: transparent; border-style: dashed; }
+  .ps-nota h2 { font-size: 14px; color: var(--text-2); }
   .ps-on { font-size: 13px; color: var(--text-2); padding: 8px 0;
            border-bottom: 1px dashed var(--border); display: flex;
            justify-content: space-between; gap: 10px; flex-wrap: wrap; }
@@ -449,6 +452,21 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   <div class="ps-card">
     <h2>Histórico de tempo de uso</h2>
     <div id="ps-historico"></div>
+  </div>
+  <!-- 2026-07-23: o Rodrigo estranhou uma pessoa não aparecer aqui. As 3
+       listas acima só enxergam sessão com senha INDIVIDUAL (o token carrega
+       `pessoa`); senha de nível compartilhado entra só na contagem anônima e
+       em "Aparelhos conectados agora". Isso não estava dito em lugar nenhum
+       da tela — quem sumia parecia bug, e era ausência de senha própria. -->
+  <div class="ps-card ps-nota">
+    <h2>Quem NÃO aparece nestas listas</h2>
+    <p class="sub" style="margin:2px 0 0;font-size:12.5px">Só quem entra com
+    <b>senha individual</b> é identificado por nome. Quem usa senha de nível
+    compartilhada (equipe, ou a senha de chefe antiga que não é por casa)
+    conta no número de "online agora" e aparece em <b>Aparelhos conectados
+    agora</b> como “sem identificação”, mas <b>nunca entra no histórico</b> —
+    não há nome a gravar. Se alguém do quadro nunca aparece, o motivo quase
+    sempre é esse: falta distribuir a senha individual dessa pessoa.</p>
   </div>
 </div>
 
