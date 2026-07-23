@@ -783,75 +783,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
 })();
 </script>
 
-
-<script>
-(function () {
-  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
-  if (!WORKER) return;
-  var CHAVE = 'geo_ok_ts', VALIDADE = 30 * 60 * 1000;
-  try {
-    var t = parseInt(sessionStorage.getItem(CHAVE) || '0', 10);
-    if (t && Date.now() - t < VALIDADE) return;
-  } catch (e) {}
-
-  function overlay(titulo, msg, mostrarBtn) {
-    var d = document.getElementById('geo-blk') || document.createElement('div');
-    d.id = 'geo-blk';
-    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#16130f;color:#f3ede2;'
-      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
-      + 'text-align:center;padding:32px;font-family:-apple-system,Segoe UI,Roboto,sans-serif';
-    d.innerHTML = '<div style="font-family:Georgia,serif;font-size:22px;margin-bottom:12px">'
-      + titulo + '</div><div style="max-width:420px;color:#c3baa9;line-height:1.5">' + msg + '</div>'
-      + (mostrarBtn ? '<button id="geo-retry" style="margin-top:22px;padding:12px 22px;border:none;'
-      + 'border-radius:999px;background:#d0a352;color:#241a06;font-weight:600;font-size:15px;'
-      + 'cursor:pointer">Tentar de novo</button>' : '');
-    if (!d.parentNode) document.body.appendChild(d);
-    var b = document.getElementById('geo-retry');
-    if (b) b.onclick = function () { verifica(); };
-  }
-  function libera() {
-    try { sessionStorage.setItem(CHAVE, String(Date.now())); } catch (e) {}
-    var d = document.getElementById('geo-blk');
-    if (d && d.parentNode) d.parentNode.removeChild(d);
-  }
-
-  function checa(lat, lon) {
-    fetch(WORKER + '/api/geo', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lat: lat, lon: lon }),
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      if (d.ok) libera();
-      else overlay('Fora de área',
-        'O Bar.IZ só funciona dentro das casas do Grupo IZ. '
-        + 'Você precisa estar em uma delas para acessar.', true);
-    }).catch(function () { libera(); }); // rede falhou: não tranca
-  }
-
-  function verifica() {
-    overlay('Confirmando localização…', 'Só um instante.', false);
-    if (!navigator.geolocation) { libera(); return; }
-    navigator.geolocation.getCurrentPosition(
-      function (pos) { checa(pos.coords.latitude, pos.coords.longitude); },
-      function () {
-        overlay('Ative a localização',
-          'Para usar o portal no bar, permita o acesso à localização no seu '
-          + 'navegador e toque em “Tentar de novo”.', true);
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-    );
-  }
-
-  // 1º toque no Worker SEM coordenadas: só pra saber se a cerca está ligada.
-  // Se desligada, para aqui — nenhum pedido de GPS aparece.
-  fetch(WORKER + '/api/geo', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
-  }).then(function (r) { return r.json(); }).then(function (d) {
-    if (d && d.desativado) return;
-    verifica();
-  }).catch(function () {}); // rede falhou: não tranca
-})();
-</script>
-
+<!-- cerca geográfica desligada em config/geofence.json (ativo=false) -->
 
 <script>
 (function () {
@@ -1139,6 +1071,28 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     try { atual = player.getCurrentTime() || 0; } catch (e) {}
     if (forcar || Math.abs(atual - alvo) > 3) { try { player.seekTo(alvo, true); } catch (e) {} }
   }
+  // A rádio é PREGUIÇOSA (2026-07-23): o player só nasce quando alguém
+  // encosta nela. Antes, criaPlayer() rodava no fim deste script em TODA
+  // página — o que baixava o iframe_api do YouTube e punha um vídeo tocando
+  // (mudo, em loop) em cada carregamento do portal.
+  //
+  // Medido nas 45 páginas do site publicado: os recursos do YouTube
+  // respondiam por 536-1002ms de um carregamento total de 570-1085ms — 85%
+  // a 95% de tudo que acontecia depois da página já estar utilizável (o DOM
+  // fica pronto em 23-198ms). Pior caso: 3.739ms.
+  //
+  // E não havia nada a ganhar com isso: logo acima, `s.som = false` força
+  // MUDO a cada carga de propósito, então o som nunca atravessa de uma
+  // página pra outra. O player criado no load tocava mudo e era descartado
+  // na navegação seguinte. A sincronização por relógio (posGlobal) garante
+  // que entrar depois cai no mesmo ponto de todo mundo — é justamente o que
+  // torna adiar seguro.
+  var criando = false;
+  function ligaRadio() {
+    if (player || criando) return;
+    criando = true;
+    criaPlayer();
+  }
   function criaPlayer() {
     var st = ST[s.idx]; if (!st) return;
     carregaYT(function () {
@@ -1155,7 +1109,16 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
             mudo = true;
             sincroniza(true);
             try { e.target.playVideo(); } catch (x) {}
-            if (s.som) armaSom();   // desmuta no 1º gesto (o que o Rodrigo pediu)
+            if (s.som) {
+              // Com a rádio preguiçosa, s.som já pode estar true aqui: a
+              // pessoa clicou no play e o player só ficou pronto depois.
+              // Nesse caso ela JÁ fez o gesto — esperar por outro deixaria
+              // a rádio muda depois de um clique explícito. Tenta desmutar
+              // na hora e mantém o gesto só como rede de segurança, caso o
+              // navegador recuse por o clique já ter ficado velho demais.
+              try { e.target.unMute(); e.target.setVolume(s.vol); mudo = false; } catch (x) {}
+              armaSom();
+            }
             setupMedia(); render();
           },
           onStateChange: function (e) {
@@ -1169,7 +1132,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     });
   }
   function trocaVideo() {
-    if (!player || !pronto) { criaPlayer(); return; }
+    if (!player || !pronto) { ligaRadio(); return; }  // trocar estação também liga
     var st = ST[s.idx]; if (!st) return;
     try { player.loadVideoById(st.vid); } catch (e) {}
     // respeita o estado de som atual no vídeo novo + realinha a sincronia
@@ -1185,6 +1148,10 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   // ---- som: mudo <-> com som ----
   function ativaSom() {
     s.som = true; mudo = false; salvar();
+    // Pedir som é o gatilho mais direto pra ligar a rádio — cobre o caso de
+    // quem toca no play/no "religar" sem passar pelo painel. O onReady do
+    // criaPlayer respeita s.som, então o som entra assim que o player existe.
+    ligaRadio();
     if (player && pronto) { try { player.unMute(); player.setVolume(s.vol); if (player.getPlayerState && player.getPlayerState() !== 1) player.playVideo(); } catch (e) {} }
     desarmaSom(); render();
   }
@@ -1248,7 +1215,15 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   if (mini) mini.addEventListener('click', function () { alternaSom(); });
 
   // ---- abre/fecha painel ----
-  function toggle(v) { pop.classList.toggle('aberto', v === undefined ? !pop.classList.contains('aberto') : v); atualizaMini(); }
+  function toggle(v) {
+    var abrindo = v === undefined ? !pop.classList.contains('aberto') : v;
+    pop.classList.toggle('aberto', abrindo);
+    // Abrir o painel já liga a rádio: dá ao YouTube a folga de carregar
+    // enquanto a pessoa escolhe a estação, em vez de fazê-la esperar depois
+    // do play. Quem não abre o painel não paga nada disso.
+    if (abrindo) ligaRadio();
+    atualizaMini();
+  }
   btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
   $('radio-close').addEventListener('click', function () { toggle(false); });
   document.addEventListener('click', function (e) { if (pop.classList.contains('aberto') && !pop.contains(e.target) && !btn.contains(e.target)) toggle(false); });
@@ -1266,7 +1241,10 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     var st = ST[s.idx];
     nmEl.textContent = st ? st.nome : 'Rádio Vice City';
     dsEl.textContent = st ? st.ds : (ST.length + ' estações');
-    stEl.textContent = !tocando ? 'ligando…' : (mudo ? 'no mudo' : 'no ar');
+    // "ligando…" só vale depois que alguém pediu a rádio. Antes disso ela
+    // nem foi criada (ver ligaRadio), então dizer "ligando" seria mentira.
+    stEl.textContent = tocando ? (mudo ? 'no mudo' : 'no ar')
+                     : (player || criando ? 'ligando…' : 'toque para ligar');
     playIc.innerHTML = mudo ? SOM_OFF : SOM_ON;
     if (religar) religar.classList.toggle('on', tocando && mudo);
     atualizaMini();
@@ -1284,9 +1262,10 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     if (!document.hidden && player && pronto) { try { sincroniza(true); if (player.getPlayerState() !== 1) player.playVideo(); } catch (e) {} }
   });
 
-  // ---- início: sempre toca (no mudo até um gesto) ----
+  // ---- início: NÃO cria o player (ver ligaRadio) ----
+  // Só desenha o controle. O YouTube entra na primeira interação com a
+  // rádio — abrir o painel, dar play, trocar de estação ou tocar no mini.
   render();
-  criaPlayer();
 })();
 </script>
 

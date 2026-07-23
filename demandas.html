@@ -525,6 +525,28 @@ prioridade (urgência primeiro, mais antiga depois).</p>
      views novas unificam ocorrência+solicitação e, ao clicar, abrem o card
      existente (renderCard: triagem+resposta+conversa) num overlay. */
   .dm-vistas { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  /* Modo triagem (PLANO_MOTORES_DEMANDAS.md §2): uma demanda por vez, sem
+     expandir card. Vive dentro do mesmo overlay .dm-ov das outras vistas. */
+  .dm-tri-abrir { background: var(--acc); color: var(--acc-txt); border: 0; font: inherit; font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+  .dm-tri-abrir:disabled { opacity: .5; cursor: default; }
+  .dm-tri-abrir svg { width: 15px; height: 15px; }
+  .dm-tri { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px 16px; }
+  .dm-tri-topo { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 12px; color: var(--text-3); }
+  .dm-tri-fechar { background: none; border: 0; color: var(--text-3); font: inherit; font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px; }
+  .dm-tri-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .dm-tri-desc { font-size: 16px; line-height: 1.55; margin: 0 0 6px; white-space: pre-wrap; }
+  .dm-tri-quem { font-size: 13px; color: var(--text-3); margin-bottom: 10px; }
+  .dm-tri-alerta { font-size: 13px; color: var(--amarelo); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .dm-tri-alerta svg { width: 15px; height: 15px; flex: none; }
+  .dm-tri-transc { font-size: 13px; color: var(--text-2); border-left: 2px solid var(--border); padding-left: 10px; margin: 0 0 12px; white-space: pre-wrap; }
+  .dm-tri-rs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .dm-tri-rs button { background: none; border: 1px solid var(--border); color: var(--text); font: inherit; font-size: 13px; padding: 8px 13px; border-radius: 9px; cursor: pointer; }
+  .dm-tri-rs button.sel { border-color: var(--acc); color: var(--acc); }
+  .dm-tri-rs button:disabled { opacity: .5; cursor: default; }
+  .dm-tri-ta { width: 100%; box-sizing: border-box; min-height: 68px; padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 14px; margin-bottom: 12px; }
+  .dm-tri-acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .dm-tri-fim { text-align: center; padding: 22px 8px; }
+  .dm-tri-fim p { margin: 0 0 14px; font-size: 15px; }
   .dm-vseg { display: inline-flex; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
   .dm-vseg button { background: none; border: 0; color: var(--text-3); font: inherit; font-size: 13px; padding: 6px 11px; border-radius: 8px; cursor: pointer; }
   .dm-vseg button.on { background: var(--acc); color: var(--acc-txt); font-weight: 600; }
@@ -791,6 +813,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     <button type="button" data-v="kanban">Kanban</button>
     <button type="button" data-v="tabela">Tabela</button>
   </div>
+  <button type="button" class="dm-tri-abrir" id="dm-tri-abrir" hidden><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12z"/></svg> <span id="dm-tri-abrir-txt">Triagem</span></button>
   <label class="dm-vctrl" id="dm-agrupo-wrap">Agrupar
     <select id="dm-agrupo">
       <option value="urgencia">Necessidade</option>
@@ -885,6 +908,9 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   var CASAS = {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "enttres": "Enttres", "fulles": "Fulles", "nip": "NIP"};       // slug -> label
   var STATUS_OPCOES = ["Novo", "Visto", "Em andamento", "Resolvido"];
   var URGENCIAS = {"hoje": "Hoje", "uma_semana": "Uma semana", "um_mes": "Um mês", "tres_meses": "3 meses+"};
+  // Modo triagem: respostas de um toque, editáveis em config/registro.json
+  // (nunca hardcoded aqui — ver _nota_respostas_rapidas lá).
+  var RESPOSTAS = [{"slug": "aprovado", "label": "Aprovado", "status": "Aprovado", "texto": "Aprovado. Pode seguir."}, {"slug": "analise", "label": "Em análise", "status": "Em análise", "texto": "Recebido, estou avaliando. Retorno em breve."}, {"slug": "agora_nao", "label": "Agora não", "status": "Reprovado", "texto": "Agora não vai dar. Vamos retomar mais pra frente."}, {"slug": "ja_resolvido", "label": "Já resolvido", "status": "Aprovado", "texto": "Já foi resolvido.", "resolve": true}];
   // setor -> mesma cor da casa (A10): reuso de paleta, semântica pelo contexto
   var SETOR_COR = {
     manutencao: 'var(--casa-fulles)', compras_insumos: 'var(--casa-gra)',
@@ -2216,6 +2242,8 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     renderResumoFrase();
     renderFiltrosBar();
     if (typeof redesenhaUni === 'function') redesenhaUni();
+    // O contador do botão de triagem acompanha os mesmos filtros da tela.
+    if (typeof atualizaTriBotao === 'function') atualizaTriBotao();
   }
 
   function limpaFiltroRapido() {
@@ -2410,6 +2438,224 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   }
   elOv.addEventListener('click', function (ev) { if (ev.target === elOv) dmFechaOv(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && elOv.classList.contains('on')) dmFechaOv(); });
+
+  // ---- Modo triagem (PLANO_MOTORES_DEMANDAS.md §2) --------------------------
+  // Medição de 2026-07-23: 47 de 55 demandas paradas em "Novo", 51 sem retorno
+  // ao solicitante. Quem registra são os chefes (26 dos 55), então a triagem
+  // cai numa pessoa só — a Central inteira é uma fila dela. Aqui ela vence a
+  // fila item a item, sem expandir card: o gargalo é o gesto repetido.
+  // Reusa patch()/overlay/filtros existentes — nada de worker nem de schema.
+  var elTriAbrir = document.getElementById('dm-tri-abrir');
+  var elTriAbrirTxt = document.getElementById('dm-tri-abrir-txt');
+  var triFila = [], triIdx = 0, triOcupado = false;
+
+  // Só quem pode responder tria (o Worker recusaria o PATCH dos demais).
+  var PODE_TRIAR = !SOMENTE_LEITURA && (NIVEL === 'chefe' || NIVEL === 'coord') && RESPOSTAS.length > 0;
+
+  function triPendentes() {
+    var arr = dmTodos().filter(function (o) {
+      return !o.d.status_resposta && o.d.status !== 'Resolvido';
+    });
+    // Mesma regra da fila (D4): urgência primeiro, mais antiga desempata. Sem
+    // isso a ordem seria "ocorrências e depois solicitações", que é a ordem em
+    // que os dois fetches voltam — não uma ordem de prioridade.
+    arr.sort(function (x, y) {
+      var a = x.d, b = y.d;
+      var ra = URGENCIA_RANK.hasOwnProperty(a.urgencia) ? URGENCIA_RANK[a.urgencia] : 99;
+      var rb = URGENCIA_RANK.hasOwnProperty(b.urgencia) ? URGENCIA_RANK[b.urgencia] : 99;
+      if (ra !== rb) return ra - rb;
+      return new Date(a.recebido_em || a.data || 0).getTime() - new Date(b.recebido_em || b.data || 0).getTime();
+    });
+    return arr;
+  }
+  // "aberta há N dias" — a triagem precisa da IDADE, não da data de chegada
+  // (idade() devolve horaCurta, usada no card onde o carimbo é o que importa).
+  function triIdadeTxt(iso) {
+    if (!iso) return '';
+    var dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+    if (isNaN(dias) || dias < 0) return '';
+    if (dias === 0) return 'aberta hoje';
+    return 'aberta há ' + dias + (dias === 1 ? ' dia' : ' dias');
+  }
+  function atualizaTriBotao() {
+    if (!elTriAbrir) return;
+    if (!PODE_TRIAR) { elTriAbrir.hidden = true; return; }
+    var n = triPendentes().length;
+    elTriAbrir.hidden = n === 0;
+    elTriAbrirTxt.textContent = 'Triagem · ' + n;
+  }
+
+  // Palavras em comum com outras ABERTAS da mesma casa. É o aviso de duplicata
+  // (§2.3 do plano) adiantado pro ponto onde rende mais: dá pra despachar um
+  // lote de uma vez em vez de item a item. URLs saem ANTES de tokenizar — os
+  // links de loja que a equipe cola trazem rastreamento (gclid, campaign...)
+  // e essas palavras dominariam a semelhança (erro real, visto no diagnóstico).
+  var TRI_STOP = ('de da do das dos para pra por com que sem nao mais muito esta '
+    + 'estao ter tem precisa preciso favor bar casa dia hoje ontem semana mes aqui '
+    + 'isso esse essa nosso quando onde como qual pois porque entao tudo todo toda '
+    + 'mas ou se eu ele ela nos voces esta uma uns umas dos das https').split(' ');
+  function triPalavras(txt) {
+    var s = (txt || '').replace(/https?:\/\/\S+/g, ' ').toLowerCase();
+    s = s.normalize ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : s;
+    var out = {};
+    s.replace(/[^a-z0-9]+/g, ' ').split(' ').forEach(function (w) {
+      if (w.length > 3 && TRI_STOP.indexOf(w) < 0) out[w] = 1;
+    });
+    return Object.keys(out);
+  }
+  function triParecidas(alvo) {
+    var pal = triPalavras(alvo.descricao);
+    if (pal.length < 2) return 0;
+    var n = 0;
+    dmTodos().forEach(function (o) {
+      var d = o.d;
+      if (d === alvo || d.casa !== alvo.casa || d.status === 'Resolvido') return;
+      var outras = triPalavras(d.descricao), comuns = 0;
+      for (var i = 0; i < pal.length; i++) if (outras.indexOf(pal[i]) >= 0) comuns++;
+      if (comuns >= 2) n++;
+    });
+    return n;
+  }
+
+  function abreTriagem() {
+    triFila = triPendentes();
+    triIdx = 0;
+    if (!triFila.length) { toast('Nada pendente de retorno.'); return; }
+    elOv.classList.add('on');
+    renderTri();
+  }
+  function triFecha() {
+    elOv.classList.remove('on');
+    elOvInner.innerHTML = '';
+    triFila = [];
+    redesenhaUni();
+    ['ocorrencia', 'solicitacao'].forEach(function (k) { if (FILAS[k]) redesenhaFila(FILAS[k]); });
+    renderResumo();
+    atualizaTriBotao();
+  }
+  function triProxima() {
+    triIdx++;
+    if (triIdx >= triFila.length) renderTriFim(); else renderTri();
+  }
+
+  function renderTriFim() {
+    elOvInner.innerHTML = '';
+    var box = document.createElement('div');
+    box.className = 'dm-tri dm-tri-fim';
+    var p = document.createElement('p');
+    p.textContent = 'Fila vencida — ' + triFila.length + (triFila.length === 1 ? ' demanda vista.' : ' demandas vistas.');
+    box.appendChild(p);
+    var b = document.createElement('button');
+    b.className = 'dm-btn pri'; b.textContent = 'Fechar';
+    b.onclick = triFecha;
+    box.appendChild(b);
+    elOvInner.appendChild(box);
+  }
+
+  function renderTri() {
+    var o = triFila[triIdx], d = o.d, t = o.t;
+    elOvInner.innerHTML = '';
+    var box = document.createElement('div'); box.className = 'dm-tri';
+
+    var topo = document.createElement('div'); topo.className = 'dm-tri-topo';
+    var ida = idade(d.recebido_em || d.data);
+    topo.innerHTML = '<span>' + (triIdx + 1) + ' de ' + triFila.length + ' · fila de triagem</span>' +
+      '<span class="' + ida.cls + '">' + esc(triIdadeTxt(d.recebido_em || d.data)) + '</span>';
+    var bx = document.createElement('button');
+    bx.type = 'button'; bx.className = 'dm-tri-fechar'; bx.setAttribute('aria-label', 'Fechar triagem');
+    bx.innerHTML = '&times;'; bx.onclick = triFecha;
+    topo.appendChild(bx);
+    box.appendChild(topo);
+
+    var chips = document.createElement('div'); chips.className = 'dm-tri-chips';
+    chips.innerHTML = chipCasa(d.casa) + chipUrgencia(d.urgencia) +
+      (d.setor ? '<span class="dm-chip">' + esc(d.setor) + '</span>' : '');
+    box.appendChild(chips);
+
+    var desc = document.createElement('p'); desc.className = 'dm-tri-desc';
+    desc.textContent = (d.tipo ? d.tipo + ' — ' : '') + (d.descricao || '(sem descrição)');
+    box.appendChild(desc);
+
+    var quem = document.createElement('div'); quem.className = 'dm-tri-quem';
+    quem.textContent = 'por ' + (d.solicitante || d.registrado_por || 'anônimo');
+    box.appendChild(quem);
+
+    if (d.transcricao) {
+      var tr = document.createElement('div'); tr.className = 'dm-tri-transc';
+      tr.textContent = d.transcricao;
+      box.appendChild(tr);
+    }
+
+    var par = triParecidas(d);
+    if (par) {
+      var al = document.createElement('div'); al.className = 'dm-tri-alerta';
+      al.innerHTML = "<svg class=\"ic\" width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3.5l9 15.5H3z\"/><path d=\"M12 10v4M12 16.5h.01\"/></svg>" + '<span>parecida com ' + par +
+        (par === 1 ? ' outra aberta' : ' outras abertas') + ' em ' + esc(d.casa || 'na mesma casa') + '</span>';
+      box.appendChild(al);
+    }
+
+    var ta = document.createElement('textarea');
+    ta.className = 'dm-tri-ta';
+    ta.placeholder = 'Escrever uma resposta…';
+    ta.value = d.resposta || '';
+
+    var escolhido = null;
+    var rs = document.createElement('div'); rs.className = 'dm-tri-rs';
+    RESPOSTAS.forEach(function (r) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = r.label;
+      b.onclick = function () {
+        escolhido = r;
+        ta.value = r.texto || '';
+        Array.prototype.forEach.call(rs.querySelectorAll('button'), function (x) { x.classList.toggle('sel', x === b); });
+      };
+      rs.appendChild(b);
+    });
+    box.appendChild(rs);
+    box.appendChild(ta);
+
+    var acoes = document.createElement('div'); acoes.className = 'dm-tri-acoes';
+    var bOk = document.createElement('button');
+    bOk.className = 'dm-btn pri'; bOk.textContent = 'Responder e próxima';
+    bOk.onclick = function () {
+      if (triOcupado) return;
+      // Sem resposta pronta escolhida e sem texto, não há o que gravar — o
+      // caminho pra pular é o botão "Pular", não um PATCH vazio.
+      var texto = ta.value.trim();
+      if (!escolhido && !texto) { toast('Escolha uma resposta ou escreva uma.', true); return; }
+      var campos = { resposta: texto };
+      if (escolhido && escolhido.status) campos.status_resposta = escolhido.status;
+      else if (!d.status_resposta) campos.status_resposta = 'Em análise';
+      if (escolhido && escolhido.resolve) campos.status = 'Resolvido';
+      triOcupado = true; bOk.disabled = true;
+      Array.prototype.forEach.call(rs.querySelectorAll('button'), function (x) { x.disabled = true; });
+      patch(d.chave, campos, function () {
+        d.resposta = campos.resposta;
+        d.status_resposta = campos.status_resposta || d.status_resposta;
+        d.respondido_em = new Date().toISOString();
+        if (campos.status) { d.status = campos.status; removeDaFila(t, d); t.resolvidos = null; }
+        triOcupado = false;
+        toast('Respondida.');
+        triProxima();
+      }, function () {
+        triOcupado = false; bOk.disabled = false;
+        Array.prototype.forEach.call(rs.querySelectorAll('button'), function (x) { x.disabled = false; });
+        toast('Falha ao responder — tenta de novo.', true);
+      });
+    };
+    acoes.appendChild(bOk);
+
+    var bSkip = document.createElement('button');
+    bSkip.className = 'dm-btn'; bSkip.textContent = 'Pular';
+    bSkip.onclick = function () { if (!triOcupado) triProxima(); };
+    acoes.appendChild(bSkip);
+    box.appendChild(acoes);
+
+    elOvInner.appendChild(box);
+    ta.focus();
+  }
+
+  if (elTriAbrir) elTriAbrir.onclick = abreTriagem;
   function dmAplicaVista() {
     Array.prototype.forEach.call(elVseg.querySelectorAll('button'), function (b) { b.classList.toggle('on', b.dataset.v === vistaDem); });
     var ehFila = vistaDem === 'fila';
@@ -2846,75 +3092,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
 })();
 </script>
 
-
-<script>
-(function () {
-  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
-  if (!WORKER) return;
-  var CHAVE = 'geo_ok_ts', VALIDADE = 30 * 60 * 1000;
-  try {
-    var t = parseInt(sessionStorage.getItem(CHAVE) || '0', 10);
-    if (t && Date.now() - t < VALIDADE) return;
-  } catch (e) {}
-
-  function overlay(titulo, msg, mostrarBtn) {
-    var d = document.getElementById('geo-blk') || document.createElement('div');
-    d.id = 'geo-blk';
-    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#16130f;color:#f3ede2;'
-      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
-      + 'text-align:center;padding:32px;font-family:-apple-system,Segoe UI,Roboto,sans-serif';
-    d.innerHTML = '<div style="font-family:Georgia,serif;font-size:22px;margin-bottom:12px">'
-      + titulo + '</div><div style="max-width:420px;color:#c3baa9;line-height:1.5">' + msg + '</div>'
-      + (mostrarBtn ? '<button id="geo-retry" style="margin-top:22px;padding:12px 22px;border:none;'
-      + 'border-radius:999px;background:#d0a352;color:#241a06;font-weight:600;font-size:15px;'
-      + 'cursor:pointer">Tentar de novo</button>' : '');
-    if (!d.parentNode) document.body.appendChild(d);
-    var b = document.getElementById('geo-retry');
-    if (b) b.onclick = function () { verifica(); };
-  }
-  function libera() {
-    try { sessionStorage.setItem(CHAVE, String(Date.now())); } catch (e) {}
-    var d = document.getElementById('geo-blk');
-    if (d && d.parentNode) d.parentNode.removeChild(d);
-  }
-
-  function checa(lat, lon) {
-    fetch(WORKER + '/api/geo', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lat: lat, lon: lon }),
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      if (d.ok) libera();
-      else overlay('Fora de área',
-        'O Bar.IZ só funciona dentro das casas do Grupo IZ. '
-        + 'Você precisa estar em uma delas para acessar.', true);
-    }).catch(function () { libera(); }); // rede falhou: não tranca
-  }
-
-  function verifica() {
-    overlay('Confirmando localização…', 'Só um instante.', false);
-    if (!navigator.geolocation) { libera(); return; }
-    navigator.geolocation.getCurrentPosition(
-      function (pos) { checa(pos.coords.latitude, pos.coords.longitude); },
-      function () {
-        overlay('Ative a localização',
-          'Para usar o portal no bar, permita o acesso à localização no seu '
-          + 'navegador e toque em “Tentar de novo”.', true);
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-    );
-  }
-
-  // 1º toque no Worker SEM coordenadas: só pra saber se a cerca está ligada.
-  // Se desligada, para aqui — nenhum pedido de GPS aparece.
-  fetch(WORKER + '/api/geo', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
-  }).then(function (r) { return r.json(); }).then(function (d) {
-    if (d && d.desativado) return;
-    verifica();
-  }).catch(function () {}); // rede falhou: não tranca
-})();
-</script>
-
+<!-- cerca geográfica desligada em config/geofence.json (ativo=false) -->
 
 <script>
 (function () {
@@ -3202,6 +3380,28 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     try { atual = player.getCurrentTime() || 0; } catch (e) {}
     if (forcar || Math.abs(atual - alvo) > 3) { try { player.seekTo(alvo, true); } catch (e) {} }
   }
+  // A rádio é PREGUIÇOSA (2026-07-23): o player só nasce quando alguém
+  // encosta nela. Antes, criaPlayer() rodava no fim deste script em TODA
+  // página — o que baixava o iframe_api do YouTube e punha um vídeo tocando
+  // (mudo, em loop) em cada carregamento do portal.
+  //
+  // Medido nas 45 páginas do site publicado: os recursos do YouTube
+  // respondiam por 536-1002ms de um carregamento total de 570-1085ms — 85%
+  // a 95% de tudo que acontecia depois da página já estar utilizável (o DOM
+  // fica pronto em 23-198ms). Pior caso: 3.739ms.
+  //
+  // E não havia nada a ganhar com isso: logo acima, `s.som = false` força
+  // MUDO a cada carga de propósito, então o som nunca atravessa de uma
+  // página pra outra. O player criado no load tocava mudo e era descartado
+  // na navegação seguinte. A sincronização por relógio (posGlobal) garante
+  // que entrar depois cai no mesmo ponto de todo mundo — é justamente o que
+  // torna adiar seguro.
+  var criando = false;
+  function ligaRadio() {
+    if (player || criando) return;
+    criando = true;
+    criaPlayer();
+  }
   function criaPlayer() {
     var st = ST[s.idx]; if (!st) return;
     carregaYT(function () {
@@ -3218,7 +3418,16 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
             mudo = true;
             sincroniza(true);
             try { e.target.playVideo(); } catch (x) {}
-            if (s.som) armaSom();   // desmuta no 1º gesto (o que o Rodrigo pediu)
+            if (s.som) {
+              // Com a rádio preguiçosa, s.som já pode estar true aqui: a
+              // pessoa clicou no play e o player só ficou pronto depois.
+              // Nesse caso ela JÁ fez o gesto — esperar por outro deixaria
+              // a rádio muda depois de um clique explícito. Tenta desmutar
+              // na hora e mantém o gesto só como rede de segurança, caso o
+              // navegador recuse por o clique já ter ficado velho demais.
+              try { e.target.unMute(); e.target.setVolume(s.vol); mudo = false; } catch (x) {}
+              armaSom();
+            }
             setupMedia(); render();
           },
           onStateChange: function (e) {
@@ -3232,7 +3441,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     });
   }
   function trocaVideo() {
-    if (!player || !pronto) { criaPlayer(); return; }
+    if (!player || !pronto) { ligaRadio(); return; }  // trocar estação também liga
     var st = ST[s.idx]; if (!st) return;
     try { player.loadVideoById(st.vid); } catch (e) {}
     // respeita o estado de som atual no vídeo novo + realinha a sincronia
@@ -3248,6 +3457,10 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   // ---- som: mudo <-> com som ----
   function ativaSom() {
     s.som = true; mudo = false; salvar();
+    // Pedir som é o gatilho mais direto pra ligar a rádio — cobre o caso de
+    // quem toca no play/no "religar" sem passar pelo painel. O onReady do
+    // criaPlayer respeita s.som, então o som entra assim que o player existe.
+    ligaRadio();
     if (player && pronto) { try { player.unMute(); player.setVolume(s.vol); if (player.getPlayerState && player.getPlayerState() !== 1) player.playVideo(); } catch (e) {} }
     desarmaSom(); render();
   }
@@ -3311,7 +3524,15 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   if (mini) mini.addEventListener('click', function () { alternaSom(); });
 
   // ---- abre/fecha painel ----
-  function toggle(v) { pop.classList.toggle('aberto', v === undefined ? !pop.classList.contains('aberto') : v); atualizaMini(); }
+  function toggle(v) {
+    var abrindo = v === undefined ? !pop.classList.contains('aberto') : v;
+    pop.classList.toggle('aberto', abrindo);
+    // Abrir o painel já liga a rádio: dá ao YouTube a folga de carregar
+    // enquanto a pessoa escolhe a estação, em vez de fazê-la esperar depois
+    // do play. Quem não abre o painel não paga nada disso.
+    if (abrindo) ligaRadio();
+    atualizaMini();
+  }
   btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
   $('radio-close').addEventListener('click', function () { toggle(false); });
   document.addEventListener('click', function (e) { if (pop.classList.contains('aberto') && !pop.contains(e.target) && !btn.contains(e.target)) toggle(false); });
@@ -3329,7 +3550,10 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     var st = ST[s.idx];
     nmEl.textContent = st ? st.nome : 'Rádio Vice City';
     dsEl.textContent = st ? st.ds : (ST.length + ' estações');
-    stEl.textContent = !tocando ? 'ligando…' : (mudo ? 'no mudo' : 'no ar');
+    // "ligando…" só vale depois que alguém pediu a rádio. Antes disso ela
+    // nem foi criada (ver ligaRadio), então dizer "ligando" seria mentira.
+    stEl.textContent = tocando ? (mudo ? 'no mudo' : 'no ar')
+                     : (player || criando ? 'ligando…' : 'toque para ligar');
     playIc.innerHTML = mudo ? SOM_OFF : SOM_ON;
     if (religar) religar.classList.toggle('on', tocando && mudo);
     atualizaMini();
@@ -3347,9 +3571,10 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     if (!document.hidden && player && pronto) { try { sincroniza(true); if (player.getPlayerState() !== 1) player.playVideo(); } catch (e) {} }
   });
 
-  // ---- início: sempre toca (no mudo até um gesto) ----
+  // ---- início: NÃO cria o player (ver ligaRadio) ----
+  // Só desenha o controle. O YouTube entra na primeira interação com a
+  // rádio — abrir o painel, dar play, trocar de estação ou tocar no mini.
   render();
-  criaPlayer();
 })();
 </script>
 
