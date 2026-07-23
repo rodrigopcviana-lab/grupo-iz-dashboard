@@ -725,6 +725,11 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-msg.outro .bolha { background: var(--card); border: 1px solid var(--border); color: var(--text);
                           border-bottom-left-radius: 4px; }
   .dm-msg .hora { font-size: 10.5px; color: var(--text-3); padding: 0 3px; }
+  /* Mensagem ainda na fila offline (sem rede, ou 429/5xx do worker) — mesma
+     bolha, esmaecida, com "Enviando…" no lugar da hora. Some sozinha quando
+     a fila entrega de verdade (nunca é um estado permanente). */
+  .dm-msg.pendente .bolha { opacity: .55; }
+  .dm-msg.pendente .hora { font-style: italic; }
   .dm-conversa-comp { display: flex; gap: 8px; align-items: flex-end; margin-top: 11px; }
   .dm-conversa-comp textarea { flex: 1; min-width: 0; resize: none; font: inherit; font-size: 13.5px;
                                 padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border);
@@ -1334,6 +1339,70 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     redesenhaFila(t);
   }
 
+  // Fila offline de mensagens (2026-07-21) — mesmo molde da fila de
+  // registro.html (LS_FILA/processaFila): se o envio falhar por rede ruim ou
+  // 429/5xx do worker, a mensagem não se perde — fica em localStorage e um
+  // processador global tenta de novo com backoff crescente, até entregar.
+  // Escopo é a PÁGINA (não a conversa aberta): sobrevive a fechar o card,
+  // trocar de visão ou recarregar — só some quando entrega de verdade.
+  var DM_MSG_LS = 'dm_msg_fila';
+  function lerFilaMsg() { try { return JSON.parse(localStorage.getItem(DM_MSG_LS) || '[]'); } catch (e) { return []; } }
+  function salvaFilaMsg(fila) { try { localStorage.setItem(DM_MSG_LS, JSON.stringify(fila)); } catch (e) {} }
+  function idLocal() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  var NIVEL_LABEL_LOCAL = { coord: 'Coordenação', controladoria: 'Controladoria', chefe: 'Chefe', equipe: 'Equipe', bartender: 'Bartender' };
+  var AUTOR_LOCAL = PESSOA || NIVEL_LABEL_LOCAL[NIVEL] || NIVEL;
+
+  // Instâncias de conversa MONTADAS agora (abre() chamado, fecha() ainda não)
+  // — processaFilaMsg avisa direto quem está de olho na chave, pra sumir com
+  // a bolha pendente sem esperar o próximo tick de 15s.
+  var OUVINTES_PEND = {};  // chave -> [fn, fn, ...]
+  function avisaPendMudou(chave) { (OUVINTES_PEND[chave] || []).forEach(function (fn) { fn(); }); }
+
+  var enviandoFilaMsg = false, backoffMsgMs = 2000;
+  function processaFilaMsg() {
+    if (enviandoFilaMsg) return;
+    var fila = lerFilaMsg();
+    if (!fila.length) return;
+    enviandoFilaMsg = true;
+    var item = fila[0];
+    fetch(WORKER + '/api/demanda/' + encodeURIComponent(item.chave) + '/mensagens', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify({ texto: item.texto })
+    }).then(function (r) {
+      // 400/403/409: nunca vai vencer tentando de novo (corpo inválido, sem
+      // permissão, ou thread cheia) — descarta e avisa, não trava a fila inteira.
+      if (r.status === 400 || r.status === 403 || r.status === 409) {
+        fila = lerFilaMsg().filter(function (x) { return x.idLocal !== item.idLocal; });
+        salvaFilaMsg(fila);
+        toast('Uma mensagem não foi aceita e foi descartada: "' + item.texto.slice(0, 60) + '"', true);
+        avisaPendMudou(item.chave);
+        enviandoFilaMsg = false; backoffMsgMs = 2000;
+        setTimeout(processaFilaMsg, 200);
+        return;
+      }
+      // 401: sessão expirou — não adianta bater de novo agora; deixa na fila
+      // (some se a pessoa logar de novo) e para de tentar até o próximo gatilho.
+      if (r.status === 401) { enviandoFilaMsg = false; return; }
+      if (!r.ok) { throw new Error('http ' + r.status); }
+      return r.json().then(function (data) {
+        fila = lerFilaMsg().filter(function (x) { return x.idLocal !== item.idLocal; });
+        salvaFilaMsg(fila);
+        avisaPendMudou(item.chave);
+        enviandoFilaMsg = false; backoffMsgMs = 2000;
+        setTimeout(processaFilaMsg, 200);   // drena o resto da fila sem esperar o timer
+      });
+    }).catch(function () {
+      // rede fora do ar, 429, 5xx: mantém na fila, tenta de novo com backoff.
+      enviandoFilaMsg = false;
+      setTimeout(processaFilaMsg, backoffMsgMs);
+      backoffMsgMs = Math.min(backoffMsgMs * 2, 60000);
+    });
+  }
+  window.addEventListener('online', processaFilaMsg);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) processaFilaMsg(); });
+  setInterval(processaFilaMsg, 15000);
+  processaFilaMsg();
+
   // Thread de conversa por demanda ("o card cresce a partir da tratativa",
   // 2026-07-19). Reusada nas duas superfícies: Recebidas (chefe/coord
   // respondem) e Enviadas (o autor responde com senha individual).
@@ -1342,6 +1411,8 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   // já está na tela; fecha() desliga. O tick se auto-desliga se o elemento
   // saiu do DOM (redesenha da fila descarta os cards) — sem vazar intervalos.
   // `aoEnviar` (opcional) avisa o card pai pra atualizar o badge de contagem.
+  // OFFLINE: se o envio falhar (rede/429/5xx), a mensagem entra na fila global
+  // acima em vez de sumir — a bolha fica esmaecida ("Enviando…") até entregar.
   function montaConversa(chave, podeEscrever, aoEnviar) {
     var wrap = document.createElement('div'); wrap.className = 'dm-conversa';
     var tit = document.createElement('div'); tit.className = 'dm-conversa-tit'; tit.textContent = 'Conversa';
@@ -1349,14 +1420,25 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     var lista = document.createElement('div'); lista.className = 'dm-conversa-lista';
     lista.innerHTML = '<div class="dm-conversa-vazia">Carregando…</div>';
     wrap.appendChild(lista);
+    // pendWrap é irmão de lista (nunca tocado por pintaFull/mergeTail), só pra
+    // mensagens ainda na fila offline — repintaPendentes() o redesenha inteiro
+    // a cada chamada (fila é sempre curta, custo desprezível).
+    var pendWrap = document.createElement('div'); pendWrap.className = 'dm-conversa-lista dm-conversa-pend';
+    wrap.appendChild(pendWrap);
 
     function bolhaMsg(m) {
-      var el = document.createElement('div'); el.className = 'dm-msg ' + (m.eu ? 'eu' : 'outro');
+      var el = document.createElement('div'); el.className = 'dm-msg ' + (m.eu ? 'eu' : 'outro') + (m.pendente ? ' pendente' : '');
       var aut = document.createElement('div'); aut.className = 'autor'; aut.textContent = m.autor || '';
       var b = document.createElement('div'); b.className = 'bolha'; b.textContent = m.texto || '';
-      var h = document.createElement('div'); h.className = 'hora'; h.textContent = m.ts ? horaCurta(m.ts) : '';
+      var h = document.createElement('div'); h.className = 'hora'; h.textContent = m.pendente ? 'Enviando…' : (m.ts ? horaCurta(m.ts) : '');
       el.appendChild(aut); el.appendChild(b); el.appendChild(h);
       return el;
+    }
+    function repintaPendentes() {
+      pendWrap.innerHTML = '';
+      lerFilaMsg().filter(function (x) { return x.chave === chave; }).forEach(function (x) {
+        pendWrap.appendChild(bolhaMsg({ autor: AUTOR_LOCAL, texto: x.texto, eu: true, pendente: true }));
+      });
     }
     var renderedCount = 0;
     function pintaFull(msgs) {
@@ -1383,6 +1465,14 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       if (!document.body.contains(wrap)) { fecha(); return; }   // card descartado
       if (document.hidden) return;
       busca().then(function (msgs) { if (msgs) mergeTail(msgs); });
+      repintaPendentes();   // a fila pode ter entregue/mudado desde o último tick
+    }
+    function registraOuvinte() {
+      (OUVINTES_PEND[chave] = OUVINTES_PEND[chave] || []).push(repintaPendentes);
+    }
+    function desregistraOuvinte() {
+      var arr = OUVINTES_PEND[chave]; if (!arr) return;
+      var i = arr.indexOf(repintaPendentes); if (i !== -1) arr.splice(i, 1);
     }
     function abre() {
       busca().then(function (msgs) {
@@ -1390,9 +1480,11 @@ prioridade (urgência primeiro, mais antiga depois).</p>
         carregadoUmaVez = true;
         if (renderedCount === 0) pintaFull(msgs); else mergeTail(msgs);
       });
+      repintaPendentes();
+      registraOuvinte();
       if (!timer) timer = setInterval(tick, 15000);
     }
-    function fecha() { if (timer) { clearInterval(timer); timer = null; } }
+    function fecha() { if (timer) { clearInterval(timer); timer = null; } desregistraOuvinte(); }
 
     if (podeEscrever) {
       var comp = document.createElement('div'); comp.className = 'dm-conversa-comp';
@@ -1400,21 +1492,42 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       var enviar = document.createElement('button'); enviar.type = 'button'; enviar.className = 'dm-conversa-enviar'; enviar.disabled = true;
       enviar.setAttribute('aria-label', 'Enviar');
       enviar.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>';
+      // Nunca perde texto: sucesso pinta a bolha real; falha de rede/429/5xx
+      // entra na fila offline (bolha esmaecida) em vez de só um toast que some.
+      // 400/403/401 (worker recusou de propósito) não entram na fila — nada de
+      // ficar tentando pra sempre algo que o worker já disse que não aceita.
       function envia() {
         var texto = ta.value.trim(); if (!texto) return;
-        enviar.disabled = true;
+        ta.value = ''; ta.style.height = 'auto'; enviar.disabled = true;
         fetch(WORKER + '/api/demanda/' + encodeURIComponent(chave) + '/mensagens', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
           body: JSON.stringify({ texto: texto })
-        }).then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (data) {
-            if (!data || !data.mensagem) { toast('Falha ao enviar — tenta de novo.', true); enviar.disabled = false; return; }
+        }).then(function (r) {
+          if (r.status === 400 || r.status === 403 || r.status === 409) {
+            // 409 = thread cheia (teto de mensagens) — nunca vai vencer tentando de
+            // novo, mesmo critério de 400/403: não enfileira, devolve o texto.
+            toast(r.status === 409 ? 'Conversa cheia — apague algo antes de continuar.' : 'Mensagem não aceita — copie e avise o coordenador.', true);
+            ta.value = texto; return;
+          }
+          if (r.status === 401) { toast('Sessão expirou — entre de novo.', true); ta.value = texto; return; }
+          if (!r.ok) throw new Error('http ' + r.status);
+          return r.json().then(function (data) {
+            if (!data || !data.mensagem) throw new Error('resposta vazia');
             var vazia = lista.querySelector('.dm-conversa-vazia'); if (vazia) lista.innerHTML = '';
             var novo = bolhaMsg(data.mensagem); lista.appendChild(novo); renderedCount++;
-            ta.value = ''; ta.style.height = 'auto';
             novo.scrollIntoView({ block: 'nearest' });
             if (aoEnviar) aoEnviar();
-          }).catch(function () { toast('Falha ao enviar — tenta de novo.', true); enviar.disabled = false; });
+          });
+        }).catch(function () {
+          // rede fora do ar, 429, 5xx, ou JSON quebrado: guarda na fila offline
+          // em vez de perder — repintaPendentes() mostra a bolha esmaecida já.
+          var fila = lerFilaMsg();
+          fila.push({ idLocal: idLocal(), chave: chave, texto: texto });
+          salvaFilaMsg(fila);
+          repintaPendentes();
+          processaFilaMsg();
+          if (aoEnviar) aoEnviar();
+        }).finally(function () { enviar.disabled = false; });
       }
       ta.addEventListener('input', function () {
         enviar.disabled = !ta.value.trim();
