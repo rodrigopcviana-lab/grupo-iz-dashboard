@@ -466,6 +466,15 @@ window.msgAcessoNegado = function (nomePagina) {
 <p class="bh-vazio" id="bh-vazio" style="display:none">Nenhum bartender com dado ainda.</p>
 </div>
 
+<div class="bh-plano" id="bh-devendo-wrap" style="display:none">
+  <h2>Quem deve horas pra casa</h2>
+  <p class="sub">Saldo negativo — a pessoa deve horas ao invés de a empresa dever a ela. Ordenado do mais crítico pro menos.</p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+  <table class="bh-plano-tb"><thead><tr><th>Casa</th><th>Bartender</th><th class="n">Deve</th><th>Situação</th></tr></thead>
+  <tbody id="bh-devendo-lista"></tbody></table>
+  </div>
+</div>
+
 <div class="bh-plano" id="bh-plano-wrap" style="display:none">
   <h2>Plano pra zerar horas extras</h2>
   <p class="sub">Quem tem saldo a favor precisa zerar antes do fechamento, senão vira pagamento em dinheiro. Duas formas de zerar — liberação diária ou folga(s) inteira(s) — escolha a que fizer mais sentido pra operação de cada casa.</p>
@@ -573,6 +582,35 @@ window.msgAcessoNegado = function (nomePagina) {
       fech.innerHTML = 'Banco de Horas fecha para pagamento de horas extras em <b>' +
         fmtDataBR(payload.fechamento_pagamento) + '</b>. Quem tiver saldo positivo precisa ' +
         'zerar até lá (ver "Plano pra zerar horas extras" abaixo) — senão vira pagamento em dinheiro.';
+    }
+
+    var devendoPessoas = pessoas.filter(function (p) { return p.saldo_minutos != null && p.saldo_minutos < 0; })
+      .sort(function (a, b) { return a.saldo_minutos - b.saldo_minutos; });
+    if (devendoPessoas.length) {
+      document.getElementById('bh-devendo-wrap').style.display = '';
+      var devendoLista = document.getElementById('bh-devendo-lista');
+      devendoPessoas.forEach(function (p) {
+        var tr = document.createElement('tr');
+        tr.appendChild(td(p.casa));
+        var tdNome = document.createElement('td');
+        var nomeEl = document.createElement('div'); nomeEl.className = 'bh-nome'; nomeEl.textContent = p.nome;
+        tdNome.appendChild(nomeEl);
+        tr.appendChild(tdNome);
+        var tdSaldo = document.createElement('td'); tdSaldo.className = 'n';
+        var saldoEl = document.createElement('span'); saldoEl.className = 'bh-saldo neg';
+        saldoEl.textContent = p.saldo_texto;
+        tdSaldo.appendChild(saldoEl);
+        var alerta = alertaDe(p.saldo_minutos);
+        if (alerta && alerta !== 'ok') {
+          var badge = document.createElement('span');
+          badge.className = 'bh-badge ' + alerta; badge.style.marginLeft = '6px';
+          badge.textContent = alerta === 'critico' ? 'Crítico' : 'Atenção';
+          tdSaldo.appendChild(badge);
+        }
+        tr.appendChild(tdSaldo);
+        tr.appendChild(td(p.situacao || '—'));
+        devendoLista.appendChild(tr);
+      });
     }
 
     if (planoPessoas.length) {
