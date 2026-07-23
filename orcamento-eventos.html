@@ -593,83 +593,110 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="panel">
       <p class="orz-sec" style="margin-top:0">Casa que recebe o evento</p>
       <div class="orev-casa-pills" id="orev-casa-pills"></div>
-
-      <p class="orz-sec">Quando e quantos</p>
-      <div class="orev-campo"><label for="orev-convidados">Convidados</label>
-        <input type="number" id="orev-convidados" min="0" placeholder="0"></div>
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orev-duracao">Duração do evento (horas)</label>
+      <div class="orev-linha2" style="margin-top:12px">
+        <div class="orev-campo" style="margin-bottom:0"><label for="orev-convidados">Convidados</label>
+          <input type="number" id="orev-convidados" min="0" placeholder="0"></div>
+        <div class="orev-campo" style="margin-bottom:0"><label for="orev-duracao">Duração do evento (horas)</label>
           <input type="number" id="orev-duracao" min="1" value="4"></div>
-        <div class="orev-campo"><label for="orev-pos">Pós-evento — desmontagem (h)</label>
-          <input type="number" id="orev-pos" min="0" step="0.5" value="2"></div>
       </div>
-      <div class="orev-campo"><label for="orev-pre">Pré-evento — montagem (h)</label>
-        <input type="number" id="orev-pre" min="0" step="0.5" value="2"></div>
-
-      <p class="orz-sec">Parâmetros financeiros</p>
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orev-markup">Markup (insumo + mão de obra)</label>
-          <input type="number" id="orev-markup" min="1" step="0.1" value="2.0"></div>
-        <div class="orev-campo"><label for="orev-desloc">Deslocamento (R$)</label>
-          <input type="number" id="orev-desloc" min="0" step="0.01" value="0"></div>
-      </div>
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orev-buffer">Buffer de perda de insumo (%)
-          <span class="orz-help" title="Margem extra sobre o custo de insumo — evento sempre consome mais que o previsto (quebra, sobra descartada, reposição).">?</span></label>
-          <input type="number" id="orev-buffer" min="0" step="1" value="10"></div>
-        <div class="orev-campo"><label for="orev-piso">Piso — convidados/bartender
-          <span class="orz-help" title="Nº mínimo de bartenders por convidados, além do cálculo por volume de preparo — garante cobertura mesmo com cardápio leve (muita água/refrigerante).">?</span></label>
-          <input type="number" id="orev-piso" min="0" step="1" value="60"></div>
-      </div>
-
-      <p class="orz-sec">Gelo &amp; equipe de apoio</p>
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orev-coordenadores">Coordenadores de turno
-          <span class="orz-help" title="Quantidade manual — nem todo evento precisa de coordenador de turno separado do bartender.">?</span></label>
-          <input type="number" id="orev-coordenadores" min="0" step="1" value="0"></div>
-        <div class="orev-campo"><label for="orev-gelo-kg">Gelo por convidado (kg)</label>
-          <input type="number" id="orev-gelo-kg" min="0" step="0.1" value="1.2"></div>
-      </div>
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orev-gelo-preco">Preço do gelo (R$/kg)</label>
-          <input type="number" id="orev-gelo-preco" min="0" step="0.1" value="2.5"></div>
-        <div class="orev-campo"><label for="orev-diaria-barback">Diária do barback (R$)
-          <span class="orz-help" title="Calculado automaticamente: 1 barback pra cada 2 bartenders (padrão de mercado). Aqui você só define o valor da diária.">?</span></label>
-          <input type="number" id="orev-diaria-barback" min="0" step="1" value="150"></div>
-      </div>
-      <div class="orev-campo"><label for="orev-diaria-coord">Diária do coordenador (R$)</label>
-        <input type="number" id="orev-diaria-coord" min="0" step="1" value="0" placeholder="a definir"></div>
-
-      <details class="orz-premissas">
-        <summary>Premissas do cálculo</summary>
-        <div class="orev-linha2" style="margin-top:10px">
-          <div class="orev-campo"><label for="orev-taxa-hora">Taxa/hora do bartender (R$)</label>
-            <input type="number" id="orev-taxa-hora" min="0" step="1" value="60"></div>
-          <div class="orev-campo"><label for="orev-min-preparado">Min./drink preparado
-            <span class="orz-help" title="Cocktail montado na hora (Negroni, Caipirinha...) — conta tempo cheio de bartender.">?</span></label>
-            <input type="number" id="orev-min-preparado" min="0" step="0.5" value="3.5"></div>
-        </div>
-        <div class="orev-campo"><label for="orev-min-servido">Min./drink servido
-          <span class="orz-help" title="Garrafa/lata/pré-batch — só abrir e entregar, não infla o nº de bartenders como um cocktail.">?</span></label>
-          <input type="number" id="orev-min-servido" min="0" step="0.1" value="0.5"></div>
-        <div class="orev-linha2">
-          <div class="orev-campo"><label for="orev-taxa-cocktail">Cocktails/convidado/hora
-            <span class="orz-help" title="Referência de mercado para estimar quantos cocktails por convidado o evento consome (ex.: 3 num evento de 4h = 0,75/h) — só sugere, o mix real do cardápio continua sendo o que você marcar abaixo.">?</span></label>
-            <input type="number" id="orev-taxa-cocktail" min="0" step="0.05" value="0.75"></div>
-          <div class="orev-campo"><label for="orev-ml-agua">Água/outro (ml/convidado/hora)
-            <span class="orz-help" title="Referência de mercado de catering de eventos para água + não-alcoólicos combinados (faixa usual ~250-350ml/convidado/hora) — só sugere, não converte automaticamente em unidades do cardápio.">?</span></label>
-            <input type="number" id="orev-ml-agua" min="0" step="10" value="300"></div>
-        </div>
-      </details>
     </div>
 
-    <div class="panel" style="margin-top:14px">
+    <div class="orz-driver">
+      <h3 class="orz-driver-tit">Consumo por convidado</h3>
+      <p class="orz-driver-sub">A referência de mercado é o ponto de partida — mexa e o cardápio se distribui sozinho.</p>
+      <div class="orz-slider-row">
+        <span class="orz-slider-lab">Cocktails</span>
+        <input type="range" id="orev-ckt-alvo" min="1" max="10" step="0.5" value="3">
+        <span class="orz-slider-val" id="orev-ckt-alvo-v">3</span>
+        <span class="orz-slider-un">por convidado</span>
+      </div>
+      <p class="orz-mkt" id="orev-ckt-mkt"></p>
+      <div class="orz-slider-row">
+        <span class="orz-slider-lab">Água / não-alcoólicos</span>
+        <input type="range" id="orev-ml-agua" min="150" max="600" step="25" value="300">
+        <span class="orz-slider-val" id="orev-agua-v" style="font-size:17px">1,2L</span>
+      </div>
+      <p class="orz-mkt" id="orev-agua-mkt"></p>
+      <div class="orz-modo">
+        <button type="button" class="orz-modo-b on" id="orev-modo-auto">Distribuir automático</button>
+        <button type="button" class="orz-modo-b" id="orev-modo-man">Definir item a item</button>
+      </div>
+    </div>
+
+    <div class="panel">
       <h3 style="margin-top:0">Cardápio do evento</h3>
-      <p class="orev-sub" style="margin:-4px 0 4px">Marque os itens e defina quantas unidades cada convidado consome de cada um — o custo de insumo vem desse mix, não de uma média.</p>
+      <p class="orev-sub" style="margin:-4px 0 4px">No automático, as unidades por convidado vêm dos controles acima; editar um item deixa aquele item manual.</p>
       <p class="orz-override-msg" id="orev-sugestao-consumo" style="color:var(--text-3)"></p>
       <input type="text" class="orev-busca" id="orev-busca" placeholder="Buscar item do cardápio…">
       <div id="orev-cardapio"></div>
       <p class="orev-vazio" id="orev-cardapio-vazio" style="display:none">Cardápio de custo ainda não disponível.</p>
+    </div>
+
+    <div class="panel" style="padding:0">
+      <details class="orz-avancado">
+        <summary class="orz-sec" style="margin:0">Ajustes avançados — finanças, equipe, gelo</summary>
+        <div class="orz-avancado-corpo">
+          <p class="orz-sec" style="margin-top:0">Montagem &amp; desmontagem</p>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orev-pre">Pré-evento — montagem (h)</label>
+              <input type="number" id="orev-pre" min="0" step="0.5" value="2"></div>
+            <div class="orev-campo"><label for="orev-pos">Pós-evento — desmontagem (h)</label>
+              <input type="number" id="orev-pos" min="0" step="0.5" value="2"></div>
+          </div>
+
+          <p class="orz-sec">Parâmetros financeiros</p>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orev-markup">Markup (insumo + mão de obra)</label>
+              <input type="number" id="orev-markup" min="1" step="0.1" value="2.0"></div>
+            <div class="orev-campo"><label for="orev-desloc">Deslocamento (R$)</label>
+              <input type="number" id="orev-desloc" min="0" step="0.01" value="0"></div>
+          </div>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orev-buffer">Buffer de perda de insumo (%)
+              <span class="orz-help" title="Margem extra sobre o custo de insumo — evento sempre consome mais que o previsto (quebra, sobra descartada, reposição).">?</span></label>
+              <input type="number" id="orev-buffer" min="0" step="1" value="10"></div>
+            <div class="orev-campo"><label for="orev-piso">Piso — convidados/bartender
+              <span class="orz-help" title="Nº mínimo de bartenders por convidados, além do cálculo por volume de preparo — garante cobertura mesmo com cardápio leve (muita água/refrigerante).">?</span></label>
+              <input type="number" id="orev-piso" min="0" step="1" value="60"></div>
+          </div>
+
+          <p class="orz-sec">Gelo &amp; equipe de apoio</p>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orev-coordenadores">Coordenadores de turno
+              <span class="orz-help" title="Quantidade manual — nem todo evento precisa de coordenador de turno separado do bartender.">?</span></label>
+              <input type="number" id="orev-coordenadores" min="0" step="1" value="0"></div>
+            <div class="orev-campo"><label for="orev-gelo-kg">Gelo por convidado (kg)</label>
+              <input type="number" id="orev-gelo-kg" min="0" step="0.1" value="1.2"></div>
+          </div>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orev-gelo-preco">Preço do gelo (R$/kg)</label>
+              <input type="number" id="orev-gelo-preco" min="0" step="0.1" value="2.5"></div>
+            <div class="orev-campo"><label for="orev-diaria-barback">Diária do barback (R$)
+              <span class="orz-help" title="Calculado automaticamente: 1 barback pra cada 2 bartenders (padrão de mercado). Aqui você só define o valor da diária.">?</span></label>
+              <input type="number" id="orev-diaria-barback" min="0" step="1" value="150"></div>
+          </div>
+          <div class="orev-campo"><label for="orev-diaria-coord">Diária do coordenador (R$)</label>
+            <input type="number" id="orev-diaria-coord" min="0" step="1" value="0" placeholder="a definir"></div>
+
+          <p class="orz-sec">Tempos &amp; referências de mercado</p>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orev-taxa-hora">Taxa/hora do bartender (R$)</label>
+              <input type="number" id="orev-taxa-hora" min="0" step="1" value="60"></div>
+            <div class="orev-campo"><label for="orev-min-preparado">Min./drink preparado
+              <span class="orz-help" title="Cocktail montado na hora (Negroni, Caipirinha...) — conta tempo cheio de bartender.">?</span></label>
+              <input type="number" id="orev-min-preparado" min="0" step="0.5" value="3.5"></div>
+          </div>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orev-min-servido">Min./drink servido
+              <span class="orz-help" title="Garrafa/lata/pré-batch — só abrir e entregar, não infla o nº de bartenders como um cocktail.">?</span></label>
+              <input type="number" id="orev-min-servido" min="0" step="0.1" value="0.5"></div>
+            <div class="orev-campo"><label for="orev-taxa-cocktail">Cocktails/convidado/hora (mercado)
+              <span class="orz-help" title="Referência de mercado usada como ponto de partida do slider de cocktails (ex.: 3 num evento de 4h = 0,75/h).">?</span></label>
+              <input type="number" id="orev-taxa-cocktail" min="0" step="0.05" value="0.75"></div>
+          </div>
+          <p class="orz-mkt">A referência de água (ml/convidado/hora) virou o slider de água lá em cima.</p>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -686,6 +713,9 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="orz-bar"><div class="c" id="orev-bar-c"></div><div class="l" id="orev-bar-l"></div></div>
     <div class="orz-split" id="orev-split"></div>
     <div id="orev-avisos"></div>
+
+    <p class="orz-sec">O cliente recebe</p>
+    <div class="orz-chips" id="orev-recebe"></div>
 
     <p class="orz-sec">Como o preço se forma</p>
     <div id="orev-forma"></div>
@@ -723,62 +753,38 @@ window.msgAcessoNegado = function (nomePagina) {
   <div>
     <div class="panel">
       <p class="orz-sec" style="margin-top:0">Identificação</p>
-      <div class="orev-campo"><label for="orme-nome">Nome do evento</label>
-        <input type="text" id="orme-nome" placeholder="Ex.: Festival Tal — 3 dias"></div>
-      <div class="orev-campo"><label for="orme-casa">Casa</label>
-        <select id="orme-casa"></select></div>
-
-      <p class="orz-sec">Parâmetros financeiros</p>
       <div class="orev-linha2">
-        <div class="orev-campo"><label for="orme-markup">Markup (insumo + mão de obra)</label>
-          <input type="number" id="orme-markup" min="1" step="0.1" value="2.0"></div>
-        <div class="orev-campo"><label for="orme-buffer">Buffer de perda de insumo (%)</label>
-          <input type="number" id="orme-buffer" min="0" step="1" value="10"></div>
+        <div class="orev-campo" style="margin-bottom:0"><label for="orme-nome">Nome do evento</label>
+          <input type="text" id="orme-nome" placeholder="Ex.: Festival Tal — 3 dias"></div>
+        <div class="orev-campo" style="margin-bottom:0"><label for="orme-casa">Casa</label>
+          <select id="orme-casa"></select></div>
       </div>
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orme-desloc">Deslocamento (R$, evento inteiro)</label>
-          <input type="number" id="orme-desloc" min="0" step="0.01" value="0"></div>
-        <div class="orev-campo"><label for="orme-custo-estacao">Custo por estação de cocktail (R$)</label>
-          <input type="number" id="orme-custo-estacao" min="0" step="0.01" value="0" placeholder="a definir"></div>
-      </div>
-      <div class="orev-campo"><label for="orme-piso">Piso — convidados por bartender
-        <span class="orz-help" title="Nº mínimo de bartenders por convidados, além do cálculo por volume de preparo.">?</span></label>
-        <input type="number" id="orme-piso" min="0" step="1" value="60"></div>
+    </div>
 
-      <p class="orz-sec">Gelo &amp; equipe de apoio</p>
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orme-gelo-kg">Gelo por convidado (kg)</label>
-          <input type="number" id="orme-gelo-kg" min="0" step="0.1" value="1.2"></div>
-        <div class="orev-campo"><label for="orme-gelo-preco">Preço do gelo (R$/kg)</label>
-          <input type="number" id="orme-gelo-preco" min="0" step="0.1" value="2.5"></div>
+    <div class="orz-driver">
+      <h3 class="orz-driver-tit">Consumo por convidado</h3>
+      <p class="orz-driver-sub">Vale pro cardápio do evento inteiro — mexa e os itens se distribuem sozinhos.</p>
+      <div class="orz-slider-row">
+        <span class="orz-slider-lab">Cocktails</span>
+        <input type="range" id="orme-ckt-alvo" min="1" max="10" step="0.5" value="3">
+        <span class="orz-slider-val" id="orme-ckt-alvo-v">3</span>
+        <span class="orz-slider-un">por convidado</span>
       </div>
-      <div class="orev-linha2">
-        <div class="orev-campo"><label for="orme-diaria-barback">Diária do barback (R$)
-          <span class="orz-help" title="Calculado automaticamente: 1 barback pra cada 2 bartenders. Aqui você só define o valor da diária.">?</span></label>
-          <input type="number" id="orme-diaria-barback" min="0" step="1" value="150"></div>
-        <div class="orev-campo"><label for="orme-diaria-coord">Diária do coordenador (R$)</label>
-          <input type="number" id="orme-diaria-coord" min="0" step="1" value="0" placeholder="a definir"></div>
+      <p class="orz-mkt" id="orme-ckt-mkt"></p>
+      <div class="orz-slider-row">
+        <span class="orz-slider-lab">Água / não-alcoólicos</span>
+        <input type="range" id="orme-ml-agua" min="150" max="600" step="25" value="300">
+        <span class="orz-slider-val" id="orme-agua-v" style="font-size:17px">1,2L</span>
       </div>
+      <p class="orz-mkt" id="orme-agua-mkt"></p>
+      <div class="orz-modo">
+        <button type="button" class="orz-modo-b on" id="orme-modo-auto">Distribuir automático</button>
+        <button type="button" class="orz-modo-b" id="orme-modo-man">Definir item a item</button>
+      </div>
+    </div>
 
-      <details class="orz-premissas">
-        <summary>Premissas do cálculo</summary>
-        <div class="orev-linha2" style="margin-top:10px">
-          <div class="orev-campo"><label for="orme-taxa-hora">Taxa/hora do bartender (R$)</label>
-            <input type="number" id="orme-taxa-hora" min="0" step="1" value="60"></div>
-          <div class="orev-campo"><label for="orme-min-preparado">Min./drink preparado</label>
-            <input type="number" id="orme-min-preparado" min="0" step="0.5" value="3.5"></div>
-        </div>
-        <div class="orev-campo"><label for="orme-min-servido">Min./drink servido</label>
-          <input type="number" id="orme-min-servido" min="0" step="0.1" value="0.5"></div>
-        <div class="orev-linha2">
-          <div class="orev-campo"><label for="orme-taxa-cocktail">Cocktails/convidado/hora</label>
-            <input type="number" id="orme-taxa-cocktail" min="0" step="0.05" value="0.75"></div>
-          <div class="orev-campo"><label for="orme-ml-agua">Água/outro (ml/convidado/hora)</label>
-            <input type="number" id="orme-ml-agua" min="0" step="10" value="300"></div>
-        </div>
-      </details>
-
-      <p class="orz-sec">Dias do evento</p>
+    <div class="panel">
+      <p class="orz-sec" style="margin-top:0">Dias do evento</p>
       <table class="orev-dias">
         <thead><tr><th>Data</th><th>Início</th><th>Convidados</th><th>Duração (h)</th><th>Pré (h)</th><th>Pós (h)</th><th>Estações</th><th title="Coordenador de turno (manual)">Coord.</th><th></th></tr></thead>
         <tbody id="orme-dias-corpo"></tbody>
@@ -786,12 +792,67 @@ window.msgAcessoNegado = function (nomePagina) {
       <button type="button" class="orev-tab" id="orme-add-dia">+ Adicionar dia</button>
     </div>
 
-    <div class="panel" style="margin-top:14px">
+    <div class="panel">
       <p class="orz-sec" style="margin-top:0">Cardápio do evento</p>
+      <p class="orev-sub" style="margin:-4px 0 4px">No automático, as unidades por convidado vêm dos controles acima; editar um item deixa aquele item manual.</p>
       <p class="orz-override-msg" id="orme-sugestao-consumo" style="color:var(--text-3)"></p>
       <input type="text" class="orev-busca" id="orme-busca" placeholder="Buscar item do cardápio…">
       <div id="orme-cardapio"></div>
       <p class="orev-vazio" id="orme-cardapio-vazio" style="display:none">Cardápio de custo ainda não disponível.</p>
+    </div>
+
+    <div class="panel" style="padding:0">
+      <details class="orz-avancado">
+        <summary class="orz-sec" style="margin:0">Ajustes avançados — finanças, equipe, gelo</summary>
+        <div class="orz-avancado-corpo">
+          <p class="orz-sec" style="margin-top:0">Parâmetros financeiros</p>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orme-markup">Markup (insumo + mão de obra)</label>
+              <input type="number" id="orme-markup" min="1" step="0.1" value="2.0"></div>
+            <div class="orev-campo"><label for="orme-buffer">Buffer de perda de insumo (%)</label>
+              <input type="number" id="orme-buffer" min="0" step="1" value="10"></div>
+          </div>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orme-desloc">Deslocamento (R$, evento inteiro)</label>
+              <input type="number" id="orme-desloc" min="0" step="0.01" value="0"></div>
+            <div class="orev-campo"><label for="orme-custo-estacao">Custo por estação de cocktail (R$)</label>
+              <input type="number" id="orme-custo-estacao" min="0" step="0.01" value="0" placeholder="a definir"></div>
+          </div>
+          <div class="orev-campo"><label for="orme-piso">Piso — convidados por bartender
+            <span class="orz-help" title="Nº mínimo de bartenders por convidados, além do cálculo por volume de preparo.">?</span></label>
+            <input type="number" id="orme-piso" min="0" step="1" value="60"></div>
+
+          <p class="orz-sec">Gelo &amp; equipe de apoio</p>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orme-gelo-kg">Gelo por convidado (kg)</label>
+              <input type="number" id="orme-gelo-kg" min="0" step="0.1" value="1.2"></div>
+            <div class="orev-campo"><label for="orme-gelo-preco">Preço do gelo (R$/kg)</label>
+              <input type="number" id="orme-gelo-preco" min="0" step="0.1" value="2.5"></div>
+          </div>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orme-diaria-barback">Diária do barback (R$)
+              <span class="orz-help" title="Calculado automaticamente: 1 barback pra cada 2 bartenders. Aqui você só define o valor da diária.">?</span></label>
+              <input type="number" id="orme-diaria-barback" min="0" step="1" value="150"></div>
+            <div class="orev-campo"><label for="orme-diaria-coord">Diária do coordenador (R$)</label>
+              <input type="number" id="orme-diaria-coord" min="0" step="1" value="0" placeholder="a definir"></div>
+          </div>
+
+          <p class="orz-sec">Tempos &amp; referências de mercado</p>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orme-taxa-hora">Taxa/hora do bartender (R$)</label>
+              <input type="number" id="orme-taxa-hora" min="0" step="1" value="60"></div>
+            <div class="orev-campo"><label for="orme-min-preparado">Min./drink preparado</label>
+              <input type="number" id="orme-min-preparado" min="0" step="0.5" value="3.5"></div>
+          </div>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orme-min-servido">Min./drink servido</label>
+              <input type="number" id="orme-min-servido" min="0" step="0.1" value="0.5"></div>
+            <div class="orev-campo"><label for="orme-taxa-cocktail">Cocktails/convidado/hora (mercado)</label>
+              <input type="number" id="orme-taxa-cocktail" min="0" step="0.05" value="0.75"></div>
+          </div>
+          <p class="orz-mkt">A referência de água (ml/convidado/hora) virou o slider de água lá em cima.</p>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -808,6 +869,9 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="orz-bar"><div class="c" id="orme-bar-c"></div><div class="l" id="orme-bar-l"></div></div>
     <div class="orz-split" id="orme-split"></div>
     <div id="orme-avisos"></div>
+
+    <p class="orz-sec">O cliente recebe</p>
+    <div class="orz-chips" id="orme-recebe"></div>
 
     <p class="orz-sec">Como o preço se forma</p>
     <div id="orme-forma"></div>
@@ -981,6 +1045,100 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orev-tab-btn-' + a).onclick = function () { mostraAba(a); };
   });
 
+  // ---- Distribuição automática do consumo (redesenho 2026-07-23) ----
+  // O motor do cálculo virou o "Consumo por convidado": os dois sliders
+  // (cocktails/convidado e água ml/convidado/hora) DISTRIBUEM o total entre os
+  // itens marcados, em vez de só sugerir. Editar um item na mão o torna manual
+  // (a distribuição respeita e divide o resto entre os automáticos). O botão
+  // "Definir item a item" desliga a distribuição pra quem quer cravar tudo.
+  var modoDist = { orev: 'auto', orme: 'auto' };
+  var cktTocado = { orev: false, orme: false };
+
+  // Volume (ml) lido do NOME do item de água/não-alcoólico ("Água 500ml",
+  // "Refri 1,5L", "lata 350ml"). 0 quando não dá pra reconhecer — aí o item
+  // fica de fora da conversão automática (o usuário digita as unidades).
+  function volumeMlDoNome(nome) {
+    var s = String(nome || '').toLowerCase().replace(',', '.');
+    var mL = s.match(/([0-9]+(?:\.[0-9]+)?)\s*l(?:itro|itros)?\b/);
+    if (mL) return parseFloat(mL[1]) * 1000;
+    var mMl = s.match(/([0-9]+(?:\.[0-9]+)?)\s*ml\b/);
+    if (mMl) return parseFloat(mMl[1]);
+    return 0;
+  }
+
+  function distribui(prefix, selecao, convidados, duracao) {
+    var itens = Object.keys(selecao).map(function (k) { return selecao[k]; });
+    if (modoDist[prefix] === 'auto') {
+      // Cocktails: divide o alvo (slider, total por convidado no evento) entre
+      // os cocktails marcados que NÃO foram editados na mão.
+      var cktAlvo = Math.max(0, parseFloat(document.getElementById(prefix + '-ckt-alvo').value) || 0);
+      var ckts = itens.filter(function (i) { return i.tipo !== 'servido'; });
+      var cktAuto = ckts.filter(function (i) { return !i.manual; });
+      var usadoManual = ckts.filter(function (i) { return i.manual; })
+        .reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
+      var cadaCkt = cktAuto.length ? Math.max(0, cktAlvo - usadoManual) / cktAuto.length : 0;
+      cktAuto.forEach(function (i) { i.porConvidado = cadaCkt; });
+      // Água/não-alcoólicos: alvo em ml/convidado (slider ml/h × duração),
+      // convertido em unidades pelo volume lido do nome; item sem volume
+      // reconhecível fica de fora (o usuário digita).
+      var mlHora = Math.max(0, parseFloat(document.getElementById(prefix + '-ml-agua').value) || 0);
+      var mlAlvo = mlHora * (duracao || 0);
+      var servidos = itens.filter(function (i) { return i.tipo === 'servido'; });
+      var comVol = servidos.filter(function (i) { return !i.manual && volumeMlDoNome(i.nome) > 0; });
+      var mlManual = servidos.filter(function (i) { return i.manual; })
+        .reduce(function (s, i) { return s + (i.porConvidado || 0) * (volumeMlDoNome(i.nome) || 0); }, 0);
+      var mlCada = comVol.length ? Math.max(0, mlAlvo - mlManual) / comVol.length : 0;
+      comVol.forEach(function (i) { i.porConvidado = mlCada / (volumeMlDoNome(i.nome) || 1); });
+    }
+    // Reflete porConvidado nos inputs do cardápio (sem disparar oninput).
+    var uns = document.querySelectorAll('#' + prefix + '-cardapio .orev-un');
+    Array.prototype.forEach.call(uns, function (un) {
+      var it = selecao[un.dataset.nome];
+      if (!it) return;
+      un.value = String(Math.round((it.porConvidado || 0) * 100) / 100);
+      un.classList.toggle('manual', !!it.manual);
+    });
+  }
+
+  // Atualiza os rótulos/valores dos sliders + as linhas de referência de
+  // mercado. Enquanto o usuário não mexe no slider de cocktails, ele segue a
+  // sugestão de mercado (duração × taxa) automaticamente.
+  function atualizaSliders(prefix, duracao) {
+    var taxa = num(prefix + '-taxa-cocktail') || PREMISSAS_DEFAULT.taxaCocktailConvHora;
+    var cktEl = document.getElementById(prefix + '-ckt-alvo');
+    if (!cktTocado[prefix] && duracao > 0) {
+      cktEl.value = Math.min(10, Math.max(1, Math.round(duracao * taxa * 2) / 2));
+    }
+    var ckt = parseFloat(cktEl.value) || 0;
+    document.getElementById(prefix + '-ckt-alvo-v').textContent = ckt.toString().replace('.', ',');
+    var mlHora = parseFloat(document.getElementById(prefix + '-ml-agua').value) || 0;
+    var litros = mlHora * (duracao || 0) / 1000;
+    document.getElementById(prefix + '-agua-v').textContent = litros.toFixed(1).replace('.', ',') + 'L';
+    var refCkt = taxa * (duracao || 0);
+    document.getElementById(prefix + '-ckt-mkt').innerHTML = 'Mercado: ' + taxa.toFixed(2).replace('.', ',')
+      + '/convidado/hora × ' + (duracao || 0).toString().replace('.', ',') + 'h ≈ <b>'
+      + refCkt.toFixed(1).replace('.', ',') + '</b> por convidado.';
+    document.getElementById(prefix + '-agua-mkt').innerHTML = 'Mercado: 250–350ml/convidado/hora. Você está em <b>'
+      + mlHora + 'ml</b>/hora (' + litros.toFixed(1).replace('.', ',') + 'L no evento).';
+  }
+
+  function setModo(prefix, modo, recalc) {
+    modoDist[prefix] = modo;
+    document.getElementById(prefix + '-modo-auto').classList.toggle('on', modo === 'auto');
+    document.getElementById(prefix + '-modo-man').classList.toggle('on', modo === 'man');
+    if (modo === 'auto') {
+      var selecao = prefix === 'orev' ? selecionados : selecionadosEvento;
+      Object.keys(selecao).forEach(function (k) { selecao[k].manual = false; });
+    }
+    if (recalc) recalc();
+  }
+  function ligaModo(prefix, recalc) {
+    document.getElementById(prefix + '-modo-auto').onclick = function () { setModo(prefix, 'auto', recalc); };
+    document.getElementById(prefix + '-modo-man').onclick = function () { setModo(prefix, 'man', recalc); };
+    document.getElementById(prefix + '-ckt-alvo').addEventListener('input', function () { cktTocado[prefix] = true; recalc(); });
+    document.getElementById(prefix + '-ml-agua').addEventListener('input', recalc);
+  }
+
   function montaCardapio(itens, containerId, vazioId, selecao, onChange) {
     var wrapCard = document.getElementById(containerId);
     var vazio = document.getElementById(vazioId);
@@ -1011,10 +1169,16 @@ window.msgAcessoNegado = function (nomePagina) {
         var un = document.createElement('input');
         un.type = 'number'; un.min = '0'; un.step = '0.1'; un.value = '1';
         un.className = 'orev-un'; un.disabled = true; un.title = 'Unidades por convidado';
+        un.dataset.nome = item.nome;
         un.onclick = function (e) { e.preventDefault(); e.stopPropagation(); };
         un.oninput = function () {
           if (selecao[item.nome]) {
             selecao[item.nome].porConvidado = Math.max(0, parseFloat(un.value) || 0);
+            // Editar um item na mão passa SÓ aquele item pra manual — a
+            // distribuição automática (sliders) para de mexer nele, mas segue
+            // valendo pros outros marcados.
+            selecao[item.nome].manual = true;
+            un.classList.add('manual');
             onChange();
           }
         };
@@ -1022,11 +1186,11 @@ window.msgAcessoNegado = function (nomePagina) {
         custo.textContent = semCusto ? 'sem custo cadastrado' : fmtBRL(item.custo) + '/un.';
         chk.onchange = function () {
           if (chk.checked) {
-            selecao[item.nome] = Object.assign({}, item, { porConvidado: Math.max(0, parseFloat(un.value) || 0) });
+            selecao[item.nome] = Object.assign({}, item, { porConvidado: Math.max(0, parseFloat(un.value) || 0), manual: false });
             un.disabled = false;
           } else {
             delete selecao[item.nome];
-            un.disabled = true;
+            un.disabled = true; un.classList.remove('manual');
           }
           onChange();
         };
@@ -1177,6 +1341,25 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     chip(temRodizio ? 'rodízio — limite legal 10h/dia' : 'dentro da lei — sem rodízio', temRodizio ? 'aviso' : 'ok');
 
+    // "O cliente recebe" — o que o convidado enxerga (cocktails/convidado, água
+    // em L/convidado, equipe), separado da conta interna de custo.
+    var recebeEl = document.getElementById(prefix + '-recebe');
+    if (recebeEl) {
+      recebeEl.innerHTML = '';
+      var cktSum = ctx.itensSel.filter(function (i) { return i.tipo !== 'servido'; })
+        .reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
+      var mlSum = ctx.itensSel.filter(function (i) { return i.tipo === 'servido'; })
+        .reduce(function (s, i) { return s + (i.porConvidado || 0) * (volumeMlDoNome(i.nome) || 0); }, 0);
+      function chipR(txt, cls) {
+        var s = document.createElement('span'); s.className = 'orz-chip' + (cls ? ' ' + cls : ''); s.textContent = txt;
+        recebeEl.appendChild(s);
+      }
+      if (cktSum > 0) chipR(cktSum.toFixed(1).replace('.', ',') + ' cocktails/convidado', 'ok');
+      if (mlSum > 0) chipR((mlSum / 1000).toFixed(1).replace('.', ',') + 'L de água/convidado');
+      if (totalBartenders > 0) chipR(totalBartenders + ' bartender(s)' + (ctx.dias.length > 1 ? ' no total' : ''));
+      if (!ctx.itensSel.length) chipR('cardápio ainda não marcado');
+    }
+
     var wpp = document.getElementById(prefix + '-wpp');
     var texto = 'Orçamento de evento — ' + ctx.convidados + ' convidado(s)'
       + (ctx.dias.length > 1 ? ', ' + ctx.dias.length + ' dias' : '') + '\n'
@@ -1199,29 +1382,32 @@ window.msgAcessoNegado = function (nomePagina) {
   // mercado de catering de evento ~250-350ml/convidado/hora) — mostrado em
   // ml porque a unidade de cardápio (garrafinha/lata) varia de tamanho, não
   // dá pra comparar direto com "quantas unidades marcadas".
+  // Feedback ao vivo do mix marcado × alvo dos sliders (revisão 2026-07-23 —
+  // antes era só uma referência estática de mercado; agora o slider distribui
+  // de verdade, então isto mostra o que EFETIVAMENTE está no cardápio e se
+  // bate com o alvo). volumeMlDoNome converte a água marcada em L/convidado.
   function atualizaSugestaoConsumo(prefix, convidados, duracaoHoras, itensSel, p) {
     var el = document.getElementById(prefix + '-sugestao-consumo');
     if (!el) return;
-    if (!duracaoHoras) { el.innerHTML = ''; return; }
-    p = p || {};
     var cocktails = itensSel.filter(function (i) { return i.tipo !== 'servido'; });
     var servidos = itensSel.filter(function (i) { return i.tipo === 'servido'; });
-    var marcadoCocktail = cocktails.reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
-    var marcadoServido = servidos.reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
-    var taxaCocktail = p.taxaCocktailConvHora != null ? p.taxaCocktailConvHora : PREMISSAS_DEFAULT.taxaCocktailConvHora;
-    var mlAgua = p.mlAguaConvHora != null ? p.mlAguaConvHora : PREMISSAS_DEFAULT.mlAguaConvHora;
-    var sugestaoCocktail = Math.min(10, Math.max(1, duracaoHoras * taxaCocktail));
-    var sugestaoMlAgua = duracaoHoras * mlAgua;
-    var linhas = [
-      'Cocktails — referência de mercado: ' + taxaCocktail.toFixed(2).replace('.', ',') + '/convidado/hora × '
-        + duracaoHoras.toFixed(1).replace('.', ',') + 'h ≈ ' + sugestaoCocktail.toFixed(1).replace('.', ',')
-        + ' un./convidado no evento (entre 1 e 10)'
-        + (cocktails.length ? ' — você marcou ' + marcadoCocktail.toFixed(1).replace('.', ',') + '.' : '.'),
-      'Água/outro — referência de mercado: ' + mlAgua.toFixed(0) + 'ml/convidado/hora × '
-        + duracaoHoras.toFixed(1).replace('.', ',') + 'h ≈ ' + sugestaoMlAgua.toFixed(0) + 'ml/convidado no total'
-        + (servidos.length ? ' — você marcou ' + marcadoServido.toFixed(1).replace('.', ',') + ' un. (confira o volume de cada item).' : '.'),
-    ];
-    el.innerHTML = linhas.map(function (t) { return '<div>' + t + '</div>'; }).join('');
+    if (!cocktails.length && !servidos.length) { el.innerHTML = ''; return; }
+    var mixCocktail = cocktails.reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
+    var mlServido = servidos.reduce(function (s, i) { return s + (i.porConvidado || 0) * (volumeMlDoNome(i.nome) || 0); }, 0);
+    var cktEl = document.getElementById(prefix + '-ckt-alvo');
+    var cktAlvo = Math.max(0, parseFloat(cktEl ? cktEl.value : 0) || 0);
+    var partes = [];
+    if (cocktails.length) {
+      var okC = Math.abs(mixCocktail - cktAlvo) < 0.05;
+      partes.push('Mix de cocktails: <b>' + mixCocktail.toFixed(1).replace('.', ',') + '</b>/convidado'
+        + (modoDist[prefix] === 'auto' ? ' (alvo ' + cktAlvo.toFixed(1).replace('.', ',') + (okC ? ' ✓' : '') + ')' : ' — modo manual'));
+    }
+    if (servidos.length) {
+      var litros = mlServido / 1000;
+      partes.push('Água/não-alcoólicos: <b>' + (litros ? litros.toFixed(1).replace('.', ',') + 'L' : '—') + '</b>/convidado'
+        + (mlServido ? '' : ' (item sem volume no nome — digite a unidade na mão)'));
+    }
+    el.innerHTML = partes.map(function (t) { return '<div>' + t + '</div>'; }).join('');
   }
 
   // Avisos de sanidade (didática, 2026-07-22): sinaliza situações que quase
@@ -1309,6 +1495,8 @@ window.msgAcessoNegado = function (nomePagina) {
     var markup = Math.max(1, num('orev-markup'));
     var bufferPct = num('orev-buffer');
     var pisoCobertura = num('orev-piso');
+    atualizaSliders('orev', duracao);
+    distribui('orev', selecionados, convidados, duracao);
     var itensSel = Object.keys(selecionados).map(function (k) { return selecionados[k]; });
     var premissas = premissasDe('orev');
     var p = Object.assign({ itensSel: itensSel, custoEstacao: 0, pisoCobertura: pisoCobertura, bufferPct: bufferPct }, premissas);
@@ -1331,10 +1519,11 @@ window.msgAcessoNegado = function (nomePagina) {
   ligaEdicaoHero('orev', calcula);
   ligaPrint('orev-print', 'orev', 'Orçamento de evento');
   ligaBusca('orev-busca', 'orev-cardapio');
+  ligaModo('orev', calcula);
 
   ['orev-convidados', 'orev-duracao', 'orev-pre', 'orev-pos', 'orev-coordenadores', 'orev-desloc', 'orev-markup',
     'orev-buffer', 'orev-piso', 'orev-taxa-hora', 'orev-min-preparado', 'orev-min-servido',
-    'orev-taxa-cocktail', 'orev-ml-agua',
+    'orev-taxa-cocktail',
     'orev-gelo-kg', 'orev-gelo-preco', 'orev-diaria-barback', 'orev-diaria-coord'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calcula);
   });
@@ -1369,7 +1558,7 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-markup').value = markup;
     document.getElementById('orme-desloc').value = deslocamento;
     ['buffer', 'piso', 'gelo-kg', 'gelo-preco', 'diaria-barback', 'diaria-coord',
-      'taxa-hora', 'min-preparado', 'min-servido', 'taxa-cocktail', 'ml-agua'].forEach(function (campo) {
+      'taxa-hora', 'min-preparado', 'min-servido', 'taxa-cocktail', 'ml-agua', 'ckt-alvo'].forEach(function (campo) {
       document.getElementById('orme-' + campo).value = document.getElementById('orev-' + campo).value;
     });
     document.getElementById('orme-dias-corpo').innerHTML = '';
@@ -1377,6 +1566,10 @@ window.msgAcessoNegado = function (nomePagina) {
       convidados: convidados, duracao: duracao, pre: preEvento, pos: posEvento, estacoes: 0, coordenadores: coordenadores,
     }));
     preencheCardapioEvento(itensCalc);
+    // Transfere o mix EXATO da Calculadora — trava em manual pra distribui()
+    // não redistribuir por cima do que veio de lá (o usuário pode voltar pro
+    // automático em Meus Eventos se quiser).
+    cktTocado.orme = true; setModo('orme', 'man');
     calculaEvento();
     document.getElementById('orme-form-secao').scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById('orme-salvar-msg').textContent = 'Cálculo transferido — dê um nome ao evento e clique em Salvar orçamento.';
@@ -1450,6 +1643,9 @@ window.msgAcessoNegado = function (nomePagina) {
     var markup = Math.max(1, num('orme-markup'));
     var bufferPct = num('orme-buffer');
     var pisoCobertura = num('orme-piso');
+    var durRef = diasIn.length ? diasIn[0].duracaoHoras : 4;
+    atualizaSliders('orme', durRef);
+    distribui('orme', selecionadosEvento, 0, durRef);
     var itensSel = Object.keys(selecionadosEvento).map(function (k) { return selecionadosEvento[k]; });
     var premissas = premissasDe('orme');
     var p = Object.assign({ itensSel: itensSel, custoEstacao: custoEstacao, pisoCobertura: pisoCobertura, bufferPct: bufferPct }, premissas);
@@ -1493,9 +1689,10 @@ window.msgAcessoNegado = function (nomePagina) {
   ligaEdicaoHero('orme', calculaEvento);
   ligaPrint('orme-print', 'orme', function () { return document.getElementById('orme-nome').value || 'Orçamento de evento'; });
   ligaBusca('orme-busca', 'orme-cardapio');
+  ligaModo('orme', calculaEvento);
 
   ['orme-desloc', 'orme-custo-estacao', 'orme-markup', 'orme-buffer', 'orme-piso', 'orme-taxa-hora',
-    'orme-min-preparado', 'orme-min-servido', 'orme-taxa-cocktail', 'orme-ml-agua',
+    'orme-min-preparado', 'orme-min-servido', 'orme-taxa-cocktail',
     'orme-gelo-kg', 'orme-gelo-preco',
     'orme-diaria-barback', 'orme-diaria-coord'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calculaEvento);
@@ -1575,6 +1772,9 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-min-servido').value = PREMISSAS_DEFAULT.tempoServidoMin;
     document.getElementById('orme-taxa-cocktail').value = PREMISSAS_DEFAULT.taxaCocktailConvHora;
     document.getElementById('orme-ml-agua').value = PREMISSAS_DEFAULT.mlAguaConvHora;
+    // Novo evento volta pro automático (mercado como ponto de partida).
+    document.getElementById('orme-ckt-alvo').value = 3;
+    cktTocado.orme = false; setModo('orme', 'auto');
     calculaEvento();
     document.getElementById('orme-cancelar-edicao').style.display = 'none';
     document.getElementById('orme-salvar').textContent = 'Salvar orçamento';
@@ -1636,6 +1836,14 @@ window.msgAcessoNegado = function (nomePagina) {
       document.getElementById('orme-dias-corpo').appendChild(linhaDia());
     }
     preencheCardapioEvento(det.cardapio);
+    // Reflete o mix salvo no slider de cocktails e trava em MANUAL — distribui()
+    // não pode redistribuir por cima do cardápio já salvo (senão só abrir um
+    // evento pra editar mudaria o mix dele sozinho).
+    var cktSalvo = Object.keys(selecionadosEvento).reduce(function (s, k) {
+      var it = selecionadosEvento[k]; return s + (it.tipo !== 'servido' ? (it.porConvidado || 0) : 0);
+    }, 0);
+    document.getElementById('orme-ckt-alvo').value = Math.min(10, Math.max(1, Math.round(cktSalvo * 2) / 2 || 1));
+    cktTocado.orme = true; setModo('orme', 'man');
     // Override é um FLAG EXPLÍCITO salvo (det.overrideValor), nunca adivinhado
     // por diferença numérica — a fórmula muda com o tempo (buffer/piso/tipo
     // são melhorias recentes), então "valor salvo != recalculado" pode ser só
