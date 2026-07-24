@@ -482,6 +482,16 @@ window.msgAcessoNegado = function (nomePagina) {
   table.bh-plano-tb tbody tr:last-child td { border-bottom:none; }
   table.bh-plano-tb td.n, table.bh-plano-tb th.n { text-align:right; font-variant-numeric:tabular-nums; }
   .bh-plano-acao { font-weight:600; color:var(--acc); }
+  .bh-acao-col { width:52px; text-align:center; white-space:nowrap; overflow-wrap:normal; }
+  .bh-acao { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
+      padding:0; border:1px solid var(--border); border-radius:8px; background:transparent;
+      color:var(--text-3); cursor:pointer; transition:color .12s, border-color .12s, background .12s; }
+  .bh-acao:hover { color:var(--verm); border-color:var(--verm); background:rgba(255,90,90,.08); }
+  .bh-acao-reativar:hover { color:var(--verde); border-color:var(--verde); background:rgba(90,200,120,.08); }
+  #bh-desativadas-wrap { opacity:.85; }
+  #bh-desativadas-wrap h2 { color:var(--text-2); }
+  #bh-desativadas-wrap .bh-nome { color:var(--text-2); font-weight:600; }
+  #bh-desativadas-wrap .bh-saldo { color:var(--text-3); }
   @media (max-width: 640px) {
     .bh-hero { padding:14px 15px; gap:12px 20px; }
     .bh-hero-val { font-size:32px; }
@@ -500,13 +510,22 @@ window.msgAcessoNegado = function (nomePagina) {
     table.bh-plano-tb td, table.bh-plano-tb th {
       padding:6px 8px; font-size:12.5px; white-space:normal; overflow-wrap:anywhere; }
 
-    /* Lista de pessoas: só Nome + Saldo (esconde Casa/Matrícula/Situação/Tendência) */
+    /* Lista de pessoas: Nome + Saldo + Ação (esconde Casa/Matrícula/Situação/Tendência) */
     table.bh th:nth-child(1), table.bh td:nth-child(1),
     table.bh th:nth-child(3), table.bh td:nth-child(3),
     table.bh th:nth-child(5), table.bh td:nth-child(5),
     table.bh th:nth-child(6), table.bh td:nth-child(6) { display:none; }
-    table.bh th:nth-child(2), table.bh td:nth-child(2) { width:64%; }
-    table.bh th:nth-child(4), table.bh td:nth-child(4) { width:36%; text-align:right; }
+    table.bh th:nth-child(2), table.bh td:nth-child(2) { width:50%; }
+    table.bh th:nth-child(4), table.bh td:nth-child(4) { width:32%; text-align:right; }
+    table.bh th:nth-child(7), table.bh td:nth-child(7) { width:18%; }
+
+    /* Desativadas: Nome | Saldo | Ação (esconde Casa/Matrícula/Desativada) */
+    table.bh-tb-desat th:nth-child(1), table.bh-tb-desat td:nth-child(1),
+    table.bh-tb-desat th:nth-child(3), table.bh-tb-desat td:nth-child(3),
+    table.bh-tb-desat th:nth-child(5), table.bh-tb-desat td:nth-child(5) { display:none; }
+    table.bh-tb-desat th:nth-child(2), table.bh-tb-desat td:nth-child(2) { width:56%; }
+    table.bh-tb-desat th:nth-child(4), table.bh-tb-desat td:nth-child(4) { width:28%; }
+    table.bh-tb-desat th:nth-child(6), table.bh-tb-desat td:nth-child(6) { width:16%; }
 
     /* Por casa: Casa | Saldo | Custo — linhas finas, sem os sub de extremos */
     table.bh-porcasa th:nth-child(2), table.bh-porcasa td:nth-child(2),
@@ -581,7 +600,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </div>
 
 <div class="panel bh-panel-lista" style="padding:8px 10px;overflow-x:auto">
-<table class="bh"><thead><tr><th>Casa</th><th id="bh-col-nome">Bartender</th><th>Matrícula</th><th class="n">Saldo atual</th><th>Situação</th><th>Tendência</th></tr></thead>
+<table class="bh"><thead><tr><th>Casa</th><th id="bh-col-nome">Bartender</th><th>Matrícula</th><th class="n">Saldo atual</th><th>Situação</th><th>Tendência</th><th class="bh-acao-col">Ação</th></tr></thead>
 <tbody id="bh-corpo-lista"></tbody></table>
 <p class="bh-vazio" id="bh-vazio" style="display:none">Nenhuma pessoa com dado ainda.</p>
 </div>
@@ -604,6 +623,15 @@ window.msgAcessoNegado = function (nomePagina) {
   </div>
 </div>
 
+<div class="bh-plano" id="bh-desativadas-wrap" style="display:none">
+  <h2>Matrículas desativadas</h2>
+  <p class="sub">Marcadas como fora da equipe — não entram nas contas ativas (custo, saldo líquido, por casa). Nada foi apagado; o saldo fica congelado como estava. Toque em reativar pra trazer de volta.</p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+  <table class="bh-plano-tb bh-tb-desat"><thead><tr><th>Casa</th><th>Nome</th><th>Matrícula</th><th class="n">Saldo</th><th>Desativada</th><th class="bh-acao-col">Ação</th></tr></thead>
+  <tbody id="bh-desativadas-lista"></tbody></table>
+  </div>
+</div>
+
 <p class="bh-foot" id="bh-foot"></p>
 </div><!-- bh-corpo -->
 
@@ -616,6 +644,7 @@ window.msgAcessoNegado = function (nomePagina) {
   var msg = document.getElementById('bh-msg');
   var gate = document.getElementById('bh-gate');
   var wrap = document.getElementById('bh-corpo');
+  var TOKEN = null;  // guardado no login, usado pra POST de desativar/reativar
 
   if (!WORKER) {
     gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">Banco de Horas ainda não foi ativado.</p>';
@@ -627,6 +656,74 @@ window.msgAcessoNegado = function (nomePagina) {
     if (classe) e.className = classe;
     e.textContent = texto;
     return e;
+  }
+
+  // Botão pequeno de ação (SVG de linha, sem emoji — regra do projeto).
+  function botaoAcao(tipo, titulo, onClick) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'bh-acao bh-acao-' + tipo;
+    b.title = titulo;
+    b.setAttribute('aria-label', titulo);
+    var svg = (tipo === 'reativar')
+      ? '<circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 9"/>'
+      : '<circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/>';
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + svg + '</svg>';
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  // Marca/desmarca uma matrícula como desativada. O servidor decide a casa
+  // pelo token quando é chefe (ignora a que mandamos); pra coord, manda o slug.
+  function mudaDesativacao(casaSlug, matricula, nome, ativar) {
+    var verbo = ativar ? 'Reativar' : 'Desativar';
+    var pergunta = ativar
+      ? 'Reativar a matrícula de ' + nome + '? Ela volta pras contas ativas.'
+      : 'Desativar a matrícula de ' + nome + '?\n\nSai das contas ativas (custo, saldo líquido, por casa) e vai pra lista de desativados. Nada é apagado — dá pra reativar depois.';
+    if (!window.confirm(pergunta)) return;
+    fetch(WORKER + '/api/banco-horas/desativar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify({ casa: casaSlug, matricula: matricula, nome: nome, ativo: !!ativar }),
+    }).then(function (r) {
+      if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
+      if (!r.ok) { alert(verbo + ' falhou (' + r.status + '). Tente de novo.'); return null; }
+      return r.json();
+    }).then(function (d) {
+      if (d && d.ok) buscaDados(TOKEN);  // recarrega e re-renderiza
+    }).catch(function () { alert('Sem conexão. Tente de novo.'); });
+  }
+
+  function renderDesativados(lista) {
+    var wrapEl = document.getElementById('bh-desativadas-wrap');
+    var tbody = document.getElementById('bh-desativadas-lista');
+    tbody.innerHTML = '';
+    if (!lista.length) { wrapEl.style.display = 'none'; return; }
+    wrapEl.style.display = '';
+    lista.sort(function (a, b) { return (a.casa || '').localeCompare(b.casa || '') || (a.nome || '').localeCompare(b.nome || ''); });
+    lista.forEach(function (d) {
+      var tr = document.createElement('tr');
+      tr.appendChild(td(d.casa || '—'));
+      var tdNome = document.createElement('td');
+      var nomeEl = document.createElement('div'); nomeEl.className = 'bh-nome'; nomeEl.textContent = d.nome || '—';
+      tdNome.appendChild(nomeEl);
+      tr.appendChild(tdNome);
+      tr.appendChild(td(d.matricula || '—'));
+      var tdSaldo = document.createElement('td'); tdSaldo.className = 'n';
+      var sEl = document.createElement('span'); sEl.className = 'bh-saldo'; sEl.textContent = d.saldo_texto || '—';
+      tdSaldo.appendChild(sEl); tr.appendChild(tdSaldo);
+      var quando = d.reg && d.reg.quando ? fmtDataBR((d.reg.quando + '').slice(0, 10)) : '';
+      var quem = d.reg && d.reg.por ? d.reg.por : '';
+      tr.appendChild(td(quando ? (quando + (quem ? ' · ' + quem : '')) : '—'));
+      var tdAcao = document.createElement('td'); tdAcao.className = 'bh-acao-col';
+      (function (d) {
+        tdAcao.appendChild(botaoAcao('reativar', 'Reativar matrícula (volta pras contas ativas)', function () {
+          mudaDesativacao(d.casa_slug, d.matricula, d.nome, true);
+        }));
+      })(d);
+      tr.appendChild(tdAcao);
+      tbody.appendChild(tr);
+    });
   }
 
   function alertaDe(minutos) {
@@ -846,7 +943,7 @@ window.msgAcessoNegado = function (nomePagina) {
         var custo = (b.plano_zerar_horas && b.plano_zerar_horas.custo_se_nao_abater != null)
           ? b.plano_zerar_horas.custo_se_nao_abater : null;
         pessoas.push({
-          casa: nomeCasa, matricula: b.matricula, nome: b.nome,
+          casa: nomeCasa, casa_slug: slug, matricula: b.matricula, nome: b.nome,
           saldo_texto: b.saldo_atual_texto, saldo_minutos: b.saldo_atual_minutos,
           situacao: b.situacao, tendencia: tendenciaDe(b.historico), custo: custo,
         });
@@ -883,6 +980,23 @@ window.msgAcessoNegado = function (nomePagina) {
     });
     // renderPorCasa é chamado mais abaixo, depois de selecionarCasa/desenha
     // existirem — as linhas precisam do callback de seleção.
+
+    // Matrículas desativadas do time atual (o Worker já separou em
+    // c.desativadas, fora das listas ativas — então nada disso entra nas
+    // contas). Filtra pelo setor de origem pra bater com o seletor Bar/Salão.
+    var desativados = [];
+    Object.keys(casasObj).forEach(function (slug) {
+      var c = casasObj[slug];
+      (c.desativadas || []).forEach(function (d) {
+        if (d.setor_original !== SET.chave) return;
+        desativados.push({
+          casa: c.bar || slug, casa_slug: slug, nome: d.nome, matricula: d.matricula,
+          saldo_texto: d.saldo_atual_texto, reg: d.desativada || {},
+        });
+      });
+    });
+    renderDesativados(desativados);
+
     if (pendenciasCasa.length) {
       var pend = document.createElement('div');
       pend.className = 'bh-pendencia';
@@ -1060,6 +1174,14 @@ window.msgAcessoNegado = function (nomePagina) {
         }
         tr.appendChild(tdTend);
 
+        var tdAcao = document.createElement('td'); tdAcao.className = 'bh-acao-col';
+        (function (p) {
+          tdAcao.appendChild(botaoAcao('desativar', 'Desativar matrícula (marca como fora da equipe)', function () {
+            mudaDesativacao(p.casa_slug, p.matricula, p.nome, false);
+          }));
+        })(p);
+        tr.appendChild(tdAcao);
+
         corpoLista.appendChild(tr);
       });
       vazio.style.display = visiveis.length ? 'none' : '';
@@ -1104,7 +1226,7 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   var r = window.exigirNivel(NIVEIS_OK, SLUG);
-  if (r.ok) buscaDados(r.sessao.token);
+  if (r.ok) { TOKEN = r.sessao.token; buscaDados(TOKEN); }
   else if (!r.redirecionou) msg.innerHTML = window.msgAcessoNegado('o Banco de Horas');
 })();
 </script>
