@@ -188,7 +188,19 @@ window.msgAcessoNegado = function (nomePagina) {
     }).catch(function () {});
   };
   window.marcaPresenca();
-  setInterval(window.marcaPresenca, 120000);
+  // Intervalo do heartbeat (2026-07-24, achado por acidente: publicar o
+  // Bento falhou porque a CONTA Cloudflare — não o Worker do Bento — bateu
+  // o limite grátis de 1.000 escritas/dia em KV). Cada ping aqui é 1
+  // KV.put() no contagem-worker (VENDAS_KV.put presenca:v1:<device>).
+  // Em 2min, 4 aparelhos abertos 8h já somam ~960 escritas — a cota do dia
+  // inteira, sem sobrar nada pra publicar nenhum portal. Subir pra 10min
+  // corta o gasto em 5x (de ~960 pra ~192 nesse mesmo cenário) e o número
+  // "Online agora" fica ~10min mais velho no pior caso — troca aceitável
+  // pra um indicador de enfeite. Ver PRESENCA_TTL_S (contagem-worker/
+  // worker.js) e GAP_SESSAO_MS (gera_presenca, portal_gen.py) — os três
+  // valores têm que crescer juntos, senão presença "pisca" ou uma sessão
+  // contínua vira várias sessões curtas na tela de detalhe.
+  setInterval(window.marcaPresenca, 600000);
 })();
 </script>
 
@@ -393,7 +405,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
 
 <h1>Banco de Horas</h1>
-<p class="sub">Saldo de banco de horas por bartender, atualizado a cada ~5 dias a partir do AHgora. Fonte oficial continua sendo o AHgora — esta página é acompanhamento, não homologação.</p>
+<p class="sub">Saldo de banco de horas do bar e do salão, atualizado a cada ~5 dias a partir do AHgora. Fonte oficial continua sendo o AHgora — esta página é acompanhamento, não homologação.</p>
 
 <div class="panel" id="bh-gate">
   <h2>Acesso restrito</h2>
@@ -451,27 +463,28 @@ window.msgAcessoNegado = function (nomePagina) {
 <p class="bh-fechamento" id="bh-fechamento"></p>
 
 <div class="bh-controles">
+  <div class="chips" id="bh-setor" style="display:none"></div>
   <div class="chips" id="bh-casas"></div>
   <input type="text" id="bh-busca" placeholder="Buscar por nome…">
 </div>
 
 <div class="bh-resumo">
-  <div class="bh-kpi"><div class="v" id="bh-kpi-n">—</div><div class="l">Bartenders</div></div>
+  <div class="bh-kpi"><div class="v" id="bh-kpi-n">—</div><div class="l" id="bh-kpi-n-rot">Bartenders</div></div>
   <div class="bh-kpi"><div class="v" id="bh-kpi-alerta">—</div><div class="l">Em atenção/crítico</div></div>
   <div class="bh-kpi"><div class="v" id="bh-kpi-semdados">—</div><div class="l">Sem dados</div></div>
 </div>
 
 <div class="panel" style="padding:8px 10px;overflow-x:auto">
-<table class="bh"><thead><tr><th>Casa</th><th>Bartender</th><th>Matrícula</th><th class="n">Saldo atual</th><th>Situação</th><th>Tendência</th></tr></thead>
+<table class="bh"><thead><tr><th>Casa</th><th id="bh-col-nome">Bartender</th><th>Matrícula</th><th class="n">Saldo atual</th><th>Situação</th><th>Tendência</th></tr></thead>
 <tbody id="bh-corpo-lista"></tbody></table>
-<p class="bh-vazio" id="bh-vazio" style="display:none">Nenhum bartender com dado ainda.</p>
+<p class="bh-vazio" id="bh-vazio" style="display:none">Nenhuma pessoa com dado ainda.</p>
 </div>
 
 <div class="bh-plano" id="bh-devendo-wrap" style="display:none">
   <h2>Quem deve horas pra casa</h2>
   <p class="sub">Saldo negativo — a pessoa deve horas ao invés de a empresa dever a ela. Ordenado do mais crítico pro menos.</p>
   <div class="panel" style="padding:8px 10px;overflow-x:auto">
-  <table class="bh-plano-tb"><thead><tr><th>Casa</th><th>Bartender</th><th class="n">Deve</th><th>Situação</th></tr></thead>
+  <table class="bh-plano-tb"><thead><tr><th>Casa</th><th id="bh-col-nome-dev">Bartender</th><th class="n">Deve</th><th>Situação</th></tr></thead>
   <tbody id="bh-devendo-lista"></tbody></table>
   </div>
 </div>
@@ -480,7 +493,7 @@ window.msgAcessoNegado = function (nomePagina) {
   <h2>Plano pra zerar horas extras</h2>
   <p class="sub">Quem tem saldo a favor precisa zerar antes do fechamento, senão vira pagamento em dinheiro. Duas formas de zerar — liberação diária ou folga(s) inteira(s) — escolha a que fizer mais sentido pra operação de cada casa.</p>
   <div class="panel" style="padding:8px 10px;overflow-x:auto">
-  <table class="bh-plano-tb"><thead><tr><th>Casa</th><th>Bartender</th><th class="n">Saldo</th><th>Opção 1 — liberar mais cedo</th><th>Opção 2 — folga(s) inteira(s)</th><th class="n">Custo se não abater</th></tr></thead>
+  <table class="bh-plano-tb"><thead><tr><th>Casa</th><th id="bh-col-nome-plano">Bartender</th><th class="n">Saldo</th><th>Opção 1 — liberar mais cedo</th><th>Opção 2 — folga(s) inteira(s)</th><th class="n">Custo se não abater</th></tr></thead>
   <tbody id="bh-plano-lista"></tbody></table>
   </div>
 </div>
@@ -544,15 +557,80 @@ window.msgAcessoNegado = function (nomePagina) {
     return h + 'h' + (m ? ' ' + m + 'min' : '');
   }
 
+  // Bar e Salão são duas equipes na MESMA página (decisão do Rodrigo,
+  // 2026-07-24): mesma estrutura, mesmos blocos, um seletor no topo. O
+  // payload traz as duas listas por casa ("bartenders" e "salao"), então
+  // trocar de time é só re-render — nenhuma chamada nova ao Worker.
+  var SETORES = {
+    bar:   { chave: 'bartenders', rotulo: 'Bar',    pessoa: 'Bartender', plural: 'Bartenders', pend: 'pendencia' },
+    salao: { chave: 'salao',      rotulo: 'Salão',  pessoa: 'Pessoa',    plural: 'Pessoas',    pend: 'pendencia_salao' }
+  };
+  var setorAtual = 'bar';
+  var PAYLOAD = null;
+
   function inicia(payload) {
+    PAYLOAD = payload;
+    montaSeletor();
+    montaSetor();
+  }
+
+  function temGente(chave) {
+    var casas = (PAYLOAD || {}).casas || {};
+    return Object.keys(casas).some(function (s) { return ((casas[s] || {})[chave] || []).length; });
+  }
+
+  function montaSeletor() {
+    var alvo = document.getElementById('bh-setor');
+    // O seletor só aparece quando há de fato um segundo time publicado —
+    // uma casa que ainda não teve o salão mapeado não ganha uma aba vazia.
+    if (!temGente('salao')) { alvo.style.display = 'none'; return; }
+    alvo.style.display = '';
+    alvo.innerHTML = '';
+    Object.keys(SETORES).forEach(function (k) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (k === setorAtual ? ' on' : '');
+      b.textContent = SETORES[k].rotulo;
+      b.onclick = function () {
+        if (setorAtual === k) return;
+        setorAtual = k;
+        alvo.querySelectorAll('.chip').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        montaSetor();
+      };
+      alvo.appendChild(b);
+    });
+  }
+
+  function montaSetor() {
+    var payload = PAYLOAD || {};
+    var SET = SETORES[setorAtual];
     var casasObj = payload.casas || {};
     var pendenciasCasa = [];
     var pessoas = [];
     var planoPessoas = [];
+    // Re-render limpo: sem isso, trocar de time ia ANEXANDO nas tabelas em
+    // vez de substituir (as listas abaixo usam appendChild).
+    ['bh-devendo-lista', 'bh-plano-lista', 'bh-corpo-lista', 'bh-casas'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = '';
+    });
+    document.getElementById('bh-devendo-wrap').style.display = 'none';
+    document.getElementById('bh-plano-wrap').style.display = 'none';
+    var pendAntiga = wrap.querySelector('.bh-pendencia');
+    if (pendAntiga) pendAntiga.remove();
+    document.getElementById('bh-busca').value = '';
+    // Rótulos seguem o time escolhido — "Bartender" numa lista de salão
+    // seria mentira de interface.
+    document.getElementById('bh-kpi-n-rot').textContent = SET.plural;
+    document.getElementById('bh-col-nome').textContent = SET.pessoa;
+    document.getElementById('bh-col-nome-dev').textContent = SET.pessoa;
+    document.getElementById('bh-col-nome-plano').textContent = SET.pessoa;
+    document.getElementById('bh-vazio').textContent = 'Nenhuma pessoa com dado ainda.';
     Object.keys(casasObj).forEach(function (slug) {
       var c = casasObj[slug];
-      if (c.pendencia) pendenciasCasa.push((c.bar || slug) + ': ' + c.pendencia);
-      (c.bartenders || []).forEach(function (b) {
+      if (c[SET.pend]) pendenciasCasa.push((c.bar || slug) + ': ' + c[SET.pend]);
+      (c[SET.chave] || []).forEach(function (b) {
         pessoas.push({
           casa: c.bar || slug, matricula: b.matricula, nome: b.nome,
           saldo_texto: b.saldo_atual_texto, saldo_minutos: b.saldo_atual_minutos,

@@ -188,7 +188,19 @@ window.msgAcessoNegado = function (nomePagina) {
     }).catch(function () {});
   };
   window.marcaPresenca();
-  setInterval(window.marcaPresenca, 120000);
+  // Intervalo do heartbeat (2026-07-24, achado por acidente: publicar o
+  // Bento falhou porque a CONTA Cloudflare — não o Worker do Bento — bateu
+  // o limite grátis de 1.000 escritas/dia em KV). Cada ping aqui é 1
+  // KV.put() no contagem-worker (VENDAS_KV.put presenca:v1:<device>).
+  // Em 2min, 4 aparelhos abertos 8h já somam ~960 escritas — a cota do dia
+  // inteira, sem sobrar nada pra publicar nenhum portal. Subir pra 10min
+  // corta o gasto em 5x (de ~960 pra ~192 nesse mesmo cenário) e o número
+  // "Online agora" fica ~10min mais velho no pior caso — troca aceitável
+  // pra um indicador de enfeite. Ver PRESENCA_TTL_S (contagem-worker/
+  // worker.js) e GAP_SESSAO_MS (gera_presenca, portal_gen.py) — os três
+  // valores têm que crescer juntos, senão presença "pisca" ou uma sessão
+  // contínua vira várias sessões curtas na tela de detalhe.
+  setInterval(window.marcaPresenca, 600000);
 })();
 </script>
 
@@ -412,6 +424,17 @@ window.msgAcessoNegado = function (nomePagina) {
   .tn-enviar { width:100%; padding:14px; font-size:15px; font-weight:600; border:none; border-radius:10px;
                background:var(--acc); color:var(--acc-txt); cursor:pointer; }
   .tn-enviar:disabled { opacity:.5; }
+  .tn-chips-ajuda { font-size:12.5px; color:var(--text-3); margin:-2px 0 8px; text-transform:none; letter-spacing:normal; }
+  .tn-chips-add { display:flex; gap:8px; margin-bottom:8px; }
+  .tn-chips-add input { flex:1; }
+  .tn-chips-add button { padding:0 16px; border-radius:10px; border:1px solid var(--border); background:none;
+                          color:var(--text); font-size:14px; cursor:pointer; white-space:nowrap; }
+  .tn-chips-lista { display:flex; gap:6px; flex-wrap:wrap; }
+  .tn-chip { display:inline-flex; align-items:center; gap:7px; padding:6px 8px 6px 12px; border-radius:999px;
+             border:1px solid var(--acc); color:var(--acc); font-size:13.5px; }
+  .tn-chip button { background:none; border:0; color:var(--acc); font-size:15px; line-height:1; cursor:pointer;
+                     padding:2px; }
+  .tn-resumo { font-size:13px; color:var(--text-2); margin:4px 0 14px; }
 </style>
 
 <div id="tn-app">
@@ -520,19 +543,66 @@ window.msgAcessoNegado = function (nomePagina) {
     {k:'movimento', l:'Movimento (reservas/eventos do turno)', tipo:'textarea'},
     {k:'producao_feita', l:'Produção feita', tipo:'textarea'},
     {k:'producao_pendente', l:'Produção pendente p/ próximo turno', tipo:'textarea'},
-    {k:'rupturas', l:'Rupturas (um item por linha)', tipo:'textarea'},
+  ];
+  var CAMPOS_APOS_QUEBRA = [
     {k:'gelo', l:'Gelo (máquina %, sacos avulsos, status)', tipo:'textarea'},
-    {k:'equip_novo', l:'Equipamento — problema novo (um por linha)', tipo:'textarea'},
     {k:'equip_conhecido', l:'Equipamento — problema já conhecido, sem mudança', tipo:'textarea'},
     {k:'etiquetagem_obs', l:'Etiquetagem — observação (se houver)', tipo:'textarea'},
     {k:'ocorrencias', l:'Ocorrências', tipo:'textarea'},
-    {k:'pendencia', l:'Pendência para o coordenador (só se precisar de decisão de alguém acima)', tipo:'textarea'},
   ];
+  // Turno v2: texto de interface vem de config/turno.json (na geração);
+  // regra de corte e categoria/tipo do registro-bares vivem só no Worker.
+  var BLOCO_FALTA = {"slug": "falta", "label": "Faltou algum item?", "ajuda": "O que acabou ou está para acabar. Um item por vez.", "placeholder": "xarope de gengibre", "tipo": "solicitacao", "categoria": "compras_insumos", "urgencia": "hoje", "virou": "vira demanda de compra, com a casa e o seu nome", "coordenacao": false};
+  var BLOCO_QUEBRA = {"slug": "quebra", "label": "Quebrou ou parou?", "ajuda": "Equipamento com defeito, avaria, estrutura.", "placeholder": "liquidificador 2", "tipo": "ocorrencia", "categoria": "manutencao", "urgencia": "hoje", "virou": "vira demanda de manutenção", "coordenacao": false};
+  var chipsFalta = [];
+  var chipsQuebra = [];
+
+  function renderBlocoChips(bloco, itens, idPrefix) {
+    var h = '<div class="tn-campo"><label>' + esc(bloco.label || '') + '</label>';
+    if (bloco.ajuda) h += '<p class="tn-chips-ajuda">' + esc(bloco.ajuda) + '</p>';
+    h += '<div class="tn-chips-add"><input type="text" id="' + idPrefix + '-add" placeholder="' +
+      esc(bloco.placeholder || '') + '" autocomplete="off">' +
+      '<button type="button" id="' + idPrefix + '-btn">Adicionar</button></div>';
+    h += '<div class="tn-chips-lista" id="' + idPrefix + '-lista"></div></div>';
+    return h;
+  }
+
+  function ligaBlocoChips(idPrefix, itens, aoMudar) {
+    var elIn = document.getElementById(idPrefix + '-add');
+    var elBtn = document.getElementById(idPrefix + '-btn');
+    var elLista = document.getElementById(idPrefix + '-lista');
+    function redesenhaChips() {
+      elLista.innerHTML = '';
+      itens.forEach(function (texto, i) {
+        var chip = document.createElement('span'); chip.className = 'tn-chip';
+        var txt = document.createElement('span'); txt.textContent = texto;
+        var rm = document.createElement('button'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remover');
+        rm.innerHTML = '&times;';
+        rm.onclick = function () { itens.splice(i, 1); redesenhaChips(); aoMudar(); };
+        chip.appendChild(txt); chip.appendChild(rm);
+        elLista.appendChild(chip);
+      });
+    }
+    function adiciona() {
+      var v = elIn.value.trim();
+      if (!v) return;
+      itens.push(v.slice(0, 200));
+      elIn.value = '';
+      redesenhaChips(); aoMudar();
+      elIn.focus();
+    }
+    elBtn.onclick = adiciona;
+    elIn.onkeydown = function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); adiciona(); }
+    };
+    redesenhaChips();
+  }
 
   function desenha() {
     elForm.style.display = '';
     var hoje = new Date().toISOString().slice(0, 10);
     var nomeCasa = CASAS.filter(function (c) { return c.slug === casaSel; })[0].nome;
+    chipsFalta = []; chipsQuebra = [];
     var html = '<h2>Relatório — ' + esc(nomeCasa.toUpperCase()) + '</h2>' +
       '<p class="sub" id="tn-trocar" style="cursor:pointer;text-decoration:underline;margin-top:-6px">trocar de casa</p>';
     html += '<div class="tn-campo"><label>Responsável</label><input id="tn-responsavel" type="text" autocomplete="name"></div>';
@@ -544,10 +614,33 @@ window.msgAcessoNegado = function (nomePagina) {
     CAMPOS.forEach(function (c) {
       html += '<div class="tn-campo"><label>' + esc(c.l) + '</label><textarea id="tn-' + c.k + '"></textarea></div>';
     });
+    html += renderBlocoChips(BLOCO_FALTA, chipsFalta, 'tn-falta');
+    CAMPOS_APOS_QUEBRA.slice(0, 1).forEach(function (c) {
+      html += '<div class="tn-campo"><label>' + esc(c.l) + '</label><textarea id="tn-' + c.k + '"></textarea></div>';
+    });
+    html += renderBlocoChips(BLOCO_QUEBRA, chipsQuebra, 'tn-quebra');
+    CAMPOS_APOS_QUEBRA.slice(1).forEach(function (c) {
+      html += '<div class="tn-campo"><label>' + esc(c.l) + '</label><textarea id="tn-' + c.k + '"></textarea></div>';
+    });
+    html += '<div class="tn-campo"><label>Pendência para o coordenador (só se precisar de decisão de alguém acima)</label><textarea id="tn-pendencia"></textarea></div>';
+    html += '<p class="tn-resumo" id="tn-resumo"></p>';
     html += '<div class="tn-campo tn-check"><input type="checkbox" id="tn-etiquetagem-ok"><label for="tn-etiquetagem-ok" style="margin:0;text-transform:none;font-size:14px;color:var(--text)">Etiquetagem conferida e OK neste turno</label></div>';
     html += '<button type="submit" class="tn-enviar" id="tn-enviar">Enviar relatório</button>';
     html += '<p class="sub" id="tn-envio-msg" style="margin-top:10px"></p>';
     elForm.innerHTML = html;
+
+    var elResumo = document.getElementById('tn-resumo');
+    function atualizaResumo() {
+      var pend = document.getElementById('tn-pendencia');
+      var n = chipsFalta.length + chipsQuebra.length + ((pend && pend.value.trim()) ? 1 : 0);
+      elResumo.textContent = n
+        ? n + ' ite' + (n === 1 ? 'm' : 'ns') + ' ' + (n === 1 ? 'será enviado' : 'serão enviados') + ' como demanda (sujeito ao teto diário da casa).'
+        : '';
+    }
+    ligaBlocoChips('tn-falta', chipsFalta, atualizaResumo);
+    ligaBlocoChips('tn-quebra', chipsQuebra, atualizaResumo);
+    document.getElementById('tn-pendencia').addEventListener('input', atualizaResumo);
+    atualizaResumo();
 
     document.getElementById('tn-trocar').onclick = function () {
       elForm.style.display = 'none';
@@ -568,13 +661,22 @@ window.msgAcessoNegado = function (nomePagina) {
     elForm.onsubmit = function (ev) {
       ev.preventDefault();
       if (!turnoSel) { document.getElementById('tn-envio-msg').textContent = 'Escolha o turno (manhã/tarde/noite).'; return; }
+      var pendTexto = document.getElementById('tn-pendencia').value;
       var body = {
         data: document.getElementById('tn-data').value,
         turno: turnoSel,
         etiquetagem_ok: document.getElementById('tn-etiquetagem-ok').checked,
+        pendencia: pendTexto,
+        itens_falta: chipsFalta.slice(),
+        itens_quebra: chipsQuebra.slice(),
+        // 1 item só: o formulário não oferece chips pra decisão (mockup
+        // mostra 1 textarea) — o que for digitado vira 1 demanda pra
+        // coordenação, além de continuar gravado como texto no relatório.
+        itens_decisao: pendTexto.trim() ? [pendTexto.trim()] : [],
         _idemp: uuidTn(),
       };
       CAMPOS.forEach(function (c) { body[c.k] = document.getElementById('tn-' + c.k).value; });
+      CAMPOS_APOS_QUEBRA.forEach(function (c) { body[c.k] = document.getElementById('tn-' + c.k).value; });
       body.responsavel = document.getElementById('tn-responsavel').value;
 
       // Enfileira primeiro (durável) e drena — se a rede falhar, o relatório

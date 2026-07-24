@@ -188,7 +188,19 @@ window.msgAcessoNegado = function (nomePagina) {
     }).catch(function () {});
   };
   window.marcaPresenca();
-  setInterval(window.marcaPresenca, 120000);
+  // Intervalo do heartbeat (2026-07-24, achado por acidente: publicar o
+  // Bento falhou porque a CONTA Cloudflare — não o Worker do Bento — bateu
+  // o limite grátis de 1.000 escritas/dia em KV). Cada ping aqui é 1
+  // KV.put() no contagem-worker (VENDAS_KV.put presenca:v1:<device>).
+  // Em 2min, 4 aparelhos abertos 8h já somam ~960 escritas — a cota do dia
+  // inteira, sem sobrar nada pra publicar nenhum portal. Subir pra 10min
+  // corta o gasto em 5x (de ~960 pra ~192 nesse mesmo cenário) e o número
+  // "Online agora" fica ~10min mais velho no pior caso — troca aceitável
+  // pra um indicador de enfeite. Ver PRESENCA_TTL_S (contagem-worker/
+  // worker.js) e GAP_SESSAO_MS (gera_presenca, portal_gen.py) — os três
+  // valores têm que crescer juntos, senão presença "pisca" ou uma sessão
+  // contínua vira várias sessões curtas na tela de detalhe.
+  setInterval(window.marcaPresenca, 600000);
 })();
 </script>
 
@@ -483,11 +495,16 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   }
 
   // Gap entre pings da MESMA pessoa maior que isso = sessão nova (heartbeat
-  // roda a cada 2min; 6min tolera 2 heartbeats perdidos sem fatiar demais).
-  var GAP_SESSAO_MS = 6 * 60 * 1000;
-  // Mesma janela do TTL da contagem anônima (server usa 300s) — sessão cujo
-  // último ping caiu dentro disso ainda está rolando, não terminou de vez.
-  var JANELA_ANDAMENTO_MS = 300 * 1000;
+  // roda a cada 10min desde 2026-07-24 — subiu de 2min pra economizar escrita
+  // em KV, ver JS_PRESENCA; 15min tolera 1 heartbeat perdido sem fatiar uma
+  // sessão contínua em várias curtas).
+  var GAP_SESSAO_MS = 15 * 60 * 1000;
+  // Mesma janela do TTL da contagem anônima (server usa PRESENCA_TTL_S =
+  // 900s, contagem-worker/worker.js) — sessão cujo último ping caiu dentro
+  // disso ainda está rolando, não terminou de vez. Tem que bater com o
+  // servidor: se um dos dois mudar sem o outro, "em andamento" e "online
+  // agora" divergem silenciosamente.
+  var JANELA_ANDAMENTO_MS = 900 * 1000;
 
   function fmtDataHora(iso) {
     var d = new Date(iso);

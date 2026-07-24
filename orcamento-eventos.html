@@ -188,7 +188,19 @@ window.msgAcessoNegado = function (nomePagina) {
     }).catch(function () {});
   };
   window.marcaPresenca();
-  setInterval(window.marcaPresenca, 120000);
+  // Intervalo do heartbeat (2026-07-24, achado por acidente: publicar o
+  // Bento falhou porque a CONTA Cloudflare — não o Worker do Bento — bateu
+  // o limite grátis de 1.000 escritas/dia em KV). Cada ping aqui é 1
+  // KV.put() no contagem-worker (VENDAS_KV.put presenca:v1:<device>).
+  // Em 2min, 4 aparelhos abertos 8h já somam ~960 escritas — a cota do dia
+  // inteira, sem sobrar nada pra publicar nenhum portal. Subir pra 10min
+  // corta o gasto em 5x (de ~960 pra ~192 nesse mesmo cenário) e o número
+  // "Online agora" fica ~10min mais velho no pior caso — troca aceitável
+  // pra um indicador de enfeite. Ver PRESENCA_TTL_S (contagem-worker/
+  // worker.js) e GAP_SESSAO_MS (gera_presenca, portal_gen.py) — os três
+  // valores têm que crescer juntos, senão presença "pisca" ou uma sessão
+  // contínua vira várias sessões curtas na tela de detalhe.
+  setInterval(window.marcaPresenca, 600000);
 })();
 </script>
 
@@ -439,6 +451,24 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-item .orev-un { width:66px; padding:5px 6px; border-radius:8px; border:1px solid var(--border);
       background:var(--card); color:var(--text); font:inherit; font-size:12.5px; box-sizing:border-box; }
   .orev-item .orev-un:disabled { opacity:.3; }
+  /* Chave "insumo do contratante" por item (2026-07-23) — OPCIONAL e desligada
+     por padrão: evento que não a usa calcula exatamente como antes. */
+  .orev-item .orev-cli { border:1px solid var(--border); background:transparent; color:var(--text-3);
+      border-radius:999px; padding:3px 9px; font:inherit; font-size:10.5px; cursor:pointer;
+      white-space:nowrap; flex:none; }
+  .orev-item .orev-cli:disabled { opacity:.25; cursor:default; }
+  .orev-item .orev-cli.on { color:var(--accent,#c9a24b); border-color:var(--accent,#c9a24b); font-weight:600; }
+  table.orz-bebida { width:100%; border-collapse:collapse; font-size:11.5px; margin-top:6px; }
+  table.orz-bebida th { text-align:right; font-size:9.5px; text-transform:uppercase; letter-spacing:.05em;
+      color:var(--text-3); padding:0 4px 6px; font-weight:600; border-bottom:1px solid var(--border); }
+  table.orz-bebida th:first-child, table.orz-bebida td:first-child { text-align:left; padding-left:0; }
+  table.orz-bebida td { padding:5px 4px; text-align:right; font-variant-numeric:tabular-nums;
+      color:var(--text-2); border-bottom:1px solid var(--border); }
+  table.orz-bebida tr:last-child td { border-bottom:none; }
+  table.orz-bebida td.nm { color:var(--text); }
+  table.orz-bebida tr.tot td { font-weight:600; color:var(--text); border-top:1px solid var(--border); }
+  .orz-bebida-cli { font-size:9.5px; color:var(--accent,#c9a24b); border:1px solid var(--accent,#c9a24b);
+      border-radius:5px; padding:1px 5px; margin-left:5px; white-space:nowrap; }
   .orev-resumo { position:sticky; top:12px; }
   .orev-sub { font-size:12.5px; color:var(--text-3); }
   .orev-vazio { text-align:center; color:var(--text-3); padding:20px 10px; }
@@ -659,6 +689,12 @@ window.msgAcessoNegado = function (nomePagina) {
               <span class="orz-help" title="Nº mínimo de bartenders por convidados, além do cálculo por volume de preparo — garante cobertura mesmo com cardápio leve (muita água/refrigerante).">?</span></label>
               <input type="number" id="orev-piso" min="0" step="1" value="60"></div>
           </div>
+          <div class="orev-campo"><label for="orev-rateio">Ratear operacional por
+            <span class="orz-help" title="Só afeta o quadro &quot;Detalhamento por bebida&quot; — como mão de obra, gelo e apoio se dividem entre as bebidas. Por tempo de preparo, um cocktail carrega mais que uma lata; por unidade, todas carregam igual. O preço total não muda.">?</span></label>
+            <select id="orev-rateio">
+              <option value="tempo">Tempo de preparo</option>
+              <option value="unidade">Unidade</option>
+            </select></div>
 
           <p class="orz-sec">Gelo &amp; equipe de apoio</p>
           <div class="orev-linha2">
@@ -719,6 +755,11 @@ window.msgAcessoNegado = function (nomePagina) {
 
     <p class="orz-sec">Como o preço se forma</p>
     <div id="orev-forma"></div>
+
+    <details style="margin-top:10px">
+      <summary class="orz-sec" style="margin:0;cursor:pointer">Detalhamento por bebida</summary>
+      <div id="orev-bebidas" style="padding-top:4px"></div>
+    </details>
 
     <p class="orz-sec">Equipe</p>
     <div class="orz-chips" id="orev-chips"></div>
@@ -818,9 +859,17 @@ window.msgAcessoNegado = function (nomePagina) {
             <div class="orev-campo"><label for="orme-custo-estacao">Custo por estação de cocktail (R$)</label>
               <input type="number" id="orme-custo-estacao" min="0" step="0.01" value="0" placeholder="a definir"></div>
           </div>
-          <div class="orev-campo"><label for="orme-piso">Piso — convidados por bartender
-            <span class="orz-help" title="Nº mínimo de bartenders por convidados, além do cálculo por volume de preparo.">?</span></label>
-            <input type="number" id="orme-piso" min="0" step="1" value="60"></div>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orme-piso">Piso — convidados por bartender
+              <span class="orz-help" title="Nº mínimo de bartenders por convidados, além do cálculo por volume de preparo.">?</span></label>
+              <input type="number" id="orme-piso" min="0" step="1" value="60"></div>
+            <div class="orev-campo"><label for="orme-rateio">Ratear operacional por
+              <span class="orz-help" title="Só afeta o quadro &quot;Detalhamento por bebida&quot; — como mão de obra, gelo e apoio se dividem entre as bebidas. O preço total não muda.">?</span></label>
+              <select id="orme-rateio">
+                <option value="tempo">Tempo de preparo</option>
+                <option value="unidade">Unidade</option>
+              </select></div>
+          </div>
 
           <p class="orz-sec">Gelo &amp; equipe de apoio</p>
           <div class="orev-linha2">
@@ -875,6 +924,11 @@ window.msgAcessoNegado = function (nomePagina) {
 
     <p class="orz-sec">Como o preço se forma</p>
     <div id="orme-forma"></div>
+
+    <details style="margin-top:10px">
+      <summary class="orz-sec" style="margin:0;cursor:pointer">Detalhamento por bebida</summary>
+      <div id="orme-bebidas" style="padding-top:4px"></div>
+    </details>
 
     <p class="orz-sec">Equipe</p>
     <div class="orz-chips" id="orme-chips"></div>
@@ -962,9 +1016,25 @@ window.msgAcessoNegado = function (nomePagina) {
     var itensSel = p.itensSel;
 
     var unidPorConv = itensSel.reduce(function (s, i) { return s + (i.porConvidado || 0); }, 0);
-    var custoPorConvBase = itensSel.reduce(function (s, i) { return s + (i.porConvidado || 0) * i.custo; }, 0);
+    // "Insumo do contratante" (2026-07-23) — o cliente entrega a bebida e a
+    // casa só opera. Nasceu do briefing do MotoGP (item 8.5: "considerar que
+    // a cachaça e a caipivodka serão entregues pelo contratante"), mas é uma
+    // OPÇÃO por item, não um modo novo: desligada — o padrão — a conta é
+    // byte a byte a de antes. Ligada, o item sai só do custo de INSUMO e
+    // continua contando tempo de bartender, gelo e apoio, que é o que a casa
+    // de fato fornece. Tirar o item do cardápio (única saída antes desta
+    // chave) levava junto esse tempo e subestimava a equipe.
+    var custoPorConvBase = itensSel.reduce(function (s, i) {
+      return s + (i.insumoCliente ? 0 : (i.porConvidado || 0) * i.custo);
+    }, 0);
+    var custoPorConvCliente = itensSel.reduce(function (s, i) {
+      return s + (i.insumoCliente ? (i.porConvidado || 0) * i.custo : 0);
+    }, 0);
     var custoInsumosBase = convidados * custoPorConvBase;
     var custoInsumos = custoInsumosBase * (1 + (p.bufferPct || 0) / 100);
+    // Só pra exibir ("o contratante entrega X em insumo") — nunca entra em
+    // custoServico nem no preço.
+    var custoInsumosCliente = convidados * custoPorConvCliente;
 
     var tempoTotalMin = convidados * itensSel.reduce(function (s, i) {
       var tempo = i.tipo === 'servido' ? p.tempoServidoMin : p.tempoPreparadoMin;
@@ -996,6 +1066,7 @@ window.msgAcessoNegado = function (nomePagina) {
     return {
       convidados: convidados, unidPorConv: unidPorConv,
       custoInsumosBase: custoInsumosBase, custoInsumos: custoInsumos,
+      custoInsumosCliente: custoInsumosCliente,
       bartendersVazao: bartendersVazao, bartendersPiso: bartendersPiso,
       bartenders: mdo.bartenders, turnos: mdo.turnos, horasPorPessoa: mdo.horasPorPessoa,
       custoMaoObra: mdo.custo, custoEstacoesDia: custoEstacoesDia,
@@ -1029,6 +1100,21 @@ window.msgAcessoNegado = function (nomePagina) {
   }
   function esc(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Forma como o cardápio é SALVO (Notion, via Detalhamento do Worker) e
+  // reenviado. Existia triplicada em 3 pontos; virou função única quando a
+  // chave "insumo do contratante" entrou — três cópias divergirem era questão
+  // de tempo (já aconteceu antes com bufferPct/pisoCobertura no Worker).
+  // `insumoCliente` só é emitido quando LIGADO: evento salvo antes desta
+  // versão volta a ler idêntico, e o payload não cresce à toa (o Detalhamento
+  // já teve bug de truncamento por tamanho).
+  function serieCardapio(itens) {
+    return itens.map(function (i) {
+      var o = { nome: i.nome, porConvidado: i.porConvidado || 0 };
+      if (i.insumoCliente) o.insumoCliente = true;
+      return o;
+    });
   }
 
   // --- abas Calculadora / Meus Eventos (Roteiro deixou de ser aba própria em
@@ -1184,17 +1270,37 @@ window.msgAcessoNegado = function (nomePagina) {
         };
         var custo = document.createElement('span'); custo.className = 'custo';
         custo.textContent = semCusto ? 'sem custo cadastrado' : fmtBRL(item.custo) + '/un.';
+        // Chave OPCIONAL "insumo do contratante" — ver comentário em
+        // calculaDia(). Fica visível sempre (pra ser descoberta) mas só
+        // clicável com o item marcado; volta a desligada ao desmarcar, pra
+        // uma remarcação nunca herdar o estado de um evento anterior.
+        var cli = document.createElement('button');
+        cli.type = 'button'; cli.className = 'orev-cli'; cli.disabled = true;
+        cli.textContent = 'insumo do cliente';
+        cli.title = 'O contratante entrega esta bebida. Sai do custo de insumo; '
+          + 'tempo de bartender, gelo e equipe continuam contando.';
+        cli.onclick = function (e) {
+          // A linha inteira é um <label> — sem isto o clique no botão
+          // marcaria/desmarcaria o checkbox junto.
+          e.preventDefault(); e.stopPropagation();
+          if (!selecao[item.nome]) return;
+          selecao[item.nome].insumoCliente = !selecao[item.nome].insumoCliente;
+          cli.classList.toggle('on', !!selecao[item.nome].insumoCliente);
+          onChange();
+        };
         chk.onchange = function () {
           if (chk.checked) {
             selecao[item.nome] = Object.assign({}, item, { porConvidado: Math.max(0, parseFloat(un.value) || 0), manual: false });
-            un.disabled = false;
+            un.disabled = false; cli.disabled = false;
           } else {
             delete selecao[item.nome];
             un.disabled = true; un.classList.remove('manual');
+            cli.disabled = true; cli.classList.remove('on');
           }
           onChange();
         };
-        linha.appendChild(chk); linha.appendChild(nome); linha.appendChild(un); linha.appendChild(custo);
+        linha.appendChild(chk); linha.appendChild(nome); linha.appendChild(cli);
+        linha.appendChild(un); linha.appendChild(custo);
         itensWrap.appendChild(linha);
       });
       bloco.appendChild(cab); bloco.appendChild(itensWrap);
@@ -1282,10 +1388,23 @@ window.msgAcessoNegado = function (nomePagina) {
     forma.innerHTML = '';
     var detIns = ctx.itensSel.map(function (i) {
       var sub = ctx.convidados * (i.porConvidado || 0) * i.custo;
-      return esc(i.nome) + ' · ' + (i.porConvidado || 0) + ' un./convidado × ' + fmtBRL(i.custo) + ' = ' + fmtBRL(sub);
+      var linha = esc(i.nome) + ' · ' + (i.porConvidado || 0) + ' un./convidado × ' + fmtBRL(i.custo);
+      // Item com a chave do contratante ligada aparece com o custo que a casa
+      // DEIXA de ter — some do total, mas fica visível pra ninguém achar que
+      // o item foi esquecido no cardápio.
+      // Sempre fmtBRL(0), nunca o valor zerado escrito à mão como texto:
+      // _checa_publica aborta a build se achar R$ literal numa página
+      // pública que não seja de cardápio, e esta não é.
+      return i.insumoCliente
+        ? linha + ' = <b>' + fmtBRL(0) + '</b> · contratante entrega (' + fmtBRL(sub) + ' fora do custo)'
+        : linha + ' = ' + fmtBRL(sub);
     }).join('<br>');
     if (ctx.bufferPct > 0 && ctx.itensSel.length) {
       detIns += '<br>+ ' + ctx.bufferPct + '% de perda = ' + fmtBRL(ctx.custoInsumosTotal - ctx.custoInsumosBaseTotal);
+    }
+    if (ctx.custoInsumosClienteTotal > 0) {
+      detIns += '<br><b>' + fmtBRL(ctx.custoInsumosClienteTotal) + '</b> em insumo é entregue pelo contratante — '
+        + 'mão de obra, gelo e apoio desses itens continuam na conta.';
     }
     forma.appendChild(linhaCusto(prefix, 'insumos', 'Insumos', ctx.custoInsumosTotal, detIns || 'Nenhum item marcado.'));
 
@@ -1360,6 +1479,8 @@ window.msgAcessoNegado = function (nomePagina) {
       if (!ctx.itensSel.length) chipR('cardápio ainda não marcado');
     }
 
+    montaQuadroBebidas(prefix, ctx, valorFinal);
+
     var wpp = document.getElementById(prefix + '-wpp');
     var texto = 'Orçamento de evento — ' + ctx.convidados + ' convidado(s)'
       + (ctx.dias.length > 1 ? ', ' + ctx.dias.length + ' dias' : '') + '\n'
@@ -1368,6 +1489,95 @@ window.msgAcessoNegado = function (nomePagina) {
     wpp.href = 'https://wa.me/?text=' + encodeURIComponent(texto);
 
     return valorFinal;
+  }
+
+  // Quadro "por bebida" — nasceu de exigência literal de briefing de cliente
+  // (MotoGP, itens 8.4 e 8.5: "apresentar SEPARADAMENTE o custo ... valor
+  // unitário, volume estimado, custos operacionais"). NÃO muda número nenhum:
+  // é uma decomposição do MESMO preço que a fórmula já produziu — a soma dos
+  // subtotais fecha com o preço ao cliente, e isso é o teste de que está certo.
+  //
+  // O rateio do operacional é uma OPÇÃO ('tempo' | 'unidade'), não uma regra
+  // imposta: por tempo de preparo (padrão) um cocktail carrega mais operação
+  // que uma lata, o que é coerente com a mão de obra que a fórmula já pesa por
+  // tipo; por unidade, todas as bebidas carregam igual. Qual das duas usar é
+  // decisão comercial de cada evento, então fica no controle de quem orça.
+  function montaQuadroBebidas(prefix, ctx, valorFinal) {
+    var alvo = document.getElementById(prefix + '-bebidas');
+    if (!alvo) return;
+    alvo.innerHTML = '';
+    var itens = (ctx.itensSel || []).filter(function (i) { return (i.porConvidado || 0) > 0; });
+    if (!itens.length) {
+      alvo.innerHTML = '<p class="orev-sub" style="margin:0">Marque itens no cardápio para ver o quadro.</p>';
+      return;
+    }
+    var selRateio = document.getElementById(prefix + '-rateio');
+    var modo = (selRateio && selRateio.value) || 'tempo';
+    var prem = ctx.premissas || PREMISSAS_DEFAULT;
+    var markup = ctx.markup || 1;
+    var linhas = itens.map(function (i) {
+      var un = ctx.convidados * (i.porConvidado || 0);
+      var min = i.tipo === 'servido' ? prem.tempoServidoMin : prem.tempoPreparadoMin;
+      return {
+        nome: i.nome, cliente: !!i.insumoCliente, un: un,
+        ml: volumeMlDoNome(i.nome) * un,
+        insumo: i.insumoCliente ? 0 : un * i.custo * (1 + (ctx.bufferPct || 0) / 100),
+        peso: modo === 'unidade' ? un : un * min,
+      };
+    });
+    var pesoTotal = linhas.reduce(function (s, l) { return s + l.peso; }, 0);
+    // Operacional = o que leva markup junto com o insumo (mão de obra, gelo,
+    // apoio). Estações e deslocamento são REPASSE a custo — rateados também
+    // (senão a soma não fecharia com o preço), mas sem markup em cima.
+    var operTotal = (ctx.custoMaoObraTotal || 0) + (ctx.custoGeloTotal || 0) + (ctx.custoApoioTotal || 0);
+    var repasseTotal = (ctx.custoEstacoesTotal || 0) + (ctx.deslocamento || 0);
+    // Preço ajustado à mão não pode quebrar o fechamento: o quadro inteiro é
+    // escalado na mesma proporção do valor que está sendo exibido.
+    var fator = ctx.valorCalculado > 0 ? (valorFinal / ctx.valorCalculado) : 1;
+
+    var tab = document.createElement('table'); tab.className = 'orz-bebida';
+    tab.innerHTML = '<thead><tr><th>Bebida</th><th>Un.</th><th>Volume</th>'
+      + '<th>Insumo/un</th><th>Oper./un</th><th>Valor/un</th><th>Subtotal</th></tr></thead>';
+    var tb = document.createElement('tbody');
+    var somaUn = 0, somaMl = 0, somaSub = 0;
+    linhas.forEach(function (l) {
+      var quota = pesoTotal > 0 ? l.peso / pesoTotal : 0;
+      var oper = quota * operTotal;
+      var sub = ((l.insumo + oper) * markup + quota * repasseTotal) * fator;
+      somaUn += l.un; somaMl += l.ml; somaSub += sub;
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="nm">' + esc(l.nome)
+        + (l.cliente ? '<span class="orz-bebida-cli">contratante</span>' : '') + '</td>'
+        + '<td>' + Math.round(l.un).toLocaleString('pt-BR') + '</td>'
+        + '<td>' + (l.ml > 0 ? (l.ml / 1000).toFixed(0) + ' L' : '—') + '</td>'
+        + '<td>' + (l.cliente ? '—' : fmtBRL(l.un > 0 ? l.insumo / l.un : 0)) + '</td>'
+        + '<td>' + fmtBRL(l.un > 0 ? oper / l.un : 0) + '</td>'
+        + '<td>' + fmtBRL(l.un > 0 ? sub / l.un : 0) + '</td>'
+        + '<td>' + fmtBRL(sub) + '</td>';
+      tb.appendChild(tr);
+    });
+    var trT = document.createElement('tr'); trT.className = 'tot';
+    trT.innerHTML = '<td>Total</td><td>' + Math.round(somaUn).toLocaleString('pt-BR') + '</td>'
+      + '<td>' + (somaMl > 0 ? (somaMl / 1000).toFixed(0) + ' L' : '—') + '</td>'
+      + '<td></td><td></td><td></td><td>' + fmtBRL(somaSub) + '</td>';
+    tb.appendChild(trT);
+    tab.appendChild(tb);
+    alvo.appendChild(tab);
+
+    var nota = document.createElement('p');
+    nota.className = 'orz-mkt'; nota.style.marginTop = '8px';
+    var partes = ['Operacional rateado por <b>' + (modo === 'unidade' ? 'unidade' : 'tempo de preparo') + '</b>'
+      + ' — mão de obra, gelo e equipe de apoio.'];
+    if (repasseTotal > 0) partes.push('Estações e deslocamento entram rateados a custo, sem markup.');
+    // Cocktail não tem volume no nome (a ficha não viaja no payload), então o
+    // volume fica "—" em vez de ser estimado — o cliente pediu volume, não um
+    // palpite de volume.
+    if (linhas.some(function (l) { return l.ml <= 0; })) {
+      partes.push('Volume em branco: o item não declara o tamanho da porção no nome.');
+    }
+    if (Math.abs(fator - 1) > 0.0001) partes.push('Ajustado ao valor definido à mão.');
+    nota.innerHTML = partes.join(' ');
+    alvo.appendChild(nota);
   }
 
   // Guia de consumo (didática, revisão 2026-07-23 — antes era 1 referência
@@ -1511,7 +1721,9 @@ window.msgAcessoNegado = function (nomePagina) {
       custoInsumosTotal: d.custoInsumos, custoInsumosBaseTotal: d.custoInsumosBase,
       custoMaoObraTotal: d.custoMaoObra, custoEstacoesTotal: 0, custoGeloTotal: d.custoGelo,
       custoApoioTotal: d.custoApoio, deslocamento: deslocamento,
+      custoInsumosClienteTotal: d.custoInsumosCliente,
       custoTotal: custoTotal, valorCalculado: valorCalculado,
+      markup: markup, premissas: premissas,
     });
     atualizaSugestaoConsumo('orev', convidados, duracao, itensSel, p);
     atualizaAvisos('orev', convidados, itensSel, d);
@@ -1524,7 +1736,8 @@ window.msgAcessoNegado = function (nomePagina) {
   ['orev-convidados', 'orev-duracao', 'orev-pre', 'orev-pos', 'orev-coordenadores', 'orev-desloc', 'orev-markup',
     'orev-buffer', 'orev-piso', 'orev-taxa-hora', 'orev-min-preparado', 'orev-min-servido',
     'orev-taxa-cocktail',
-    'orev-gelo-kg', 'orev-gelo-preco', 'orev-diaria-barback', 'orev-diaria-coord'].forEach(function (id) {
+    'orev-gelo-kg', 'orev-gelo-preco', 'orev-diaria-barback', 'orev-diaria-coord',
+    'orev-rateio'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calcula);
   });
 
@@ -1541,9 +1754,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var coordenadores = num('orev-coordenadores');
     var deslocamento = num('orev-desloc');
     var markup = Math.max(1, num('orev-markup'));
-    var itensCalc = Object.keys(selecionados).map(function (k) {
-      return { nome: selecionados[k].nome, porConvidado: selecionados[k].porConvidado || 0 };
-    });
+    var itensCalc = serieCardapio(Object.keys(selecionados).map(function (k) { return selecionados[k]; }));
 
     document.getElementById('orev-tab-btn-eventos').click();
     // Abre o formulário de "Meus Eventos" (fica escondido atrás da galeria por
@@ -1677,7 +1888,9 @@ window.msgAcessoNegado = function (nomePagina) {
       custoInsumosTotal: custoInsumosTotal, custoInsumosBaseTotal: custoInsumosBaseTotal,
       custoMaoObraTotal: custoMaoObraTotal, custoEstacoesTotal: custoEstacoesTotal,
       custoGeloTotal: custoGeloTotal, custoApoioTotal: custoApoioTotal, deslocamento: deslocamento,
+      custoInsumosClienteTotal: dias.reduce(function (s, d) { return s + (d.custoInsumosCliente || 0); }, 0),
       custoTotal: custoTotal, valorCalculado: valorCalculado,
+      markup: markup, premissas: premissas,
     });
     atualizaSugestaoConsumo('orme', totalConvidados, dias.length ? dias[0].duracaoHoras : 0, itensSel, p);
     atualizaAvisos('orme', totalConvidados, itensSel, dias[0] || {});
@@ -1694,7 +1907,7 @@ window.msgAcessoNegado = function (nomePagina) {
   ['orme-desloc', 'orme-custo-estacao', 'orme-markup', 'orme-buffer', 'orme-piso', 'orme-taxa-hora',
     'orme-min-preparado', 'orme-min-servido', 'orme-taxa-cocktail',
     'orme-gelo-kg', 'orme-gelo-preco',
-    'orme-diaria-barback', 'orme-diaria-coord'].forEach(function (id) {
+    'orme-diaria-barback', 'orme-diaria-coord', 'orme-rateio'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calculaEvento);
   });
 
@@ -1734,8 +1947,14 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     var mapa = {};
     (itensSalvos || []).forEach(function (it) {
-      if (typeof it === 'string') mapa[it] = 1;
-      else if (it && it.nome) mapa[it.nome] = (it.porConvidado != null ? it.porConvidado : 1);
+      // Formato legado: só o nome (string). Depois: {nome, porConvidado}.
+      // Desde 2026-07-23 pode vir também insumoCliente — ausente = false, que
+      // é como todo evento salvo antes desta versão volta a abrir.
+      if (typeof it === 'string') mapa[it] = { porConvidado: 1, insumoCliente: false };
+      else if (it && it.nome) mapa[it.nome] = {
+        porConvidado: (it.porConvidado != null ? it.porConvidado : 1),
+        insumoCliente: !!it.insumoCliente,
+      };
     });
     for (var j = 0; j < itens.length; j++) {
       var nomeEl = itens[j].querySelector('.nome');
@@ -1744,9 +1963,15 @@ window.msgAcessoNegado = function (nomePagina) {
       var chk = itens[j].querySelector('input[type=checkbox]');
       var un = itens[j].querySelector('.orev-un');
       if (!chk || chk.disabled) continue;
-      un.value = mapa[nome];
+      un.value = mapa[nome].porConvidado;
       chk.checked = true;
+      // O change monta a entrada em `selecao` — a chave do contratante só
+      // pode ser restaurada DEPOIS dele.
       chk.dispatchEvent(new Event('change', { bubbles: true }));
+      if (mapa[nome].insumoCliente) {
+        var cliBtn = itens[j].querySelector('.orev-cli');
+        if (cliBtn && !cliBtn.disabled) cliBtn.click();
+      }
     }
   }
 
@@ -1883,7 +2108,7 @@ window.msgAcessoNegado = function (nomePagina) {
       method: editando ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
       body: JSON.stringify({
         nome: nomeEvento, casa: selCasa.value, dias: calc.dias,
-        cardapio: calc.itensSel.map(function (i) { return { nome: i.nome, porConvidado: i.porConvidado || 0 }; }),
+        cardapio: serieCardapio(calc.itensSel),
         deslocamento: calc.deslocamento, custoEstacao: calc.custoEstacao, markup: calc.markup,
         bufferPct: calc.bufferPct, pisoCobertura: calc.pisoCobertura, overrideValor: overrides.orme,
         kgGeloConv: calc.premissas.kgGeloConv, precoGeloKg: calc.premissas.precoGeloKg,
@@ -2002,7 +2227,13 @@ window.msgAcessoNegado = function (nomePagina) {
     var detIns = (det.cardapio || []).map(function (it) {
       var c = custoDoItem(it.nome);
       var sub = convidados * (it.porConvidado || 0) * c;
-      return esc(it.nome) + ' · ' + (it.porConvidado || 0) + ' un./convidado × ' + fmtBRL(c) + ' = ' + fmtBRL(sub);
+      var linha = esc(it.nome) + ' · ' + (it.porConvidado || 0) + ' un./convidado × ' + fmtBRL(c);
+      // O TOTAL de insumos aqui já vem certo (soma de dia.custoInsumos, que
+      // calculaDia gravou sem os itens do contratante) — só a linha precisava
+      // dizer por que o item aparece sem somar.
+      return it.insumoCliente
+        ? linha + ' = <b>' + fmtBRL(0) + '</b> · contratante entrega (' + fmtBRL(sub) + ' fora do custo)'
+        : linha + ' = ' + fmtBRL(sub);
     }).join('<br>');
     if (bufferPct > 0 && (det.cardapio || []).length) detIns += '<br>+ ' + bufferPct + '% de perda = ' + fmtBRL(insumos - insumosBase);
     forma.appendChild(linhaCustoLocal('Insumos', insumos, detIns || 'Nenhum item marcado.'));
@@ -2193,9 +2424,10 @@ window.msgAcessoNegado = function (nomePagina) {
       itens.forEach(function (it) {
         var c = custoDoItem(it.nome);
         var tr = document.createElement('tr');
-        tr.innerHTML = '<td>' + esc(it.nome) + '</td>'
+        tr.innerHTML = '<td>' + esc(it.nome)
+          + (it.insumoCliente ? '<span class="orz-bebida-cli">contratante</span>' : '') + '</td>'
           + '<td>' + (it.porConvidado != null ? it.porConvidado : 1) + '</td>'
-          + '<td>' + fmtBRL(c) + '</td>';
+          + '<td>' + (it.insumoCliente ? '—' : fmtBRL(c)) + '</td>';
         corpoC.appendChild(tr);
       });
       tabC.appendChild(corpoC); container.appendChild(tabC);
@@ -2512,7 +2744,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var casa = CASA_NOME[prefix === 'orme' ? document.getElementById('orme-casa').value : casaCalc] || '';
     var valorFinal = overrides[prefix] != null ? overrides[prefix] : ctx.valorCalculado;
     return montaDados(nome, casa, ctx.convidados, ctx.dias, {
-      markup: markup, cardapio: ctx.itensSel.map(function (i) { return { nome: i.nome, porConvidado: i.porConvidado }; }),
+      markup: markup, cardapio: serieCardapio(ctx.itensSel),
       insumos: ctx.custoInsumosTotal, mdo: ctx.custoMaoObraTotal, gelo: ctx.custoGeloTotal, apoio: ctx.custoApoioTotal,
       estacoes: ctx.custoEstacoesTotal, deslocamento: ctx.deslocamento,
       custoTotal: ctx.custoTotal, valorFinal: valorFinal, bufferPct: ctx.bufferPct,
