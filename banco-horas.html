@@ -935,8 +935,8 @@ window.msgAcessoNegado = function (nomePagina) {
       corpoLista.innerHTML = '';
       var comAlerta = 0, semDados = 0;
       // Totais do grupo (respeitam o filtro de casa/busca, igual aos KPIs de
-      // contagem que já existiam). custoTemAlgum evita mostrar "R$ 0,00" como
-      // se fosse zero real quando na verdade é salário não configurado.
+      // contagem que já existiam). custoTemAlgum evita mostrar um valor zerado
+      // como se fosse zero real quando na verdade é salário não configurado.
       var custoTotal = 0, custoTemAlgum = false, saldoLiquido = 0, comSaldo = 0;
       visiveis.forEach(function (p) {
         var alerta = alertaDe(p.saldo_minutos);
@@ -987,7 +987,7 @@ window.msgAcessoNegado = function (nomePagina) {
       document.getElementById('bh-kpi-alerta').textContent = comAlerta;
       document.getElementById('bh-kpi-semdados').textContent = semDados;
       // custo: se há gente a favor mas nenhum custo pôde ser calculado
-      // (salário não configurado), "—" em vez de um R$ 0,00 enganoso.
+      // (salário não configurado), "—" em vez de um valor zerado enganoso.
       var temFavor = visiveis.some(function (p) { return p.saldo_minutos != null && p.saldo_minutos > 0; });
       document.getElementById('bh-kpi-custo').textContent = (temFavor && !custoTemAlgum) ? '—' : fmtRS(custoTotal);
       document.getElementById('bh-kpi-liquido').textContent = comSaldo === 0 ? '—' : fmtSaldoAgg(saldoLiquido);

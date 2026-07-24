@@ -430,6 +430,23 @@ window.msgAcessoNegado = function (nomePagina) {
   .tn-chips-add button { padding:0 16px; border-radius:10px; border:1px solid var(--border); background:none;
                           color:var(--text); font-size:14px; cursor:pointer; white-space:nowrap; }
   .tn-chips-lista { display:flex; gap:6px; flex-wrap:wrap; }
+  /* Caderno de hoje — histórico cronológico do que foi registrado neste
+     turno (local, este aparelho), pra ler como um caderno de bar. */
+  .tn-cad { margin:0 0 16px; }
+  .tn-cad-tit { font-size:13px; font-weight:600; color:var(--text-2); margin:0 0 8px;
+                 display:flex; align-items:center; gap:6px; }
+  .tn-cad-vazio { font-size:13px; color:var(--text-3); margin:0; }
+  .tn-cad-item { border-left:2px solid var(--border); padding:0 0 12px 12px; margin-left:4px; position:relative; }
+  .tn-cad-item:last-child { padding-bottom:0; }
+  .tn-cad-cab { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+  .tn-cad-hora { font-size:11px; color:var(--text-3); font-variant-numeric:tabular-nums; }
+  .tn-cad-chip { font-size:11px; font-weight:600; border-radius:999px; padding:2px 9px; }
+  .tn-cad-chip.quebra { color:#e79a9a; background:#3a1e1e; }
+  .tn-cad-chip.falta { color:#e0c07a; background:#3a2f14; }
+  .tn-cad-chip.decisao { color:#a9c7f0; background:#1e2c40; }
+  .tn-cad-chip.nota { color:var(--text-2); background:var(--card2, #2a2419); border:1px solid var(--border); }
+  .tn-cad-linha { font-size:13px; color:var(--text); margin:2px 0 0; }
+  .tn-cad-nota-k { color:var(--text-3); }
   /* Abertura (PLANO_TURNO_V2.md §3.1) — "ficou de ontem" antes de pedir
      qualquer coisa. É a única parte em que o chefe RECEBE. */
   .tn-abas { display:flex; gap:8px; margin-bottom:16px; }
@@ -774,6 +791,61 @@ window.msgAcessoNegado = function (nomePagina) {
       });
   }
 
+  // --- Caderno de hoje ----------------------------------------------------
+  // Histórico cronológico do turno, gravado NESTE aparelho a cada envio
+  // (mesmo offline — escreve na hora, como um caderno de bar). Complementa a
+  // Central: aqui ficam os registros do turno com hora e as anotações livres;
+  // o que virou demanda continua indo pra Central. Sem rota nova no Worker.
+  var LS_CADERNO = 'turno_caderno';
+  function lerCaderno() { try { return JSON.parse(localStorage.getItem(LS_CADERNO) || '[]'); } catch (e) { return []; } }
+  function diaHojeCad() { return new Date().toISOString().slice(0, 10); }
+  function registraCaderno(casa, body) {
+    var notas = [];
+    CAMPOS.concat(CAMPOS_APOS_QUEBRA).forEach(function (c) {
+      var v = (body[c.k] || '').trim();
+      if (v) notas.push({ k: c.l, v: v });
+    });
+    var vazio = !(body.itens_falta || []).length && !(body.itens_quebra || []).length &&
+                !(body.itens_decisao || []).length && !notas.length && !(body.responsavel || '').trim();
+    if (vazio) return;
+    var lista = lerCaderno();
+    lista.push({
+      casa: casa, dia: (body.data || diaHojeCad()), ts: new Date().toISOString(),
+      turno: body.turno || '', responsavel: (body.responsavel || '').trim(),
+      faltas: (body.itens_falta || []).slice(), quebras: (body.itens_quebra || []).slice(),
+      decisao: (body.itens_decisao || []).slice(), notas: notas,
+    });
+    if (lista.length > 120) lista = lista.slice(lista.length - 120); // não vira log infinito
+    try { localStorage.setItem(LS_CADERNO, JSON.stringify(lista)); } catch (e) {}
+  }
+  function renderCaderno() {
+    var alvo = document.getElementById('tn-caderno');
+    if (!alvo || !casaSel) return;
+    var hoje = diaHojeCad();
+    var itens = lerCaderno().filter(function (e) { return e.casa === casaSel && e.dia === hoje; })
+      .sort(function (a, b) { return a.ts < b.ts ? 1 : -1; }); // mais recente no topo
+    var h = '<div class="tn-cad-tit"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg> Caderno de hoje</div>';
+    if (!itens.length) {
+      alvo.innerHTML = h + '<p class="tn-cad-vazio">Ainda nada registrado neste turno. O que você enviar aparece aqui, com a hora.</p>';
+      return;
+    }
+    itens.forEach(function (e) {
+      h += '<div class="tn-cad-item"><div class="tn-cad-cab"><span class="tn-cad-hora">' + esc(e.ts.slice(11, 16)) + '</span>';
+      if ((e.quebras || []).length) h += '<span class="tn-cad-chip quebra">quebrou</span>';
+      if ((e.faltas || []).length) h += '<span class="tn-cad-chip falta">faltou</span>';
+      if ((e.decisao || []).length) h += '<span class="tn-cad-chip decisao">decisão</span>';
+      if ((e.notas || []).length) h += '<span class="tn-cad-chip nota">nota</span>';
+      if (e.turno) h += '<span class="tn-cad-hora">' + esc(e.turno) + (e.responsavel ? ' · ' + esc(e.responsavel) : '') + '</span>';
+      h += '</div>';
+      (e.quebras || []).forEach(function (x) { h += '<p class="tn-cad-linha">' + esc(x) + '</p>'; });
+      (e.faltas || []).forEach(function (x) { h += '<p class="tn-cad-linha">' + esc(x) + '</p>'; });
+      (e.decisao || []).forEach(function (x) { h += '<p class="tn-cad-linha">' + esc(x) + '</p>'; });
+      (e.notas || []).forEach(function (n) { h += '<p class="tn-cad-linha"><span class="tn-cad-nota-k">' + esc(n.k) + ': </span>' + esc(n.v) + '</p>'; });
+      h += '</div>';
+    });
+    alvo.innerHTML = h;
+  }
+
   function mostraVista(v) {
     var ab = document.getElementById('tn-abertura');
     var fe = document.getElementById('tn-form');
@@ -783,6 +855,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var botoes = document.querySelectorAll('.tn-aba');
     Array.prototype.forEach.call(botoes, function (b) { b.classList.toggle('on', b.dataset.v === v); });
     if (v === 'abertura') carregaAbertura();
+    else renderCaderno();
   }
 
   function desenha() {
@@ -808,6 +881,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
     var html = '<h2>Relatório — ' + esc(nomeCasa.toUpperCase()) + '</h2>' +
       '<p class="sub" id="tn-trocar" style="cursor:pointer;text-decoration:underline;margin-top:-6px">trocar de casa</p>';
+    html += '<div id="tn-caderno" class="tn-cad"></div>';
     html += '<div class="tn-campo"><label>Responsável</label><input id="tn-responsavel" type="text" autocomplete="name"></div>';
     html += '<div class="tn-campo"><label>Data</label><input id="tn-data" type="date" value="' + hoje + '"></div>';
     html += '<div class="tn-campo"><label>Turno</label><div class="tn-pills" id="tn-turno-pills">' +
@@ -831,6 +905,7 @@ window.msgAcessoNegado = function (nomePagina) {
     html += '<button type="submit" class="tn-enviar" id="tn-enviar">Enviar relatório</button>';
     html += '<p class="sub" id="tn-envio-msg" style="margin-top:10px"></p>';
     elForm.innerHTML = html;
+    renderCaderno();
 
     // Seletor Abertura/Fechamento acima dos dois painéis. Abre na ABERTURA de
     // propósito: é a parte em que o chefe recebe antes de dar — o motivo de
@@ -907,6 +982,11 @@ window.msgAcessoNegado = function (nomePagina) {
       CAMPOS.forEach(function (c) { body[c.k] = document.getElementById('tn-' + c.k).value; });
       CAMPOS_APOS_QUEBRA.forEach(function (c) { body[c.k] = document.getElementById('tn-' + c.k).value; });
       body.responsavel = document.getElementById('tn-responsavel').value;
+
+      // Caderno de hoje: escreve na hora (mesmo offline), antes de tentar a
+      // rede — o registro não some da tela ao enviar, vira histórico do turno.
+      registraCaderno(casaSel, body);
+      renderCaderno();
 
       // Enfileira primeiro (durável) e drena — se a rede falhar, o relatório
       // NÃO se perde: fica na fila e sobe sozinho quando a conexão voltar.

@@ -612,6 +612,13 @@ window.msgAcessoNegado = function (nomePagina) {
     var iQtd = document.createElement('input'); iQtd.type = 'number'; iQtd.min = 1; iQtd.value = it.quantidade || 1;
     var iResp = document.createElement('input'); iResp.value = it.responsavel || ''; iResp.placeholder = 'Responsável';
     var sCat = document.createElement('select');
+    if (!it.categoria) {
+      // A captura do WhatsApp não infere categoria (nunca chuta) — sem isto
+      // o <select> mostraria a 1ª opção como se already escolhida, e
+      // Confirmar sem tocar no campo salvaria uma categoria errada calada.
+      var oVazia = document.createElement('option'); oVazia.value = ''; oVazia.textContent = '— escolher categoria —';
+      sCat.appendChild(oVazia);
+    }
     CATEGORIAS.forEach(function(c){ var o = document.createElement('option'); o.value = c.label; o.textContent = c.label; if (c.label === it.categoria) o.selected = true; sCat.appendChild(o); });
     var iMotivo = document.createElement('input'); iMotivo.className = 'full'; iMotivo.value = it.motivo || ''; iMotivo.placeholder = 'Motivo';
     editar.appendChild(iItem); editar.appendChild(iQtd); editar.appendChild(iResp); editar.appendChild(sCat); editar.appendChild(iMotivo);
