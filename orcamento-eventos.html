@@ -710,6 +710,9 @@ window.msgAcessoNegado = function (nomePagina) {
               <span class="orz-help" title="Nº mínimo de bartenders por convidados, além do cálculo por volume de preparo — garante cobertura mesmo com cardápio leve (muita água/refrigerante).">?</span></label>
               <input type="number" id="orev-piso" min="0" step="1" value="60"></div>
           </div>
+          <div class="orev-campo"><label for="orev-meta-margem">Meta de margem (%) — alerta
+            <span class="orz-help" title="Opcional. Se a margem do evento cair abaixo desta meta, aparece um alerta no resumo. Vazio ou 0 = sem alerta. Fica salvo neste aparelho e vale pras duas abas.">?</span></label>
+            <input type="number" id="orev-meta-margem" min="0" max="100" step="1" placeholder="sem meta"></div>
           <div class="orev-campo"><label for="orev-rateio">Ratear operacional por
             <span class="orz-help" title="Só afeta o quadro &quot;Detalhamento por bebida&quot; — como mão de obra, gelo e apoio se dividem entre as bebidas. Por tempo de preparo, um cocktail carrega mais que uma lata; por unidade, todas carregam igual. O preço total não muda.">?</span></label>
             <select id="orev-rateio">
@@ -925,6 +928,11 @@ window.msgAcessoNegado = function (nomePagina) {
             <div class="orev-campo"><label for="orme-piso">Piso — convidados por bartender
               <span class="orz-help" title="Nº mínimo de bartenders por convidados, além do cálculo por volume de preparo.">?</span></label>
               <input type="number" id="orme-piso" min="0" step="1" value="60"></div>
+            <div class="orev-campo"><label for="orme-meta-margem">Meta de margem (%) — alerta
+              <span class="orz-help" title="Opcional. Se a margem do evento cair abaixo desta meta, aparece um alerta no resumo. Vazio ou 0 = sem alerta. Fica salvo neste aparelho e vale pras duas abas.">?</span></label>
+              <input type="number" id="orme-meta-margem" min="0" max="100" step="1" placeholder="sem meta"></div>
+          </div>
+          <div class="orev-linha2">
             <div class="orev-campo"><label for="orme-rateio">Ratear operacional por
               <span class="orz-help" title="Só afeta o quadro &quot;Detalhamento por bebida&quot; — como mão de obra, gelo e apoio se dividem entre as bebidas. O preço total não muda.">?</span></label>
               <select id="orme-rateio">
@@ -1796,28 +1804,71 @@ window.msgAcessoNegado = function (nomePagina) {
   // Avisos de sanidade (didática, 2026-07-22): sinaliza situações que quase
   // sempre são erro de preenchimento, não decisão consciente — nunca bloqueia
   // salvar, só avisa.
+  // Meta de margem (2026-07-24) — preferência de CASA, não do evento: mora em
+  // localStorage (mesmo aparelho), vale pras duas abas, não vai pro Notion nem
+  // pro Worker (é só um limiar de alerta, não muda número nenhum). Vazio/0 =
+  // desligado (opt-in) — sem meta a página se comporta byte a byte como antes.
+  var META_MARGEM_KEY = 'orev_meta_margem';
+  function metaMargem() {
+    var v = parseFloat(localStorage.getItem(META_MARGEM_KEY) || '');
+    return (Number.isFinite(v) && v > 0) ? Math.min(100, v) : 0;
+  }
+  function ligaMetaMargem(recalcs) {
+    var salvo = localStorage.getItem(META_MARGEM_KEY) || '';
+    ['orev', 'orme'].forEach(function (p) {
+      var el = document.getElementById(p + '-meta-margem');
+      if (!el) return;
+      el.value = salvo;
+      el.addEventListener('input', function () {
+        var v = parseFloat(el.value);
+        if (Number.isFinite(v) && v > 0) localStorage.setItem(META_MARGEM_KEY, String(v));
+        else localStorage.removeItem(META_MARGEM_KEY);
+        // Espelha no campo da outra aba pra não divergirem.
+        ['orev', 'orme'].forEach(function (q) {
+          if (q === p) return;
+          var outro = document.getElementById(q + '-meta-margem');
+          if (outro) outro.value = el.value;
+        });
+        recalcs.forEach(function (fn) { fn(); });
+      });
+    });
+  }
+
   function atualizaAvisos(prefix, convidados, itensSel, diaRef) {
     var el = document.getElementById(prefix + '-avisos');
     if (!el) return;
     var avisos = [];
+    function avisa(txt, cor) { avisos.push({ txt: txt, cor: cor || 'var(--urg-urgente, #e24b4a)' }); }
     if (convidados > 0 && !itensSel.length) {
-      avisos.push('Convidados definidos mas nenhum item do cardápio marcado — o custo de insumo vai ficar zerado.');
+      avisa('Convidados definidos mas nenhum item do cardápio marcado — o custo de insumo vai ficar zerado.');
     }
     if (convidados > 0 && itensSel.length && (diaRef.bartenders || 0) === 0) {
-      avisos.push('Nenhum bartender alocado — confira se algum item tem unidades/convidado > 0 e se o piso de cobertura não está zerado.');
+      avisa('Nenhum bartender alocado — confira se algum item tem unidades/convidado > 0 e se o piso de cobertura não está zerado.');
     }
     var calc = ultimoCalculo[prefix];
     if (calc) {
       var vf = overrides[prefix] != null ? overrides[prefix] : calc.valorCalculado;
       if (vf > 0 && vf < calc.custoTotal) {
-        avisos.push('Prejuízo: o custo total (' + fmtBRL(calc.custoTotal) + ') é maior que o valor a cobrar (' + fmtBRL(vf) + ').');
+        avisa('Prejuízo: o custo total (' + fmtBRL(calc.custoTotal) + ') é maior que o valor a cobrar (' + fmtBRL(vf) + ').');
+      } else {
+        // Abaixo da meta é AVISO (âmbar), não erro (vermelho) — o evento pode
+        // dar lucro e ainda ficar abaixo da política da casa. Só quando há
+        // meta definida e o preço não é prejuízo (esse já tem alerta próprio).
+        var meta = metaMargem();
+        if (meta > 0 && vf > 0) {
+          var margem = ((vf - calc.custoTotal) / vf) * 100;
+          if (margem < meta) {
+            avisa('Abaixo da meta: margem de ' + margem.toFixed(0) + '% (meta da casa: ' + meta.toFixed(0) + '%).',
+              'var(--urg-hoje, #d99a2b)');
+          }
+        }
       }
     }
     el.innerHTML = '';
     if (!avisos.length) return;
-    avisos.forEach(function (txt) {
-      var p = document.createElement('p'); p.className = 'orz-override-msg'; p.style.color = 'var(--urg-urgente, #e24b4a)';
-      p.textContent = txt;
+    avisos.forEach(function (a) {
+      var p = document.createElement('p'); p.className = 'orz-override-msg'; p.style.color = a.cor;
+      p.textContent = a.txt;
       el.appendChild(p);
     });
   }
@@ -2097,6 +2148,9 @@ window.msgAcessoNegado = function (nomePagina) {
   ligaBusca('orme-busca', 'orme-cardapio');
   ligaModo('orme', calculaEvento);
   ligaEstrutura('orme', calculaEvento);
+  // Meta de margem — restaura do localStorage e re-avalia os avisos das duas
+  // abas quando muda (o próprio campo dispara os recálculos).
+  ligaMetaMargem([calcula, calculaEvento]);
 
   ['orme-desloc', 'orme-custo-estacao', 'orme-markup', 'orme-buffer', 'orme-piso', 'orme-taxa-hora',
     'orme-min-preparado', 'orme-min-servido', 'orme-taxa-cocktail',
