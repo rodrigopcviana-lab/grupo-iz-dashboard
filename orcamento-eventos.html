@@ -419,8 +419,17 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-campo { margin-bottom:12px; }
   .orev-campo label { display:block; font-size:12px; color:var(--text-3); text-transform:uppercase;
       letter-spacing:.05em; margin-bottom:4px; }
-  .orev-campo input, .orev-campo select { width:100%; padding:11px 10px; font-size:15px; border-radius:10px;
+  .orev-campo input, .orev-campo select, .orev-campo textarea { width:100%; padding:11px 10px; font-size:15px; border-radius:10px;
       border:1px solid var(--border); background:var(--card); color:var(--text); font:inherit; box-sizing:border-box; }
+  .orev-campo textarea { resize:vertical; min-height:44px; }
+  /* Estrutura & serviço (2026-07-23): linhas manuais nome+R$, repasse a custo */
+  .orz-estr-linha { display:grid; grid-template-columns:1fr 110px 30px; gap:8px; margin-bottom:8px; align-items:center; }
+  .orz-estr-linha input { padding:9px 10px; font-size:14px; border-radius:8px; border:1px solid var(--border);
+      background:var(--card); color:var(--text); font:inherit; box-sizing:border-box; width:100%; }
+  .orz-estr-sugestoes { display:flex; gap:6px; flex-wrap:wrap; margin:2px 0 10px; }
+  .orz-estr-sug { padding:5px 11px; border-radius:999px; border:1px dashed var(--border); background:transparent;
+      color:var(--text-3); font:inherit; font-size:12px; cursor:pointer; }
+  .orz-estr-sug:hover { color:var(--text); border-color:var(--text-3); }
   .orev-linha2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .orev-linha3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
   @media (max-width: 480px) { .orev-linha3 { grid-template-columns:1fr; } }
@@ -664,6 +673,18 @@ window.msgAcessoNegado = function (nomePagina) {
 
     <div class="panel" style="padding:0">
       <details class="orz-avancado">
+        <summary class="orz-sec" style="margin:0">Estrutura &amp; serviço — vidraria, tecido, back bar (opcional)</summary>
+        <div class="orz-avancado-corpo">
+          <p class="orev-sub" style="margin:0 0 10px">Custos de estrutura que o evento exigir (locação de vidraria, guardanapo de tecido, back bar…). Entram repassados a custo, sem markup — igual ao deslocamento. Valor fica em branco até você digitar; nada aqui é estimado sozinho.</p>
+          <div id="orev-estrutura-lista"></div>
+          <div class="orz-estr-sugestoes" id="orev-estrutura-sugestoes"></div>
+          <button type="button" class="orev-tab" id="orev-estrutura-add">+ Adicionar linha</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="panel" style="padding:0">
+      <details class="orz-avancado">
         <summary class="orz-sec" style="margin:0">Ajustes avançados — finanças, equipe, gelo</summary>
         <div class="orz-avancado-corpo">
           <p class="orz-sec" style="margin-top:0">Montagem &amp; desmontagem</p>
@@ -703,6 +724,14 @@ window.msgAcessoNegado = function (nomePagina) {
               <input type="number" id="orev-coordenadores" min="0" step="1" value="0"></div>
             <div class="orev-campo"><label for="orev-gelo-kg">Gelo por convidado (kg)</label>
               <input type="number" id="orev-gelo-kg" min="0" step="0.1" value="1.2"></div>
+          </div>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orev-areas">Áreas de serviço (bares)
+              <span class="orz-help" title="Evento com mais de uma frente de bar (VIP + geral, dois salões...). Com 1 — o padrão — nada muda; com 2+, cada área garante o próprio mínimo de bartenders.">?</span></label>
+              <input type="number" id="orev-areas" min="1" step="1" value="1"></div>
+            <div class="orev-campo"><label for="orev-min-area">Mín. de bartenders por área
+              <span class="orz-help" title="Só vale quando há 2+ áreas: cada frente de bar precisa de uma equipe própria (regra operacional do grupo: 2 por turno). Zere pra desligar.">?</span></label>
+              <input type="number" id="orev-min-area" min="0" step="1" value="2"></div>
           </div>
           <div class="orev-linha2">
             <div class="orev-campo"><label for="orev-gelo-preco">Preço do gelo (R$/kg)</label>
@@ -827,7 +856,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="panel">
       <p class="orz-sec" style="margin-top:0">Dias do evento</p>
       <table class="orev-dias">
-        <thead><tr><th>Data</th><th>Início</th><th>Convidados</th><th>Duração (h)</th><th>Pré (h)</th><th>Pós (h)</th><th>Estações</th><th title="Coordenador de turno (manual)">Coord.</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Início</th><th>Convidados</th><th>Duração (h)</th><th>Pré (h)</th><th>Pós (h)</th><th>Estações</th><th title="Coordenador de turno (manual)">Coord.</th><th title="Frentes de bar separadas no dia (VIP + geral...). 1 = padrão; 2+ garante o mínimo de bartenders por área.">Áreas</th><th></th></tr></thead>
         <tbody id="orme-dias-corpo"></tbody>
       </table>
       <button type="button" class="orev-tab" id="orme-add-dia">+ Adicionar dia</button>
@@ -840,6 +869,39 @@ window.msgAcessoNegado = function (nomePagina) {
       <input type="text" class="orev-busca" id="orme-busca" placeholder="Buscar item do cardápio…">
       <div id="orme-cardapio"></div>
       <p class="orev-vazio" id="orme-cardapio-vazio" style="display:none">Cardápio de custo ainda não disponível.</p>
+    </div>
+
+    <div class="panel" style="padding:0">
+      <details class="orz-avancado">
+        <summary class="orz-sec" style="margin:0">Estrutura &amp; serviço — vidraria, tecido, back bar (opcional)</summary>
+        <div class="orz-avancado-corpo">
+          <p class="orev-sub" style="margin:0 0 10px">Custos de estrutura que o evento exigir (locação de vidraria, guardanapo de tecido, back bar…). Entram repassados a custo, sem markup — igual ao deslocamento. Valor fica em branco até você digitar; nada aqui é estimado sozinho.</p>
+          <div id="orme-estrutura-lista"></div>
+          <div class="orz-estr-sugestoes" id="orme-estrutura-sugestoes"></div>
+          <button type="button" class="orev-tab" id="orme-estrutura-add">+ Adicionar linha</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="panel" style="padding:0">
+      <details class="orz-avancado">
+        <summary class="orz-sec" style="margin:0">Proposta comercial — validade, pagamento, prazos (opcional)</summary>
+        <div class="orz-avancado-corpo">
+          <p class="orev-sub" style="margin:0 0 10px">Sai na imagem exportada da proposta (seção G de briefing de cliente). Campo em branco não aparece no documento.</p>
+          <div class="orev-linha2">
+            <div class="orev-campo"><label for="orme-prop-validade">Validade da proposta</label>
+              <input type="date" id="orme-prop-validade"></div>
+            <div class="orev-campo"><label for="orme-prop-pagamento">Condições de pagamento</label>
+              <input type="text" id="orme-prop-pagamento" maxlength="400" placeholder="Ex.: 50% na reserva, saldo na véspera"></div>
+          </div>
+          <div class="orev-campo"><label for="orme-prop-prazos">Prazos</label>
+            <input type="text" id="orme-prop-prazos" maxlength="400" placeholder="Ex.: confirmação de convidados até 5 dias antes"></div>
+          <div class="orev-campo"><label for="orme-prop-areas">Áreas e nível de serviço</label>
+            <textarea id="orme-prop-areas" maxlength="600" rows="2" placeholder="Ex.: VIP 80 convidados, serviço só em vidro; área geral 320"></textarea></div>
+          <div class="orev-campo"><label for="orme-prop-necessidades">Necessidades técnicas e operacionais</label>
+            <textarea id="orme-prop-necessidades" maxlength="1200" rows="3" placeholder="Ex.: 2 pontos de energia no back bar, acesso de carga até 14h"></textarea></div>
+        </div>
+      </details>
     </div>
 
     <div class="panel" style="padding:0">
@@ -885,6 +947,9 @@ window.msgAcessoNegado = function (nomePagina) {
             <div class="orev-campo"><label for="orme-diaria-coord">Diária do coordenador (R$)</label>
               <input type="number" id="orme-diaria-coord" min="0" step="1" value="0" placeholder="a definir"></div>
           </div>
+          <div class="orev-campo"><label for="orme-min-area">Mín. de bartenders por área
+            <span class="orz-help" title="Só vale quando um dia tem 2+ áreas (coluna Áreas): cada frente de bar garante a própria equipe mínima (regra operacional do grupo: 2 por turno). Zere pra desligar.">?</span></label>
+            <input type="number" id="orme-min-area" min="0" step="1" value="2"></div>
 
           <p class="orz-sec">Tempos &amp; referências de mercado</p>
           <div class="orev-linha2">
@@ -983,6 +1048,11 @@ window.msgAcessoNegado = function (nomePagina) {
     // Cocktail (tipo 'preparado'): 3 drinks/convidado num evento de 4h,
     // confirmado com o Rodrigo -> 0,75 drink/convidado/hora.
     taxaCocktailConvHora: 0.75,
+    // Mín. de bartenders por área de serviço (2026-07-23, briefing MotoGP —
+    // área VIP com bar próprio). SÓ é aplicado quando o dia declara 2+
+    // áreas; com 1 área (o padrão) a conta é idêntica à de antes. O default
+    // 2 vem da regra operacional do grupo (cobertura mínima por turno).
+    minBartendersArea: 2,
     // Água/outro (tipo 'servido'): ~250-350ml de água+não-alcoólico por
     // convidado/hora é a faixa usual em referências de catering de evento
     // (ex.: 1L de água a cada 2h = 500ml/h no limite alto de clima quente/
@@ -1044,6 +1114,14 @@ window.msgAcessoNegado = function (nomePagina) {
     var bartendersVazao = tempoTotalMin > 0 ? Math.max(1, Math.ceil(tempoTotalMin / duracaoMin)) : 0;
     var bartendersPiso = (p.pisoCobertura > 0 && convidados > 0) ? Math.ceil(convidados / p.pisoCobertura) : 0;
     var bartendersBase = Math.max(bartendersVazao, bartendersPiso);
+    // Áreas de serviço (2026-07-23, briefing MotoGP — VIP com bar próprio):
+    // OPT-IN por dia. areas ausente/1 = conta idêntica à de antes; 2+ áreas
+    // = cada frente de bar garante a própria equipe mínima (não dá pra
+    // "emprestar" bartender entre bares em pontos diferentes do evento).
+    var areas = Math.max(1, dia.areas || 1);
+    if (areas > 1 && convidados > 0) {
+      bartendersBase = Math.max(bartendersBase, areas * (p.minBartendersArea || 0));
+    }
     var horasTrabalhadas = duracaoHoras + preEvento + posEvento;
     var mdo = custoMaoObraCLT(bartendersBase, horasTrabalhadas, p.taxaHoraBase);
     var custoEstacoesDia = estacoesCocktail * p.custoEstacao;
@@ -1064,7 +1142,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var custoDia = custoServico + custoEstacoesDia;
 
     return {
-      convidados: convidados, unidPorConv: unidPorConv,
+      convidados: convidados, unidPorConv: unidPorConv, areas: areas,
       custoInsumosBase: custoInsumosBase, custoInsumos: custoInsumos,
       custoInsumosCliente: custoInsumosCliente,
       bartendersVazao: bartendersVazao, bartendersPiso: bartendersPiso,
@@ -1115,6 +1193,93 @@ window.msgAcessoNegado = function (nomePagina) {
       if (i.insumoCliente) o.insumoCliente = true;
       return o;
     });
+  }
+
+  // --- Estrutura & serviço (2026-07-23, briefing MotoGP item 8.2: serviço só
+  // em vidro, guardanapo de tecido, back bar) --- linhas MANUAIS de custo,
+  // repassadas a custo como o deslocamento. As sugestões preenchem só o NOME;
+  // valor é sempre digitado — nunca um preço inventado pelo sistema (mesma
+  // regra da diária do coordenador).
+  var estrutura = { orev: [], orme: [] };
+  var ESTRUTURA_SUGESTOES = ['Vidraria — locação', 'Guardanapos de tecido', 'Back bar / estrutura'];
+  function estruturaLimpa(prefix) {
+    return estrutura[prefix].filter(function (l) { return (l.nome || '').trim() || (l.valor || 0) > 0; })
+      .map(function (l) { return { nome: (l.nome || '').trim().slice(0, 80), valor: Math.max(0, l.valor || 0) }; });
+  }
+  function estruturaTotal(prefix) {
+    return estrutura[prefix].reduce(function (s, l) { return s + Math.max(0, l.valor || 0); }, 0);
+  }
+  function renderEstrutura(prefix, recalc) {
+    var lista = document.getElementById(prefix + '-estrutura-lista');
+    if (!lista) return;
+    lista.innerHTML = '';
+    estrutura[prefix].forEach(function (l) {
+      var row = document.createElement('div'); row.className = 'orz-estr-linha';
+      var nome = document.createElement('input');
+      nome.type = 'text'; nome.placeholder = 'Descrição (ex.: vidraria)'; nome.maxLength = 80; nome.value = l.nome || '';
+      nome.addEventListener('input', function () { l.nome = nome.value; });
+      var valor = document.createElement('input');
+      valor.type = 'number'; valor.min = '0'; valor.step = '0.01'; valor.placeholder = 'valor';
+      if (l.valor > 0) valor.value = l.valor;
+      valor.addEventListener('input', function () { l.valor = Math.max(0, parseFloat(valor.value) || 0); recalc(); });
+      var rm = document.createElement('button');
+      rm.type = 'button'; rm.className = 'orev-dias-rm'; rm.textContent = '×';
+      rm.onclick = function () {
+        estrutura[prefix] = estrutura[prefix].filter(function (x) { return x !== l; });
+        renderEstrutura(prefix, recalc); recalc();
+      };
+      row.appendChild(nome); row.appendChild(valor); row.appendChild(rm);
+      lista.appendChild(row);
+    });
+  }
+  function ligaEstrutura(prefix, recalc) {
+    var add = document.getElementById(prefix + '-estrutura-add');
+    if (!add) return;
+    add.onclick = function () {
+      estrutura[prefix].push({ nome: '', valor: 0 });
+      renderEstrutura(prefix, recalc);
+      var ult = document.querySelector('#' + prefix + '-estrutura-lista .orz-estr-linha:last-child input');
+      if (ult) ult.focus();
+    };
+    var sug = document.getElementById(prefix + '-estrutura-sugestoes');
+    ESTRUTURA_SUGESTOES.forEach(function (nomeSug) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'orz-estr-sug'; b.textContent = '+ ' + nomeSug;
+      b.onclick = function () {
+        estrutura[prefix].push({ nome: nomeSug, valor: 0 });
+        renderEstrutura(prefix, recalc);
+        var nums = document.querySelectorAll('#' + prefix + '-estrutura-lista input[type=number]');
+        if (nums.length) nums[nums.length - 1].focus();
+      };
+      sug.appendChild(b);
+    });
+    renderEstrutura(prefix, recalc);
+  }
+
+  // --- Proposta comercial (2026-07-23, seção G do briefing MotoGP: validade,
+  // pagamento, prazos, necessidades técnicas, áreas/nível de serviço) ---
+  // Campos livres, opcionais, salvos no Detalhamento e impressos na imagem
+  // exportada. Em branco = seção não existe (payload não cresce à toa).
+  function propostaDoForm() {
+    function v(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+    return {
+      validade: v('orme-prop-validade'),
+      pagamento: v('orme-prop-pagamento'),
+      prazos: v('orme-prop-prazos'),
+      necessidades: v('orme-prop-necessidades'),
+      areasDesc: v('orme-prop-areas'),
+    };
+  }
+  function propostaTemAlgo(p) {
+    return !!(p && (p.validade || p.pagamento || p.prazos || p.necessidades || p.areasDesc));
+  }
+  function preencheProposta(p) {
+    p = p || {};
+    document.getElementById('orme-prop-validade').value = p.validade || '';
+    document.getElementById('orme-prop-pagamento').value = p.pagamento || '';
+    document.getElementById('orme-prop-prazos').value = p.prazos || '';
+    document.getElementById('orme-prop-necessidades').value = p.necessidades || '';
+    document.getElementById('orme-prop-areas').value = p.areasDesc || '';
   }
 
   // --- abas Calculadora / Meus Eventos (Roteiro deixou de ser aba própria em
@@ -1438,6 +1603,12 @@ window.msgAcessoNegado = function (nomePagina) {
     if (ctx.deslocamento > 0) {
       forma.appendChild(linhaCusto(prefix, 'desloc', 'Deslocamento (repasse)', ctx.deslocamento, 'Repassado a custo, sem markup.'));
     }
+    if (ctx.estruturaTotal > 0) {
+      var detEstr = (ctx.estrutura || []).filter(function (l) { return l.valor > 0; })
+        .map(function (l) { return esc(l.nome || 'Sem descrição') + ' — ' + fmtBRL(l.valor); }).join('<br>');
+      forma.appendChild(linhaCusto(prefix, 'estrutura', 'Estrutura & serviço (repasse)', ctx.estruturaTotal,
+        (detEstr ? detEstr + '<br>' : '') + 'Repassado a custo, sem markup.'));
+    }
     var totalDiv = document.createElement('div'); totalDiv.className = 'orz-linha total';
     totalDiv.innerHTML = '<div class="orz-linha-cab"><span>Preço ao cliente</span><span class="v">' + fmtBRL(valorFinal) + '</span></div>';
     forma.appendChild(totalDiv);
@@ -1455,6 +1626,8 @@ window.msgAcessoNegado = function (nomePagina) {
     chip(totalBartenders + ' bartender(s)' + (ctx.dias.length > 1 ? ' (soma dos dias)' : ''));
     if (totalBarbacks > 0) chip(totalBarbacks + ' barback(s)');
     if (totalCoord > 0) chip(totalCoord + ' coordenador(es)');
+    var maxAreas = ctx.dias.reduce(function (s, d) { return Math.max(s, d.areas || 1); }, 1);
+    if (maxAreas > 1) chip(maxAreas + ' áreas de serviço');
     if (ctx.dias.length === 1 && ctx.dias[0].horasTrabalhadas > 0) {
       chip(ctx.dias[0].horasPorPessoa.toFixed(1).replace('.', ',') + 'h por pessoa');
     }
@@ -1530,7 +1703,7 @@ window.msgAcessoNegado = function (nomePagina) {
     // apoio). Estações e deslocamento são REPASSE a custo — rateados também
     // (senão a soma não fecharia com o preço), mas sem markup em cima.
     var operTotal = (ctx.custoMaoObraTotal || 0) + (ctx.custoGeloTotal || 0) + (ctx.custoApoioTotal || 0);
-    var repasseTotal = (ctx.custoEstacoesTotal || 0) + (ctx.deslocamento || 0);
+    var repasseTotal = (ctx.custoEstacoesTotal || 0) + (ctx.deslocamento || 0) + (ctx.estruturaTotal || 0);
     // Preço ajustado à mão não pode quebrar o fechamento: o quadro inteiro é
     // escalado na mesma proporção do valor que está sendo exibido.
     var fator = ctx.valorCalculado > 0 ? (valorFinal / ctx.valorCalculado) : 1;
@@ -1568,7 +1741,7 @@ window.msgAcessoNegado = function (nomePagina) {
     nota.className = 'orz-mkt'; nota.style.marginTop = '8px';
     var partes = ['Operacional rateado por <b>' + (modo === 'unidade' ? 'unidade' : 'tempo de preparo') + '</b>'
       + ' — mão de obra, gelo e equipe de apoio.'];
-    if (repasseTotal > 0) partes.push('Estações e deslocamento entram rateados a custo, sem markup.');
+    if (repasseTotal > 0) partes.push('Estações, deslocamento e estrutura entram rateados a custo, sem markup.');
     // Cocktail não tem volume no nome (a ficha não viaja no payload), então o
     // volume fica "—" em vez de ser estimado — o cliente pediu volume, não um
     // palpite de volume.
@@ -1692,6 +1865,9 @@ window.msgAcessoNegado = function (nomePagina) {
       custoDiariaCoordenador: num(prefix + '-diaria-coord'),
       taxaCocktailConvHora: num(prefix + '-taxa-cocktail') || PREMISSAS_DEFAULT.taxaCocktailConvHora,
       mlAguaConvHora: num(prefix + '-ml-agua') || PREMISSAS_DEFAULT.mlAguaConvHora,
+      // 0 é escolha válida ("sem mínimo por área") — por isso num() puro,
+      // sem fallback pro default (diferente de taxaHora, onde 0 é engano).
+      minBartendersArea: num(prefix + '-min-area'),
     };
   }
 
@@ -1712,15 +1888,17 @@ window.msgAcessoNegado = function (nomePagina) {
     var p = Object.assign({ itensSel: itensSel, custoEstacao: 0, pisoCobertura: pisoCobertura, bufferPct: bufferPct }, premissas);
 
     var d = calculaDia({ convidados: convidados, duracaoHoras: duracao, preEvento: preEvento, posEvento: posEvento,
-      estacoesCocktail: 0, coordenadores: coordenadores }, p);
-    var custoTotal = d.custoServico + deslocamento;
-    var valorCalculado = d.custoServico * markup + deslocamento;
+      estacoesCocktail: 0, coordenadores: coordenadores, areas: Math.max(1, num('orev-areas') || 1) }, p);
+    var estruturaVal = estruturaTotal('orev');
+    var custoTotal = d.custoServico + deslocamento + estruturaVal;
+    var valorCalculado = d.custoServico * markup + deslocamento + estruturaVal;
 
     renderResumo('orev', {
       convidados: convidados, itensSel: itensSel, dias: [d], bufferPct: bufferPct,
       custoInsumosTotal: d.custoInsumos, custoInsumosBaseTotal: d.custoInsumosBase,
       custoMaoObraTotal: d.custoMaoObra, custoEstacoesTotal: 0, custoGeloTotal: d.custoGelo,
       custoApoioTotal: d.custoApoio, deslocamento: deslocamento,
+      estruturaTotal: estruturaVal, estrutura: estruturaLimpa('orev'),
       custoInsumosClienteTotal: d.custoInsumosCliente,
       custoTotal: custoTotal, valorCalculado: valorCalculado,
       markup: markup, premissas: premissas,
@@ -1732,11 +1910,13 @@ window.msgAcessoNegado = function (nomePagina) {
   ligaPrint('orev-print', 'orev', 'Orçamento de evento');
   ligaBusca('orev-busca', 'orev-cardapio');
   ligaModo('orev', calcula);
+  ligaEstrutura('orev', calcula);
 
   ['orev-convidados', 'orev-duracao', 'orev-pre', 'orev-pos', 'orev-coordenadores', 'orev-desloc', 'orev-markup',
     'orev-buffer', 'orev-piso', 'orev-taxa-hora', 'orev-min-preparado', 'orev-min-servido',
     'orev-taxa-cocktail',
     'orev-gelo-kg', 'orev-gelo-preco', 'orev-diaria-barback', 'orev-diaria-coord',
+    'orev-areas', 'orev-min-area',
     'orev-rateio'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calcula);
   });
@@ -1769,13 +1949,21 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-markup').value = markup;
     document.getElementById('orme-desloc').value = deslocamento;
     ['buffer', 'piso', 'gelo-kg', 'gelo-preco', 'diaria-barback', 'diaria-coord',
-      'taxa-hora', 'min-preparado', 'min-servido', 'taxa-cocktail', 'ml-agua', 'ckt-alvo'].forEach(function (campo) {
+      'taxa-hora', 'min-preparado', 'min-servido', 'taxa-cocktail', 'ml-agua', 'ckt-alvo',
+      'min-area'].forEach(function (campo) {
       document.getElementById('orme-' + campo).value = document.getElementById('orev-' + campo).value;
     });
     document.getElementById('orme-dias-corpo').innerHTML = '';
     document.getElementById('orme-dias-corpo').appendChild(linhaDia({
       convidados: convidados, duracao: duracao, pre: preEvento, pos: posEvento, estacoes: 0, coordenadores: coordenadores,
+      areas: Math.max(1, num('orev-areas') || 1),
     }));
+    // Estrutura & serviço viaja junto (cópia, não referência — editar num
+    // lado não pode mexer no outro). Proposta comercial NÃO existe na
+    // Calculadora — limpa pra não herdar resto de uma edição anterior.
+    estrutura.orme = estruturaLimpa('orev').map(function (l) { return { nome: l.nome, valor: l.valor }; });
+    renderEstrutura('orme', calculaEvento);
+    preencheProposta(null);
     preencheCardapioEvento(itensCalc);
     // Transfere o mix EXATO da Calculadora — trava em manual pra distribui()
     // não redistribuir por cima do que veio de lá (o usuário pode voltar pro
@@ -1807,7 +1995,7 @@ window.msgAcessoNegado = function (nomePagina) {
       td.appendChild(inp);
       tr.appendChild(td);
     });
-    ['convidados', 'duracao', 'pre', 'pos', 'estacoes', 'coordenadores'].forEach(function (campo) {
+    ['convidados', 'duracao', 'pre', 'pos', 'estacoes', 'coordenadores', 'areas'].forEach(function (campo) {
       var td = document.createElement('td');
       var inp = document.createElement('input');
       inp.type = 'number'; inp.min = '0';
@@ -1815,6 +2003,7 @@ window.msgAcessoNegado = function (nomePagina) {
       if (campo === 'duracao') { inp.value = '4'; }
       if (campo === 'pre' || campo === 'pos') { inp.value = '2'; inp.step = '0.5'; }
       if (campo === 'coordenadores') { inp.value = '0'; inp.title = 'Coordenador de turno (manual — nem todo evento precisa)'; }
+      if (campo === 'areas') { inp.value = '1'; inp.min = '1'; inp.title = 'Frentes de bar separadas no dia (VIP + geral...) — 1 é o padrão'; }
       if (vals[campo] != null) { inp.value = vals[campo]; }
       inp.addEventListener('input', calculaEvento);
       td.appendChild(inp);
@@ -1843,6 +2032,7 @@ window.msgAcessoNegado = function (nomePagina) {
         convidados: v('convidados'),
         duracaoHoras: Math.max(1, v('duracao')), preEvento: v('pre'), posEvento: v('pos'),
         estacoesCocktail: v('estacoes'), coordenadores: v('coordenadores'),
+        areas: Math.max(1, v('areas') || 1),
       };
     });
   }
@@ -1877,9 +2067,10 @@ window.msgAcessoNegado = function (nomePagina) {
       return d;
     });
 
+    var estruturaVal = estruturaTotal('orme');
     var custoServicoTotal = custoInsumosTotal + custoMaoObraTotal + custoGeloTotal + custoApoioTotal;
-    var custoTotal = custoServicoTotal + custoEstacoesTotal + deslocamento;
-    var valorCalculado = custoServicoTotal * markup + custoEstacoesTotal + deslocamento;
+    var custoTotal = custoServicoTotal + custoEstacoesTotal + deslocamento + estruturaVal;
+    var valorCalculado = custoServicoTotal * markup + custoEstacoesTotal + deslocamento + estruturaVal;
     dias.forEach(function (d) { d.valorDia = (d.custoServicoDia || 0) * markup + (d.custoEstacoesDia || 0); });
 
     var totalConvidados = dias.reduce(function (s, d) { return s + d.convidados; }, 0);
@@ -1888,6 +2079,7 @@ window.msgAcessoNegado = function (nomePagina) {
       custoInsumosTotal: custoInsumosTotal, custoInsumosBaseTotal: custoInsumosBaseTotal,
       custoMaoObraTotal: custoMaoObraTotal, custoEstacoesTotal: custoEstacoesTotal,
       custoGeloTotal: custoGeloTotal, custoApoioTotal: custoApoioTotal, deslocamento: deslocamento,
+      estruturaTotal: estruturaVal, estrutura: estruturaLimpa('orme'),
       custoInsumosClienteTotal: dias.reduce(function (s, d) { return s + (d.custoInsumosCliente || 0); }, 0),
       custoTotal: custoTotal, valorCalculado: valorCalculado,
       markup: markup, premissas: premissas,
@@ -1897,17 +2089,19 @@ window.msgAcessoNegado = function (nomePagina) {
 
     return { dias: dias, custoTotal: custoTotal, valorTotal: overrides.orme != null ? overrides.orme : valorCalculado,
       deslocamento: deslocamento, custoEstacao: custoEstacao, markup: markup, itensSel: itensSel,
-      bufferPct: bufferPct, pisoCobertura: pisoCobertura, premissas: premissas };
+      bufferPct: bufferPct, pisoCobertura: pisoCobertura, premissas: premissas,
+      estrutura: estruturaLimpa('orme'), estruturaTotal: estruturaVal };
   }
   ligaEdicaoHero('orme', calculaEvento);
   ligaPrint('orme-print', 'orme', function () { return document.getElementById('orme-nome').value || 'Orçamento de evento'; });
   ligaBusca('orme-busca', 'orme-cardapio');
   ligaModo('orme', calculaEvento);
+  ligaEstrutura('orme', calculaEvento);
 
   ['orme-desloc', 'orme-custo-estacao', 'orme-markup', 'orme-buffer', 'orme-piso', 'orme-taxa-hora',
     'orme-min-preparado', 'orme-min-servido', 'orme-taxa-cocktail',
     'orme-gelo-kg', 'orme-gelo-preco',
-    'orme-diaria-barback', 'orme-diaria-coord', 'orme-rateio'].forEach(function (id) {
+    'orme-diaria-barback', 'orme-diaria-coord', 'orme-min-area', 'orme-rateio'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', calculaEvento);
   });
 
@@ -1997,6 +2191,10 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-min-servido').value = PREMISSAS_DEFAULT.tempoServidoMin;
     document.getElementById('orme-taxa-cocktail').value = PREMISSAS_DEFAULT.taxaCocktailConvHora;
     document.getElementById('orme-ml-agua').value = PREMISSAS_DEFAULT.mlAguaConvHora;
+    document.getElementById('orme-min-area').value = PREMISSAS_DEFAULT.minBartendersArea;
+    estrutura.orme = [];
+    renderEstrutura('orme', calculaEvento);
+    preencheProposta(null);
     // Novo evento volta pro automático (mercado como ponto de partida).
     document.getElementById('orme-ckt-alvo').value = 3;
     cktTocado.orme = false; setModo('orme', 'auto');
@@ -2048,6 +2246,15 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-min-servido').value = det.tempoServidoMin || PREMISSAS_DEFAULT.tempoServidoMin;
     document.getElementById('orme-taxa-cocktail').value = det.taxaCocktailConvHora || PREMISSAS_DEFAULT.taxaCocktailConvHora;
     document.getElementById('orme-ml-agua').value = det.mlAguaConvHora || PREMISSAS_DEFAULT.mlAguaConvHora;
+    // minBartendersArea: 0 salvo é escolha válida ("sem mínimo") — só evento
+    // de ANTES do campo existir (undefined) cai no default.
+    document.getElementById('orme-min-area').value =
+      det.minBartendersArea != null ? det.minBartendersArea : PREMISSAS_DEFAULT.minBartendersArea;
+    estrutura.orme = (det.estrutura || []).map(function (l) {
+      return { nome: l.nome || '', valor: Math.max(0, l.valor || 0) };
+    });
+    renderEstrutura('orme', calculaEvento);
+    preencheProposta(det.proposta);
     document.getElementById('orme-dias-corpo').innerHTML = '';
     var diasSalvos = det.dias || [];
     if (diasSalvos.length) {
@@ -2055,6 +2262,7 @@ window.msgAcessoNegado = function (nomePagina) {
         document.getElementById('orme-dias-corpo').appendChild(linhaDia({
           convidados: d.convidados, duracao: d.duracaoHoras, pre: d.preEvento, pos: d.posEvento,
           estacoes: d.estacoesCocktail, coordenadores: d.coordenadores, data: d.data, horaInicio: d.horaInicio,
+          areas: d.areas || 1,
         }));
       });
     } else {
@@ -2116,6 +2324,8 @@ window.msgAcessoNegado = function (nomePagina) {
         taxaHoraBase: calc.premissas.taxaHoraBase, tempoPreparadoMin: calc.premissas.tempoPreparadoMin,
         tempoServidoMin: calc.premissas.tempoServidoMin,
         taxaCocktailConvHora: calc.premissas.taxaCocktailConvHora, mlAguaConvHora: calc.premissas.mlAguaConvHora,
+        minBartendersArea: calc.premissas.minBartendersArea,
+        estrutura: calc.estrutura, proposta: propostaDoForm(),
         custoTotal: calc.custoTotal, valorTotal: calc.valorTotal,
       }),
     }).then(function (r) {
@@ -2241,6 +2451,7 @@ window.msgAcessoNegado = function (nomePagina) {
       var linha = (dias.length > 1 ? '<b>Dia ' + (idx + 1) + ':</b> ' : '') + (d.bartenders || 0) + ' bartender(s)';
       if (d.bartendersPiso > d.bartendersVazao) linha += ' (piso de cobertura)';
       if (d.turnos > 1) linha += ' · ' + d.turnos + ' turnos (limite legal 10h/dia)';
+      if ((d.areas || 1) > 1) linha += ' · ' + d.areas + ' áreas de serviço';
       return linha;
     }).join('<br>');
     forma.appendChild(linhaCustoLocal('Mão de obra', mdo, detMdo || '—'));
@@ -2256,9 +2467,32 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     if (estacoes > 0) forma.appendChild(linhaCustoLocal('Estações de cocktail (repasse)', estacoes, 'Repassado a custo, sem markup.'));
     if (deslocamento > 0) forma.appendChild(linhaCustoLocal('Deslocamento (repasse)', deslocamento, 'Repassado a custo, sem markup.'));
+    var estruturaLinhas = (det.estrutura || []).filter(function (l) { return (l.valor || 0) > 0; });
+    if (estruturaLinhas.length) {
+      var estrTot = estruturaLinhas.reduce(function (s, l) { return s + l.valor; }, 0);
+      forma.appendChild(linhaCustoLocal('Estrutura & serviço (repasse)', estrTot,
+        estruturaLinhas.map(function (l) { return esc(l.nome || 'Sem descrição') + ' — ' + fmtBRL(l.valor); }).join('<br>')
+        + '<br>Repassado a custo, sem markup.'));
+    }
     var totalDiv = document.createElement('div'); totalDiv.className = 'orz-linha total';
     totalDiv.innerHTML = '<div class="orz-linha-cab"><span>Preço ao cliente</span><span class="v">' + fmtBRL(valorFinal) + '</span></div>';
     forma.appendChild(totalDiv);
+
+    // Proposta comercial salva (seção G) — leitura, só campos preenchidos.
+    var prop = det.proposta;
+    if (prop && (prop.validade || prop.pagamento || prop.prazos || prop.necessidades || prop.areasDesc)) {
+      var secProp = document.createElement('p'); secProp.className = 'orz-sec'; secProp.textContent = 'Proposta comercial'; container.appendChild(secProp);
+      var boxProp = document.createElement('div');
+      boxProp.style.cssText = 'font-size:12.5px;color:var(--text-2);line-height:1.7';
+      var linhasProp = [];
+      if (prop.validade) linhasProp.push('<b>Validade:</b> ' + esc(prop.validade));
+      if (prop.pagamento) linhasProp.push('<b>Pagamento:</b> ' + esc(prop.pagamento));
+      if (prop.prazos) linhasProp.push('<b>Prazos:</b> ' + esc(prop.prazos));
+      if (prop.areasDesc) linhasProp.push('<b>Áreas e serviço:</b> ' + esc(prop.areasDesc));
+      if (prop.necessidades) linhasProp.push('<b>Necessidades técnicas:</b> ' + esc(prop.necessidades));
+      boxProp.innerHTML = linhasProp.join('<br>');
+      container.appendChild(boxProp);
+    }
 
     // Orçamento FRACIONADO por dia (2026-07-23, pedido do Rodrigo): evento de
     // vários dias mostra um mini-orçamento por dia dentro do próprio card, além
@@ -2375,6 +2609,11 @@ window.msgAcessoNegado = function (nomePagina) {
           custoDiariaBarback: det.custoDiariaBarback || 0, custoDiariaCoordenador: det.custoDiariaCoordenador || 0,
           taxaHoraBase: det.taxaHoraBase || 0, tempoPreparadoMin: det.tempoPreparadoMin || 0, tempoServidoMin: det.tempoServidoMin || 0,
           taxaCocktailConvHora: det.taxaCocktailConvHora || 0, mlAguaConvHora: det.mlAguaConvHora || 0,
+          // Reenviar TUDO que o Worker regrava — campo esquecido aqui é
+          // apagado em silêncio ao salvar um roteiro (classe de bug já
+          // mordida em 2026-07-22 com bufferPct/pisoCobertura).
+          minBartendersArea: det.minBartendersArea || 0,
+          estrutura: det.estrutura || [], proposta: det.proposta || null,
           overrideValor: det.overrideValor != null ? det.overrideValor : null,
           custoTotal: ev.custo_total, valorTotal: ev.valor_total,
         }),
@@ -2669,6 +2908,9 @@ window.msgAcessoNegado = function (nomePagina) {
     if (dados.apoio > 0) b.push({ t: 'kv', k: 'Equipe de apoio', v: fmtBRL(dados.apoio) });
     if (dados.estacoes > 0) b.push({ t: 'kv', k: 'Estações de cocktail (repasse)', v: fmtBRL(dados.estacoes) });
     if (dados.deslocamento > 0) b.push({ t: 'kv', k: 'Deslocamento (repasse)', v: fmtBRL(dados.deslocamento) });
+    (dados.estrutura || []).forEach(function (l) {
+      if (l.valor > 0) b.push({ t: 'kv', k: (l.nome || 'Estrutura') + ' (repasse)', v: fmtBRL(l.valor) });
+    });
     b.push({ t: 'rule' });
     b.push({ t: 'kv', k: 'Total ao cliente', v: fmtBRL(dados.valorFinal), forte: true, cor: PNG_COR.ouro });
     if (dados.cardapio && dados.cardapio.length) {
@@ -2682,7 +2924,8 @@ window.msgAcessoNegado = function (nomePagina) {
       dados.dias.forEach(function (d) {
         var m = d.valor > 0 ? ((d.valor - d.custo) / d.valor) * 100 : 0;
         b.push({ t: 'diahdr', s: 'Dia ' + d.idx + (d.data ? ' — ' + d.data : ''), v: fmtBRL(d.valor) });
-        b.push({ t: 'para', s: d.convidados + ' convidados · custo ' + fmtBRL(d.custo) + ' · margem ' + m.toFixed(0) + '% · ' + d.bartenders + ' bartender(s)' });
+        b.push({ t: 'para', s: d.convidados + ' convidados · custo ' + fmtBRL(d.custo) + ' · margem ' + m.toFixed(0) + '% · ' + d.bartenders + ' bartender(s)'
+          + (d.areas > 1 ? ' · ' + d.areas + ' áreas de serviço' : '') });
         var partes = [];
         if (d.insumos) partes.push('Insumos ' + fmtBRL(d.insumos));
         if (d.mdo) partes.push('Mão de obra ' + fmtBRL(d.mdo));
@@ -2691,6 +2934,25 @@ window.msgAcessoNegado = function (nomePagina) {
         if (d.estacoes) partes.push('Estações ' + fmtBRL(d.estacoes));
         if (partes.length) b.push({ t: 'para', s: partes.join('  ·  ') });
       });
+    }
+    // Proposta comercial (seção G de briefing de cliente) — só os campos
+    // preenchidos; tudo em branco = a seção não existe no documento.
+    var pr = dados.proposta;
+    if (pr && (pr.validade || pr.pagamento || pr.prazos || pr.necessidades || pr.areasDesc)) {
+      b.push({ t: 'sec', s: 'Proposta comercial' });
+      if (pr.validade) b.push({ t: 'kv', k: 'Validade da proposta', v: pr.validade });
+      if (pr.pagamento) b.push({ t: 'para', s: 'Pagamento: ' + pr.pagamento });
+      if (pr.prazos) b.push({ t: 'para', s: 'Prazos: ' + pr.prazos });
+      if (pr.areasDesc) {
+        String(pr.areasDesc).split('\n').forEach(function (ln, i) {
+          if (ln.trim()) b.push({ t: 'para', s: (i === 0 ? 'Áreas e serviço: ' : '') + ln.trim() });
+        });
+      }
+      if (pr.necessidades) {
+        String(pr.necessidades).split('\n').forEach(function (ln, i) {
+          if (ln.trim()) b.push({ t: 'para', s: (i === 0 ? 'Necessidades técnicas: ' : '') + ln.trim() });
+        });
+      }
     }
     b.push({ t: 'space', h: 8 });
     b.push({ t: 'para', s: 'Bar.IZ — Grupo IZ · valores estimados de orçamento, não é documento fiscal.' });
@@ -2724,6 +2986,7 @@ window.msgAcessoNegado = function (nomePagina) {
       return {
         idx: idx + 1, data: d.data, horaInicio: d.horaInicio, duracaoHoras: d.duracaoHoras,
         convidados: d.convidados || 0, bartenders: d.bartenders || 0, turnos: d.turnos || 1,
+        areas: d.areas || 1,
         insumos: insumos, mdo: mdo, gelo: gelo, apoio: apoio, estacoes: estacoes,
         custo: custo, valor: valor,
         roteiro: (d.roteiro && d.roteiro.length) ? d.roteiro : geraFasesSugeridas(d),
@@ -2733,6 +2996,7 @@ window.msgAcessoNegado = function (nomePagina) {
       nome: nome, casa: casa || '', convidados: convidados, dias: dias, cardapio: totais.cardapio || [],
       insumos: totais.insumos || 0, mdo: totais.mdo || 0, gelo: totais.gelo || 0, apoio: totais.apoio || 0,
       estacoes: totais.estacoes || 0, deslocamento: totais.deslocamento || 0,
+      estrutura: totais.estrutura || [], proposta: totais.proposta || null,
       custoTotal: totais.custoTotal || 0, valorFinal: totais.valorFinal || 0, bufferPct: totais.bufferPct || 0,
     };
   }
@@ -2747,6 +3011,10 @@ window.msgAcessoNegado = function (nomePagina) {
       markup: markup, cardapio: serieCardapio(ctx.itensSel),
       insumos: ctx.custoInsumosTotal, mdo: ctx.custoMaoObraTotal, gelo: ctx.custoGeloTotal, apoio: ctx.custoApoioTotal,
       estacoes: ctx.custoEstacoesTotal, deslocamento: ctx.deslocamento,
+      estrutura: ctx.estrutura || [],
+      // Proposta comercial só existe no formulário de Meus Eventos — na
+      // Calculadora a seção simplesmente não sai no documento.
+      proposta: prefix === 'orme' ? propostaDoForm() : null,
       custoTotal: ctx.custoTotal, valorFinal: valorFinal, bufferPct: ctx.bufferPct,
     });
   }
@@ -2759,6 +3027,7 @@ window.msgAcessoNegado = function (nomePagina) {
       markup: det.markup || 1, cardapio: det.cardapio || [],
       insumos: soma('custoInsumos'), mdo: soma('custoMaoObra'), gelo: soma('custoGelo'),
       apoio: soma('custoApoio'), estacoes: soma('custoEstacoesDia'), deslocamento: det.deslocamento || 0,
+      estrutura: det.estrutura || [], proposta: det.proposta || null,
       custoTotal: ev.custo_total || 0, valorFinal: ev.valor_total || 0, bufferPct: det.bufferPct || 0,
     });
   }
