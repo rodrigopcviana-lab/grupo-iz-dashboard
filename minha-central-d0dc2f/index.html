@@ -195,7 +195,7 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
   var SETOR_SLUG = {}; Object.keys(SETORES).forEach(function (s) { SETOR_SLUG[SETORES[s]] = s; });
 
   function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
   function toast(m, e) { elToast.textContent = m; elToast.classList.toggle('erro', !!e); elToast.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { elToast.classList.remove('on'); }, 3200); }
   // Mostra data+hora ABSOLUTA (pedido do Rodrigo, 2026-07-13) — a cor
   // (cls) continua vindo dos dias decorridos, só o texto deixou de ser
