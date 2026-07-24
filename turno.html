@@ -453,6 +453,16 @@ window.msgAcessoNegado = function (nomePagina) {
   .tn-pend-reincid { grid-column:1 / -1; font-size:12.5px; color:var(--amarelo);
                       border:1px solid var(--amarelo); background:rgba(224,176,92,.09);
                       border-radius:9px; padding:8px 11px; margin:2px 0 0; line-height:1.5; }
+  /* A3 — Hoje na casa (eventos) e A4 — Confirmar abertura */
+  .tn-hoje-tit { font-size:11.5px; letter-spacing:.09em; text-transform:uppercase;
+                 color:var(--text-3); margin:18px 0 8px; }
+  .tn-hoje-item { font-size:13.5px; color:var(--text-2); padding:7px 0; border-top:1px solid var(--border); }
+  .tn-hoje-item:first-of-type { border-top:0; }
+  .tn-confirma { margin-top:18px; padding-top:14px; border-top:1px solid var(--border); }
+  .tn-confirma input { width:100%; padding:11px 12px; font-size:14px; border-radius:9px;
+                        border:1px solid var(--border); background:var(--card); color:var(--text);
+                        font-family:inherit; margin-bottom:8px; }
+  .tn-confirma-ok { font-size:13.5px; color:var(--verde); }
   .tn-chip { display:inline-flex; align-items:center; gap:7px; padding:6px 8px 6px 12px; border-radius:999px;
              border:1px solid var(--acc); color:var(--acc); font-size:13.5px; }
   .tn-chip button { background:none; border:0; color:var(--acc); font-size:15px; line-height:1; cursor:pointer;
@@ -473,6 +483,7 @@ window.msgAcessoNegado = function (nomePagina) {
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
   var CASAS = [{"slug": "iz", "nome": "IZ"}, {"slug": "1929", "nome": "1929"}, {"slug": "gra-bistro", "nome": "Grá"}, {"slug": "famu", "nome": "FAMU"}, {"slug": "fulles", "nome": "Fulles"}, {"slug": "nip", "nome": "NIP"}];
+  var EVENTOS_HOJE = {};
   var casaSel = null;
 
   var elEscolha = document.getElementById('tn-casa-escolha');
@@ -626,6 +637,61 @@ window.msgAcessoNegado = function (nomePagina) {
   // login, então quem assina o token é o Worker — ver §6 do plano). "falhou"
   // NUNCA vira lista vazia na tela: dizer "nada pendente" quando na verdade
   // não deu pra checar faria o chefe abrir o dia achando que está tudo limpo.
+  // A3 — "Hoje na casa": eventos do mural, já embutidos em BUILD TIME
+  // (EVENTOS_HOJE). Sem fetch, sem login — a página não tem sessão.
+  function renderHojeCasa() {
+    var alvo = document.getElementById('tn-hoje-casa');
+    if (!alvo) return;
+    var eventos = EVENTOS_HOJE[casaSel] || [];
+    if (!eventos.length) { alvo.innerHTML = ''; return; }
+    var html = '<div class="tn-hoje-tit">Hoje na casa</div>';
+    eventos.forEach(function (e) {
+      var partes = [];
+      if (e.tipo) partes.push(e.tipo);
+      if (e.pax != null) partes.push(e.pax + ' pessoas');
+      if (e.horario) partes.push(e.horario);
+      html += '<div class="tn-hoje-item">' + esc(partes.join(' · ') || 'Evento hoje') + '</div>';
+    });
+    alvo.innerHTML = html;
+  }
+
+  // A4 — Confirmar abertura: grava quem abriu e quando. `estado` vem do
+  // mesmo fetch de /api/turno/pendencias (campo abertura_hoje) — sem rota
+  // própria, pra não duplicar round-trip. Sem sessão, autor é autodeclarado
+  // (mesmo padrão do Responsável do fechamento).
+  function renderConfirmaAbertura(estado) {
+    var alvo = document.getElementById('tn-abertura-confirma');
+    if (!alvo) return;
+    if (estado && estado.responsavel) {
+      alvo.innerHTML = '<div class="tn-confirma"><p class="tn-confirma-ok">Turno aberto por ' +
+        esc(estado.responsavel) + (estado.hora ? ' às ' + esc(estado.hora) : '') + '.</p></div>';
+      return;
+    }
+    alvo.innerHTML = '<div class="tn-confirma">' +
+      '<input id="tn-abertura-nome" type="text" placeholder="Seu nome" autocomplete="name">' +
+      '<button type="button" class="tn-enviar" id="tn-abertura-btn">Confirmar abertura</button>' +
+      '<p class="sub" id="tn-abertura-msg" style="margin-top:8px"></p></div>';
+    var btn = document.getElementById('tn-abertura-btn');
+    btn.onclick = function () {
+      var nome = document.getElementById('tn-abertura-nome').value.trim();
+      var msg = document.getElementById('tn-abertura-msg');
+      if (!nome) { msg.textContent = 'Digite seu nome.'; return; }
+      btn.disabled = true; msg.textContent = 'Salvando…';
+      fetch(WORKER + '/api/turno/abertura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Casa': casaSel },
+        body: JSON.stringify({ responsavel: nome }),
+      }).then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) throw new Error('http');
+          renderConfirmaAbertura({ responsavel: d.responsavel, hora: d.hora });
+        })
+        .catch(function () {
+          btn.disabled = false; msg.textContent = 'Não deu pra salvar, tente de novo.';
+        });
+    };
+  }
+
   function carregaAbertura() {
     var alvo = document.getElementById('tn-abertura-corpo');
     if (!alvo) return;
@@ -633,6 +699,7 @@ window.msgAcessoNegado = function (nomePagina) {
     fetch(WORKER + '/api/turno/pendencias', { headers: { 'X-Casa': casaSel } })
       .then(function (r) { return r.json(); })
       .then(function (d) {
+        renderConfirmaAbertura(d.abertura_hoje);
         if (d.falhou) {
           alvo.innerHTML = '<div class="tn-erro">Não deu pra checar as pendências agora. ' +
             'Isso <b>não</b> quer dizer que não há nada em aberto — tente de novo daqui a pouco.</div>';
@@ -701,6 +768,7 @@ window.msgAcessoNegado = function (nomePagina) {
         });
       })
       .catch(function () {
+        renderConfirmaAbertura(null);
         alvo.innerHTML = '<div class="tn-erro">Não deu pra checar as pendências agora. ' +
           'Isso <b>não</b> quer dizer que não há nada em aberto — tente de novo daqui a pouco.</div>';
       });
@@ -733,7 +801,10 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     elAb.innerHTML = '<h2>Abertura — ' + esc(nomeCasa.toUpperCase()) + '</h2>' +
       '<p class="sub" style="margin-top:-6px">O que ficou de ontem nesta casa.</p>' +
-      '<div id="tn-abertura-corpo"></div>';
+      '<div id="tn-abertura-corpo"></div>' +
+      '<div id="tn-hoje-casa"></div>' +
+      '<div id="tn-abertura-confirma"></div>';
+    renderHojeCasa();
 
     var html = '<h2>Relatório — ' + esc(nomeCasa.toUpperCase()) + '</h2>' +
       '<p class="sub" id="tn-trocar" style="cursor:pointer;text-decoration:underline;margin-top:-6px">trocar de casa</p>';
