@@ -950,6 +950,20 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   // responsável definido" (o card avisa em âmbar; a lista cresce das correções
   // do Rodrigo, o plano não deixa inventar nome). Chave = SLUG do setor.
   var RESPONSAVEIS = {"manutencao": "João Vitor Jorge", "compras_insumos": "João Vitor Jorge", "coordenacao": "Rodrigo Coelho", "rh_pessoas": "Beatriz", "gerencia_casa": null, "operacao_bar": null, "marketing": "Raphael"};
+  // Setores que "ficam na casa" (setores.json:resolve_chefe_da_casa): o dono é
+  // o chefe de bar da PRÓPRIA casa da demanda, não um nome fixo — sinal de que
+  // NÃO sobe pra coordenação. CHEFE_POR_CASA mapeia label da casa -> nome.
+  var RESOLVE_CHEFE = ["operacao_bar", "gerencia_casa"];
+  var CHEFE_POR_CASA = {"IZ": "Fabio", "1929": "Pedro (pdr)", "Grá": "Ade", "FAMU": "Tony Marcilio", "Fulles": "Carlos Henrique", "NIP": "Felipe N. Dox"};
+  // Resolve o responsável de um setor pra uma demanda: nome fixo (RESPONSAVEIS)
+  // OU, pros setores "fica na casa", o chefe da casa da demanda. Devolve
+  // {nome, fixaNaCasa} — nome pode ser null (sem responsável / sem chefe mapeado).
+  function responsavelDe(slug, casaLabel) {
+    if (RESOLVE_CHEFE.indexOf(slug) >= 0) {
+      return { nome: CHEFE_POR_CASA[casaLabel] || null, fixaNaCasa: true };
+    }
+    return { nome: RESPONSAVEIS[slug] || null, fixaNaCasa: false };
+  }
   // Motor 1 · E5.3 — URL do contagem-bares (Histórico de Compras vive lá, não
   // no registro-bares). O token de sessão vale nos dois (TOKEN_SECRET
   // compartilhado). Busca sob demanda, uma vez, cacheada em memória.
@@ -1779,10 +1793,14 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     // órfão) — 100% dado de config, nunca palpite; motiva preencher setores.json.
     if (d.setor) {
       var slugDest = SETOR_LABEL_TO_SLUG[d.setor] || '';
-      var resp = RESPONSAVEIS[slugDest];
+      var rd = responsavelDe(slugDest, d.casa);
       var dest = document.createElement('div'); dest.className = 'dm-destino';
-      if (resp) {
-        dest.innerHTML = 'Vai para <b>' + esc(d.setor) + '</b> · ' + esc(resp);
+      if (rd.fixaNaCasa) {
+        // "Fica na casa": não sobe pra coordenação; o dono é o chefe da casa.
+        var quem = rd.nome ? ' (chefe: ' + esc(rd.nome) + ')' : '';
+        dest.innerHTML = 'Vai para <b>' + esc(d.setor) + '</b> · fica na casa' + quem;
+      } else if (rd.nome) {
+        dest.innerHTML = 'Vai para <b>' + esc(d.setor) + '</b> · ' + esc(rd.nome);
       } else {
         dest.className += ' orfa';
         dest.innerHTML = 'Vai para <b>' + esc(d.setor) + '</b> · <span>sem responsável definido</span>';

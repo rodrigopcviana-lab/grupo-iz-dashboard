@@ -457,10 +457,21 @@ Motor 2 (PLANO_MOTORES_DEMANDAS.md). Chefe de bar vê a própria casa; coordena�
 
   var WORKER = "https://registro-bares.rodrigopcviana.workers.dev";
   var RESPONSAVEIS = {"manutencao": "João Vitor Jorge", "compras_insumos": "João Vitor Jorge", "coordenacao": "Rodrigo Coelho", "rh_pessoas": "Beatriz", "gerencia_casa": null, "operacao_bar": null, "marketing": "Raphael"};
+  var RESOLVE_CHEFE = ["operacao_bar", "gerencia_casa"];
+  var CHEFE_POR_CASA = {"IZ": "Fabio", "1929": "Pedro (pdr)", "Grá": "Ade", "FAMU": "Tony Marcilio", "Fulles": "Carlos Henrique", "NIP": "Felipe N. Dox"};
   var SETORES = {"manutencao": "Manutenção", "compras_insumos": "Compras / Insumos", "rh_pessoas": "RH & Pessoas", "gerencia_casa": "Gerência da casa", "operacao_bar": "Operação de bar", "marketing": "Marketing", "coordenacao": "Coordenação"};
   var SETOR_LABEL_TO_SLUG = {};
   Object.keys(SETORES).forEach(function (s) { SETOR_LABEL_TO_SLUG[SETORES[s]] = s; });
   var PARADA_DIAS = 7; // "parada" = sem chegar há mais de 7 dias (fato, não SLA)
+  // Setores que "ficam na casa" (setores.json) — o dono é o chefe da casa da
+  // demanda, resolvido por CHEFE_POR_CASA. Devolve o rótulo do responsável.
+  function respLabel(slug, casaLabel) {
+    if (RESOLVE_CHEFE.indexOf(slug) >= 0) {
+      var c = CHEFE_POR_CASA[casaLabel];
+      return c ? (c + ' (chefe da casa)') : 'chefe da casa';
+    }
+    return RESPONSAVEIS[slug] || 'sem responsável definido';
+  }
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function sessao401() { window.sessaoLimpar(); window.irParaLogin(SLUG); }
@@ -568,7 +579,7 @@ Motor 2 (PLANO_MOTORES_DEMANDAS.md). Chefe de bar vê a própria casa; coordena�
       var dd = diasDesde(d.recebido_em || d.data);
       if (dd == null || dd <= PARADA_DIAS) return;
       var slug = SETOR_LABEL_TO_SLUG[d.setor] || '';
-      var resp = RESPONSAVEIS[slug] || 'sem responsável definido';
+      var resp = respLabel(slug, d.casa);
       (porResp[resp] = porResp[resp] || []).push({ d: d, dias: dd });
     });
     var resps = Object.keys(porResp);
@@ -604,7 +615,7 @@ Motor 2 (PLANO_MOTORES_DEMANDAS.md). Chefe de bar vê a própria casa; coordena�
         b.disabled = true; b.textContent = 'Redigindo…';
         fetch(WORKER + '/api/demanda/' + encodeURIComponent(chave) + '/rascunho', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
-          body: JSON.stringify({ modo: 'encaminhar', responsavel: (resp === 'sem responsável definido' ? '' : resp) })
+          body: JSON.stringify({ modo: 'encaminhar', responsavel: (resp === 'sem responsável definido' ? '' : resp.replace(/ \(chefe da casa\)$/, '')) })
         }).then(function (resp2) { if (resp2.status === 401) { sessao401(); return null; } if (!resp2.ok) throw new Error('http'); return resp2.json(); })
           .then(function (res) {
             if (!res) return;
