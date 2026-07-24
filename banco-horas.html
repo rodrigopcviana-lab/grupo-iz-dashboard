@@ -423,6 +423,15 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-kpi { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px 16px; }
   .bh-kpi .v { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; }
   .bh-kpi .l { font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em; }
+  .bh-kpi-forte { border-color:var(--amarelo); }
+  .bh-kpi-forte .v { color:var(--amarelo); }
+  .bh-kpi-nota { font-size:11.5px; color:var(--text-3); margin:-4px 0 16px; max-width:640px; }
+  table.bh-porcasa .bh-casa { font-weight:600; }
+  table.bh-porcasa .bh-extremo { display:block; font-size:11px; color:var(--text-3); font-weight:400; margin-top:2px; }
+  table.bh-porcasa .bh-extremo b { font-weight:600; color:var(--text-2); }
+  table.bh-porcasa .bh-cont-neg { color:var(--verm); }
+  table.bh-porcasa .bh-cont-pos { color:var(--verde); }
+  table.bh-porcasa td.tot { border-top:2px solid var(--border); font-weight:700; }
   table.bh { width:100%; border-collapse:collapse; font-size:13px; }
   table.bh th { text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
       color:var(--text-3); padding:8px 8px; border-bottom:1px solid var(--border); }
@@ -459,7 +468,9 @@ window.msgAcessoNegado = function (nomePagina) {
   table.bh-plano-tb td.n, table.bh-plano-tb th.n { text-align:right; font-variant-numeric:tabular-nums; }
   .bh-plano-acao { font-weight:600; color:var(--acc); }
   @media (max-width: 640px) {
-    .bh-resumo { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+    .bh-resumo { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:10px; }
+    .bh-kpi-nota { font-size:11px; margin:-2px 0 12px; }
+    table.bh-porcasa th:nth-child(4), table.bh-porcasa td:nth-child(4) { display:none; }
     .bh-kpi { padding:8px 6px; border-radius:10px; text-align:center; }
     .bh-kpi .v { font-size:16px; }
     .bh-kpi .l { font-size:9.5px; }
@@ -488,8 +499,27 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <div class="bh-resumo">
   <div class="bh-kpi"><div class="v" id="bh-kpi-n">—</div><div class="l" id="bh-kpi-n-rot">Bartenders</div></div>
+  <div class="bh-kpi bh-kpi-forte"><div class="v" id="bh-kpi-custo">—</div><div class="l">Horas extras a pagar</div></div>
+  <div class="bh-kpi"><div class="v" id="bh-kpi-liquido">—</div><div class="l">Saldo líquido</div></div>
   <div class="bh-kpi"><div class="v" id="bh-kpi-alerta">—</div><div class="l">Em atenção/crítico</div></div>
   <div class="bh-kpi"><div class="v" id="bh-kpi-semdados">—</div><div class="l">Sem dados</div></div>
+</div>
+<p class="bh-kpi-nota" id="bh-kpi-nota">Totais do time selecionado (respeitam o filtro de casa/busca). "Horas extras a pagar" = o que a empresa desembolsaria se pagasse as horas positivas em dinheiro, em vez de zerar com folga.</p>
+
+<div class="bh-plano" id="bh-porcasa-wrap" style="display:none">
+  <h2>Por casa</h2>
+  <p class="sub">Cada casa no time selecionado. "Horas extras a pagar" é a soma do que a empresa desembolsaria pagando as horas positivas em dinheiro; "saldo líquido" soma tudo (positivos − negativos) e diz se, no geral, a casa deve horas ou tem horas a favor.</p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+  <table class="bh-plano-tb bh-porcasa"><thead><tr>
+    <th>Casa</th>
+    <th class="n">Pessoas</th>
+    <th class="n">Saldo líquido</th>
+    <th class="n">Atenção / crítico</th>
+    <th class="n">Devendo / a favor</th>
+    <th class="n">Horas extras a pagar</th>
+  </tr></thead>
+  <tbody id="bh-porcasa-lista"></tbody></table>
+  </div>
 </div>
 
 <div class="panel bh-panel-lista" style="padding:8px 10px;overflow-x:auto">
@@ -575,6 +605,90 @@ window.msgAcessoNegado = function (nomePagina) {
     return h + 'h' + (m ? ' ' + m + 'min' : '');
   }
 
+  // Saldo agregado (soma de vários) no mesmo estilo do saldo por pessoa:
+  // sinal + HH:MM. Zero fica "0:00" (não "—" — zero líquido é uma resposta,
+  // não ausência de dado).
+  function fmtSaldoAgg(min) {
+    if (min == null) return '—';
+    var s = min < 0 ? '-' : '+';
+    var a = Math.abs(min);
+    var h = Math.floor(a / 60), m = a % 60;
+    return s + h + ':' + (m < 10 ? '0' : '') + m;
+  }
+
+  function fmtRS(v) {
+    if (v == null) return '—';
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  // Resumo "Por casa" — uma linha por casa do time atual, + linha de total
+  // quando há mais de uma. Não respeita filtro de casa/busca de propósito:
+  // é a visão por casa, filtrar seria contraditório.
+  function extremoLinha(rotulo, ex) {
+    var s = document.createElement('span');
+    s.className = 'bh-extremo';
+    s.appendChild(document.createTextNode(rotulo + ': '));
+    var b = document.createElement('b');
+    b.textContent = ex.nome;
+    s.appendChild(b);
+    s.appendChild(document.createTextNode(' (' + (ex.saldo_texto || fmtSaldoAgg(ex.saldo_minutos)) + ')'));
+    return s;
+  }
+  function celContagem(neg, pos, classePos) {
+    var t = document.createElement('td');
+    t.className = 'n';
+    var a = document.createElement('span'); a.className = 'bh-cont-neg'; a.textContent = neg;
+    var b = document.createElement('span'); b.className = classePos || 'bh-cont-neg'; b.textContent = pos;
+    t.appendChild(a); t.appendChild(document.createTextNode(' / ')); t.appendChild(b);
+    return t;
+  }
+  function renderPorCasa(porCasa) {
+    var wrapEl = document.getElementById('bh-porcasa-wrap');
+    var tbody = document.getElementById('bh-porcasa-lista');
+    tbody.innerHTML = '';
+    var casas = Object.keys(porCasa).map(function (k) { return porCasa[k]; })
+      .filter(function (c) { return c.n > 0; })
+      .sort(function (a, b) { return b.custo - a.custo || a.saldo - b.saldo; });
+    if (!casas.length) { wrapEl.style.display = 'none'; return; }
+    wrapEl.style.display = '';
+    var T = { n: 0, saldo: 0, comSaldo: 0, atencao: 0, critico: 0, devendo: 0, favor: 0, custo: 0, custoAlgum: false };
+    function linha(c, ehTotal) {
+      var tr = document.createElement('tr');
+      var tdCasa = document.createElement('td');
+      if (ehTotal) tdCasa.className = 'tot';
+      var nomeEl = document.createElement('span'); nomeEl.className = 'bh-casa'; nomeEl.textContent = c.casa;
+      tdCasa.appendChild(nomeEl);
+      if (!ehTotal && c.maiorDev) tdCasa.appendChild(extremoLinha('maior devedor', c.maiorDev));
+      if (!ehTotal && c.maiorCred) tdCasa.appendChild(extremoLinha('maior a favor', c.maiorCred));
+      tr.appendChild(tdCasa);
+      tr.appendChild(td(String(c.n), 'n' + (ehTotal ? ' tot' : '')));
+      var tdS = document.createElement('td'); tdS.className = 'n' + (ehTotal ? ' tot' : '');
+      var sEl = document.createElement('span');
+      sEl.className = 'bh-saldo ' + (c.comSaldo === 0 ? '' : (c.saldo < 0 ? 'neg' : 'pos'));
+      sEl.textContent = c.comSaldo === 0 ? '—' : fmtSaldoAgg(c.saldo);
+      tdS.appendChild(sEl); tr.appendChild(tdS);
+      var cAl = celContagem(c.atencao, c.critico); if (ehTotal) cAl.className += ' tot'; tr.appendChild(cAl);
+      var cDF = celContagem(c.devendo, c.favor, 'bh-cont-pos'); if (ehTotal) cDF.className += ' tot'; tr.appendChild(cDF);
+      var tdCusto = document.createElement('td'); tdCusto.className = 'n' + (ehTotal ? ' tot' : '');
+      tdCusto.textContent = (c.favor > 0 && !c.custoTemAlgum) ? '—' : fmtRS(c.custo);
+      tr.appendChild(tdCusto);
+      tbody.appendChild(tr);
+    }
+    casas.forEach(function (c) {
+      linha(c, false);
+      T.n += c.n; T.saldo += c.saldo; T.comSaldo += c.comSaldo;
+      T.atencao += c.atencao; T.critico += c.critico; T.devendo += c.devendo; T.favor += c.favor;
+      T.custo += c.custo; if (c.custoTemAlgum) T.custoAlgum = true;
+    });
+    if (casas.length > 1) {
+      linha({
+        casa: 'Todas as casas', n: T.n, saldo: T.saldo, comSaldo: T.comSaldo,
+        atencao: T.atencao, critico: T.critico, devendo: T.devendo, favor: T.favor,
+        custo: T.custo, custoTemAlgum: T.custoAlgum,
+      }, true);
+    }
+  }
+
   // Bar e Salão são duas equipes na MESMA página (decisão do Rodrigo,
   // 2026-07-24): mesma estrutura, mesmos blocos, um seletor no topo. O
   // payload traz as duas listas por casa ("bartenders" e "salao"), então
@@ -645,18 +759,35 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('bh-col-nome-dev').textContent = SET.pessoa;
     document.getElementById('bh-col-nome-plano').textContent = SET.pessoa;
     document.getElementById('bh-vazio').textContent = 'Nenhuma pessoa com dado ainda.';
+    // Agregado por casa (independe do filtro de casa/busca — é O resumo por
+    // casa, filtrar seria sem sentido). O custo vem DIRETO do payload, não da
+    // planoPessoas: um saldo positivo com dias_uteis<=0 tem custo mas fica
+    // fora da planoPessoas (que exige minutos_por_dia) — somar só de lá
+    // subcontaria o total a pagar.
+    var porCasa = {};
+    function bucketCasa(nome) {
+      if (!porCasa[nome]) porCasa[nome] = {
+        casa: nome, n: 0, saldo: 0, comSaldo: 0, semDados: 0,
+        atencao: 0, critico: 0, devendo: 0, favor: 0,
+        custo: 0, custoTemAlgum: false, maiorDev: null, maiorCred: null,
+      };
+      return porCasa[nome];
+    }
     Object.keys(casasObj).forEach(function (slug) {
       var c = casasObj[slug];
       if (c[SET.pend]) pendenciasCasa.push((c.bar || slug) + ': ' + c[SET.pend]);
+      var nomeCasa = c.bar || slug;
       (c[SET.chave] || []).forEach(function (b) {
+        var custo = (b.plano_zerar_horas && b.plano_zerar_horas.custo_se_nao_abater != null)
+          ? b.plano_zerar_horas.custo_se_nao_abater : null;
         pessoas.push({
-          casa: c.bar || slug, matricula: b.matricula, nome: b.nome,
+          casa: nomeCasa, matricula: b.matricula, nome: b.nome,
           saldo_texto: b.saldo_atual_texto, saldo_minutos: b.saldo_atual_minutos,
-          situacao: b.situacao, tendencia: tendenciaDe(b.historico),
+          situacao: b.situacao, tendencia: tendenciaDe(b.historico), custo: custo,
         });
         if (b.plano_zerar_horas && b.plano_zerar_horas.minutos_por_dia) {
           planoPessoas.push({
-            casa: c.bar || slug, nome: b.nome, saldo_texto: b.saldo_atual_texto,
+            casa: nomeCasa, nome: b.nome, saldo_texto: b.saldo_atual_texto,
             saldo_minutos: b.saldo_atual_minutos,
             dias_uteis: b.plano_zerar_horas.dias_uteis,
             minutos_por_dia: b.plano_zerar_horas.minutos_por_dia,
@@ -664,8 +795,28 @@ window.msgAcessoNegado = function (nomePagina) {
             custo_se_nao_abater: b.plano_zerar_horas.custo_se_nao_abater,
           });
         }
+        // agregado por casa
+        var bk = bucketCasa(nomeCasa);
+        bk.n++;
+        var sm = b.saldo_atual_minutos;
+        if (sm == null) { bk.semDados++; }
+        else {
+          bk.comSaldo++; bk.saldo += sm;
+          var al = alertaDe(sm);
+          if (al === 'atencao') bk.atencao++;
+          else if (al === 'critico') bk.critico++;
+          if (sm < 0) {
+            bk.devendo++;
+            if (!bk.maiorDev || sm < bk.maiorDev.saldo_minutos) bk.maiorDev = { nome: b.nome, saldo_texto: b.saldo_atual_texto, saldo_minutos: sm };
+          } else if (sm > 0) {
+            bk.favor++;
+            if (!bk.maiorCred || sm > bk.maiorCred.saldo_minutos) bk.maiorCred = { nome: b.nome, saldo_texto: b.saldo_atual_texto, saldo_minutos: sm };
+          }
+        }
+        if (custo != null) { bk.custo += custo; bk.custoTemAlgum = true; }
       });
     });
+    renderPorCasa(porCasa);
     if (pendenciasCasa.length) {
       var pend = document.createElement('div');
       pend.className = 'bh-pendencia';
@@ -783,10 +934,16 @@ window.msgAcessoNegado = function (nomePagina) {
       });
       corpoLista.innerHTML = '';
       var comAlerta = 0, semDados = 0;
+      // Totais do grupo (respeitam o filtro de casa/busca, igual aos KPIs de
+      // contagem que já existiam). custoTemAlgum evita mostrar "R$ 0,00" como
+      // se fosse zero real quando na verdade é salário não configurado.
+      var custoTotal = 0, custoTemAlgum = false, saldoLiquido = 0, comSaldo = 0;
       visiveis.forEach(function (p) {
         var alerta = alertaDe(p.saldo_minutos);
         if (alerta === 'atencao' || alerta === 'critico') comAlerta++;
         if (p.saldo_minutos == null) semDados++;
+        else { saldoLiquido += p.saldo_minutos; comSaldo++; }
+        if (p.custo != null) { custoTotal += p.custo; custoTemAlgum = true; }
 
         var tr = document.createElement('tr');
         tr.appendChild(td(p.casa || '—'));
@@ -829,6 +986,11 @@ window.msgAcessoNegado = function (nomePagina) {
       document.getElementById('bh-kpi-n').textContent = visiveis.length;
       document.getElementById('bh-kpi-alerta').textContent = comAlerta;
       document.getElementById('bh-kpi-semdados').textContent = semDados;
+      // custo: se há gente a favor mas nenhum custo pôde ser calculado
+      // (salário não configurado), "—" em vez de um R$ 0,00 enganoso.
+      var temFavor = visiveis.some(function (p) { return p.saldo_minutos != null && p.saldo_minutos > 0; });
+      document.getElementById('bh-kpi-custo').textContent = (temFavor && !custoTemAlgum) ? '—' : fmtRS(custoTotal);
+      document.getElementById('bh-kpi-liquido').textContent = comSaldo === 0 ? '—' : fmtSaldoAgg(saldoLiquido);
     }
     desenha();
 
