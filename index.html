@@ -440,12 +440,16 @@ window.msgAcessoNegado = function (nomePagina) {
   .pr-card.pr-3d::before { background: #bfa8e0; }
   .pr-card.pr-ideia { background: linear-gradient(135deg,#3d2f14,#241c0d); border-color: #e0c060; }
   .pr-card.pr-ideia::before { background: #f0d68a; }
+  .pr-card.pr-notas { background: linear-gradient(135deg,#241f38,#171428); border-color: #9b8dcc; }
+  .pr-card.pr-notas::before { background: #c4b8e8; }
+  .pr-card.pr-notas.aberto { border-color: #c4b8e8; }
   .pr-card .pr-chip { width: 32px; height: 32px; border-radius: 9px; display: flex;
                        align-items: center; justify-content: center; flex: none; }
   .pr-card .pr-chip svg { width: 17px; height: 17px; display: block; flex: none; }
   .pr-card.pr-receita .pr-chip { background: rgba(143,208,165,.18); color: #a8dfba; }
   .pr-card.pr-3d .pr-chip { background: rgba(165,143,208,.18); color: #bfa8e0; }
   .pr-card.pr-ideia .pr-chip { background: rgba(224,192,96,.18); color: #f0d68a; }
+  .pr-card.pr-notas .pr-chip { background: rgba(155,141,204,.18); color: #c4b8e8; }
   .pr-card .pr-tt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
   .pr-card .pr-tt .t { font-family: var(--serif); font-size: 13.5px; line-height: 1.2; white-space: nowrap;
                         overflow: hidden; text-overflow: ellipsis; }
@@ -492,9 +496,11 @@ window.msgAcessoNegado = function (nomePagina) {
 </style>
 <!-- v7 (2026-07-23): Painel Rápido DESDOBRADO — sem a gaveta-mãe (pr-master).
      Linha 1: 3 botões simétricos (Entenda o portal · Nova demanda · Central de
-     Demandas). Linha 2: 4 ações (Criar · Avarias · Dose · Notas). Os drawers
-     (pr-conteudo do Criar, np-painel das Notas, pr-avarias-sub) e seus ids
-     seguem iguais — só a casca dos botões mudou. -->
+     Demandas). Linha 2: 3 ações (Criar · Avarias · Dose), mesmo grid de 3
+     colunas da linha 1 — Notas saiu daqui e virou card dentro da gaveta
+     Criar (ver comentário de _painel_rapido_corpo). Os drawers (pr-conteudo
+     do Criar, np-painel das Notas — agora aninhado dentro do Criar,
+     pr-avarias-sub) e seus ids seguem iguais — só a casca dos botões mudou. -->
 <style>
   .prv-top3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 9px; }
   .prv-tb { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
@@ -508,8 +514,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .prv-tb.prv-nova .ic { background: rgba(224,122,82,.18); color: #f0a58f; }
   .prv-tb.prv-dem { background: linear-gradient(135deg,#2f2016,#20140f); border-color: #e07a52; }
   .prv-tb.prv-dem .ic { background: rgba(224,122,82,.16); color: #f0a58f; }
-  .prv-q4 { display: flex; gap: 7px; margin-bottom: 12px; }
-  .prv-q { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  .prv-q3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .prv-q { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px;
             text-align: center; border: 1.5px solid var(--border); border-radius: 12px; padding: 9px 3px;
             text-decoration: none; color: var(--text); background: var(--card); font: inherit; font-size: 10.5px; cursor: pointer; }
   .prv-q .ic { color: var(--acc); display: flex; } .prv-q .ic svg { width: 17px; height: 17px; }
@@ -520,8 +526,6 @@ window.msgAcessoNegado = function (nomePagina) {
   .prv-q-avaria { border-color: #cf7089; } .prv-q-avaria .ic { color: #e192a6; }
   .prv-q-avaria.aberto { border-color: #e192a6; }
   .prv-q-dose { border-color: #6fa8dc; } .prv-q-dose .ic { color: #8ec0ea; }
-  .prv-q-notas { border-color: #9b8dcc; } .prv-q-notas .ic { color: #c4b8e8; }
-  .prv-q-notas.aberto { border-color: #c4b8e8; }
   @media (max-width: 380px) { .prv-tb b { font-size: 10px; } .prv-q { font-size: 10px; } }
 </style>
 <div class="prv-top3">
@@ -529,30 +533,34 @@ window.msgAcessoNegado = function (nomePagina) {
   <a class="prv-tb prv-nova" href="registro.html"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><b>Nova demanda</b></a>
   <a class="prv-tb prv-dem" href="demandas.html"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><b>Central de Demandas</b></a>
 </div>
-<div class="prv-q4">
+<div class="prv-q3">
   <button type="button" class="prv-q prv-q-criar" id="pr-toggle-btn" aria-expanded="false" aria-controls="pr-conteudo"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>Criar <span class="pr-toggle-ic"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></button>
   <button type="button" class="prv-q prv-q-avaria" id="pr-avarias-btn" aria-expanded="false" aria-controls="pr-avarias-sub"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span>Avarias</button>
   <a class="prv-q prv-q-dose" id="pr-dose-card" href="dose.html" style="display:none"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span>Dose</a>
-  <button type="button" class="prv-q prv-q-notas" id="np-toggle-btn" aria-expanded="false" aria-controls="np-painel"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg></span>Notas</button>
 </div>
 <div class="pr-avarias-sub" id="pr-avarias-sub" hidden>
   <p class="pr-avarias-cab">O que avariou?</p>
-  <div class="pr-avarias-grid"><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Copos%20e%20ta%C3%A7as%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Copos e taças</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Mob%C3%ADlia%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Mobília</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Equipamentos%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Equipamentos</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Estrutural%20%28pintura%2C%20tomadas%E2%80%A6%29%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Estrutural (pintura, tomadas…)</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Utens%C3%ADlios%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Utensílios</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Vestu%C3%A1rio%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Vestuário</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Outra avaria — escrever</span></a></div>
+  <div class="pr-avarias-grid"><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Copos%20e%20ta%C3%A7as%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Copos e taças</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Lou%C3%A7a%20%28pratos%2C%20travessas...%29%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Louça (pratos, travessas...)</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Mob%C3%ADlia%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Mobília</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Equipamentos%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Equipamentos</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=manutencao&nota=Avaria%20%E2%80%94%20Estrutural%20%28pintura%2C%20tomadas%E2%80%A6%29%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Estrutural (pintura, tomadas…)</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Utens%C3%ADlios%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Utensílios</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20Vestu%C3%A1rio%3A%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Vestuário</span></a><a class="pr-av-chip" href="registro.html?tipo=ocorrencia&setor=gerencia_casa&nota=Avaria%20%E2%80%94%20"><span class="pr-av-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span><span>Outra avaria — escrever</span></a></div>
 </div>
-<div class="painel-rapido" id="pr-conteudo" hidden>
-  <a class="pr-card pr-receita" id="pr-receita-card" href="cocktails.html#nova" style="display:none">
-    <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span>
-    <span class="pr-tt"><span class="t">Nova receita</span><span class="d">ficha técnica direto no banco</span></span>
-  </a>
-  <a class="pr-card pr-3d" id="pr-3d-card" href="planejador-3d.html" style="display:none">
-    <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg></span>
-    <span class="pr-tt"><span class="t">Projeto 3D</span><span class="d">planejador da bancada</span></span>
-  </a>
-  <a class="pr-card pr-ideia" id="pr-ideia-card" href="ideia.html">
-    <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg></span>
-    <span class="pr-tt"><span class="t">Ideia</span><span class="d">desenho e colagem livre</span></span>
-  </a>
-</div>
+<div id="pr-conteudo" hidden>
+  <div class="painel-rapido">
+    <a class="pr-card pr-receita" id="pr-receita-card" href="cocktails.html#nova" style="display:none">
+      <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span>
+      <span class="pr-tt"><span class="t">Nova receita</span><span class="d">ficha técnica direto no banco</span></span>
+    </a>
+    <a class="pr-card pr-3d" id="pr-3d-card" href="planejador-3d.html" style="display:none">
+      <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg></span>
+      <span class="pr-tt"><span class="t">Projeto 3D</span><span class="d">planejador da bancada</span></span>
+    </a>
+    <a class="pr-card pr-ideia" id="pr-ideia-card" href="ideia.html">
+      <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg></span>
+      <span class="pr-tt"><span class="t">Ideia</span><span class="d">desenho e colagem livre</span></span>
+    </a>
+    <button type="button" class="pr-card pr-notas" id="np-toggle-btn" aria-expanded="false" aria-controls="np-painel">
+      <span class="pr-chip"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg></span>
+      <span class="pr-tt"><span class="t">Notas</span><span class="d">bloco de notas pessoal</span></span>
+    </button>
+  </div>
 
 <!-- Prévia das Notas (camada 1 do PLANO_NOTAS_RAPIDAS.md) — captura rápida +
      3 recentes + "Abrir tudo →" (notas.html). O app completo mora em notas.html. -->
@@ -603,6 +611,7 @@ window.msgAcessoNegado = function (nomePagina) {
     </div>
   </div>
 </div>
+</div>
 
 <script>(function () {
   var NP_WORKER = "https://registro-bares.rodrigopcviana.workers.dev";
@@ -623,35 +632,30 @@ window.msgAcessoNegado = function (nomePagina) {
   } catch (e) {}
 
   // v7 (2026-07-23): Painel Rápido desdobrado — não há mais gaveta-mãe
-  // (pr-master removido). Criar/Notas seguem como abas mutuamente exclusivas.
-  // --- Abrir/fechar abas (Criar, Notas — mutuamente exclusivas; Central de
-  // Demandas é botão do topo agora, link direto) ---
+  // (pr-master removido). 2026-07-24: Notas saiu da linha de baixo e virou
+  // card DENTRO da gaveta Criar — não é mais aba irmã, então não há mais
+  // exclusão mútua entre Criar/Notas: Criar abre/fecha sozinho, e o card
+  // Notas (dentro dela) é um sub-toggle próprio, no mesmo molde do
+  // pr-avarias-btn abaixo.
   var btn = document.getElementById('pr-toggle-btn');
   var conteudo = document.getElementById('pr-conteudo');
   var npBtn = document.getElementById('np-toggle-btn');
   var npPainel = document.getElementById('np-painel');
 
-  var abas = [
-    { btn: btn, cont: conteudo },
-    { btn: npBtn, cont: npPainel, aoAbrir: function () { npAbreGaveta(); } }
-  ];
-  function fechaAba(a) {
-    a.cont.hidden = true;
-    a.btn.setAttribute('aria-expanded', 'false');
-    a.btn.classList.remove('aberto');
-  }
-  function abreAba(a) {
-    abas.forEach(function (o) { if (o !== a) fechaAba(o); });
-    a.cont.hidden = false;
-    a.btn.setAttribute('aria-expanded', 'true');
-    a.btn.classList.add('aberto');
-    if (a.aoAbrir) a.aoAbrir();
-  }
-  abas.forEach(function (a) {
-    a.btn.onclick = function () {
-      if (a.cont.hidden) abreAba(a); else fechaAba(a);
-    };
-  });
+  btn.onclick = function () {
+    var abrir = conteudo.hidden;
+    conteudo.hidden = !abrir;
+    btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    btn.classList.toggle('aberto', abrir);
+  };
+
+  npBtn.onclick = function () {
+    var abrir = npPainel.hidden;
+    npPainel.hidden = !abrir;
+    npBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    npBtn.classList.toggle('aberto', abrir);
+    if (abrir) npAbreGaveta();
+  };
 
   // Avarias abre/fecha o submenu de categorias — não navega sozinho.
   var avBtn = document.getElementById('pr-avarias-btn');
@@ -663,11 +667,17 @@ window.msgAcessoNegado = function (nomePagina) {
     avBtn.classList.toggle('aberto', abrir);
   };
 
-  // Abre direto em ?np=1 (link do mini-painel em outras páginas) — sem
-  // gaveta-mãe agora (v7), só abre a aba Notas.
+  // Abre direto em ?np=1 (link do mini-painel em outras páginas): agora
+  // precisa abrir a gaveta Criar E o sub-painel de Notas dentro dela.
   try {
     if (new URLSearchParams(location.search).get('np') === '1') {
-      abreAba(abas[1]);
+      conteudo.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      btn.classList.add('aberto');
+      npPainel.hidden = false;
+      npBtn.setAttribute('aria-expanded', 'true');
+      npBtn.classList.add('aberto');
+      npAbreGaveta();
     }
   } catch (e) {}
 })();
@@ -1545,7 +1555,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 23/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 24/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
