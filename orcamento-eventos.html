@@ -691,6 +691,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="panel">
       <h3 style="margin-top:0">Cardápio do evento</h3>
       <p class="orev-sub" style="margin:-4px 0 4px">No automático, as unidades por convidado vêm dos controles acima; editar um item deixa aquele item manual.</p>
+      <p class="orev-sub" id="orev-cmv-idade" style="margin:0 0 6px"></p>
       <p class="orz-override-msg" id="orev-sugestao-consumo" style="color:var(--text-3)"></p>
       <div class="orz-presets" id="orev-presets"></div>
       <input type="text" class="orev-busca" id="orev-busca" placeholder="Buscar item do cardápio…">
@@ -878,11 +879,14 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="panel">
       <p class="orz-sec" style="margin-top:0">Identificação</p>
       <div class="orev-linha2">
-        <div class="orev-campo" style="margin-bottom:0"><label for="orme-nome">Nome do evento</label>
+        <div class="orev-campo"><label for="orme-nome">Nome do evento</label>
           <input type="text" id="orme-nome" placeholder="Ex.: Festival Tal — 3 dias"></div>
-        <div class="orev-campo" style="margin-bottom:0"><label for="orme-casa">Casa</label>
+        <div class="orev-campo"><label for="orme-casa">Casa</label>
           <select id="orme-casa"></select></div>
       </div>
+      <div class="orev-campo" style="margin-bottom:0"><label for="orme-cliente">Cliente / contato
+        <span class="orz-help" title="Pra quem é o orçamento — nome, empresa ou contato. Opcional. Fica salvo com o evento e aparece no card.">?</span></label>
+        <input type="text" id="orme-cliente" maxlength="200" placeholder="Ex.: João da Silva · Empresa X · (62) 9…"></div>
     </div>
 
     <div class="orz-driver">
@@ -919,6 +923,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="panel">
       <p class="orz-sec" style="margin-top:0">Cardápio do evento</p>
       <p class="orev-sub" style="margin:-4px 0 4px">No automático, as unidades por convidado vêm dos controles acima; editar um item deixa aquele item manual.</p>
+      <p class="orev-sub" id="orme-cmv-idade" style="margin:0 0 6px"></p>
       <p class="orz-override-msg" id="orme-sugestao-consumo" style="color:var(--text-3)"></p>
       <div class="orz-presets" id="orme-presets"></div>
       <input type="text" class="orev-busca" id="orme-busca" placeholder="Buscar item do cardápio…">
@@ -2222,11 +2227,11 @@ window.msgAcessoNegado = function (nomePagina) {
       areas: Math.max(1, num('orev-areas') || 1),
     }));
     // Estrutura & serviço viaja junto (cópia, não referência — editar num
-    // lado não pode mexer no outro). Proposta comercial NÃO existe na
-    // Calculadora — limpa pra não herdar resto de uma edição anterior.
+    // lado não pode mexer no outro). Proposta comercial agora existe na
+    // Calculadora também (2026-07-24) — transfere o que foi preenchido lá.
     estrutura.orme = estruturaLimpa('orev').map(function (l) { return { nome: l.nome, valor: l.valor }; });
     renderEstrutura('orme', calculaEvento);
-    preencheProposta(null);
+    preencheProposta(propostaDoForm('orev'), 'orme');
     preencheCardapioEvento(itensCalc);
     // Transfere o mix EXATO da Calculadora — trava em manual pra distribui()
     // não redistribuir por cima do que veio de lá (o usuário pode voltar pro
@@ -2440,6 +2445,7 @@ window.msgAcessoNegado = function (nomePagina) {
     overrides.orme = null;
     diasOriginaisEditando = null;
     document.getElementById('orme-nome').value = '';
+    document.getElementById('orme-cliente').value = '';
     document.getElementById('orme-dias-corpo').innerHTML = '';
     document.getElementById('orme-dias-corpo').appendChild(linhaDia());
     preencheCardapioEvento([]);
@@ -2496,6 +2502,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var det = det0;
     diasOriginaisEditando = det.dias || null;
     document.getElementById('orme-nome').value = ev.nome || '';
+    document.getElementById('orme-cliente').value = (det.cliente) || '';
     var slugCasa = CASA_SLUG_POR_LABEL[ev.casa] || '';
     if (slugCasa) selCasa.value = slugCasa;
     document.getElementById('orme-markup').value = det.markup != null ? det.markup : 2.0;
@@ -2618,6 +2625,7 @@ window.msgAcessoNegado = function (nomePagina) {
         taxaCocktailConvHora: calc.premissas.taxaCocktailConvHora, mlAguaConvHora: calc.premissas.mlAguaConvHora,
         minBartendersArea: calc.premissas.minBartendersArea,
         estrutura: calc.estrutura, proposta: propostaDoForm(),
+        cliente: document.getElementById('orme-cliente').value.trim(),
         custoTotal: calc.custoTotal, valorTotal: calc.valorTotal,
       }),
     }).then(function (r) {
@@ -2632,7 +2640,10 @@ window.msgAcessoNegado = function (nomePagina) {
   // --- Meus Eventos: lista + status ---
   var statusAtivo = 'Em orçamento';
   var tabsStatus = document.getElementById('orme-status-tabs');
-  STATUS_ORDEM.forEach(function (s) {
+  // "Perdido" (2026-07-24) é aba de filtro/terminal, mas NÃO entra no
+  // avancaStatus (fluxo linear Em orçamento → Fechado → Concluído) — vira só
+  // por botão explícito "Marcar perdido".
+  STATUS_ORDEM.concat(['Perdido']).forEach(function (s) {
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'orev-status-tab' + (s === statusAtivo ? ' on' : '');
     b.textContent = s; b.dataset.s = s;
@@ -2906,6 +2917,7 @@ window.msgAcessoNegado = function (nomePagina) {
           // mordida em 2026-07-22 com bufferPct/pisoCobertura).
           minBartendersArea: det.minBartendersArea || 0,
           estrutura: det.estrutura || [], proposta: det.proposta || null,
+          cliente: det.cliente || '',
           overrideValor: det.overrideValor != null ? det.overrideValor : null,
           custoTotal: ev.custo_total, valorTotal: ev.valor_total,
         }),
@@ -3004,9 +3016,11 @@ window.msgAcessoNegado = function (nomePagina) {
             var dUlt = dias0[dias0.length - 1].data;
             dataEvento = (dUlt && dUlt !== dias0[0].data) ? (dias0[0].data + ' – ' + dUlt) : dias0[0].data;
           }
+          var clienteEv = (ev.detalhe && ev.detalhe.cliente) || '';
           var meta = document.createElement('div'); meta.className = 'meta';
           meta.textContent = (ev.casa || '—') + ' · ' + dataEvento + ' · ' + (ev.dias || 0) + ' dia(s) · '
-            + (ev.convidados_totais || 0) + ' convidados' + (ev.criado_por ? ' · por ' + ev.criado_por : '');
+            + (ev.convidados_totais || 0) + ' convidados' + (ev.criado_por ? ' · por ' + ev.criado_por : '')
+            + (clienteEv ? ' · cliente: ' + clienteEv : '');
 
           var lucroEv = (ev.valor_total || 0) - (ev.custo_total || 0);
           var margemEv = ev.valor_total ? (lucroEv / ev.valor_total) * 100 : 0;
@@ -3050,6 +3064,16 @@ window.msgAcessoNegado = function (nomePagina) {
           btnDup.title = 'Cria um evento novo já preenchido com tudo deste — pra cliente recorrente ou evento parecido. O original fica intacto.';
           btnDup.onclick = function () { duplicaEvento(ev); };
           acoes.appendChild(btnPng); acoes.appendChild(btnDup); acoes.appendChild(btnEd); acoes.appendChild(btnDel);
+          // "Marcar perdido" — só faz sentido enquanto o orçamento não fechou
+          // nem já é perdido. Terminal alternativo, fora do fluxo linear.
+          if (ev.status !== 'Perdido' && ev.status !== 'Concluído') {
+            var btnPerd = document.createElement('button'); btnPerd.type = 'button'; btnPerd.textContent = 'Marcar perdido';
+            btnPerd.title = 'O cliente não fechou. Move pra Perdido (entra na taxa de conversão).';
+            btnPerd.onclick = function () {
+              if (window.confirm('Marcar "' + ev.nome + '" como Perdido?')) mudaStatus(ev.id, 'Perdido');
+            };
+            acoes.appendChild(btnPerd);
+          }
 
           corpo.appendChild(resumoBox); corpo.appendChild(agendaBox); corpo.appendChild(roteiroBox); corpo.appendChild(acoes);
           card.appendChild(tit); card.appendChild(meta); card.appendChild(rapido); card.appendChild(corpo);
@@ -3326,6 +3350,34 @@ window.msgAcessoNegado = function (nomePagina) {
     return b;
   }
 
+  // Proposta em PDF (2026-07-24) — o mesmo conteúdo client-safe do
+  // blocosProposta, renderizado como HTML (texto vetorial) no #orz-print-area
+  // e mandado pra window.print(); o usuário escolhe "Salvar como PDF" no
+  // diálogo. Reusa blocosProposta pra NUNCA vazar custo/margem (a garantia é
+  // a mesma da imagem — não há caminho separado que monte custo). Sem lib.
+  function blocosParaHTML(blocos) {
+    return blocos.map(function (b) {
+      if (b.t === 'title') return '<h2>' + esc(b.s) + '</h2>';
+      if (b.t === 'sub') return '<p style="color:#666;margin:0 0 8px">' + esc(b.s) + '</p>';
+      if (b.t === 'hero') return '<p style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin:14px 0 0">'
+        + esc(b.k) + '</p><p style="font-size:30px;font-weight:800;margin:0 0 8px;color:#111">' + esc(b.v) + '</p>';
+      if (b.t === 'sec') return '<h3>' + esc(b.s) + '</h3>';
+      if (b.t === 'kv') return '<p style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #eee;padding:4px 0;margin:0">'
+        + '<span>' + esc(b.k) + '</span><b>' + esc(b.v) + '</b></p>';
+      if (b.t === 'para') return '<p style="margin:4px 0">' + esc(b.s) + '</p>';
+      if (b.t === 'diahdr') return '<p style="display:flex;justify-content:space-between;gap:16px;font-weight:700;margin:14px 0 2px">'
+        + '<span>' + esc(b.s) + '</span><span>' + esc(b.v) + '</span></p>';
+      if (b.t === 'rule') return '<hr style="border:none;border-top:1px solid #ccc;margin:8px 0">';
+      if (b.t === 'space') return '<div style="height:' + (b.h || 8) + 'px"></div>';
+      return '';
+    }).join('');
+  }
+  function imprimeProposta(dados) {
+    if (!dados || !dados.convidados) { window.alert('Preencha convidados / calcule o orçamento antes de gerar a proposta.'); return; }
+    document.getElementById('orz-print-area').innerHTML = blocosParaHTML(blocosProposta(dados));
+    window.print();
+  }
+
   // Monta o "dados" comum a partir de um array de dias já calculados + totais.
   function montaDados(nome, casa, convidados, diasCalc, totais) {
     var dias = diasCalc.map(function (d, idx) {
@@ -3453,6 +3505,15 @@ window.msgAcessoNegado = function (nomePagina) {
       };
       acoes.appendChild(bs);
     }
+    // Proposta em PDF — abre o diálogo de impressão só com a proposta
+    // (client-safe); "Salvar como PDF" gera o documento formal, texto
+    // vetorial em vez de imagem. Sai de dentro do modal pra não imprimir a
+    // sobreposição junto.
+    var bpdf = document.createElement('button'); bpdf.type = 'button'; bpdf.textContent = 'Imprimir / PDF (proposta)';
+    bpdf.style.cssText = 'flex:1;min-width:150px;padding:11px;border-radius:10px;border:1px solid var(--border);'
+      + 'background:var(--bg);color:var(--text);cursor:pointer;font:inherit';
+    bpdf.onclick = function () { ov.remove(); setTimeout(function () { imprimeProposta(dados); }, 60); };
+    acoes.appendChild(bpdf);
     var bf = document.createElement('button'); bf.type = 'button'; bf.textContent = 'Fechar';
     bf.style.cssText = 'flex:1;min-width:110px;padding:11px;border-radius:10px;border:1px solid var(--border);'
       + 'background:var(--card);color:var(--text);cursor:pointer;font:inherit';
@@ -3461,6 +3522,27 @@ window.msgAcessoNegado = function (nomePagina) {
     ov.appendChild(box);
     ov.onclick = function (e) { if (e.target === ov) ov.remove(); };
     document.body.appendChild(ov);
+  }
+
+  // Idade do CMV (2026-07-24) — o cardápio de custo é regerado pelo robô das
+  // 7h (orcamento_eventos_gen.py) todo dia; se o pipeline quebrar, orçar sobre
+  // custo velho corrói margem em silêncio. Mostra há quanto tempo foi gerado;
+  // acima de 3 dias vira aviso âmbar, acima de 10 dias vermelho. Sem
+  // gerado_em (payload antigo) não inventa nada — some.
+  function mostraIdadeCardapio(geradoEm) {
+    var els = [document.getElementById('orev-cmv-idade'), document.getElementById('orme-cmv-idade')];
+    var txt = '', cor = 'var(--text-3)';
+    if (geradoEm) {
+      var d = new Date(geradoEm);
+      if (!isNaN(d.getTime())) {
+        var dias = Math.floor((Date.now() - d.getTime()) / 86400000);
+        var quando = dias <= 0 ? 'hoje' : (dias === 1 ? 'ontem' : 'há ' + dias + ' dias');
+        txt = 'Custo do cardápio atualizado ' + quando + ' (' + d.toLocaleDateString('pt-BR') + ').';
+        if (dias > 10) { cor = 'var(--urg-urgente, #e24b4a)'; txt += ' Pode estar defasado — confira o pipeline de custo antes de fechar preço.'; }
+        else if (dias > 3) { cor = 'var(--urg-hoje, #d99a2b)'; txt += ' Confira se o custo ainda reflete os preços atuais.'; }
+      }
+    }
+    els.forEach(function (el) { if (el) { el.textContent = txt; el.style.color = cor; } });
   }
 
   function buscaDados(token) {
@@ -3474,6 +3556,7 @@ window.msgAcessoNegado = function (nomePagina) {
           gate.style.display = 'none';
           wrap.style.display = '';
           cardapioItens = d.itens || [];
+          mostraIdadeCardapio(d.gerado_em);
           montaCardapio(cardapioItens, 'orev-cardapio', 'orev-cardapio-vazio', selecionados, calcula);
           montaCardapio(cardapioItens, 'orme-cardapio', 'orme-cardapio-vazio', selecionadosEvento, calculaEvento);
           // Presets só existem depois do cardápio montado (eles agem sobre as
