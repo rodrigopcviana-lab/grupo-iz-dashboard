@@ -1466,6 +1466,11 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   // Ícones do alto-falante (traço): COM som / MUDO.
   var SOM_ON = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9a3.3 3.3 0 0 1 0 6"/><path d="M19 6.5a6.5 6.5 0 0 1 0 11"/>';
   var SOM_OFF = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>';
+  // Rádio parada mostra PLAY, não alto-falante-mudo (pedido do Rodrigo,
+  // 2026-07-23: "a rádio sempre tem que aparecer em pausa"). Alto-falante
+  // cortado diz "está ligada, sem som"; triângulo diz "está parada, toque
+  // pra ligar" — que é a verdade desde que o player virou preguiçoso.
+  var PLAY_IC = '<path d="M7 5.5v13l11-6.5z"/>';
   var player = null, pronto = false, tocando = false, mudo = true;
 
   // ---- lista de estações (do config, via JSON injetado) ----
@@ -1652,10 +1657,11 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   function toggle(v) {
     var abrindo = v === undefined ? !pop.classList.contains('aberto') : v;
     pop.classList.toggle('aberto', abrindo);
-    // Abrir o painel já liga a rádio: dá ao YouTube a folga de carregar
-    // enquanto a pessoa escolhe a estação, em vez de fazê-la esperar depois
-    // do play. Quem não abre o painel não paga nada disso.
-    if (abrindo) ligaRadio();
+    // Abrir o painel NÃO liga a rádio (pedido do Rodrigo, 2026-07-23: "a
+    // rádio sempre tem que aparecer em pausa"). Uma versão anterior ligava
+    // aqui pra adiantar o carregamento — mas aí ela nunca APARECIA pausada,
+    // que é justamente o estado que ele quer ver. Quem liga é o play (ou
+    // trocar de estação, que é um pedido explícito de ouvir aquela).
     atualizaMini();
   }
   btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
@@ -1675,11 +1681,15 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     var st = ST[s.idx];
     nmEl.textContent = st ? st.nome : 'Rádio Vice City';
     dsEl.textContent = st ? st.ds : (ST.length + ' estações');
-    // "ligando…" só vale depois que alguém pediu a rádio. Antes disso ela
-    // nem foi criada (ver ligaRadio), então dizer "ligando" seria mentira.
+    // Rádio parada aparece PARADA: "ligando…" só depois que alguém pediu,
+    // e antes disso o estado é "pausada" (ela nem foi criada — ver ligaRadio).
+    var parada = !tocando && !player && !criando;
     stEl.textContent = tocando ? (mudo ? 'no mudo' : 'no ar')
-                     : (player || criando ? 'ligando…' : 'toque para ligar');
-    playIc.innerHTML = mudo ? SOM_OFF : SOM_ON;
+                     : (parada ? 'pausada' : 'ligando…');
+    playIc.innerHTML = parada ? PLAY_IC : (mudo ? SOM_OFF : SOM_ON);
+    // O botão do topo também precisa dizer "parada": sem a classe .tocando
+    // ele já fica neutro, mas a .parada dá o ponto de pausa explícito.
+    btn.classList.toggle('parada', parada);
     if (religar) religar.classList.toggle('on', tocando && mudo);
     atualizaMini();
   }
