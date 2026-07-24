@@ -450,6 +450,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .tn-vazio { font-size:13.5px; color:var(--text-3); padding:6px 0; }
   .tn-erro { font-size:13.5px; color:var(--amarelo); border:1px solid var(--amarelo);
              background:rgba(224,176,92,.09); border-radius:10px; padding:10px 12px; }
+  .tn-pend-reincid { grid-column:1 / -1; font-size:12.5px; color:var(--amarelo);
+                      border:1px solid var(--amarelo); background:rgba(224,176,92,.09);
+                      border-radius:9px; padding:8px 11px; margin:2px 0 0; line-height:1.5; }
   .tn-chip { display:inline-flex; align-items:center; gap:7px; padding:6px 8px 6px 12px; border-radius:999px;
              border:1px solid var(--acc); color:var(--acc); font-size:13.5px; }
   .tn-chip button { background:none; border:0; color:var(--acc); font-size:15px; line-height:1; cursor:pointer;
@@ -686,6 +689,14 @@ window.msgAcessoNegado = function (nomePagina) {
           };
           acoes.appendChild(bSegue); acoes.appendChild(bOk);
           row.appendChild(esq); row.appendChild(acoes);
+          // A2 (reincidência) — turnos/fechamento.py detectou o mesmo item em
+          // 3+ turnos numa janela de 7 dias; o Worker já manda o texto pronto
+          // (SUGESTAO_PERSISTENTE), a página só exibe.
+          if (p.persistente && p.sugestao) {
+            var alerta = document.createElement('div'); alerta.className = 'tn-pend-reincid';
+            alerta.textContent = (p.ocorrencias_na_janela ? p.ocorrencias_na_janela + 'x em 7 dias — ' : '') + p.sugestao;
+            row.appendChild(alerta);
+          }
           alvo.appendChild(row);
         });
       })
