@@ -2347,6 +2347,32 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('orme-form-secao').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  // Duplicar como MODELO (2026-07-24) — cliente recorrente / evento parecido.
+  // Reusa entraModoEdicao pra preencher o formulário com TUDO do evento
+  // (cardápio, dias, premissas, estrutura, proposta, roteiro) e então vira pra
+  // modo NOVO: zera o editandoId (senão "Salvar" faria PATCH por cima do
+  // original), sufixa o nome com "(cópia)" e troca os rótulos. Salvar cria um
+  // registro novo no Notion — nunca toca o evento de origem.
+  function duplicaEvento(ev) {
+    var det = ev.detalhe || {};
+    if (!det.dias || !det.dias.length) {
+      window.alert('Este evento carregou sem dias salvos (dado desatualizado) — recarregando a lista, tente de novo.');
+      carregaEventos();
+      return;
+    }
+    entraModoEdicao(ev);            // preenche o form (a mesma guarda já passou)
+    editandoId = null;             // <- o que torna o Salvar um POST, não PATCH
+    var nomeOrigem = ev.nome || 'Evento';
+    document.getElementById('orme-nome').value = nomeOrigem + ' (cópia)';
+    document.getElementById('orme-cancelar-edicao').style.display = 'none';
+    document.getElementById('orme-salvar').textContent = 'Salvar orçamento';
+    document.getElementById('orme-form-titulo').textContent = 'Novo evento — cópia de "' + nomeOrigem + '"';
+    document.getElementById('orme-salvar-msg').textContent =
+      'Cópia de "' + nomeOrigem + '" — ajuste o que precisar (datas, convidados…) e salve como um evento novo. O original fica intacto.';
+    document.getElementById('orme-nome').focus();
+    document.getElementById('orme-nome').select();
+  }
+
   // --- Meus Eventos: salvar ---
   document.getElementById('orme-salvar').onclick = function () {
     var nomeEvento = document.getElementById('orme-nome').value.trim();
@@ -2808,7 +2834,10 @@ window.msgAcessoNegado = function (nomePagina) {
           btnDel.onclick = function () { apagaEvento(ev); };
           var btnPng = document.createElement('button'); btnPng.type = 'button'; btnPng.textContent = 'Baixar imagem';
           btnPng.onclick = function () { exportaPNG(dadosDoEv(ev)); };
-          acoes.appendChild(btnPng); acoes.appendChild(btnEd); acoes.appendChild(btnDel);
+          var btnDup = document.createElement('button'); btnDup.type = 'button'; btnDup.textContent = 'Duplicar';
+          btnDup.title = 'Cria um evento novo já preenchido com tudo deste — pra cliente recorrente ou evento parecido. O original fica intacto.';
+          btnDup.onclick = function () { duplicaEvento(ev); };
+          acoes.appendChild(btnPng); acoes.appendChild(btnDup); acoes.appendChild(btnEd); acoes.appendChild(btnDel);
 
           corpo.appendChild(resumoBox); corpo.appendChild(agendaBox); corpo.appendChild(roteiroBox); corpo.appendChild(acoes);
           card.appendChild(tit); card.appendChild(meta); card.appendChild(rapido); card.appendChild(corpo);

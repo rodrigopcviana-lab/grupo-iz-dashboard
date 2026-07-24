@@ -638,6 +638,16 @@ prioridade (urgência primeiro, mais antiga depois).</p>
                  font-family: inherit; resize: vertical; }
   .dm-rasc-barra { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
   .dm-rasc-nota { font-size: 12px; color: var(--text-3); }
+  /* Motor 1 · E5.1 duplicata / E5.3 conferência de compra */
+  .dm-dup { font-size: 13px; color: var(--text); border: 1px solid var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent);
+             border-radius: 10px; padding: 9px 12px; margin: 8px 0 0; }
+  .dm-dup b { color: var(--acc); }
+  .dm-compra { font-size: 13px; color: var(--text-2); margin: 10px 0 0; }
+  .dm-compra .dm-compra-hit { display: block; margin-top: 5px; padding: 8px 10px; border: 1px solid var(--border);
+                               border-radius: 9px; background: var(--card); }
+  .dm-compra .dm-compra-hit b { color: var(--text); }
+  .dm-compra button { font: inherit; font-size: 12.5px; padding: 5px 11px; border-radius: 9px; margin-top: 6px;
+                       border: 1px solid var(--verde); background: none; color: var(--verde); cursor: pointer; }
   .dm-status-chip { font: inherit; font-size: 11px; letter-spacing: .02em; border-radius: 999px; padding: 2.5px 9px;
                      border: 1px solid var(--border); background: none; color: var(--text-2); cursor: pointer;
                      white-space: nowrap; margin-left: auto; }
@@ -940,6 +950,11 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   // responsável definido" (o card avisa em âmbar; a lista cresce das correções
   // do Rodrigo, o plano não deixa inventar nome). Chave = SLUG do setor.
   var RESPONSAVEIS = {"manutencao": "João Vitor Jorge", "compras_insumos": "João Vitor Jorge", "coordenacao": "Rodrigo Coelho", "rh_pessoas": null, "gerencia_casa": null, "operacao_bar": null, "marketing": null};
+  // Motor 1 · E5.3 — URL do contagem-bares (Histórico de Compras vive lá, não
+  // no registro-bares). O token de sessão vale nos dois (TOKEN_SECRET
+  // compartilhado). Busca sob demanda, uma vez, cacheada em memória.
+  var CONTAGEM_URL = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var COMPRAS_HIST = null; // null=não buscado; []=buscado e vazio
   // Regras de CAMINHO ERRADO (config/fluxo_demandas.json). Só dispara alerta o
   // que está ESCRITO aqui — nunca por palpite. Nasce vazio (base sem RH), então
   // hoje não dispara: silêncio é o comportamento correto, não bug.
@@ -966,6 +981,33 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       if (bate) return r;
     }
     return null;
+  }
+  // Motor 1 · E5.3 — busca o Histórico de Compras (uma vez, cacheada) no
+  // contagem-bares. Token de sessão vale lá (secret compartilhado); servidor
+  // decide a casa (chefe só a própria). Falha/ausência = [] (silêncio honesto).
+  function carregaComprasHist() {
+    if (COMPRAS_HIST !== null) return Promise.resolve(COMPRAS_HIST);
+    if (!CONTAGEM_URL) { COMPRAS_HIST = []; return Promise.resolve(COMPRAS_HIST); }
+    return fetch(CONTAGEM_URL + '/api/compras-historico', { headers: { 'X-Token': TOKEN } })
+      .then(function (r) { return r.ok ? r.json() : { compras: [] }; })
+      .then(function (d) { COMPRAS_HIST = (d && d.compras) || []; return COMPRAS_HIST; })
+      .catch(function () { COMPRAS_HIST = []; return COMPRAS_HIST; });
+  }
+  // Compras do histórico que PARECEM esta demanda: mesma casa, >=2 palavras em
+  // comum no nome do produto. Fuzzy de propósito — o plano avisa que o nome da
+  // nota raramente bate com o texto do chefe, então NUNCA fecha sozinho; só
+  // sugere "parece esta — confirma?". Reusa triPalavras (tira URL, normaliza).
+  function comprasParecidas(d) {
+    if (!COMPRAS_HIST || !COMPRAS_HIST.length) return [];
+    var pal = triPalavras(d.descricao);
+    if (pal.length < 2) return [];
+    var casa = (d.casa || '').toLowerCase();
+    return COMPRAS_HIST.filter(function (c) {
+      if ((c.casa || '').toLowerCase() !== casa) return false;
+      var outras = triPalavras(c.produto || ''), comuns = 0;
+      for (var i = 0; i < pal.length; i++) if (outras.indexOf(pal[i]) >= 0) comuns++;
+      return comuns >= 2;
+    }).slice(0, 4);
   }
   // setor -> mesma cor da casa (A10): reuso de paleta, semântica pelo contexto
   var SETOR_COR = {
@@ -1757,6 +1799,22 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       corpoEl.appendChild(al);
     }
 
+    // Motor 1 · E5.1 — aviso de DUPLICATA. Mesma casa, texto parecido, entre as
+    // abertas carregadas (aprox. os últimos 15 dias — a fila só traz abertas
+    // recentes). Reusa triParecidas (código puro, sem IA; tira URL antes de
+    // tokenizar). Só aparece quando há sinal — nunca chute. Justificado: no Grá
+    // "troca/itens/quebrados" reaparecem = um lote de reposição fatiado.
+    if (d.status !== 'Resolvido') {
+      var nPar = triParecidas(d);
+      if (nPar > 0) {
+        var dup = document.createElement('div'); dup.className = 'dm-dup';
+        dup.innerHTML = '<b>Parecida com ' + nPar + ' outra' + (nPar === 1 ? '' : 's') +
+          ' aberta' + (nPar === 1 ? '' : 's') + '</b> no ' + esc(d.casa || 'mesma casa') +
+          ' — pode ser o mesmo pedido fatiado. Vale despachar junto.';
+        corpoEl.appendChild(dup);
+      }
+    }
+
     // Motor 1 · E4.5 — rascunho de encaminhamento por IA. Regra decide (para
     // quem / caminho certo ou errado, calculado aqui); IA só redige no Worker.
     // NADA sai sozinho: mostra num textarea editável com "Copiar". Só
@@ -1807,6 +1865,50 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       };
       rascWrap.appendChild(bRasc);
       corpoEl.appendChild(rascWrap);
+    }
+
+    // Motor 1 · E5.3 — conferência de compra POR EVIDÊNCIA. Só pra demanda de
+    // compra/insumo aberta, e só chefe/coord. Botão sob demanda (não custa nada
+    // até clicar): busca o Histórico de Compras e mostra o que PARECE esta —
+    // "confirma?". NUNCA fecha sozinho (o nome da nota raramente bate). Estado
+    // vazio honesto: "nenhuma compra parecida" — não finge evidência.
+    var slugE53 = SETOR_LABEL_TO_SLUG[d.setor] || '';
+    if (!SOMENTE_LEITURA && (NIVEL === 'chefe' || NIVEL === 'coord') && slugE53 === 'compras_insumos' && d.status !== 'Resolvido') {
+      var compWrap = document.createElement('div'); compWrap.className = 'dm-compra';
+      var bComp = document.createElement('button'); bComp.type = 'button';
+      bComp.textContent = 'Conferir no histórico de compras';
+      bComp.onclick = function () {
+        bComp.disabled = true; bComp.textContent = 'Procurando…';
+        carregaComprasHist().then(function () {
+          var hits = comprasParecidas(d);
+          bComp.style.display = 'none';
+          if (!hits.length) {
+            var vazio = document.createElement('div'); vazio.className = 'dm-compra-hit';
+            vazio.textContent = 'Nenhuma compra parecida no histórico desta casa. Isso não confirma que não foi comprada — pode só não ter chegado ao histórico ainda.';
+            compWrap.appendChild(vazio);
+            return;
+          }
+          hits.forEach(function (c) {
+            var hit = document.createElement('div'); hit.className = 'dm-compra-hit';
+            var quando = c.data ? (' · ' + esc(c.data)) : '';
+            var quanto = (typeof c.valor === 'number') ? (' · R$ ' + c.valor.toFixed(2).replace('.', ',')) : '';
+            hit.innerHTML = 'Parece esta compra: <b>' + esc(c.produto || '(sem nome)') + '</b>' + quando + quanto +
+              (c.fornecedor ? '<br><span class="sub">' + esc(c.fornecedor) + '</span>' : '');
+            var bOk = document.createElement('button');
+            bOk.textContent = 'É esta — marcar resolvida';
+            bOk.onclick = function () {
+              bOk.disabled = true; bOk.textContent = 'salvando…';
+              patch(d.chave, { status: 'Resolvido' }, function () {
+                d.status = 'Resolvido'; removeDaFila(t, d); toast('Resolvida — casada com a compra.'); redesenha();
+              }, function () { bOk.disabled = false; bOk.textContent = 'É esta — marcar resolvida'; toast('Falha ao salvar — tenta de novo.', true); });
+            };
+            hit.appendChild(bOk);
+            compWrap.appendChild(hit);
+          });
+        });
+      };
+      compWrap.appendChild(bComp);
+      corpoEl.appendChild(compWrap);
     }
 
     if (d.transcricao) {
