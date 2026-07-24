@@ -431,14 +431,16 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
     corpo.appendChild(acoes);
 
     if (d.origem === 'iz') {
+      // 1.3: mesmo vocabulário "autorizar" da Central — "Aprovado" já é o
+      // Status resposta, palavra igual pras duas coisas confundia.
       var envio = document.createElement('div'); envio.className='mc-envio';
       function pintaEnvio() {
         envio.innerHTML=''; var est=d.aviso_whatsapp||'', txt;
-        if (est==='Enviado') txt='WhatsApp enviado ao chefe da casa'; else if (est==='Aprovado') txt='Envio aprovado — aguardando disparo';
-        else if (est==='Expirado') txt='Envio expirou — re-aprovar'; else txt='Sem aviso de WhatsApp';
+        if (est==='Enviado') txt='Enviado ao chefe da casa'; else if (est==='Aprovado') txt='Envio autorizado — aguardando disparo';
+        else if (est==='Expirado') txt='Expirou — autorizar de novo'; else txt='Nenhum aviso enviado';
         var sp=document.createElement('span'); sp.textContent=txt; envio.appendChild(sp);
-        var b=document.createElement('button'); b.className='mc-btn'+(est?'':' pri'); b.textContent=(est==='Enviado'||est==='Expirado')?'Reenviar':'Aprovar envio';
-        b.onclick=function(){ b.disabled=true; aprovarEnvio(d, function () { d.aviso_whatsapp='Aprovado'; toast('Envio aprovado — sai pelo vigia local.'); pintaEnvio(); }, function () { b.disabled=false; toast('Falha ao aprovar.', true); }); };
+        var b=document.createElement('button'); b.className='mc-btn'+(est?'':' pri'); b.textContent=(est==='Enviado'||est==='Expirado')?'Reenviar':'Autorizar envio';
+        b.onclick=function(){ b.disabled=true; aprovarEnvio(d, function () { d.aviso_whatsapp='Aprovado'; toast('Envio autorizado — sai pelo vigia local.'); pintaEnvio(); }, function () { b.disabled=false; toast('Falha ao autorizar.', true); }); };
         envio.appendChild(b);
       }
       pintaEnvio(); corpo.appendChild(envio);

@@ -1784,51 +1784,62 @@ prioridade (urgência primeiro, mais antiga depois).</p>
 
     if (acoes.childElementCount) corpoEl.appendChild(acoes);
 
-    // F6: aprovação de envio WhatsApp. Estado sempre visível; botão só pra
-    // coord (o Worker também recusa qualquer outro nível). O envio real é do
-    // vigia local — "Aprovado" aqui = aguardando o Mac disparar.
-    var envioEl = document.createElement('div'); envioEl.className = 'dm-envio';
-    function pintaEnvio() {
-      envioEl.innerHTML = '';
-      var est = d.aviso_whatsapp || '';
-      var cls = 'dm-envio-est', txt;
-      if (est === 'Enviado') {
-        cls += ' ok';
-        txt = 'WhatsApp enviado ao chefe da casa' + (d.enviado_em ? ' · ' + horaCurta(d.enviado_em) : '');
-      } else if (est === 'Aprovado') {
-        cls += ' wait';
-        txt = 'Envio aprovado — aguardando disparo (Mac offline?)';
-      } else if (est === 'Expirado') {
-        cls += ' exp';
-        txt = 'Envio expirou sem sair — re-aprovar para tentar de novo';
-      } else {
-        txt = 'Sem aviso de WhatsApp enviado';
-      }
-      var span = document.createElement('span'); span.className = cls;
-      span.innerHTML = '<span class="dot" aria-hidden="true"></span>' + esc(txt);
-      envioEl.appendChild(span);
+    // F6/1.3: aprovação de envio WhatsApp. Vocabulário "autorizar/autorizado"
+    // aqui, nunca "aprovar/aprovado" — essa palavra já é o Status resposta
+    // (pill logo abaixo). As duas coisas são independentes (pedido aprovado
+    // × envio de WhatsApp autorizado) e usar a mesma palavra nas duas fazia
+    // uma coord ler "Aprovado" duas vezes no mesmo card sem saber a qual das
+    // duas se referia (PLANO_MOTORES_DEMANDAS.md 1.3). O ESTADO interno
+    // continua 'Aprovado' (é o que o Worker grava/compara — mudar isso seria
+    // mudar contrato, não vocabulário); só o TEXTO mostrado muda.
+    // Bloco só aparece pra coord (que decide autorizar) OU quando já existe
+    // estado (chefe não vê linha morta "nenhum aviso" — ele não pode agir
+    // nela mesmo).
+    var estAviso = d.aviso_whatsapp || '';
+    if (NIVEL === 'coord' || estAviso) {
+      var envioEl = document.createElement('div'); envioEl.className = 'dm-envio';
+      function pintaEnvio() {
+        envioEl.innerHTML = '';
+        var est = d.aviso_whatsapp || '';
+        var cls = 'dm-envio-est', txt;
+        if (est === 'Enviado') {
+          cls += ' ok';
+          txt = 'Enviado ao chefe da casa' + (d.enviado_em ? ' · ' + horaCurta(d.enviado_em) : '');
+        } else if (est === 'Aprovado') {
+          cls += ' wait';
+          txt = 'Envio autorizado — aguardando disparo (Mac offline?)';
+        } else if (est === 'Expirado') {
+          cls += ' exp';
+          txt = 'Expirou sem sair — autorizar de novo';
+        } else {
+          txt = 'Nenhum aviso enviado';
+        }
+        var span = document.createElement('span'); span.className = cls;
+        span.innerHTML = '<span class="dot" aria-hidden="true"></span>' + esc(txt);
+        envioEl.appendChild(span);
 
-      if (NIVEL === 'coord') {
-        var enviadoOuExpirado = (est === 'Enviado' || est === 'Expirado');
-        var b = document.createElement('button');
-        b.className = 'dm-btn' + (est ? '' : ' pri');
-        // "Reenviar" força um novo ciclo. Gerar o id _v2 na rota é trabalho
-        // futuro (fora do escopo mínimo v1); por ora re-aprova o mesmo ciclo.
-        b.textContent = enviadoOuExpirado ? 'Reenviar' : 'Aprovar envio';
-        b.onclick = function () {
-          b.disabled = true;
-          aprovarEnvio(d.chave, function () {
-            d.aviso_whatsapp = 'Aprovado';
-            d.aprovado_em = new Date().toISOString();
-            toast('Envio aprovado — o disparo sai pelo vigia local.');
-            pintaEnvio();
-          }, function () { b.disabled = false; toast('Falha ao aprovar o envio — tenta de novo.', true); });
-        };
-        envioEl.appendChild(b);
+        if (NIVEL === 'coord') {
+          var enviadoOuExpirado = (est === 'Enviado' || est === 'Expirado');
+          var b = document.createElement('button');
+          b.className = 'dm-btn' + (est ? '' : ' pri');
+          // "Reenviar" força um novo ciclo. Gerar o id _v2 na rota é trabalho
+          // futuro (fora do escopo mínimo v1); por ora re-autoriza o mesmo ciclo.
+          b.textContent = enviadoOuExpirado ? 'Reenviar' : 'Autorizar envio';
+          b.onclick = function () {
+            b.disabled = true;
+            aprovarEnvio(d.chave, function () {
+              d.aviso_whatsapp = 'Aprovado';
+              d.aprovado_em = new Date().toISOString();
+              toast('Envio autorizado — o disparo sai pelo vigia local.');
+              pintaEnvio();
+            }, function () { b.disabled = false; toast('Falha ao autorizar o envio — tenta de novo.', true); });
+          };
+          envioEl.appendChild(b);
+        }
       }
+      pintaEnvio();
+      corpoEl.appendChild(envioEl);
     }
-    pintaEnvio();
-    corpoEl.appendChild(envioEl);
 
     // Resposta do recebedor (2026-07-14, pedido do Rodrigo): texto livre +
     // 3 botões de classificação rápida. Mesma trava de SOMENTE_LEITURA das
