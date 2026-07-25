@@ -638,6 +638,21 @@ prioridade (urgência primeiro, mais antiga depois).</p>
                  font-family: inherit; resize: vertical; }
   .dm-rasc-barra { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
   .dm-rasc-nota { font-size: 12px; color: var(--text-3); }
+  /* Motor 1 · E4.7 — 3 soluções A/B/C + escrever a minha */
+  .dm-sol { margin: 8px 0 0; display: grid; gap: 7px; }
+  .dm-sol-op { display: flex; gap: 10px; align-items: flex-start; text-align: left; width: 100%;
+                padding: 9px 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+                color: var(--text); cursor: pointer; font-family: inherit; }
+  .dm-sol-op:hover { border-color: var(--acc); }
+  .dm-sol-op.sel { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent); }
+  .dm-sol-rot { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; display: inline-flex;
+                 align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+                 border: 1px solid var(--acc); color: var(--acc); }
+  .dm-sol-op.sel .dm-sol-rot { background: var(--acc); color: #fff; }
+  .dm-sol-corpo { display: grid; gap: 2px; }
+  .dm-sol-ti { font-size: 13.5px; font-weight: 600; }
+  .dm-sol-tx { font-size: 12.5px; color: var(--text-2); }
+  .dm-sol-op.livre .dm-sol-tx { color: var(--text-3); }
   /* Motor 1 · E5.1 duplicata / E5.3 conferência de compra */
   .dm-dup { font-size: 13px; color: var(--text); border: 1px solid var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent);
              border-radius: 10px; padding: 9px 12px; margin: 8px 0 0; }
@@ -1883,6 +1898,84 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       };
       rascWrap.appendChild(bRasc);
       corpoEl.appendChild(rascWrap);
+    }
+
+    // Motor 1 · E4.7 — SUGESTÃO DE SOLUÇÕES (A/B/C) + escrever a minha. O motor
+    // propõe COMO resolver: 3 caminhos práticos e distintos, vindos da IA no
+    // Worker (fallback determinístico). Nada é decidido nem enviado — o humano
+    // escolhe um, edita, ou escreve o próprio e copia. Só chefe/coord, só em
+    // demanda ainda aberta. O Worker também recusa os demais.
+    if (!SOMENTE_LEITURA && (NIVEL === 'chefe' || NIVEL === 'coord') && d.status !== 'Resolvido') {
+      var solWrap = document.createElement('div'); solWrap.className = 'dm-rasc';
+      var bSol = document.createElement('button');
+      bSol.className = 'dm-btn'; bSol.type = 'button';
+      bSol.textContent = 'Sugerir soluções (A/B/C)';
+      bSol.onclick = function () {
+        bSol.disabled = true; bSol.textContent = 'Pensando…';
+        var slugS = SETOR_LABEL_TO_SLUG[d.setor] || '';
+        var corpoS = { responsavel: RESPONSAVEIS[slugS] || '' };
+        fetch(WORKER + '/api/demanda/' + encodeURIComponent(d.chave) + '/solucoes', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+          body: JSON.stringify(corpoS)
+        }).then(function (r) {
+          if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
+          if (!r.ok) throw new Error('http');
+          return r.json();
+        }).then(function (res) {
+          if (!res) return;
+          bSol.style.display = 'none';
+          var lista = (res.opcoes || []).slice(0, 3);
+          var box = document.createElement('div'); box.className = 'dm-sol';
+          var ta = document.createElement('textarea'); ta.className = 'dm-rasc-ta'; ta.style.marginTop = '4px';
+          var ops = [];
+          function seleciona(el, texto, livre) {
+            ops.forEach(function (o) { o.classList.remove('sel'); });
+            el.classList.add('sel');
+            ta.value = livre ? '' : texto;
+            ta.focus();
+          }
+          lista.forEach(function (op) {
+            var el = document.createElement('button'); el.type = 'button'; el.className = 'dm-sol-op';
+            var rot = document.createElement('span'); rot.className = 'dm-sol-rot'; rot.textContent = op.rotulo || '';
+            var corpo = document.createElement('span'); corpo.className = 'dm-sol-corpo';
+            var ti = document.createElement('span'); ti.className = 'dm-sol-ti'; ti.textContent = op.titulo || '';
+            var tx = document.createElement('span'); tx.className = 'dm-sol-tx'; tx.textContent = op.texto || '';
+            corpo.appendChild(ti); corpo.appendChild(tx);
+            el.appendChild(rot); el.appendChild(corpo);
+            el.onclick = function () { seleciona(el, op.texto || '', false); };
+            ops.push(el); box.appendChild(el);
+          });
+          var elL = document.createElement('button'); elL.type = 'button'; elL.className = 'dm-sol-op livre';
+          var rotL = document.createElement('span'); rotL.className = 'dm-sol-rot'; rotL.textContent = '+';
+          var corpoL = document.createElement('span'); corpoL.className = 'dm-sol-corpo';
+          var tiL = document.createElement('span'); tiL.className = 'dm-sol-ti'; tiL.textContent = 'Escrever a minha';
+          var txL = document.createElement('span'); txL.className = 'dm-sol-tx'; txL.textContent = 'Ignora as sugestões e digita a solução do seu jeito.';
+          corpoL.appendChild(tiL); corpoL.appendChild(txL);
+          elL.appendChild(rotL); elL.appendChild(corpoL);
+          elL.onclick = function () { seleciona(elL, '', true); };
+          ops.push(elL); box.appendChild(elL);
+
+          var barra = document.createElement('div'); barra.className = 'dm-rasc-barra';
+          var bCop = document.createElement('button'); bCop.className = 'dm-btn pri'; bCop.type = 'button';
+          bCop.textContent = 'Copiar';
+          bCop.onclick = function () {
+            if (!ta.value.trim()) { toast('Escolha uma opção ou escreva a sua antes de copiar.', true); return; }
+            ta.select();
+            try { navigator.clipboard.writeText(ta.value); } catch (e) { document.execCommand('copy'); }
+            toast('Copiado. Nada foi enviado — resolva ou mande você mesmo.');
+          };
+          var notaS = document.createElement('span'); notaS.className = 'dm-rasc-nota';
+          notaS.textContent = res.fonte === 'ia' ? 'Sugestões da IA — escolha uma e edite. Nada é decidido sozinho.'
+            : 'Sugestões simples (IA indisponível) — escolha uma e edite.';
+          barra.appendChild(bCop); barra.appendChild(notaS);
+          solWrap.appendChild(box); solWrap.appendChild(ta); solWrap.appendChild(barra);
+        }).catch(function () {
+          bSol.disabled = false; bSol.textContent = 'Sugerir soluções (A/B/C)';
+          toast('Não deu pra sugerir agora — tente de novo.', true);
+        });
+      };
+      solWrap.appendChild(bSol);
+      corpoEl.appendChild(solWrap);
     }
 
     // Motor 1 · E5.3 — conferência de compra POR EVIDÊNCIA. Só pra demanda de
