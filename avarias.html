@@ -413,8 +413,24 @@ window.msgAcessoNegado = function (nomePagina) {
   .av-form-body { display:none; margin-top:10px; }
   .av-form.on .av-form-body { display:block; }
   .av-row { display:flex; gap:8px; flex-wrap:wrap; }
-  .av-campo { display:flex; flex-direction:column; gap:3px; flex:1 1 140px; min-width:0; }
-  .av-campo.qtd { flex:0 0 64px; }
+  /* Cada campo tem peso/base própria: numa tela larga os 6 cabem em 1-2
+     linhas; no celular quebram sozinhos em duplas. Antes eram 4 linhas
+     fixas, o que fazia o card ocupar meia tela (reclamação do Rodrigo). */
+  .av-campo { display:flex; flex-direction:column; gap:3px; min-width:0; flex:1 1 150px; }
+  .av-campo.item { flex:2 1 200px; }
+  .av-campo.qtd { flex:0 0 68px; }
+  .av-campo.casa { flex:0 1 120px; }
+  .av-campo.motivo { flex:2 1 200px; }
+  /* Bloco recolhível (Fila de revisão) — mesmo molde do cabeçalho do
+     formulário. Existe porque a fila tem ~150 cards com edição inline:
+     aberta por padrão, ela empurrava a tabela pra fora do alcance. */
+  .av-bloco { background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:12px 14px; margin:26px 0 0; }
+  .av-bloco-head { display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+  .av-bloco-head h3 { font-size:14px; margin:0; }
+  .av-bloco-n { font-size:11.5px; color:var(--amarelo); font-weight:700; }
+  .av-bloco-chev { margin-left:auto; font-size:13px; color:var(--text-3); transition:transform .15s; }
+  .av-bloco.on .av-bloco-chev { transform:rotate(180deg); }
   .av-campo label { font-size:10px; letter-spacing:.03em; text-transform:uppercase; color:var(--text-3); }
   .av-campo input, .av-campo select { padding:9px 9px; font-size:13.5px; border-radius:9px;
     border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:inherit; width:100%; box-sizing:border-box; }
@@ -500,18 +516,12 @@ window.msgAcessoNegado = function (nomePagina) {
   </div>
   <div class="av-form-body" id="av-form-body">
   <div class="av-row">
-    <div class="av-campo"><label>Item</label><input type="text" id="av-f-item" maxlength="200" placeholder="Ex.: taça de vinho"></div>
+    <div class="av-campo item"><label>Item</label><input type="text" id="av-f-item" maxlength="200" placeholder="Ex.: taça de vinho"></div>
     <div class="av-campo qtd"><label>Qtd.</label><input type="number" id="av-f-qtd" min="1" value="1"></div>
-  </div>
-  <div class="av-row" style="margin-top:8px">
     <div class="av-campo"><label>Categoria</label><select id="av-f-cat"></select></div>
     <div class="av-campo"><label>Responsável</label><input type="text" id="av-f-resp" maxlength="120" placeholder="Se souber"></div>
-  </div>
-  <div class="av-row" style="margin-top:8px" id="av-f-casa-wrap">
-    <div class="av-campo"><label>Casa</label><select id="av-f-casa"></select></div>
-  </div>
-  <div class="av-row" style="margin-top:8px">
-    <div class="av-campo"><label>Motivo (opc.)</label><input type="text" id="av-f-motivo" maxlength="500" placeholder="Como aconteceu?"></div>
+    <div class="av-campo casa" id="av-f-casa-wrap"><label>Casa</label><select id="av-f-casa"></select></div>
+    <div class="av-campo motivo"><label>Motivo (opc.)</label><input type="text" id="av-f-motivo" maxlength="500" placeholder="Como aconteceu?"></div>
   </div>
   <p class="av-erro" id="av-f-erro"></p>
   <button class="av-salvar" id="av-f-salvar">Registrar</button>
@@ -519,23 +529,19 @@ window.msgAcessoNegado = function (nomePagina) {
 </div>
 
 <div id="av-gestao" style="display:none">
-  <p class="av-sec">Fila de revisão</p>
-  <p class="av-sec-sub">Avarias capturadas do WhatsApp por texto livre — confira e confirme antes de contarem na análise.</p>
-  <div class="av-lista" id="av-revisar"></div>
-
   <p class="av-sec">Registros</p>
-  <p class="av-sec-sub">Casa e mês recortam tudo abaixo (inclusive o ranking); status e categoria filtram só esta tabela.</p>
+  <p class="av-sec-sub">Casa e mês recortam tudo (tabela e ranking); status e categoria filtram só a tabela.</p>
   <div class="av-controles">
-    <select id="av-filtro-casa"><option value="">Todas as casas</option></select>
-    <select id="av-filtro-mes"><option value="">Todos os meses</option></select>
-    <select id="av-filtro-status">
+    <select id="av-filtro-casa" aria-label="Casa"><option value="">Todas as casas</option></select>
+    <select id="av-filtro-mes" aria-label="Mês"><option value="">Todos os meses</option></select>
+    <select id="av-filtro-status" aria-label="Status">
       <option value="">Todos os status</option>
       <option value="Novo">Novo</option>
       <option value="Confirmado">Confirmado</option>
       <option value="Revisar">Revisar</option>
       <option value="Descartado">Descartado</option>
     </select>
-    <select id="av-filtro-cat"><option value="">Todas as categorias</option></select>
+    <select id="av-filtro-cat" aria-label="Categoria"><option value="">Todas as categorias</option></select>
   </div>
   <div class="av-tab-wrap panel" style="padding:8px 10px">
     <table class="av-tab">
@@ -546,6 +552,18 @@ window.msgAcessoNegado = function (nomePagina) {
       <tbody id="av-registros"></tbody>
     </table>
     <p class="av-vazio" id="av-registros-vazio" style="display:none">Nenhum registro com esse filtro.</p>
+  </div>
+  <p class="av-sec-sub" id="av-registros-total" style="margin-top:8px"></p>
+
+  <div class="av-bloco" id="av-rev-bloco">
+    <div class="av-bloco-head" id="av-rev-head" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="av-revisar">
+      <h3>Fila de revisão</h3>
+      <span class="av-bloco-n" id="av-rev-n"></span>
+      <span class="av-bloco-chev">⌄</span>
+    </div>
+    <p class="av-sec-sub" style="margin:6px 0 0">Avarias capturadas do WhatsApp por texto livre — confira e confirme antes de contarem na análise.</p>
+    <div class="av-lista" id="av-revisar" hidden style="margin-top:10px"></div>
   </div>
 
   <p class="av-sec">Mais quebrado</p>
@@ -711,11 +729,26 @@ window.msgAcessoNegado = function (nomePagina) {
     return tr;
   }
 
+  // Só monta os cards quando a fila está aberta: são ~150 registros com
+  // formulário de edição inline cada um. Montados sempre, empurravam a
+  // tabela pra ~37 mil pixels abaixo — ninguém chegava nela.
   function renderRevisar(){
-    var box = $('av-revisar'); box.innerHTML = '';
+    var box = $('av-revisar');
     var itens = LINHAS.filter(function(l){ return l.status === 'Revisar'; });
+    $('av-rev-n').textContent = itens.length ? (itens.length + (itens.length > 1 ? ' pendentes' : ' pendente')) : '';
+    if (box.hidden) return;
+    box.innerHTML = '';
     if (!itens.length) { box.appendChild(el('div', 'av-vazio', 'Nada pendente de revisão.')); return; }
     itens.forEach(function(it){ box.appendChild(cardRevisar(it)); });
+  }
+
+  function alternaRev(){
+    var box = $('av-revisar');
+    var abrir = box.hidden;
+    box.hidden = !abrir;
+    $('av-rev-bloco').classList.toggle('on', abrir);
+    $('av-rev-head').setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    if (abrir) renderRevisar();
   }
 
   // Casa e mês recortam TODA a visão (tabela + ranking abaixo); status e
@@ -739,6 +772,10 @@ window.msgAcessoNegado = function (nomePagina) {
     }).sort(function(a,b){ return (b.data || '').localeCompare(a.data || ''); });
     $('av-registros-vazio').style.display = itens.length ? 'none' : '';
     itens.forEach(function(it){ tbody.appendChild(linhaRegistro(it)); });
+    var qtd = itens.reduce(function(a, l){ return a + (l.quantidade || 1); }, 0);
+    $('av-registros-total').textContent = itens.length
+      ? (itens.length + (itens.length > 1 ? ' registros' : ' registro') + ' · ' + qtd + (qtd > 1 ? ' peças' : ' peça'))
+      : '';
   }
 
   function chaveNome(s){ return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
@@ -829,6 +866,8 @@ window.msgAcessoNegado = function (nomePagina) {
     $('av-f-salvar').onclick = salvar;
     $('av-form-head').onclick = alternaForm;
     $('av-form-head').onkeydown = function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternaForm(); } };
+    $('av-rev-head').onclick = alternaRev;
+    $('av-rev-head').onkeydown = function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternaRev(); } };
     if (PODE_GERIR) {
       $('av-filtro-casa').onchange = atualizaEscopo;
       $('av-filtro-mes').onchange = atualizaEscopo;
