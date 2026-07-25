@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Lição · Escola de Bar — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=f272d15d164b">
+<link rel="stylesheet" href="portal.css?v=4c90602096bf">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -832,6 +832,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   // fontes e junta no cliente. Alternativa seria dar acesso à base de
   // Colaboradores ao registro-bares só pra isso; não vale o acoplamento.
   var CTG = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var ACESSOS_DONO = "Rodrigo Coelho Viana";
   var btn = document.getElementById('sino-btn');
   var pop = document.getElementById('sino-pop');
   if(!btn || !pop) return;
@@ -875,13 +876,15 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     demanda:'<path d="M5 4h14v16l-7-3-7 3z"/>',
     resposta:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     aviso:'<path d="M3 11l18-7-7 18-2-8z"/>',
-    ferias:'<path d="M3 21h18"/><path d="M12 21V9"/><path d="M12 9a7 7 0 0 1 9 3"/><path d="M12 9a7 7 0 0 0-9 3"/>'
+    ferias:'<path d="M3 21h18"/><path d="M12 21V9"/><path d="M12 9a7 7 0 0 1 9 3"/><path d="M12 9a7 7 0 0 0-9 3"/>',
+    acesso:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M18 8v6M15 11h6"/>'
   };
   function svg(tp){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICO[tp]||ICO.aviso)+'</svg>'; }
   function tag(tp){
     if(tp==='demanda') return 'Demanda';
     if(tp==='resposta') return 'Resposta';
     if(tp==='ferias') return 'Férias';
+    if(tp==='acesso') return 'Acesso';
     return 'Aviso';
   }
 
@@ -955,9 +958,27 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
       url:'meu-perfil.html'
     };
   }
-  function juntaRec(base, extra){
-    recebidas = extra ? [extra].concat(base) : base;
+  function juntaRec(base, extras){
+    recebidas = (extras||[]).filter(Boolean).concat(base);
     renderRec(); atualiza();
+  }
+  // Pedidos de acesso esperando (PLANO_ACESSOS_AUTOSSERVICO.md). Só o dono
+  // busca — sem isso um pedido que não é de bartender ficaria parado até ele
+  // lembrar de abrir a página, e é justamente essa fila que faz a aprovação
+  // existir. Um item por pedido, não um resumo: a chave de lido é o id, então
+  // aprovar um não some com o aviso dos outros.
+  function itensAcessos(d){
+    if(!d || !d.itens || !d.itens.length) return [];
+    return d.itens.map(function(x){
+      return {
+        tipo:'acesso',
+        chave:'acesso:'+x.id,
+        titulo:'Pedido de acesso: '+x.nome,
+        descricao:'quer entrar no portal'+(x.cargo ? ' como '+x.cargo : ''),
+        quando:x.criado_em ? new Date(x.criado_em).toISOString() : null,
+        url:'acessos.html'
+      };
+    });
   }
   function carregar(){
     carregou = true;
@@ -966,15 +987,23 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
           .then(function(r){ return r.ok ? r.json() : null; })
           .then(itemFerias).catch(function(){ return null; })
       : Promise.resolve(null);
+    var pAcessos = (CTG && s.pessoa && s.pessoa === ACESSOS_DONO)
+      ? fetch(CTG+'/api/acessos/pendentes', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(itensAcessos).catch(function(){ return []; })
+      : Promise.resolve([]);
     if(REG){
       Promise.all([
         fetch(REG+'/api/notificacoes', { headers:{ 'X-Token': s.token } })
           .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
           .then(function(d){ return (d&&d.itens)||[]; })
           .catch(function(){ return []; }),
-        pFerias
-      ]).then(function(res){ juntaRec(res[0], res[1]); });
-    } else { pFerias.then(function(f){ juntaRec([], f); }); }
+        pFerias, pAcessos
+      ]).then(function(res){ juntaRec(res[0], (res[2]||[]).concat([res[1]])); });
+    } else {
+      Promise.all([pFerias, pAcessos])
+        .then(function(res){ juntaRec([], (res[1]||[]).concat([res[0]])); });
+    }
     fetch('changelog.json', { cache:'no-cache' })
       .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
       .then(function(d){ novidades = ((d&&d.itens)||[]).filter(function(x){ return visivel(x.niveis); }); renderNov(); atualiza(); })
@@ -1589,7 +1618,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'f272d15d164b';
+  var BUILD = '4c90602096bf';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
