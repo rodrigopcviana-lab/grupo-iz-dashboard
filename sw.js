@@ -1,13 +1,26 @@
 /* Service worker do Portal dos Bares — Grupo IZ (PLANO_APP_PWA.md, Fase 2).
- * network-first p/ HTML (fresco online, cache como reserva offline);
- * cache-first p/ assets (css/ícones/manifesto), revalidando em segundo plano.
+ * rede-primeiro p/ HTML e *.json (fresco online, cache como reserva offline);
+ * cache-primeiro p/ a casca (css/ícones/manifesto), revalidando por trás.
  * Só GET — escrita (contagem/turno/registro) NÃO passa por aqui; a fila
  * offline durável entra na Fase 3. Caminhos relativos: funciona em localhost
  * e em /grupo-iz-dashboard/ (Pages). */
-const CACHE = "iz-portal-v3";
+/* O nome do cache carrega o id do build (trocado em main(), mesma marca das
+ * páginas). Assim toda publicação nova nasce com um cache NOVO e o `activate`
+ * abaixo apaga o anterior — a casca (ícones, manifesto) fica fresca sozinha,
+ * sem custar uma ida à rede a cada carregamento como o rede-primeiro custaria
+ * num stylesheet, que bloqueia a renderização.
+ *
+ * O CSS ainda assim é pedido como `portal.css?v=<build>` pelas páginas: a
+ * troca de service worker não é instantânea — na PRIMEIRA navegação depois de
+ * uma publicação quem responde ainda é o worker anterior, que serviria o CSS
+ * velho do cache dele. Com o ?v= no endereço, a busca no cache antigo erra
+ * (endereço novo) e o CSS novo vem da rede já nessa primeira carga. */
+const CACHE = "iz-portal-8ad7e596d8a6";
 const CORE = [
   "index.html",
-  "portal.css",
+  /* com o ?v= do build, igual ao <link> das páginas — precisa bater byte a
+     byte, senão a busca no cache erra e o offline fica sem CSS. */
+  "portal.css?v=8ad7e596d8a6",
   "manifest.webmanifest",
   "icon-192.png",
   "icon-512.png",
@@ -15,9 +28,42 @@ const CORE = [
   "apple-touch-icon.png",
 ];
 
+/* Busca da REDE de verdade, furando o cache HTTP do navegador (ver comentário
+ * do gerador: o Pages manda max-age=600 e não dá pra desligar lá). Resposta
+ * que veio de redirecionamento é reembalada — o navegador recusa atender uma
+ * navegação com uma Response `redirected`. */
+function daRede(req) {
+  return fetch(req.url, { cache: "no-store", credentials: "same-origin" }).then((res) =>
+    res.redirected
+      ? new Response(res.body, { status: res.status, statusText: res.statusText, headers: res.headers })
+      : res
+  );
+}
+
+function guarda(req, res) {
+  if (res && res.ok) {
+    const copia = res.clone();
+    caches.open(CACHE).then((c) => c.put(req, copia)).catch(() => {});
+  }
+  return res;
+}
+
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}));
+  // um a um (não addAll): addAll é tudo-ou-nada, então um único 404 abortava
+  // o precache inteiro. E cada um vai de no-store, senão o precache nasce com
+  // a cópia velha do cache HTTP.
+  event.waitUntil(
+    caches.open(CACHE).then((c) =>
+      Promise.all(
+        CORE.map((u) =>
+          fetch(u, { cache: "no-store" })
+            .then((r) => (r.ok ? c.put(u, r) : null))
+            .catch(() => {})
+        )
+      )
+    )
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -37,32 +83,30 @@ self.addEventListener("fetch", (event) => {
   const isHTML =
     req.mode === "navigate" ||
     (req.headers.get("accept") || "").includes("text/html");
+  // versao.json é consultado a cada poucos minutos com um ?t= diferente pra
+  // furar proxy — cada consulta viraria uma entrada nova e eterna no cache.
+  // Vai direto pra rede e não é guardado; offline a consulta simplesmente
+  // falha, que é o certo (não há como saber de versão nova sem rede).
+  if (url.pathname.endsWith("versao.json")) {
+    event.respondWith(daRede(req));
+    return;
+  }
 
-  if (isHTML) {
+  // *.json é dado buscado por fetch (changelog, receitas_idx) — nunca casca.
+  // `.webmanifest` não casa aqui de propósito: esse é casca.
+  const isDado = url.pathname.endsWith(".json");
+
+  if (isHTML || isDado) {
     event.respondWith(
-      fetch(req)
-        .then((res) => {
-          if (res.ok) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-          }
-          return res;
-        })
-        .catch(() => caches.match(req).then((r) => r || caches.match("index.html")))
+      daRede(req)
+        .then((res) => guarda(req, res))
+        .catch(() => caches.match(req).then((r) => r || (isHTML ? caches.match("index.html") : undefined)))
     );
   } else {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        const network = fetch(req)
-          .then((res) => {
-            if (res.ok) {
-              const copy = res.clone();
-              caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-            }
-            return res;
-          })
-          .catch(() => cached);
-        return cached || network;
+      caches.match(req).then((cacheado) => {
+        const rede = daRede(req).then((res) => guarda(req, res)).catch(() => cacheado);
+        return cacheado || rede;
       })
     );
   }

@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Registro Rápido · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="portal.css?v=8ad7e596d8a6">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -294,6 +294,34 @@ direto para a coordenação.</p>
   .rr-btn2 { padding: 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--card);
              color: var(--text); font-size: 14px; cursor: pointer; text-decoration: none; text-align: center; }
   .rr-gate { padding: 30px 10px; text-align: center; color: var(--text-2); }
+  /* Motor 3 — aconselhar antes de subir (overlay em folha) */
+  .rr-acons { position: fixed; inset: 0; z-index: 70; display: none;
+              align-items: flex-end; justify-content: center; background: rgba(0,0,0,.55); }
+  .rr-acons.on { display: flex; }
+  .rr-acons-cx { width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
+                 background: var(--bg); border: 1px solid var(--border);
+                 border-radius: 18px 18px 0 0; padding: 22px 18px 26px; }
+  @media (min-width: 560px) { .rr-acons { align-items: center; }
+    .rr-acons-cx { border-radius: 18px; } }
+  .rr-acons-tit { font-size: 17px; font-weight: 700; margin: 0 0 4px; color: var(--text); }
+  .rr-acons-sub { font-size: 13px; color: var(--text-3); margin: 0 0 16px; line-height: 1.4; }
+  .rr-acons-passos { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 10px; }
+  .rr-acons-passo { display: flex; gap: 11px; padding: 12px 13px; border-radius: 12px;
+                    border: 1px solid var(--border); background: var(--card); }
+  .rr-acons-num { flex: none; width: 22px; height: 22px; border-radius: 50%;
+                  background: color-mix(in srgb, var(--acc) 18%, transparent); color: var(--acc);
+                  font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .rr-acons-tx { font-size: 14px; color: var(--text); line-height: 1.42; }
+  .rr-acons-sobe { padding: 13px 14px; border-radius: 12px; margin: 0 0 18px;
+                   border: 1px solid var(--border); background: var(--card);
+                   font-size: 14px; color: var(--text-2); line-height: 1.45; }
+  .rr-acons-btns { display: grid; gap: 10px; }
+  .rr-acons-enviar { padding: 14px; border-radius: 999px; border: none; background: var(--acc);
+                     color: var(--acc-txt); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .rr-acons-resolvi { padding: 13px; border-radius: 999px; border: 1px solid var(--verde);
+                      background: transparent; color: var(--verde); font-size: 14px; font-weight: 600; cursor: pointer; }
+  .rr-acons-nota { font-size: 11.5px; color: var(--text-3); text-align: center; margin: 12px 0 0; line-height: 1.4; }
+  .rr-acons-load { text-align: center; color: var(--text-3); padding: 22px 0; font-size: 14px; }
   /* Foto e áudio — botões GRANDES com estado sempre visível (mockup E0 v2) */
   .rr-midia { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .rr-midia-btn { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 9px;
@@ -416,6 +444,10 @@ direto para a coordenação.</p>
 </form>
 
 <div id="rr-sucesso" class="rr-sucesso" style="display:none"></div>
+
+<div class="rr-acons" id="rr-acons" role="dialog" aria-modal="true" aria-labelledby="rr-acons-tit">
+  <div class="rr-acons-cx" id="rr-acons-cx"></div>
+</div>
 
 <div id="rr-abertos" class="rr-abertos" style="display:none">
   <h2>Registros abertos</h2>
@@ -1104,6 +1136,110 @@ direto para a coordenação.</p>
       '</div>';
   }
 
+  // --- Motor 3: aconselhar antes de subir (PLANO_MOTORES_DEMANDAS.md) --------
+  // Ao Enviar, o motor intercepta UMA vez e mostra 2-3 coisas que a pessoa
+  // pode tentar sozinha antes de a demanda subir. NUNCA bloqueia — sempre há
+  // "Enviar mesmo assim". Sem descrição, sem conselho ou com IA/worker fora,
+  // segue direto pro envio (degrada honesto).
+  var acOv = document.getElementById('rr-acons');
+  var acCx = document.getElementById('rr-acons-cx');
+  function fechaAcons() { acOv.classList.remove('on'); }
+
+  function enviaDeVerdade(item) {
+    elBannerAlerta.innerHTML = '';
+    if (anexos.length) {
+      // caminho com mídia (online-only; degrada pra texto na fila se cair)
+      enviarComAnexos(item);
+    } else {
+      // caminho só-texto: fila offline robusta (inalterado)
+      var fila = lerFila();
+      fila.push(item);
+      salvarFila(fila);
+      chaveEmTela = item.chave_registro;
+      elEnviar.disabled = true;
+      elMsg.textContent = 'Enviando…';
+      processaFila();
+      setTimeout(function () { elEnviar.disabled = false; }, 600);
+    }
+  }
+
+  function marcaEvitada(item) {
+    // telemetria best-effort — não espera resposta nem trava a UI
+    try {
+      fetch(CFG.worker + '/api/registro/evitada', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+        body: JSON.stringify({ casa: item.casa, categoria: item.categoria, tipo: item.tipo })
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  function pintaAcons(r, item) {
+    var passos = (r && Array.isArray(r.passos)) ? r.passos : [];
+    var sobe = !!(r && r.sobe);
+    var h = '';
+    if (sobe) {
+      h += '<p class="rr-acons-tit" id="rr-acons-tit">Isso é mesmo pra cima</p>';
+      h += '<p class="rr-acons-sub">Pelo que você descreveu, essa demanda precisa mesmo da coordenação ou do chefe. Pode enviar.</p>';
+      if (passos.length) h += '<div class="rr-acons-sobe">' + esc(passos[0]) + '</div>';
+    } else {
+      h += '<p class="rr-acons-tit" id="rr-acons-tit">Dá pra resolver antes de subir?</p>';
+      h += '<p class="rr-acons-sub">Antes de mandar pra coordenação/chefe, veja se algo aqui resolve ainda neste turno. Se não, é só enviar mesmo assim.</p>';
+      h += '<ul class="rr-acons-passos">';
+      passos.forEach(function (p, i) {
+        h += '<li class="rr-acons-passo"><span class="rr-acons-num">' + (i + 1) + '</span>' +
+             '<span class="rr-acons-tx">' + esc(p) + '</span></li>';
+      });
+      h += '</ul>';
+    }
+    h += '<div class="rr-acons-btns">';
+    if (!sobe) h += '<button type="button" class="rr-acons-resolvi" id="rr-acons-resolvi">Resolvi, não vou abrir</button>';
+    h += '<button type="button" class="rr-acons-enviar" id="rr-acons-enviar">' +
+         (sobe ? 'Enviar para a coordenação' : 'Enviar mesmo assim') + '</button>';
+    h += '</div>';
+    h += '<p class="rr-acons-nota">Sugestões de um assistente — não é ordem, e nada é enviado sozinho.</p>';
+    acCx.innerHTML = h;
+    var bEnv = document.getElementById('rr-acons-enviar');
+    if (bEnv) bEnv.onclick = function () { fechaAcons(); enviaDeVerdade(item); };
+    var bRes = document.getElementById('rr-acons-resolvi');
+    if (bRes) bRes.onclick = function () {
+      marcaEvitada(item);
+      fechaAcons();
+      elMsg.textContent = '';
+      elBannerAlerta.innerHTML = '<div class="rr-banner pend">Boa — resolvido sem abrir demanda. ' +
+        'Se precisar, é só descrever de novo e enviar.</div>';
+    };
+  }
+
+  function abreAconselho(item) {
+    acCx.innerHTML = '<p class="rr-acons-load">Vendo se dá pra resolver antes de subir…</p>';
+    acOv.classList.add('on');
+    var feito = false;
+    var t = setTimeout(function () { if (!feito) { feito = true; fechaAcons(); enviaDeVerdade(item); } }, 9000);
+    fetch(CFG.worker + '/api/registro/aconselhar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify({ tipo: item.tipo, casa: item.casa, categoria: item.categoria, descricao: item.descricao })
+    })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (r) {
+        if (feito) return; feito = true; clearTimeout(t);
+        var passos = (r && Array.isArray(r.passos)) ? r.passos : [];
+        if (!passos.length) { fechaAcons(); enviaDeVerdade(item); return; }
+        pintaAcons(r, item);
+      })
+      .catch(function () {
+        if (feito) return; feito = true; clearTimeout(t);
+        fechaAcons(); enviaDeVerdade(item); // IA/worker fora → não atrapalha o envio
+      });
+  }
+
+  // fechar tocando fora ou no Esc = cancelar (não envia, não conta como evitada)
+  acOv.addEventListener('click', function (ev) { if (ev.target === acOv) fechaAcons(); });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && acOv.classList.contains('on')) fechaAcons();
+  });
+
   form.onsubmit = function (ev) {
     ev.preventDefault();
     var falta = primeiroPendente();
@@ -1130,21 +1266,13 @@ direto para a coordenação.</p>
       solicitante_manual: PESSOA ? null : nomeAtual()
     };
 
-    elBannerAlerta.innerHTML = '';
-    if (anexos.length) {
-      // caminho com mídia (online-only; degrada pra texto na fila se cair)
-      enviarComAnexos(item);
-    } else {
-      // caminho só-texto: fila offline robusta (inalterado)
-      var fila = lerFila();
-      fila.push(item);
-      salvarFila(fila);
-      chaveEmTela = item.chave_registro;
-      elEnviar.disabled = true;
-      elMsg.textContent = 'Enviando…';
-      processaFila();
-      setTimeout(function () { elEnviar.disabled = false; }, 600);
+    // Motor 3: aconselha antes de subir (só se há descrição — sem texto não há
+    // o que aconselhar). Anexo não pula o conselho; a mídia segue no envio real.
+    if (item.descricao) {
+      abreAconselho(item);
+      return;
     }
+    enviaDeVerdade(item);
   };
 })();
 </script>
@@ -2073,6 +2201,97 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
   });
 }
+</script>
+
+
+<style>
+  /* var(--x, fallback) em tudo: este mesmo bloco é reusado nas subpastas
+     (Minha Central, Contador de Evento), que têm paleta própria — e a
+     ausência de uma variável não pode deixar o aviso ilegível. */
+  .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
+    z-index: 96; margin: 0 auto; max-width: 460px; display: none;
+    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    align-items: center; gap: 10px; }
+  .ver-nova.on { display: flex; }
+  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
+  .vn-txt b { color: var(--text, #f3ede2); }
+  .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
+    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
+    color: var(--acc-txt, #16130f); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
+</style>
+<div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
+  <svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3.5V9h-5.5"/></svg>
+  <div class="vn-txt"><b>Nova versão disponível.</b> Atualize pra ver o conteúdo mais recente.</div>
+  <button type="button" class="vn-ok" id="vn-ok">Atualizar</button>
+  <button type="button" class="vn-x" id="vn-x" aria-label="Dispensar">&times;</button>
+</div>
+<script>
+(function () {
+  var BUILD = '8ad7e596d8a6';
+  var ALVO = 'versao.json';
+  var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
+  var ultimo = 0, mostrando = false;
+
+  function mostra(novo) {
+    if (mostrando) return;
+    if (localStorage.getItem('bariz_build_dispensado') === novo) return;
+    mostrando = true;
+    var box = document.getElementById('ver-nova');
+    if (!box) return;
+    box.classList.add('on');
+    document.getElementById('vn-x').onclick = function () {
+      try { localStorage.setItem('bariz_build_dispensado', novo); } catch (e) {}
+      box.classList.remove('on');
+    };
+    document.getElementById('vn-ok').onclick = atualiza;
+  }
+
+  // Limpa TODOS os caches do service worker e recarrega. Sem isso um reload
+  // comum ainda seria atendido pela casca cacheada (css/ícones).
+  function atualiza() {
+    var feito = false;
+    var recarrega = function () { if (feito) return; feito = true; location.reload(); };
+    setTimeout(recarrega, 2500);   // rede travada não pode prender o usuário
+    var t = [];
+    try {
+      if (window.caches && caches.keys) {
+        t.push(caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+        }));
+      }
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+        t.push(navigator.serviceWorker.getRegistration().then(function (r) { return r && r.update(); }));
+      }
+    } catch (e) {}
+    Promise.all(t).then(recarrega, recarrega);
+  }
+
+  function confere() {
+    if (mostrando) return;
+    var agora = Date.now();
+    if (agora - ultimo < MIN_ENTRE) return;
+    ultimo = agora;
+    fetch(ALVO + '?t=' + agora, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && d.build && d.build !== BUILD) mostra(d.build); })
+      .catch(function () {});
+  }
+
+  // Exposto pro botão manual "Buscar atualização" (meu-perfil.html).
+  window.barizAtualiza = atualiza;
+  window.barizConfere = function () { ultimo = 0; confere(); };
+
+  setTimeout(confere, 4000);                       // não competir com o render
+  setInterval(function () { if (!document.hidden) confere(); }, 600000);
+  document.addEventListener('visibilitychange', function () {
+    // o caso que só isto alcança: app em standalone voltando do alternador.
+    if (!document.hidden) confere();
+  });
+})();
 </script>
 
 

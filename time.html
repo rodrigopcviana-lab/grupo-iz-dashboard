@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Time · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="portal.css?v=8ad7e596d8a6">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -418,6 +418,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <div class="perf-tabs">
   <button class="perf-tab" type="button" data-tab="equipe" data-niveis="chefe coord rh">Equipe</button>
+  <button class="perf-tab" type="button" data-tab="ferias" data-niveis="chefe coord rh">Férias</button>
   <button class="perf-tab on" type="button" data-tab="metas" data-niveis="equipe chefe coord controladoria">Metas &amp; Desenv.</button>
   <button class="perf-tab" type="button" data-tab="contatos" data-niveis="equipe chefe coord">Contatos</button>
 </div>
@@ -483,6 +484,511 @@ window.msgAcessoNegado = function (nomePagina) {
   var r = window.exigirNivel(NIVEIS_OK, SLUG);
   if (r.ok) buscaDados(r.sessao.token);
   else if (!r.redirecionou) msg.innerHTML = window.msgAcessoNegado('o Quadro de Equipes');
+})();
+</script></div>
+<div id="perf-panel-ferias" class="perf-panel" hidden>
+<h1>Planejamento de férias</h1>
+<p class="sub">O time inteiro numa tabela — quem já tem férias marcadas, quem ainda não tem, e quem está perto do limite legal.</p>
+
+<div class="panel" id="fp-gate">
+  <h2>Acesso restrito</h2>
+  <p class="sub" id="fp-msg" style="margin:4px 0 0" role="status" aria-live="polite">Verificando seu acesso…</p>
+</div>
+<div id="fp-corpo" style="display:none">
+
+  <div class="fp-tiles" id="fp-tiles"></div>
+
+  <div id="fp-alertas"></div>
+
+  <div class="fp-barra">
+    <div class="fp-chips" id="fp-chips"></div>
+    <label class="fp-so-falta"><input type="checkbox" id="fp-so-falta"> Só quem não tem férias marcadas</label>
+  </div>
+
+  <div class="fp-tb-wrap">
+    <table class="fp-tb">
+      <thead>
+        <tr>
+          <th class="fp-c-nome">Pessoa</th>
+          <th class="fp-c-casa">Casa</th>
+          <th class="fp-c-saida">Saída</th>
+          <th class="fp-c-volta">Último dia</th>
+          <th class="fp-c-dias">Dias</th>
+          <th class="fp-c-limite">Limite</th>
+          <th class="fp-c-acao"></th>
+        </tr>
+      </thead>
+      <tbody id="fp-linhas"></tbody>
+    </table>
+  </div>
+
+  <p class="sub" id="fp-rodape" style="margin:14px 0 0"></p>
+</div>
+
+<div class="fp-modal" id="fp-modal" hidden>
+  <div class="fp-modal-cx" role="dialog" aria-modal="true" aria-labelledby="fp-modal-tit">
+    <h2 id="fp-modal-tit">Planejar férias</h2>
+    <p class="sub" id="fp-modal-sub" style="margin:2px 0 16px"></p>
+
+    <label class="fp-campo">
+      <span>Saída (primeiro dia de férias)</span>
+      <input type="date" id="fp-f-saida">
+    </label>
+    <label class="fp-campo">
+      <span>Último dia de férias</span>
+      <input type="date" id="fp-f-volta">
+    </label>
+    <label class="fp-campo">
+      <span>Limite legal para tirar</span>
+      <input type="date" id="fp-f-limite">
+    </label>
+
+    <p class="fp-msg" id="fp-modal-msg" role="status" aria-live="polite"></p>
+
+    <div class="fp-modal-bt">
+      <button type="button" class="fp-bt-limpar" id="fp-limpar">Limpar férias</button>
+      <span style="flex:1"></span>
+      <button type="button" class="fp-bt-sec" id="fp-cancelar">Cancelar</button>
+      <button type="button" class="fp-bt-pri" id="fp-salvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fp-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 18px; }
+  .fp-tile { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+  .fp-tile b { display:block; font-size:26px; line-height:1.1; }
+  .fp-tile span { font-size:12px; color:var(--text-2); }
+  .fp-tile.aviso b { color:#c2410c; }
+  .fp-tile.ruim b { color:#b91c1c; }
+
+  .fp-alerta { display:flex; gap:9px; align-items:flex-start; border:1px solid var(--border);
+    border-left:3px solid #c2410c; border-radius:10px; padding:10px 13px; margin:0 0 10px; background:var(--card); }
+  .fp-alerta svg { flex:none; margin-top:2px; color:#c2410c; }
+  .fp-alerta p { margin:0; font-size:13.5px; }
+  .fp-alerta p b { font-weight:600; }
+
+  .fp-barra { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin:18px 0 12px; }
+  .fp-chips { display:flex; gap:7px; flex-wrap:wrap; }
+  .fp-chip { font:inherit; font-size:13px; padding:6px 13px; border:1.5px solid var(--border);
+    border-radius:999px; background:var(--card); color:var(--text-2); cursor:pointer; }
+  .fp-chip.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); }
+  .fp-so-falta { font-size:13px; color:var(--text-2); display:flex; gap:6px; align-items:center; cursor:pointer; }
+
+  .fp-tb-wrap { overflow-x:auto; }
+  .fp-tb { width:100%; border-collapse:collapse; font-size:14px; }
+  .fp-tb th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--text-2); font-weight:600; padding:0 10px 8px; border-bottom:1px solid var(--border); }
+  .fp-tb td { padding:10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .fp-tb tr.fp-grupo td { background:var(--bg); font-weight:600; font-size:12px; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--text-2); padding:12px 10px 6px; border-bottom:1px solid var(--border); }
+  .fp-nome { font-weight:600; }
+  .fp-cargo { display:block; font-size:12px; color:var(--text-2); }
+  .fp-vazio { color:var(--text-2); }
+  .fp-pill { display:inline-block; font-size:11.5px; font-weight:600; padding:2px 9px; border-radius:999px;
+    border:1px solid var(--border); color:var(--text-2); }
+  .fp-pill.ok { border-color:#15803d; color:#15803d; }
+  .fp-pill.aviso { border-color:#c2410c; color:#c2410c; }
+  .fp-pill.ruim { border-color:#b91c1c; color:#b91c1c; }
+  .fp-c-acao { width:1%; }
+  .fp-bt-ed { font:inherit; font-size:13px; padding:5px 12px; border:1.5px solid var(--border);
+    border-radius:8px; background:var(--card); color:var(--text); cursor:pointer; white-space:nowrap; }
+  .fp-bt-ed:hover { border-color:var(--acc); }
+
+  .fp-modal { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:60;
+    display:flex; align-items:center; justify-content:center; padding:18px; }
+  .fp-modal[hidden] { display:none; }
+  .fp-modal-cx { background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:22px; width:100%; max-width:420px; max-height:90vh; overflow:auto; }
+  .fp-modal-cx h2 { margin:0; font-size:19px; }
+  .fp-campo { display:block; margin:0 0 13px; }
+  .fp-campo span { display:block; font-size:12.5px; color:var(--text-2); margin:0 0 5px; }
+  .fp-campo input { width:100%; font:inherit; font-size:15px; padding:9px 11px;
+    border:1.5px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text); }
+  .fp-msg { margin:0 0 12px; font-size:13px; min-height:18px; }
+  .fp-msg.erro { color:#b91c1c; }
+  .fp-modal-bt { display:flex; gap:8px; align-items:center; }
+  .fp-bt-pri, .fp-bt-sec, .fp-bt-limpar { font:inherit; font-size:14px; padding:9px 16px;
+    border-radius:9px; cursor:pointer; border:1.5px solid var(--border); background:var(--card); color:var(--text); }
+  .fp-bt-pri { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); font-weight:600; }
+  .fp-bt-limpar { color:#b91c1c; border-color:var(--border); }
+  .fp-bt-pri[disabled], .fp-bt-limpar[disabled] { opacity:.55; cursor:default; }
+
+  /* Mobile: a tabela CABE na tela, sem rolagem lateral nem dentro do próprio
+     wrapper (lição do Banco de Horas, 2026-07-24 — medido a 375px). Somem
+     Casa, Limite e Dias: casa vai pra linha fina sob o nome, e limite/dias
+     aparecem inteiros no modal de edição. O que sobra são as duas datas, que
+     é o que se lê numa tabela de férias. */
+  @media (max-width:640px) {
+    .fp-tiles { grid-template-columns:repeat(2,1fr); }
+    .fp-tb { table-layout:fixed; }
+    .fp-tb .fp-c-casa, .fp-tb .fp-c-limite, .fp-tb .fp-c-dias,
+    .fp-tb td.fp-c-casa, .fp-tb td.fp-c-limite, .fp-tb td.fp-c-dias { display:none; }
+    .fp-c-nome { width:38%; }
+    .fp-c-saida, .fp-c-volta { width:21%; }
+    .fp-c-acao { width:20%; }
+    .fp-tb td, .fp-tb th { padding:9px 4px; font-size:13px; }
+    .fp-bt-ed { padding:5px 7px; font-size:12.5px; }
+  }
+</style>
+
+<script type="text/plain" id="perf-src-ferias">
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var SLUG = 'time.html?tab=ferias';
+  var gate = document.getElementById('fp-gate');
+  var msg = document.getElementById('fp-msg');
+  var corpo = document.getElementById('fp-corpo');
+
+  if (!WORKER) {
+    gate.textContent = '';
+    var h = document.createElement('h2'); h.textContent = 'Em configuração';
+    var p = document.createElement('p'); p.className = 'sub'; p.style.margin = '0';
+    p.textContent = 'O planejamento de férias pelo site ainda não foi ativado.';
+    gate.appendChild(h); gate.appendChild(p);
+    return;
+  }
+
+  var PESSOAS = [];
+  var PODE_EDITAR = false;
+  var casaFiltro = null;
+  var soFalta = false;
+  var editando = null;
+
+  // ---- datas: tudo em AAAA-MM-DD, comparado como texto (ordem lexicográfica
+  // = ordem cronológica nesse formato) pra não esbarrar em fuso horário.
+  function hojeIso() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  var HOJE = hojeIso();
+
+  function br(iso) {
+    if (!iso) return null;
+    var p = iso.split('-');
+    return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0].slice(2)) : iso;
+  }
+  function diasEntre(a, b) {
+    if (!a || !b) return null;
+    var d1 = new Date(a + 'T00:00:00Z'), d2 = new Date(b + 'T00:00:00Z');
+    if (isNaN(d1) || isNaN(d2)) return null;
+    return Math.round((d2 - d1) / 86400000) + 1;
+  }
+  function td(texto, cls) {
+    var c = document.createElement('td');
+    if (cls) c.className = cls;
+    if (texto === null || texto === undefined || texto === '') {
+      c.textContent = '—';
+      c.classList.add('fp-vazio');
+    } else {
+      c.textContent = texto;
+    }
+    return c;
+  }
+
+  // ---- leitura
+  function carrega() {
+    var s = window.sessaoLer && window.sessaoLer();
+    return fetch(WORKER + '/api/ferias-plano', {
+      headers: s && s.token ? { 'X-Token': s.token } : {},
+    }).then(function (r) {
+      if (r.status === 401) {
+        window.sessaoLimpar && window.sessaoLimpar();
+        window.irParaLogin && window.irParaLogin(SLUG);
+        return null;
+      }
+      return r.json();
+    });
+  }
+
+  // ---- análise: o que faz este painel valer como PLANEJAMENTO
+  function analisa() {
+    var comFerias = PESSOAS.filter(function (p) { return p.saida_ferias; });
+    var semFerias = PESSOAS.filter(function (p) { return !p.saida_ferias; });
+
+    // limite estourado ou chegando (90 dias) sem férias marcadas
+    var limiteRisco = PESSOAS.filter(function (p) {
+      if (!p.limite_ferias) return false;
+      if (p.saida_ferias && p.saida_ferias <= p.limite_ferias) return false;
+      var d = diasEntre(HOJE, p.limite_ferias);
+      return d !== null && d <= 90;
+    });
+
+    // duas pessoas da MESMA casa fora ao mesmo tempo — o conflito que
+    // realmente atrapalha a escala
+    var sobrep = [];
+    var porCasa = {};
+    comFerias.forEach(function (p) {
+      if (!p.ultimo_dia_ferias) return;
+      (porCasa[p.casa] = porCasa[p.casa] || []).push(p);
+    });
+    Object.keys(porCasa).forEach(function (casa) {
+      var lista = porCasa[casa];
+      for (var i = 0; i < lista.length; i++) {
+        for (var j = i + 1; j < lista.length; j++) {
+          var a = lista[i], b = lista[j];
+          if (a.saida_ferias <= b.ultimo_dia_ferias && b.saida_ferias <= a.ultimo_dia_ferias) {
+            sobrep.push({ casa: casa, a: a, b: b });
+          }
+        }
+      }
+    });
+    return { comFerias: comFerias, semFerias: semFerias, limiteRisco: limiteRisco, sobrep: sobrep };
+  }
+
+  function renderTiles(an) {
+    var alvo = document.getElementById('fp-tiles');
+    alvo.textContent = '';
+    [
+      { n: an.comFerias.length, r: 'com férias planejadas', c: '' },
+      { n: an.semFerias.length, r: 'ainda sem plano', c: an.semFerias.length ? 'aviso' : '' },
+      { n: an.limiteRisco.length, r: 'no limite (90 dias)', c: an.limiteRisco.length ? 'ruim' : '' },
+      { n: an.sobrep.length, r: 'sobreposições na casa', c: an.sobrep.length ? 'ruim' : '' },
+    ].forEach(function (t) {
+      var d = document.createElement('div');
+      d.className = 'fp-tile' + (t.c ? ' ' + t.c : '');
+      var b = document.createElement('b'); b.textContent = String(t.n);
+      var s = document.createElement('span'); s.textContent = t.r;
+      d.appendChild(b); d.appendChild(s);
+      alvo.appendChild(d);
+    });
+  }
+
+  function alerta(texto) {
+    var d = document.createElement('div');
+    d.className = 'fp-alerta';
+    d.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+    var p = document.createElement('p');
+    p.textContent = texto;   // textContent: nunca innerHTML com nome vindo do Notion
+    d.appendChild(p);
+    return d;
+  }
+
+  function renderAlertas(an) {
+    var alvo = document.getElementById('fp-alertas');
+    alvo.textContent = '';
+    an.sobrep.forEach(function (s) {
+      alvo.appendChild(alerta(
+        s.casa + ': ' + s.a.nome + ' (' + br(s.a.saida_ferias) + '–' + br(s.a.ultimo_dia_ferias) + ') e ' +
+        s.b.nome + ' (' + br(s.b.saida_ferias) + '–' + br(s.b.ultimo_dia_ferias) + ') estão de férias ao mesmo tempo.'
+      ));
+    });
+    an.limiteRisco.forEach(function (p) {
+      var d = diasEntre(HOJE, p.limite_ferias);
+      alvo.appendChild(alerta(
+        p.nome + ' (' + p.casa + '): limite para tirar férias em ' + br(p.limite_ferias) +
+        (d < 0 ? ' — já passou há ' + Math.abs(d) + ' dias.' : ' — faltam ' + d + ' dias e não há férias marcadas dentro do prazo.')
+      ));
+    });
+  }
+
+  function renderChips() {
+    var alvo = document.getElementById('fp-chips');
+    alvo.textContent = '';
+    var casas = [];
+    PESSOAS.forEach(function (p) { if (casas.indexOf(p.casa) === -1) casas.push(p.casa); });
+    [null].concat(casas).forEach(function (c) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'fp-chip' + (casaFiltro === c ? ' on' : '');
+      b.textContent = c === null ? 'Todas' : c;
+      b.addEventListener('click', function () { casaFiltro = c; render(); });
+      alvo.appendChild(b);
+    });
+  }
+
+  function renderTabela() {
+    var tbody = document.getElementById('fp-linhas');
+    tbody.textContent = '';
+    var lista = PESSOAS.filter(function (p) {
+      if (casaFiltro !== null && p.casa !== casaFiltro) return false;
+      if (soFalta && p.saida_ferias) return false;
+      return true;
+    });
+
+    var casaAtual = null;
+    lista.forEach(function (p) {
+      if (casaFiltro === null && p.casa !== casaAtual) {
+        casaAtual = p.casa;
+        var tr0 = document.createElement('tr');
+        tr0.className = 'fp-grupo';
+        var c0 = document.createElement('td');
+        c0.colSpan = 7;
+        c0.textContent = p.casa;
+        tr0.appendChild(c0);
+        tbody.appendChild(tr0);
+      }
+
+      var tr = document.createElement('tr');
+
+      var tdNome = document.createElement('td');
+      tdNome.className = 'fp-c-nome';
+      var sn = document.createElement('span'); sn.className = 'fp-nome'; sn.textContent = p.nome;
+      tdNome.appendChild(sn);
+      var sc = document.createElement('span'); sc.className = 'fp-cargo';
+      sc.textContent = (p.cargo || 'Sem cargo') + (window.matchMedia('(max-width:640px)').matches ? ' · ' + p.casa : '');
+      tdNome.appendChild(sc);
+      tr.appendChild(tdNome);
+
+      tr.appendChild(td(p.casa, 'fp-c-casa'));
+      tr.appendChild(td(br(p.saida_ferias), 'fp-c-saida'));
+      tr.appendChild(td(br(p.ultimo_dia_ferias), 'fp-c-volta'));
+
+      var dias = diasEntre(p.saida_ferias, p.ultimo_dia_ferias);
+      tr.appendChild(td(dias === null ? null : String(dias), 'fp-c-dias'));
+
+      var tdLim = document.createElement('td');
+      tdLim.className = 'fp-c-limite';
+      if (!p.limite_ferias) {
+        tdLim.textContent = '—';
+        tdLim.className += ' fp-vazio';
+      } else {
+        var pill = document.createElement('span');
+        var dentro = p.saida_ferias && p.saida_ferias <= p.limite_ferias;
+        var restam = diasEntre(HOJE, p.limite_ferias);
+        pill.className = 'fp-pill ' + (dentro ? 'ok' : (restam !== null && restam <= 90 ? 'ruim' : 'aviso'));
+        pill.textContent = br(p.limite_ferias);
+        tdLim.appendChild(pill);
+      }
+      tr.appendChild(tdLim);
+
+      var tdAc = document.createElement('td');
+      tdAc.className = 'fp-c-acao';
+      if (PODE_EDITAR) {
+        var bt = document.createElement('button');
+        bt.type = 'button';
+        bt.className = 'fp-bt-ed';
+        bt.textContent = p.saida_ferias ? 'Editar' : 'Planejar';
+        bt.addEventListener('click', function () { abreModal(p); });
+        tdAc.appendChild(bt);
+      }
+      tr.appendChild(tdAc);
+
+      tbody.appendChild(tr);
+    });
+
+    if (!lista.length) {
+      var trv = document.createElement('tr');
+      var tdv = document.createElement('td');
+      tdv.colSpan = 7;
+      tdv.className = 'fp-vazio';
+      tdv.style.padding = '18px 10px';
+      tdv.textContent = soFalta ? 'Todo mundo desse recorte já tem férias planejadas.' : 'Ninguém nesse recorte.';
+      trv.appendChild(tdv); tbody.appendChild(trv);
+    }
+  }
+
+  function render() {
+    var an = analisa();
+    renderTiles(an);
+    renderAlertas(an);
+    renderChips();
+    renderTabela();
+    var rod = document.getElementById('fp-rodape');
+    rod.textContent = PESSOAS.length + ' pessoas no quadro. ' + (PODE_EDITAR
+      ? 'Editar aqui grava direto no Quadro de Equipes — é a mesma ficha que a aba Equipe e o gestor de escalas leem.'
+      : 'Só a coordenação edita o planejamento.');
+  }
+
+  // ---- edição
+  var modal = document.getElementById('fp-modal');
+  var fSaida = document.getElementById('fp-f-saida');
+  var fVolta = document.getElementById('fp-f-volta');
+  var fLimite = document.getElementById('fp-f-limite');
+  var mMsg = document.getElementById('fp-modal-msg');
+  var btSalvar = document.getElementById('fp-salvar');
+  var btLimpar = document.getElementById('fp-limpar');
+
+  function abreModal(p) {
+    editando = p;
+    document.getElementById('fp-modal-sub').textContent = p.nome + ' · ' + (p.cargo || 'Sem cargo') + ' · ' + p.casa;
+    fSaida.value = p.saida_ferias || '';
+    fVolta.value = p.ultimo_dia_ferias || '';
+    fLimite.value = p.limite_ferias || '';
+    mMsg.textContent = ''; mMsg.className = 'fp-msg';
+    btLimpar.hidden = !(p.saida_ferias || p.ultimo_dia_ferias);
+    modal.hidden = false;
+    fSaida.focus();
+  }
+  function fechaModal() { modal.hidden = true; editando = null; }
+
+  function erro(t) { mMsg.textContent = t; mMsg.className = 'fp-msg erro'; }
+
+  function envia(payload, textoOk) {
+    var s = window.sessaoLer && window.sessaoLer();
+    btSalvar.disabled = true; btLimpar.disabled = true;
+    mMsg.className = 'fp-msg'; mMsg.textContent = textoOk;
+    return fetch(WORKER + '/api/ferias-plano/' + encodeURIComponent(editando.id), {
+      method: 'PATCH',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, s && s.token ? { 'X-Token': s.token } : {}),
+      body: JSON.stringify(payload),
+    }).then(function (r) {
+      if (r.status === 401) {
+        window.sessaoLimpar && window.sessaoLimpar();
+        window.irParaLogin && window.irParaLogin(SLUG);
+        return null;
+      }
+      return r.json().then(function (j) { return { status: r.status, j: j }; });
+    }).then(function (res) {
+      btSalvar.disabled = false; btLimpar.disabled = false;
+      if (!res) return;
+      if (res.status !== 200 || !res.j.ok) { erro(res.j && res.j.erro ? res.j.erro : 'Não deu para salvar.'); return; }
+      // aplica no objeto local só o que o servidor confirmou ter gravado
+      Object.keys(payload).forEach(function (k) { editando[k] = res.j[k] !== undefined ? res.j[k] : payload[k]; });
+      fechaModal();
+      render();
+    }).catch(function () {
+      btSalvar.disabled = false; btLimpar.disabled = false;
+      erro('Sem conexão — tente de novo.');
+    });
+  }
+
+  btSalvar.addEventListener('click', function () {
+    if (!editando) return;
+    var saida = fSaida.value || null;
+    var volta = fVolta.value || null;
+    var limite = fLimite.value || null;
+    if (saida && !volta) return erro('Informe também o último dia de férias.');
+    if (volta && !saida) return erro('Informe também a data de saída.');
+    if (saida && volta && volta < saida) return erro('O último dia não pode ser antes da saída.');
+    envia({ saida_ferias: saida, ultimo_dia_ferias: volta, limite_ferias: limite }, 'Salvando…');
+  });
+
+  btLimpar.addEventListener('click', function () {
+    if (!editando) return;
+    // "fazer um novo planejamento": zera o período e mantém o limite legal,
+    // que é dado de contrato e não decisão de planejamento.
+    envia({ saida_ferias: null, ultimo_dia_ferias: null }, 'Limpando…');
+  });
+
+  document.getElementById('fp-cancelar').addEventListener('click', fechaModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) fechaModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) fechaModal(); });
+  document.getElementById('fp-so-falta').addEventListener('change', function (e) {
+    soFalta = e.target.checked; render();
+  });
+
+  // ---- entrada. exigirNivel é SÍNCRONO (devolve {ok, sessao}, não Promise) —
+  // só o carrega() abaixo é que é assíncrono.
+  var acesso = window.exigirNivel(['chefe', 'coord', 'rh'], SLUG);
+  if (!acesso.ok) {
+    if (!acesso.redirecionou) msg.innerHTML = window.msgAcessoNegado('o planejamento de férias');
+    return;
+  }
+  carrega().then(function (dados) {
+    if (!dados) return;
+    if (dados.sem_config) {
+      msg.textContent = 'O planejamento de férias ainda não foi configurado.';
+      return;
+    }
+    PESSOAS = dados.pessoas || [];
+    PODE_EDITAR = !!dados.pode_editar;
+    gate.style.display = 'none';
+    corpo.style.display = 'block';
+    render();
+  }).catch(function () {
+    msg.textContent = 'Não deu para carregar o planejamento. Recarregue a página.';
+  });
 })();
 </script></div>
 <div id="perf-panel-metas" class="perf-panel">
@@ -556,7 +1062,7 @@ WhatsApp — Rodrigo (Coordenação de Bares)</a>
 <script>
 (function () {
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.perf-tab'));
-  var panels = { equipe: document.getElementById('perf-panel-equipe'), metas: document.getElementById('perf-panel-metas'), contatos: document.getElementById('perf-panel-contatos') };
+  var panels = { equipe: document.getElementById('perf-panel-equipe'), ferias: document.getElementById('perf-panel-ferias'), metas: document.getElementById('perf-panel-metas'), contatos: document.getElementById('perf-panel-contatos') };
   var iniciados = {};
   function ativaScript(nome) {
     if (iniciados[nome]) return;
@@ -1504,6 +2010,97 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
   });
 }
+</script>
+
+
+<style>
+  /* var(--x, fallback) em tudo: este mesmo bloco é reusado nas subpastas
+     (Minha Central, Contador de Evento), que têm paleta própria — e a
+     ausência de uma variável não pode deixar o aviso ilegível. */
+  .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
+    z-index: 96; margin: 0 auto; max-width: 460px; display: none;
+    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    align-items: center; gap: 10px; }
+  .ver-nova.on { display: flex; }
+  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
+  .vn-txt b { color: var(--text, #f3ede2); }
+  .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
+    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
+    color: var(--acc-txt, #16130f); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
+</style>
+<div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
+  <svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3.5V9h-5.5"/></svg>
+  <div class="vn-txt"><b>Nova versão disponível.</b> Atualize pra ver o conteúdo mais recente.</div>
+  <button type="button" class="vn-ok" id="vn-ok">Atualizar</button>
+  <button type="button" class="vn-x" id="vn-x" aria-label="Dispensar">&times;</button>
+</div>
+<script>
+(function () {
+  var BUILD = '8ad7e596d8a6';
+  var ALVO = 'versao.json';
+  var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
+  var ultimo = 0, mostrando = false;
+
+  function mostra(novo) {
+    if (mostrando) return;
+    if (localStorage.getItem('bariz_build_dispensado') === novo) return;
+    mostrando = true;
+    var box = document.getElementById('ver-nova');
+    if (!box) return;
+    box.classList.add('on');
+    document.getElementById('vn-x').onclick = function () {
+      try { localStorage.setItem('bariz_build_dispensado', novo); } catch (e) {}
+      box.classList.remove('on');
+    };
+    document.getElementById('vn-ok').onclick = atualiza;
+  }
+
+  // Limpa TODOS os caches do service worker e recarrega. Sem isso um reload
+  // comum ainda seria atendido pela casca cacheada (css/ícones).
+  function atualiza() {
+    var feito = false;
+    var recarrega = function () { if (feito) return; feito = true; location.reload(); };
+    setTimeout(recarrega, 2500);   // rede travada não pode prender o usuário
+    var t = [];
+    try {
+      if (window.caches && caches.keys) {
+        t.push(caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+        }));
+      }
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+        t.push(navigator.serviceWorker.getRegistration().then(function (r) { return r && r.update(); }));
+      }
+    } catch (e) {}
+    Promise.all(t).then(recarrega, recarrega);
+  }
+
+  function confere() {
+    if (mostrando) return;
+    var agora = Date.now();
+    if (agora - ultimo < MIN_ENTRE) return;
+    ultimo = agora;
+    fetch(ALVO + '?t=' + agora, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && d.build && d.build !== BUILD) mostra(d.build); })
+      .catch(function () {});
+  }
+
+  // Exposto pro botão manual "Buscar atualização" (meu-perfil.html).
+  window.barizAtualiza = atualiza;
+  window.barizConfere = function () { ultimo = 0; confere(); };
+
+  setTimeout(confere, 4000);                       // não competir com o render
+  setInterval(function () { if (!document.hidden) confere(); }, 600000);
+  document.addEventListener('visibilitychange', function () {
+    // o caso que só isto alcança: app em standalone voltando do alternador.
+    if (!document.hidden) confere();
+  });
+})();
 </script>
 
 
