@@ -405,16 +405,20 @@ window.msgAcessoNegado = function (nomePagina) {
 
 
 <style>
-  .av-form { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:20px; }
-  .av-form h3 { font-size:14.5px; margin:0 0 12px; }
-  .av-grid { display:grid; grid-template-columns:1fr; gap:10px; }
-  @media (min-width:620px) { .av-grid.dois { grid-template-columns:1fr 1fr; } }
-  .av-campo { display:flex; flex-direction:column; gap:5px; }
-  .av-campo label { font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--text-3); }
-  .av-campo input, .av-campo select, .av-campo textarea { padding:11px 10px; font-size:14px; border-radius:10px;
+  .av-form { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:12px 14px; margin-bottom:20px; }
+  .av-form-head { display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+  .av-form-head h3 { font-size:14px; margin:0; }
+  .av-form-chev { margin-left:auto; font-size:13px; color:var(--text-3); transition:transform .15s; }
+  .av-form.on .av-form-chev { transform:rotate(180deg); }
+  .av-form-body { display:none; margin-top:10px; }
+  .av-form.on .av-form-body { display:block; }
+  .av-row { display:flex; gap:8px; flex-wrap:wrap; }
+  .av-campo { display:flex; flex-direction:column; gap:3px; flex:1 1 140px; min-width:0; }
+  .av-campo.qtd { flex:0 0 64px; }
+  .av-campo label { font-size:10px; letter-spacing:.03em; text-transform:uppercase; color:var(--text-3); }
+  .av-campo input, .av-campo select { padding:9px 9px; font-size:13.5px; border-radius:9px;
     border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:inherit; width:100%; box-sizing:border-box; }
-  .av-campo textarea { resize:vertical; min-height:52px; }
-  .av-salvar { margin-top:12px; padding:12px 18px; border:none; border-radius:10px; background:var(--acc);
+  .av-salvar { margin-top:10px; padding:10px 16px; border:none; border-radius:10px; background:var(--acc);
     color:var(--acc-txt); font-weight:600; font-size:14px; cursor:pointer; }
   .av-salvar:disabled { opacity:.55; cursor:default; }
   .av-erro { color:#e08585; font-size:12.5px; min-height:1em; margin:8px 0 0; }
@@ -489,24 +493,29 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <div id="av-corpo" style="display:none">
 
-<div class="av-form">
-  <h3>Registrar avaria</h3>
-  <div class="av-grid dois">
+<div class="av-form" id="av-form">
+  <div class="av-form-head" id="av-form-head" role="button" tabindex="0" aria-expanded="false" aria-controls="av-form-body">
+    <h3>Registrar avaria</h3>
+    <span class="av-form-chev" id="av-form-chev">⌄</span>
+  </div>
+  <div class="av-form-body" id="av-form-body">
+  <div class="av-row">
     <div class="av-campo"><label>Item</label><input type="text" id="av-f-item" maxlength="200" placeholder="Ex.: taça de vinho"></div>
-    <div class="av-campo"><label>Quantidade</label><input type="number" id="av-f-qtd" min="1" value="1"></div>
+    <div class="av-campo qtd"><label>Qtd.</label><input type="number" id="av-f-qtd" min="1" value="1"></div>
   </div>
-  <div class="av-grid dois" style="margin-top:10px">
+  <div class="av-row" style="margin-top:8px">
     <div class="av-campo"><label>Categoria</label><select id="av-f-cat"></select></div>
-    <div class="av-campo"><label>Responsável</label><input type="text" id="av-f-resp" maxlength="120" placeholder="Quem quebrou (se souber)"></div>
+    <div class="av-campo"><label>Responsável</label><input type="text" id="av-f-resp" maxlength="120" placeholder="Se souber"></div>
   </div>
-  <div class="av-grid" style="margin-top:10px" id="av-f-casa-wrap">
+  <div class="av-row" style="margin-top:8px" id="av-f-casa-wrap">
     <div class="av-campo"><label>Casa</label><select id="av-f-casa"></select></div>
   </div>
-  <div class="av-grid" style="margin-top:10px">
-    <div class="av-campo"><label>Motivo (opc.)</label><textarea id="av-f-motivo" maxlength="500" placeholder="Como aconteceu?"></textarea></div>
+  <div class="av-row" style="margin-top:8px">
+    <div class="av-campo"><label>Motivo (opc.)</label><input type="text" id="av-f-motivo" maxlength="500" placeholder="Como aconteceu?"></div>
   </div>
   <p class="av-erro" id="av-f-erro"></p>
   <button class="av-salvar" id="av-f-salvar">Registrar</button>
+  </div>
 </div>
 
 <div id="av-gestao" style="display:none">
@@ -596,6 +605,9 @@ window.msgAcessoNegado = function (nomePagina) {
     if (catUrl) {
       var achou = CATEGORIAS.some(function(c){ return c.slug === catUrl; });
       if (achou) selCat.value = CATEGORIAS.filter(function(c){ return c.slug === catUrl; })[0].label;
+      // Veio de um chip do mural (Avarias — ?categoria=X): já abre o
+      // formulário pronto pra digitar, sem precisar de mais um toque.
+      abreForm(); $('av-f-item').focus();
     }
     var selCasa = $('av-f-casa');
     CASAS_WORKER.forEach(function(c){ var o = document.createElement('option'); o.value = c.slug; o.textContent = c.nome; selCasa.appendChild(o); });
@@ -798,10 +810,25 @@ window.msgAcessoNegado = function (nomePagina) {
 
   function atualizaEscopo(){ renderRegistros(); renderRanking(); }
 
+  // Formulário fecha por padrão (quem entra na página quer ver a tabela,
+  // não preencher) — só abre sozinho quando veio de um chip do mural
+  // (?categoria=, ver montaSelects) ou quando a pessoa toca no cabeçalho.
+  function abreForm(){
+    $('av-form').classList.add('on');
+    $('av-form-head').setAttribute('aria-expanded', 'true');
+  }
+  function alternaForm(){
+    var aberto = $('av-form').classList.toggle('on');
+    $('av-form-head').setAttribute('aria-expanded', aberto ? 'true' : 'false');
+    if (aberto) $('av-f-item').focus();
+  }
+
   var ligado = false;
   function ligaControles(){
     if (ligado) return; ligado = true;
     $('av-f-salvar').onclick = salvar;
+    $('av-form-head').onclick = alternaForm;
+    $('av-form-head').onkeydown = function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternaForm(); } };
     if (PODE_GERIR) {
       $('av-filtro-casa').onchange = atualizaEscopo;
       $('av-filtro-mes').onchange = atualizaEscopo;

@@ -856,8 +856,9 @@ window.msgAcessoNegado = function (nomePagina) {
   // payload traz as duas listas por casa ("bartenders" e "salao"), então
   // trocar de time é só re-render — nenhuma chamada nova ao Worker.
   var SETORES = {
-    bar:   { chave: 'bartenders', rotulo: 'Bar',    pessoa: 'Bartender', plural: 'Bartenders', pend: 'pendencia' },
-    salao: { chave: 'salao',      rotulo: 'Salão',  pessoa: 'Pessoa',    plural: 'Pessoas',    pend: 'pendencia_salao' }
+    bar:     { chave: 'bartenders', rotulo: 'Bar',     pessoa: 'Bartender', plural: 'Bartenders', pend: 'pendencia' },
+    salao:   { chave: 'salao',      rotulo: 'Salão',   pessoa: 'Pessoa',    plural: 'Pessoas',    pend: 'pendencia_salao' },
+    cozinha: { chave: 'cozinha',    rotulo: 'Cozinha', pessoa: 'Pessoa',    plural: 'Pessoas',    pend: 'pendencia_cozinha' }
   };
   var setorAtual = 'bar';
   var PAYLOAD = null;
@@ -875,12 +876,18 @@ window.msgAcessoNegado = function (nomePagina) {
 
   function montaSeletor() {
     var alvo = document.getElementById('bh-setor');
-    // O seletor só aparece quando há de fato um segundo time publicado —
-    // uma casa que ainda não teve o salão mapeado não ganha uma aba vazia.
-    if (!temGente('salao')) { alvo.style.display = 'none'; return; }
+    // Só mostra os setores que TÊM gente publicada (bar sempre entra). Um
+    // setor ainda não mapeado numa casa não ganha uma aba vazia. Se sobrar só
+    // o bar, o seletor some (nada pra escolher).
+    var visiveis = Object.keys(SETORES).filter(function (k) {
+      return k === 'bar' || temGente(SETORES[k].chave);
+    });
+    if (visiveis.length < 2) { alvo.style.display = 'none'; return; }
+    // se o setor atual sumiu (ex.: recarregou sem cozinha), volta pro bar
+    if (visiveis.indexOf(setorAtual) < 0) setorAtual = 'bar';
     alvo.style.display = '';
     alvo.innerHTML = '';
-    Object.keys(SETORES).forEach(function (k) {
+    visiveis.forEach(function (k) {
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'chip' + (k === setorAtual ? ' on' : '');
