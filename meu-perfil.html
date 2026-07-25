@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Meu perfil · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=f79fab57b624">
+<link rel="stylesheet" href="portal.css?v=f272d15d164b">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -507,6 +507,11 @@ window.msgAcessoNegado = function (nomePagina) {
   <span class="mp-tile-tx"><b>Forçar atualização</b><span id="mp-at-sub">limpa o cache do app e recarrega</span></span>
   <span class="mp-tile-go">›</span>
 </button>
+<a class="mp-tile" id="mp-tile-acessos" href="acessos.html" style="display:none">
+  <span class="mp-tile-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><path d="M9 3h6v3H9z"/><circle cx="12" cy="12" r="2.2"/><path d="M8.5 17c.6-1.5 2-2.3 3.5-2.3s2.9.8 3.5 2.3"/></svg></span>
+  <span class="mp-tile-tx"><b>Acessos</b><span>quem entra no portal, senhas e pedidos</span></span>
+  <span class="mp-tile-go">›</span>
+</a>
 
 <button type="button" class="mp-sair" id="mp-sair">Sair desta sessão</button>
 </div>
@@ -517,6 +522,7 @@ window.msgAcessoNegado = function (nomePagina) {
   var REG_WORKER = "https://registro-bares.rodrigopcviana.workers.dev";
   var LABEL = {"equipe": "Equipe de Bar", "chefe": "Chefe de Bar", "coord": "Coordenação", "rh": "RH", "controladoria": "Controladoria & Administração", "suprimentos": "Suprimentos"};
   var CASAS = {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "fulles": "Fulles", "nip": "NIP"};
+  var ACESSOS_DONO = "Rodrigo Coelho Viana";
 
   var s = window.sessaoLer();
   var gate = document.getElementById('mp-gate');
@@ -717,6 +723,14 @@ window.msgAcessoNegado = function (nomePagina) {
     window.sessaoLimpar();
     location.href = 'index.html';
   });
+
+  // Acessos (PLANO_ACESSOS_AUTOSSERVICO.md) — a página fica FORA do nav; a
+  // porta é este tile, e ele só aparece pro dono. Esconder aqui é cortesia
+  // visual: quem decide de verdade é o Worker (ehDonoAcessos), por pessoa e
+  // não por nível — cinco senhas resolvem pra "coord" hoje.
+  if (s.nivel === 'coord' && s.pessoa && s.pessoa === ACESSOS_DONO) {
+    document.getElementById('mp-tile-acessos').style.display = '';
+  }
 
   // Botão manual de atualização — o aviso automático (JS_VERSAO) só aparece
   // quando há versão nova; este força a limpeza do cache e o recarregamento a
@@ -1731,7 +1745,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'f79fab57b624';
+  var BUILD = 'f272d15d164b';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

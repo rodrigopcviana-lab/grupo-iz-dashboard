@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Central de Demandas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=f79fab57b624">
+<link rel="stylesheet" href="portal.css?v=f272d15d164b">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -767,6 +767,30 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-resolvidas-toggle:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
   .dm-resolvidas-lista { margin-top: 8px; }
   .dm-resolvidas-lista .dm-card { opacity: .72; }
+  .dm-selo-resolvido { margin-top: 8px; font-size: 12px; color: var(--text-2);
+                        display: flex; align-items: center; gap: 6px; }
+  .dm-selo-resolvido::before { content: ''; width: 7px; height: 7px; border-radius: 50%;
+                                background: var(--verde); flex: none; }
+  .dm-grupo-data { display: flex; justify-content: space-between; align-items: baseline;
+                    font-size: 11.5px; color: var(--text-3); margin: 14px 2px 6px;
+                    letter-spacing: .03em; text-transform: uppercase; }
+  .dm-grupo-data:first-child { margin-top: 4px; }
+  .dm-nota-fundo { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.55);
+                    display: flex; align-items: flex-end; justify-content: center; }
+  .dm-nota-folha { background: var(--card); border-top: 1px solid var(--border);
+                    border-radius: 16px 16px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+                    width: 100%; max-width: 520px; }
+  .dm-nota-tit { font-size: 15px; margin: 0 0 4px; }
+  .dm-nota-sub { font-size: 12.5px; color: var(--text-2); margin: 0 0 12px; line-height: 1.5; }
+  .dm-nota-ta { width: 100%; box-sizing: border-box; min-height: 72px; font: inherit; font-size: 13.5px;
+                 background: var(--bg); color: var(--text); border: 1px solid var(--border);
+                 border-radius: 10px; padding: 10px; resize: vertical; }
+  .dm-nota-btns { display: flex; gap: 8px; margin-top: 12px; }
+  .dm-nota-btns button { flex: 1; font: inherit; font-size: 13.5px; padding: 11px; border-radius: 10px;
+                          border: 1px solid var(--border); background: var(--card); color: var(--text);
+                          cursor: pointer; }
+  .dm-nota-btns button.pri { background: var(--acc); border-color: var(--acc); color: #08131f; }
+  .dm-nota-btns button:disabled { opacity: .55; cursor: default; }
 
   /* Edição de demanda enviada (F-Edit) */
   .dm-env-editar-btn { margin-top: 8px; font: inherit; font-size: 12.5px; border: 1px solid var(--border);
@@ -1310,6 +1334,57 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     clearTimeout(toast._t);
     toast._t = setTimeout(function () { elToast.classList.remove('on'); }, 3200);
   }
+
+  // Folha "O que resolveu?" (2026-07-25) — aparece só na transição pra
+  // Resolvido. Chama cb(nota, cancelou): "Fechar sem nota" devolve ('', false)
+  // e mantém o fluxo antigo intacto; fechar por fora devolve ('', true) e NÃO
+  // resolve nada. A nota reusa o campo Resposta que já existia — nenhum
+  // mecanismo novo — e é ela que vira o texto do aviso a quem registrou.
+  function pedeNota(d, cb) {
+    var fundo = document.createElement('div');
+    fundo.className = 'dm-nota-fundo';
+    var folha = document.createElement('div');
+    folha.className = 'dm-nota-folha';
+    folha.setAttribute('role', 'dialog');
+    folha.setAttribute('aria-modal', 'true');
+    folha.setAttribute('aria-label', 'O que resolveu?');
+
+    var tit = document.createElement('p'); tit.className = 'dm-nota-tit'; tit.textContent = 'O que resolveu?';
+    var sub = document.createElement('p'); sub.className = 'dm-nota-sub';
+    sub.textContent = d.solicitante
+      ? 'Vai junto do aviso para ' + d.solicitante + '.'
+      : 'Vai junto do aviso para quem registrou.';
+    var ta = document.createElement('textarea');
+    ta.className = 'dm-nota-ta';
+    ta.placeholder = 'Ex.: técnico trocou o compressor, testado e gelando';
+    ta.maxLength = 1900;
+
+    var btns = document.createElement('div'); btns.className = 'dm-nota-btns';
+    var bSem = document.createElement('button'); bSem.type = 'button'; bSem.textContent = 'Fechar sem nota';
+    var bOk = document.createElement('button'); bOk.type = 'button'; bOk.className = 'pri'; bOk.textContent = 'Resolver e avisar';
+    btns.appendChild(bSem); btns.appendChild(bOk);
+
+    folha.appendChild(tit); folha.appendChild(sub); folha.appendChild(ta); folha.appendChild(btns);
+    fundo.appendChild(folha);
+
+    var fechado = false;
+    function encerra(nota, cancelou) {
+      if (fechado) return;
+      fechado = true;
+      document.removeEventListener('keydown', onEsc);
+      if (fundo.parentNode) fundo.parentNode.removeChild(fundo);
+      cb(nota, cancelou);
+    }
+    function onEsc(ev) { if (ev.key === 'Escape') encerra('', true); }
+    // Clique no fundo (fora da folha) cancela — não fecha a demanda por engano.
+    fundo.addEventListener('click', function (ev) { if (ev.target === fundo) encerra('', true); });
+    document.addEventListener('keydown', onEsc);
+    bSem.onclick = function () { encerra('', false); };
+    bOk.onclick = function () { encerra(ta.value.trim(), false); };
+
+    document.body.appendChild(fundo);
+    ta.focus();
+  }
   // Mostra data+hora ABSOLUTA (pedido do Rodrigo, 2026-07-13: "a quanto
   // tempo" não serve pra conferência — precisa saber quando de verdade foi
   // enviada). A classificação de "envelhecida" (cor do texto) continua
@@ -1826,6 +1901,24 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     var pDesc = document.createElement('p'); pDesc.className = 'desc'; pDesc.textContent = d.descricao || '';
     corpoEl.appendChild(pDesc);
 
+    // Carimbo de fechamento (2026-07-25): quem marcou Resolvido e quando.
+    // Demanda fechada ANTES desta entrega não tem o carimbo no Notion — aí o
+    // texto diz isso, em vez de atribuir o fechamento a alguém no chute.
+    // O elemento é recriado a cada render, então reabrir/refechar acerta sozinho.
+    if (d.status === 'Resolvido') {
+      var selo = document.createElement('div');
+      selo.className = 'dm-selo-resolvido';
+      var quando = horaCurta(d.resolvido_em);
+      if (d.resolvido_por && quando) {
+        selo.textContent = d.resolvido_por + ' resolveu em ' + quando;
+      } else if (quando) {
+        selo.textContent = 'Resolvida em ' + quando;
+      } else {
+        selo.textContent = 'Resolvida antes do registro de autoria';
+      }
+      corpoEl.appendChild(selo);
+    }
+
     // Motor 1 · E4.3 — "para onde vai": setor + responsável. Só exibição, não
     // notifica nem muda permissão. Responsável null vira aviso em âmbar (setor
     // órfão) — 100% dado de config, nunca palpite; motiva preencher setores.json.
@@ -2094,7 +2187,24 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     preencheSelStatus();
     // Sincroniza a etiqueta (toque, só avança) e este select (qualquer valor,
     // inclusive reabrir um "Resolvido") — o mesmo PATCH otimista pros dois.
+    // Ao FECHAR (e só ao fechar), pergunta o desfecho antes de gravar. A nota é
+    // opcional — "Fechar sem nota" mantém exatamente o comportamento anterior.
+    // Motivo: medido na base real, 5 de 5 demandas resolvidas foram fechadas
+    // sem nota nenhuma, e quem registrou nunca soube o que tinha acontecido.
+    // Reabrir e mudar entre status abertos não passam por aqui.
     function aplicaStatus(novo) {
+      var antigo = d.status;
+      if (novo === antigo) return;
+      if (novo === 'Resolvido' && antigo !== 'Resolvido' && !SOMENTE_LEITURA) {
+        pedeNota(d, function (nota, cancelou) {
+          if (cancelou) { preencheSelStatus(); return; }
+          gravaStatus(novo, nota);
+        });
+        return;
+      }
+      gravaStatus(novo, '');
+    }
+    function gravaStatus(novo, nota) {
       var antigo = d.status;
       if (novo === antigo) return;
       statusBtn.disabled = true; selStatus.disabled = true;
@@ -2111,7 +2221,16 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       } else {
         pintaStatusBtn(); preencheSelStatus(); renderResumo();
       }
-      patch(d.chave, { status: novo }, function () {
+      // A nota vai no MESMO PATCH do status: o worker grava a resposta e o
+      // carimbo de fechamento numa transação só, e o push ao solicitante sai
+      // com o texto dela. Dois PATCHes deixariam a janela de um aviso genérico
+      // sair antes da nota chegar.
+      var campos = { status: novo };
+      if (nota) campos.resposta = nota;
+      patch(d.chave, campos, function () {
+        if (nota) { d.resposta = nota; d.respondido_em = new Date().toISOString(); }
+        if (novo === 'Resolvido') { d.resolvido_em = new Date().toISOString(); d.resolvido_por = PESSOA || ''; }
+        else { d.resolvido_em = ''; d.resolvido_por = ''; }
         toast('Status: ' + novo + '.');
         if (saiDaFila) t.resolvidos = null;   // próxima abertura de "resolvidas" busca de novo
       }, function () {
@@ -2424,12 +2543,56 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       });
   }
 
+  // Momento do fechamento, em ms. Demanda fechada antes do carimbo
+  // (2026-07-25) não tem "Resolvido em" — cai no recebimento, que é a única
+  // âncora temporal que ela tem. Data pura (AAAA-MM-DD, sem hora) NÃO passa
+  // por new Date(): seria meia-noite UTC e voltaria um dia em UTC-3.
+  function tsResolucao(d) {
+    var iso = d.resolvido_em || d.recebido_em || d.data || '';
+    if (!iso) return 0;
+    if (iso.indexOf('T') === -1) {
+      var p = iso.slice(0, 10).split('-');
+      if (p.length !== 3) return 0;
+      return new Date(+p[0], +p[1] - 1, +p[2]).getTime();
+    }
+    var ms = new Date(iso).getTime();
+    return isNaN(ms) ? 0 : ms;
+  }
+  // Rótulos por janela CORRIDA (não semana/mês de calendário) — é o que a
+  // conta faz de verdade, então o rótulo diz isso.
+  var FAIXAS_RESOLVIDAS = [
+    { label: 'Últimos 7 dias', dias: 7 },
+    { label: 'Últimos 30 dias', dias: 30 },
+    { label: 'Mais antigas', dias: Infinity },
+  ];
+
   function redesenhaResolvidas(t) {
     t.elResolvLista.innerHTML = '';
     if (!t.resolvidos.length) {
       t.elResolvLista.innerHTML = '<p class="dm-vazio">Nenhuma resolvida encontrada com esse filtro.</p>';
     } else {
-      t.resolvidos.forEach(function (d) { t.elResolvLista.appendChild(renderCard(d, null, t, true)); });
+      // Agrupa por quando foi fechada. Sem isso a lista era um bloco único que
+      // só crescia — não dava pra ver o que foi resolvido na semana.
+      var agora = Date.now();
+      var porFaixa = FAIXAS_RESOLVIDAS.map(function () { return []; });
+      t.resolvidos.forEach(function (d) {
+        var ts = tsResolucao(d);
+        var dias = ts ? (agora - ts) / 86400000 : Infinity;
+        for (var i = 0; i < FAIXAS_RESOLVIDAS.length; i++) {
+          if (dias <= FAIXAS_RESOLVIDAS[i].dias) { porFaixa[i].push(d); return; }
+        }
+        porFaixa[porFaixa.length - 1].push(d);
+      });
+      porFaixa.forEach(function (lista, i) {
+        if (!lista.length) return;
+        var cab = document.createElement('div');
+        cab.className = 'dm-grupo-data';
+        var nome = document.createElement('span'); nome.textContent = FAIXAS_RESOLVIDAS[i].label;
+        var n = document.createElement('span'); n.textContent = lista.length;
+        cab.appendChild(nome); cab.appendChild(n);
+        t.elResolvLista.appendChild(cab);
+        lista.forEach(function (d) { t.elResolvLista.appendChild(renderCard(d, null, t, true)); });
+      });
       if (t.resolvidosHasMore) {
         var mais = document.createElement('button');
         mais.type = 'button'; mais.className = 'dm-mais'; mais.textContent = 'Carregar mais resolvidas';
@@ -2437,8 +2600,18 @@ prioridade (urgência primeiro, mais antiga depois).</p>
         t.elResolvLista.appendChild(mais);
       }
     }
-    t.elResolvBtn.textContent = (t.resolvidosAbertos ? 'Ocultar resolvidas' : 'Ver resolvidas') +
-      ' (' + t.resolvidos.length + (t.resolvidosHasMore ? '+' : '') + ')';
+    // Contagem: quando o Notion não sinaliza has_more, o que está carregado É o
+    // total — aí o número pode ser afirmado. Com has_more pendente, "N+", nunca
+    // um total inventado (a API não devolve contagem).
+    t.elResolvBtn.textContent = rotuloResolvidas(t);
+  }
+
+  function rotuloResolvidas(t) {
+    var base = t.resolvidosAbertos ? 'Ocultar resolvidas' : 'Ver resolvidas';
+    if (!t.resolvidos || !t.resolvidos.length) return base;
+    return base + (t.resolvidosHasMore
+      ? ' (' + t.resolvidos.length + '+)'
+      : ' (' + t.resolvidos.length + ' no total)');
   }
 
   // "N resolvidas": a rota não expõe contagem total nem filtro por data — o
@@ -2472,8 +2645,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
         st.elResolvLista.innerHTML = '<p class="dm-vazio">Carregando…</p>';
         carregaResolvidas(st, true);
       } else {
-        st.elResolvBtn.textContent = (st.resolvidosAbertos ? 'Ocultar resolvidas' : 'Ver resolvidas') +
-          (st.resolvidos && st.resolvidos.length ? ' (' + st.resolvidos.length + (st.resolvidosHasMore ? '+' : '') + ')' : '');
+        st.elResolvBtn.textContent = rotuloResolvidas(st);
       }
     };
   });
@@ -4354,7 +4526,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'f79fab57b624';
+  var BUILD = 'f272d15d164b';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
