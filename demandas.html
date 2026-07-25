@@ -592,6 +592,21 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-ov { position: fixed; inset: 0; background: rgba(4,5,8,.66); display: none; align-items: flex-start; justify-content: center; z-index: 60; overflow-y: auto; padding: 20px 12px; }
   .dm-ov.on { display: flex; }
   .dm-ov-inner { width: 100%; max-width: 560px; }
+  /* Fechar sempre visível: no overlay (galeria/kanban/tabela) o card abria sem
+     nenhum botão de sair — só Esc (sem teclado no celular) ou tocar o backdrop
+     escondido. Botão fixo no canto, resolve pra qualquer vista e tamanho. */
+  .dm-ov-fechar { position: fixed; top: 12px; right: 12px; z-index: 62; display: inline-flex;
+                   align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px;
+                   border: 1px solid var(--border); background: var(--card); color: var(--text);
+                   font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+                   box-shadow: 0 4px 16px rgba(0,0,0,.38); }
+  .dm-ov-fechar svg { width: 15px; height: 15px; }
+  .dm-ov-fechar:hover { border-color: var(--acc); }
+  .dm-ov-fechar:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  /* No mobile o card ocupa a largura toda e o botão fixo cairia sobre a etiqueta
+     de status; empurra o conteúdo pra baixo do botão. No desktop o card é
+     centralizado e estreito, o botão fica no canto sem encostar — sem ajuste. */
+  @media (max-width: 640px) { .dm-ov { padding-top: 58px; } }
 
   .dm-filas { display: flex; flex-direction: column; gap: 22px; }
   .dm-fila { display: none; }
@@ -682,6 +697,14 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-card.aberto .dm-seta { transform: rotate(180deg); }
   .dm-card .dm-corpo { display: none; padding: 0 14px 14px; border-top: 1px solid var(--border); }
   .dm-card.aberto .dm-corpo { display: block; }
+  /* Recolher — fecha o card aberto sem ter que caçar o cabeçalho lá em cima. */
+  .dm-recolher { width: 100%; margin-top: 12px; padding: 10px; border-radius: 10px;
+                  border: 1px solid var(--border); background: var(--card); color: var(--text-2);
+                  font: inherit; font-size: 13px; cursor: pointer; display: inline-flex;
+                  align-items: center; justify-content: center; gap: 6px; }
+  .dm-recolher:hover { border-color: var(--acc); color: var(--text); }
+  .dm-recolher:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .dm-recolher svg { width: 14px; height: 14px; }
   .dm-corpo p.desc { padding: 12px 0 10px; color: var(--text-2); font-size: 14px; white-space: pre-line; }
   .dm-fotos { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
   .dm-fotos img { width: 74px; height: 74px; object-fit: cover; border-radius: 9px;
@@ -904,7 +927,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
 </div>
 
 <div class="dm-uni" id="dm-uni"></div>
-<div class="dm-ov" id="dm-ov"><div class="dm-ov-inner" id="dm-ov-inner"></div></div>
+<div class="dm-ov" id="dm-ov"><button class="dm-ov-fechar" id="dm-ov-fechar" type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>Fechar</button><div class="dm-ov-inner" id="dm-ov-inner"></div></div>
 
 <div class="dm-legenda" id="dm-legenda"></div>
 </div>
@@ -2286,6 +2309,27 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       if (card.classList.contains('aberto')) conversa.abre(); else conversa.fecha();
     });
 
+    // "Recolher" — num card longo (soluções, rascunho, conferência, conversa) o
+    // cabeçalho some da tela e o único jeito de fechar era rolar lá pra cima e
+    // reclicar. Este botão fecha na hora e traz o cabeçalho de volta à vista pra
+    // escolher outro. Fecha explicitamente (não é toggle): desliga a conversa ao
+    // vivo, igual ao que o clique no cabeçalho faz ao recolher.
+    var recolher = document.createElement('button');
+    recolher.type = 'button'; recolher.className = 'dm-recolher';
+    recolher.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 15l-6-6-6 6"/></svg>Recolher';
+    recolher.addEventListener('click', function () {
+      // Card aberto num overlay (galeria/kanban/tabela): recolher = fechar o
+      // overlay inteiro, senão sobraria um card encolhido no meio da tela cheia.
+      var ov = card.closest('.dm-ov');
+      if (ov) { var bx = document.getElementById('dm-ov-fechar'); if (bx) { bx.click(); return; } }
+      if (!card.classList.contains('aberto')) return;
+      card.classList.remove('aberto');
+      head.setAttribute('aria-expanded', 'false');
+      conversa.fecha();
+      try { head.scrollIntoView({ block: 'nearest' }); } catch (e) { head.scrollIntoView(); }
+    });
+    corpoEl.appendChild(recolher);
+
     card.appendChild(corpoEl);
     return card;
   }
@@ -2802,8 +2846,18 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     elOvInner.innerHTML = '';
     redesenhaUni();
   }
-  elOv.addEventListener('click', function (ev) { if (ev.target === elOv) dmFechaOv(); });
-  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && elOv.classList.contains('on')) dmFechaOv(); });
+  // Fecha o overlay pela via certa: triagem precisa da limpeza completa
+  // (triFecha reseta a fila e redesenha); card avulso é só dmFechaOv. Antes o
+  // Esc/backdrop chamavam sempre dmFechaOv, deixando a fila de triagem em estado
+  // pendurado. O botão fixo, o Esc e o backdrop passam todos por aqui.
+  function fechaOverlay() {
+    if (typeof triFila !== 'undefined' && triFila && triFila.length) triFecha();
+    else dmFechaOv();
+  }
+  var elOvFechar = document.getElementById('dm-ov-fechar');
+  if (elOvFechar) elOvFechar.addEventListener('click', fechaOverlay);
+  elOv.addEventListener('click', function (ev) { if (ev.target === elOv) fechaOverlay(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && elOv.classList.contains('on')) fechaOverlay(); });
 
   // ---- Modo triagem (PLANO_MOTORES_DEMANDAS.md §2) --------------------------
   // Medição de 2026-07-23: 47 de 55 demandas paradas em "Novo", 51 sem retorno
