@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Controle de Doses · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=abaf90fd6111">
+<link rel="stylesheet" href="portal.css?v=82e39af79439">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -901,6 +901,10 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
 
 (function(){
   var REG = "https://registro-bares.rodrigopcviana.workers.dev";
+  // Férias moram no OUTRO worker (contagem-bares) — o sino busca as duas
+  // fontes e junta no cliente. Alternativa seria dar acesso à base de
+  // Colaboradores ao registro-bares só pra isso; não vale o acoplamento.
+  var CTG = "https://contagem-bares.rodrigopcviana.workers.dev";
   var btn = document.getElementById('sino-btn');
   var pop = document.getElementById('sino-pop');
   if(!btn || !pop) return;
@@ -943,10 +947,16 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   var ICO = {
     demanda:'<path d="M5 4h14v16l-7-3-7 3z"/>',
     resposta:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
-    aviso:'<path d="M3 11l18-7-7 18-2-8z"/>'
+    aviso:'<path d="M3 11l18-7-7 18-2-8z"/>',
+    ferias:'<path d="M3 21h18"/><path d="M12 21V9"/><path d="M12 9a7 7 0 0 1 9 3"/><path d="M12 9a7 7 0 0 0-9 3"/>'
   };
   function svg(tp){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICO[tp]||ICO.aviso)+'</svg>'; }
-  function tag(tp){ return tp==='demanda'?'Demanda':(tp==='resposta'?'Resposta':'Aviso'); }
+  function tag(tp){
+    if(tp==='demanda') return 'Demanda';
+    if(tp==='resposta') return 'Resposta';
+    if(tp==='ferias') return 'Férias';
+    return 'Aviso';
+  }
 
   function renderRec(){
     var wrap = document.getElementById('sino-lista-rec');
@@ -991,14 +1001,53 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     if(Array.isArray(niv)) return niv.indexOf(s.nivel)>=0 || niv.indexOf('todos')>=0;
     return niv===s.nivel;
   }
+  // "Suas férias" — item derivado da própria ficha, sem caixa de entrada nova
+  // no servidor. A chave de lido (idR) inclui as datas, então cada mudança de
+  // período conta como não-lida uma vez; reeditar pro MESMO período não volta
+  // a piscar.
+  // NÃO usar dataCurta() aqui: ela faz new Date("2026-07-05"), que o
+  // navegador lê como meia-noite UTC e, em UTC-3, volta pro dia 4 — férias
+  // apareciam começando um dia antes. Uma data pura (sem hora) tem que ser
+  // fatiada como texto, nunca convertida pra Date.
+  function diaMesIso(iso){
+    var p = String(iso||'').split('-');
+    if(p.length !== 3) return String(iso||'');
+    return (+p[2]) + ' ' + MESES[(+p[1]) - 1];
+  }
+  function itemFerias(d){
+    if(!d || !d.eu || !d.eu.saida_ferias) return null;
+    var per = d.eu.ultimo_dia_ferias
+      ? diaMesIso(d.eu.saida_ferias)+' a '+diaMesIso(d.eu.ultimo_dia_ferias)
+      : 'a partir de '+diaMesIso(d.eu.saida_ferias);
+    return {
+      tipo:'ferias',
+      chave:'ferias:'+d.eu.saida_ferias+':'+(d.eu.ultimo_dia_ferias||''),
+      titulo:'Suas férias estão marcadas',
+      descricao:per,
+      quando:d.eu.atualizado_em || null,
+      url:'meu-perfil.html'
+    };
+  }
+  function juntaRec(base, extra){
+    recebidas = extra ? [extra].concat(base) : base;
+    renderRec(); atualiza();
+  }
   function carregar(){
     carregou = true;
+    var pFerias = (CTG && s.pessoa)
+      ? fetch(CTG+'/api/ferias-minhas', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(itemFerias).catch(function(){ return null; })
+      : Promise.resolve(null);
     if(REG){
-      fetch(REG+'/api/notificacoes', { headers:{ 'X-Token': s.token } })
-        .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
-        .then(function(d){ recebidas = (d&&d.itens)||[]; renderRec(); atualiza(); })
-        .catch(function(){ recebidas=[]; renderRec(); atualiza(); });
-    } else { recebidas=[]; renderRec(); }
+      Promise.all([
+        fetch(REG+'/api/notificacoes', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
+          .then(function(d){ return (d&&d.itens)||[]; })
+          .catch(function(){ return []; }),
+        pFerias
+      ]).then(function(res){ juntaRec(res[0], res[1]); });
+    } else { pFerias.then(function(f){ juntaRec([], f); }); }
     fetch('changelog.json', { cache:'no-cache' })
       .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
       .then(function(d){ novidades = ((d&&d.itens)||[]).filter(function(x){ return visivel(x.niveis); }); renderNov(); atualiza(); })
@@ -1613,7 +1662,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'abaf90fd6111';
+  var BUILD = '82e39af79439';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

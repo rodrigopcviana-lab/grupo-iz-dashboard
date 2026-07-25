@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Minha Agenda · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=abaf90fd6111">
+<link rel="stylesheet" href="portal.css?v=82e39af79439">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -511,6 +511,29 @@ window.msgAcessoNegado = function (nomePagina) {
   .ag-cancel { padding:12px 15px; border:1px solid var(--border); border-radius:10px; background:none; color:var(--text-2); cursor:pointer; }
   .ag-delc { margin-right:auto; padding:12px 13px; border:1px solid #5a3a3a; border-radius:10px; background:none; color:#e08585; cursor:pointer; font-size:13px; }
   .ag-erro { color:#e08585; font-size:12.5px; min-height:1em; margin:2px 0 0; }
+  /* Foto da lista de papel (Minha Mesa) — lê a folha e devolve os itens para
+     CONFERÊNCIA; nada é gravado antes de o Rodrigo confirmar. */
+  .ag-foto { padding:9px 13px; border-radius:9px; border:1px solid var(--border); background:var(--card);
+    color:var(--text-2); font-size:12.5px; cursor:pointer; display:flex; align-items:center; gap:7px; }
+  .ag-foto:hover { border-color:var(--acc); color:var(--acc); }
+  .ag-fontes { display:flex; gap:9px; }
+  .ag-fontes button { flex:1; padding:14px 10px; border-radius:11px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text-2); font-size:13px; cursor:pointer; }
+  .ag-fontes button:hover { border-color:var(--acc); color:var(--acc); }
+  .ag-lidos { display:flex; flex-direction:column; gap:7px; max-height:46vh; overflow:auto; margin:4px 0 2px; }
+  .ag-lido { display:flex; align-items:flex-start; gap:9px; padding:9px 10px; border:1px solid var(--border);
+    border-radius:10px; background:var(--bg); }
+  .ag-lido.fora { opacity:.45; }
+  .ag-lido input[type=checkbox] { margin-top:3px; flex:none; accent-color:var(--acc); width:16px; height:16px; }
+  .ag-lido .cx { flex:1; min-width:0; }
+  .ag-lido .cx input[type=text] { width:100%; background:none; border:none; border-bottom:1px dashed var(--border);
+    color:var(--text); font-size:13.5px; padding:2px 0; font-family:inherit; }
+  .ag-lido .cx input[type=text]:focus { outline:none; border-bottom-color:var(--acc); }
+  .ag-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; }
+  .ag-tag { font-size:10.5px; padding:2px 7px; border-radius:20px; border:1px solid var(--border); color:var(--text-3); }
+  .ag-tag.duvida { border-color:#7a5a2a; color:var(--amarelo); }
+  .ag-tag.feito { border-color:#3f6357; color:var(--verde); }
+  .ag-fresumo { font-size:12px; color:var(--text-3); margin:2px 0 0; }
   .ag-toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--card);
     border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13.5px; box-shadow:0 12px 30px rgba(0,0,0,.5);
     opacity:0; transition:.25s; z-index:70; pointer-events:none; }
@@ -544,6 +567,7 @@ independente — só você vê os seus. Use sua senha individual.</p>
       <button class="on" data-v="cal">Calendário</button>
       <button data-v="lista">Lista</button>
     </div>
+    <button class="ag-foto" id="ag-btnfoto"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg><span>Foto da lista</span></button>
     <button class="ag-novo" id="ag-btnnovo"><span>Novo</span></button>
   </div>
 
@@ -597,6 +621,28 @@ independente — só você vê os seus. Use sua senha individual.</p>
       <button class="ag-delc" id="ag-f-cancelar" style="display:none">Cancelar compromisso</button>
       <button class="ag-salvar" id="ag-f-salvar">Salvar</button>
       <button class="ag-cancel" id="ag-f-fechar">Fechar</button>
+    </div>
+  </div>
+</div>
+<div class="ag-mback" id="ag-fback">
+  <div class="ag-modal">
+    <h3 id="ag-ftit">Foto da lista</h3>
+    <p class="sub" id="ag-fsub" style="margin:-4px 0 12px;font-size:12.5px;color:var(--text-3)">
+      Fotografe a lista que você escreveu no papel. Nada é gravado até você conferir.</p>
+    <div class="ag-fontes" id="ag-fontes">
+      <button type="button" id="ag-fcam">Câmera</button>
+      <button type="button" id="ag-fgal">Galeria</button>
+    </div>
+    <input type="file" id="ag-finput-cam" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="ag-finput-gal" accept="image/*" style="display:none">
+    <div id="ag-fconf" style="display:none">
+      <div class="ag-lidos" id="ag-flidos"></div>
+      <p class="ag-fresumo" id="ag-fresumo"></p>
+    </div>
+    <p class="ag-erro" id="ag-ferro" role="status" aria-live="polite"></p>
+    <div class="ag-macoes">
+      <button class="ag-salvar" id="ag-fcriar" style="display:none">Criar tarefas</button>
+      <button class="ag-cancel" id="ag-ffechar">Fechar</button>
     </div>
   </div>
 </div>
@@ -829,16 +875,172 @@ independente — só você vê os seus. Use sua senha individual.</p>
       .catch(function(){ msg.textContent = 'Sem conexão. Tente de novo.'; });
   }
 
+  // --- Foto da lista de papel --------------------------------------------
+  // Fluxo: escolher origem (câmera/galeria — dois botões, nunca um seletor só)
+  // -> reduzir no navegador -> POST /api/agenda/foto (só LÊ) -> conferência
+  // editável na tela -> POST /api/agenda/lote (grava o que foi confirmado).
+  // Nenhuma tarefa nasce de leitura automática: item lido errado é corrigido
+  // ou desmarcado aqui, antes de existir.
+  var LIDOS = [];
+
+  function fFecha(){ $('ag-fback').classList.remove('on'); }
+  function fErro(m){ $('ag-ferro').textContent = m || ''; }
+
+  function fAbre(){
+    LIDOS = [];
+    $('ag-ftit').textContent = 'Foto da lista';
+    $('ag-fsub').style.display = '';
+    $('ag-fontes').style.display = 'flex';
+    $('ag-fconf').style.display = 'none';
+    $('ag-fcriar').style.display = 'none';
+    $('ag-flidos').textContent = '';
+    fErro('');
+    $('ag-fback').classList.add('on');
+  }
+
+  // Reduz a foto antes de subir: a folha de papel é legível bem abaixo da
+  // resolução de uma câmera de celular, e 6 MB é o teto da rota.
+  function reduz(file){
+    return new Promise(function(ok, falha){
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function(){
+        URL.revokeObjectURL(url);
+        var MAX = 1600, e = Math.min(1, MAX / Math.max(img.width, img.height));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.width * e); c.height = Math.round(img.height * e);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function(b){ b ? ok(b) : falha(new Error('falha ao preparar a imagem')); }, 'image/jpeg', 0.85);
+      };
+      img.onerror = function(){ URL.revokeObjectURL(url); falha(new Error('não consegui abrir essa imagem')); };
+      img.src = url;
+    });
+  }
+
+  function fEnvia(file){
+    if (!file) return;
+    $('ag-fontes').style.display = 'none';
+    $('ag-fsub').style.display = 'none';
+    fErro('');
+    $('ag-ftit').textContent = 'Lendo a folha…';
+    reduz(file).then(function(blob){
+      return fetch(WORKER + '/api/agenda/foto', {
+        method: 'POST', headers: { 'X-Token': TOKEN, 'Content-Type': 'image/jpeg' }, body: blob
+      });
+    }).then(function(r){
+      if (r.status === 401){ window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
+      return r.json().then(function(j){ return { st: r.status, j: j }; });
+    }).then(function(res){
+      if (!res) return;
+      if (res.st !== 200){
+        $('ag-ftit').textContent = 'Foto da lista';
+        $('ag-fontes').style.display = 'flex';
+        fErro((res.j && res.j.erro) || 'não consegui ler a foto');
+        return;
+      }
+      LIDOS = (res.j.itens || []).map(function(it){
+        // Item riscado na folha já está feito: entra desmarcado por padrão,
+        // pra não repovoar a mesa com o que você acabou de concluir.
+        return { texto: it.texto, usar: !it.feito, feito: it.feito,
+                 ideia: it.ideia, data: it.data, confianca: it.confianca };
+      });
+      fConfere(res.j);
+    }).catch(function(e){
+      $('ag-ftit').textContent = 'Foto da lista';
+      $('ag-fontes').style.display = 'flex';
+      fErro(e.message || 'falha ao enviar a foto');
+    });
+  }
+
+  function fResumo(){
+    var n = LIDOS.filter(function(x){ return x.usar; }).length;
+    $('ag-fresumo').textContent = n + (n === 1 ? ' item marcado' : ' itens marcados') + ' de ' + LIDOS.length + ' lidos.';
+    $('ag-fcriar').textContent = n ? ('Criar ' + n + (n === 1 ? ' tarefa' : ' tarefas')) : 'Criar tarefas';
+    $('ag-fcriar').disabled = !n;
+  }
+
+  function fConfere(j){
+    $('ag-ftit').textContent = j.titulo ? ('Lista: ' + j.titulo) : 'Confira o que eu li';
+    $('ag-fconf').style.display = '';
+    $('ag-fcriar').style.display = '';
+    if (j.aviso) fErro(j.aviso);
+    if (!LIDOS.length){
+      $('ag-flidos').textContent = '';
+      $('ag-flidos').appendChild(el('p', 'ag-fresumo', 'Não achei item nenhum nessa foto.'));
+      $('ag-fcriar').style.display = 'none';
+      return;
+    }
+    var box = $('ag-flidos'); box.textContent = '';
+    LIDOS.forEach(function(it){
+      var linha = el('div', 'ag-lido' + (it.usar ? '' : ' fora'));
+      var chk = document.createElement('input');
+      chk.type = 'checkbox'; chk.checked = it.usar;
+      chk.setAttribute('aria-label', 'Incluir ' + it.texto);
+      chk.onchange = function(){ it.usar = chk.checked; linha.classList.toggle('fora', !chk.checked); fResumo(); };
+      var cx = el('div', 'cx');
+      var txt = document.createElement('input');
+      txt.type = 'text'; txt.value = it.texto; txt.maxLength = 200;
+      txt.oninput = function(){ it.texto = txt.value; };
+      cx.appendChild(txt);
+      var tags = el('div', 'ag-tags');
+      if (it.confianca === 'baixa') tags.appendChild(el('span', 'ag-tag duvida', 'letra difícil — confira'));
+      if (it.feito) tags.appendChild(el('span', 'ag-tag feito', 'riscado na folha'));
+      if (it.ideia) tags.appendChild(el('span', 'ag-tag', 'ideia'));
+      if (it.data) tags.appendChild(el('span', 'ag-tag', 'prazo ' + it.data.slice(8, 10) + '/' + it.data.slice(5, 7)));
+      if (tags.childNodes.length) cx.appendChild(tags);
+      linha.appendChild(chk); linha.appendChild(cx);
+      box.appendChild(linha);
+    });
+    fResumo();
+  }
+
+  function fCria(){
+    var itens = LIDOS.filter(function(x){ return x.usar && x.texto.trim(); }).map(function(x){
+      var o = { titulo: x.texto.trim(), feito: x.feito };
+      if (x.data) o.prazo = x.data;
+      if (x.ideia) o.bloco = 'Entrada';
+      return o;
+    });
+    if (!itens.length) return;
+    $('ag-fcriar').disabled = true;
+    fErro('');
+    fetch(WORKER + '/api/agenda/lote', {
+      method: 'POST', headers: { 'X-Token': TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itens: itens })
+    }).then(function(r){
+      if (r.status === 401){ window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
+      return r.json().then(function(j){ return { st: r.status, j: j }; });
+    }).then(function(res){
+      if (!res) return;
+      var j = res.j || {};
+      $('ag-fcriar').disabled = false;
+      if (!j.ok){ fErro(j.erro || 'não consegui criar as tarefas'); return; }
+      fFecha();
+      // Falha parcial é dita, nunca engolida — o lote responde item a item.
+      toast(j.ok < j.total
+        ? (j.ok + ' de ' + j.total + ' criadas — confira as que faltaram')
+        : (j.ok + (j.ok === 1 ? ' tarefa criada' : ' tarefas criadas')));
+      recarrega();
+    }).catch(function(){ $('ag-fcriar').disabled = false; fErro('sem conexão'); });
+  }
+
   var ligado = false;
   function ligaControles(){
     if (ligado) return; ligado = true;
+    $('ag-btnfoto').onclick = fAbre;
+    $('ag-fcam').onclick = function(){ $('ag-finput-cam').click(); };
+    $('ag-fgal').onclick = function(){ $('ag-finput-gal').click(); };
+    $('ag-finput-cam').onchange = function(){ fEnvia(this.files[0]); this.value = ''; };
+    $('ag-finput-gal').onchange = function(){ fEnvia(this.files[0]); this.value = ''; };
+    $('ag-fcriar').onclick = fCria;
+    $('ag-ffechar').onclick = fFecha;
+    $('ag-fback').onclick = function(e){ if (e.target === $('ag-fback')) fFecha(); };
     $('ag-prev').onclick = function(){ mes--; if (mes < 0){ mes = 11; ano--; } render(); };
     $('ag-next').onclick = function(){ mes++; if (mes > 11){ mes = 0; ano++; } render(); };
     $('ag-btnhoje').onclick = function(){ var d = new Date(); ano = d.getFullYear(); mes = d.getMonth(); sel = HOJE; render(); };
     $('ag-btnnovo').onclick = function(){ abrir(null); };
     $('ag-f-salvar').onclick = salvar; $('ag-f-fechar').onclick = fecha; $('ag-f-cancelar').onclick = cancelar;
     $('ag-mback').onclick = function(e){ if (e.target === $('ag-mback')) fecha(); };
-    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') fecha(); });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ fecha(); fFecha(); } });
     [].forEach.call(document.querySelectorAll('.ag-seg button'), function(b){
       b.onclick = function(){ view = b.dataset.v;
         [].forEach.call(document.querySelectorAll('.ag-seg button'), function(x){ x.classList.toggle('on', x === b); });
@@ -1102,6 +1304,10 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
 
 (function(){
   var REG = "https://registro-bares.rodrigopcviana.workers.dev";
+  // Férias moram no OUTRO worker (contagem-bares) — o sino busca as duas
+  // fontes e junta no cliente. Alternativa seria dar acesso à base de
+  // Colaboradores ao registro-bares só pra isso; não vale o acoplamento.
+  var CTG = "https://contagem-bares.rodrigopcviana.workers.dev";
   var btn = document.getElementById('sino-btn');
   var pop = document.getElementById('sino-pop');
   if(!btn || !pop) return;
@@ -1144,10 +1350,16 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   var ICO = {
     demanda:'<path d="M5 4h14v16l-7-3-7 3z"/>',
     resposta:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
-    aviso:'<path d="M3 11l18-7-7 18-2-8z"/>'
+    aviso:'<path d="M3 11l18-7-7 18-2-8z"/>',
+    ferias:'<path d="M3 21h18"/><path d="M12 21V9"/><path d="M12 9a7 7 0 0 1 9 3"/><path d="M12 9a7 7 0 0 0-9 3"/>'
   };
   function svg(tp){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICO[tp]||ICO.aviso)+'</svg>'; }
-  function tag(tp){ return tp==='demanda'?'Demanda':(tp==='resposta'?'Resposta':'Aviso'); }
+  function tag(tp){
+    if(tp==='demanda') return 'Demanda';
+    if(tp==='resposta') return 'Resposta';
+    if(tp==='ferias') return 'Férias';
+    return 'Aviso';
+  }
 
   function renderRec(){
     var wrap = document.getElementById('sino-lista-rec');
@@ -1192,14 +1404,53 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     if(Array.isArray(niv)) return niv.indexOf(s.nivel)>=0 || niv.indexOf('todos')>=0;
     return niv===s.nivel;
   }
+  // "Suas férias" — item derivado da própria ficha, sem caixa de entrada nova
+  // no servidor. A chave de lido (idR) inclui as datas, então cada mudança de
+  // período conta como não-lida uma vez; reeditar pro MESMO período não volta
+  // a piscar.
+  // NÃO usar dataCurta() aqui: ela faz new Date("2026-07-05"), que o
+  // navegador lê como meia-noite UTC e, em UTC-3, volta pro dia 4 — férias
+  // apareciam começando um dia antes. Uma data pura (sem hora) tem que ser
+  // fatiada como texto, nunca convertida pra Date.
+  function diaMesIso(iso){
+    var p = String(iso||'').split('-');
+    if(p.length !== 3) return String(iso||'');
+    return (+p[2]) + ' ' + MESES[(+p[1]) - 1];
+  }
+  function itemFerias(d){
+    if(!d || !d.eu || !d.eu.saida_ferias) return null;
+    var per = d.eu.ultimo_dia_ferias
+      ? diaMesIso(d.eu.saida_ferias)+' a '+diaMesIso(d.eu.ultimo_dia_ferias)
+      : 'a partir de '+diaMesIso(d.eu.saida_ferias);
+    return {
+      tipo:'ferias',
+      chave:'ferias:'+d.eu.saida_ferias+':'+(d.eu.ultimo_dia_ferias||''),
+      titulo:'Suas férias estão marcadas',
+      descricao:per,
+      quando:d.eu.atualizado_em || null,
+      url:'meu-perfil.html'
+    };
+  }
+  function juntaRec(base, extra){
+    recebidas = extra ? [extra].concat(base) : base;
+    renderRec(); atualiza();
+  }
   function carregar(){
     carregou = true;
+    var pFerias = (CTG && s.pessoa)
+      ? fetch(CTG+'/api/ferias-minhas', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(itemFerias).catch(function(){ return null; })
+      : Promise.resolve(null);
     if(REG){
-      fetch(REG+'/api/notificacoes', { headers:{ 'X-Token': s.token } })
-        .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
-        .then(function(d){ recebidas = (d&&d.itens)||[]; renderRec(); atualiza(); })
-        .catch(function(){ recebidas=[]; renderRec(); atualiza(); });
-    } else { recebidas=[]; renderRec(); }
+      Promise.all([
+        fetch(REG+'/api/notificacoes', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
+          .then(function(d){ return (d&&d.itens)||[]; })
+          .catch(function(){ return []; }),
+        pFerias
+      ]).then(function(res){ juntaRec(res[0], res[1]); });
+    } else { pFerias.then(function(f){ juntaRec([], f); }); }
     fetch('changelog.json', { cache:'no-cache' })
       .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
       .then(function(d){ novidades = ((d&&d.itens)||[]).filter(function(x){ return visivel(x.niveis); }); renderNov(); atualiza(); })
@@ -1814,7 +2065,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'abaf90fd6111';
+  var BUILD = '82e39af79439';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Meu perfil · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=abaf90fd6111">
+<link rel="stylesheet" href="portal.css?v=82e39af79439">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -432,6 +432,23 @@ window.msgAcessoNegado = function (nomePagina) {
              padding: 10px; }
   /* o mesmo tile, como <button> — o seletor acima é de <a>. */
   button.mp-tile { width: 100%; font: inherit; text-align: left; cursor: pointer; }
+/* Minhas férias (2026-07-25) — bloco, não tile: o dado é o conteúdo, não um
+   atalho pra outra página. Quem edita é a coordenação, na aba Férias do Time. */
+.mp-ferias { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+             padding: 16px 18px; margin-bottom: 14px; }
+.mp-fe-cab { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+.mp-fe-cab b { font-family: var(--serif); font-weight: 500; font-size: 15px; }
+.mp-fe-ic { color: var(--acc); display: flex; flex: none; }
+.mp-fe-per { font-size: 21px; font-family: var(--serif); }
+.mp-fe-dias { font-size: 12.5px; color: var(--text-2); margin-top: 3px; }
+.mp-fe-nada { font-size: 13px; color: var(--text-2); margin: 0; }
+.mp-fe-lim { font-size: 12.5px; color: var(--text-2); margin: 8px 0 0; }
+.mp-fe-lim b { color: var(--text); font-weight: 600; }
+.mp-fe-casa { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.mp-fe-casa h4 { margin: 0 0 7px; font-size: 11.5px; text-transform: uppercase;
+                 letter-spacing: .04em; color: var(--text-3); font-weight: 600; }
+.mp-fe-col { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 3px 0; }
+.mp-fe-col span:last-child { color: var(--text-2); flex: none; }
 </style>
 <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg> Meu perfil</h1>
 <p class="sub">Sua identidade nesta sessão do Portal.</p>
@@ -449,6 +466,15 @@ window.msgAcessoNegado = function (nomePagina) {
     <span class="mp-chip" id="mp-chip-casa" style="display:none"></span>
   </div>
   <div class="mp-sessao" id="mp-sessao"></div>
+</div>
+
+<div class="mp-ferias" id="mp-ferias" style="display:none">
+  <div class="mp-fe-cab">
+    <span class="mp-fe-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v2"/><path d="M4 13a8 8 0 0 1 16 0z"/><path d="M12 13v8M9 21h6"/></svg></span>
+    <b>Minhas férias</b>
+  </div>
+  <div id="mp-fe-corpo"></div>
+  <div id="mp-fe-casa"></div>
 </div>
 
 <a class="mp-tile" id="mp-tile-demandas" href="demandas.html?modo=enviadas">
@@ -471,6 +497,11 @@ window.msgAcessoNegado = function (nomePagina) {
   <span class="mp-tile-tx"><b>Minhas ideias</b><span>desenhos guardados</span></span>
   <span class="mp-tile-go">›</span>
 </a>
+<button type="button" class="mp-tile" id="mp-tile-push" style="display:none">
+  <span class="mp-tile-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
+  <span class="mp-tile-tx"><b>Avisos no celular</b><span id="mp-push-sub">receber aviso quando suas férias forem marcadas</span></span>
+  <span class="mp-tile-go">›</span>
+</button>
 <button type="button" class="mp-tile" id="mp-tile-atualizar">
   <span class="mp-tile-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3.5V9h-5.5"/></svg></span>
   <span class="mp-tile-tx"><b>Forçar atualização</b><span id="mp-at-sub">limpa o cache do app e recarrega</span></span>
@@ -563,6 +594,124 @@ window.msgAcessoNegado = function (nomePagina) {
       })
       .catch(function () { elNtSub.textContent = ''; });
   }
+
+  // --- Minhas férias -------------------------------------------------------
+  // Casca: o período vem do Quadro de Equipes ao vivo (contagem-worker), a
+  // mesma ficha que a coordenação edita na aba Férias do Time. Só leitura
+  // aqui de propósito — quem planeja é a coordenação.
+  function dBr(iso) {
+    if (!iso) return '';
+    var p = String(iso).split('-');
+    return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
+  }
+  function diasEntre(a, b) {
+    if (!a || !b) return null;
+    var d1 = new Date(a + 'T00:00:00Z'), d2 = new Date(b + 'T00:00:00Z');
+    if (isNaN(d1) || isNaN(d2)) return null;
+    return Math.round((d2 - d1) / 86400000) + 1;
+  }
+  function txt(pai, tag, cls, conteudo) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    e.textContent = conteudo;          // nome de colega vem do Notion: textContent
+    pai.appendChild(e);
+    return e;
+  }
+
+  if (WORKER && s.pessoa) {
+    fetch(WORKER + '/api/ferias-minhas', { headers: { 'X-Token': s.token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        // Sem ficha no quadro (nome divergente ou fora da base) o bloco não
+        // aparece — melhor sumir do que afirmar "sem férias marcadas".
+        if (!d || !d.eu) return;
+        var bloco = document.getElementById('mp-ferias');
+        var corpo = document.getElementById('mp-fe-corpo');
+        bloco.style.display = 'block';
+
+        if (d.eu.saida_ferias && d.eu.ultimo_dia_ferias) {
+          txt(corpo, 'div', 'mp-fe-per', dBr(d.eu.saida_ferias) + ' a ' + dBr(d.eu.ultimo_dia_ferias));
+          var n = diasEntre(d.eu.saida_ferias, d.eu.ultimo_dia_ferias);
+          if (n) txt(corpo, 'div', 'mp-fe-dias', n + (n === 1 ? ' dia' : ' dias'));
+        } else if (d.eu.saida_ferias) {
+          txt(corpo, 'div', 'mp-fe-per', 'a partir de ' + dBr(d.eu.saida_ferias));
+        } else {
+          txt(corpo, 'p', 'mp-fe-nada', 'Nenhuma férias marcada ainda. Quando a coordenação planejar, aparece aqui.');
+        }
+
+        if (d.eu.limite_ferias) {
+          var lim = document.createElement('p');
+          lim.className = 'mp-fe-lim';
+          lim.appendChild(document.createTextNode('Limite para tirar: '));
+          txt(lim, 'b', '', dBr(d.eu.limite_ferias));
+          corpo.appendChild(lim);
+        }
+
+        // Colegas da MESMA casa de férias — pedido do Rodrigo, pra equipe se
+        // organizar. Só nome e período; cargo e limite legal ficam fora.
+        if (d.colegas && d.colegas.length) {
+          var cx = document.getElementById('mp-fe-casa');
+          cx.className = 'mp-fe-casa';
+          txt(cx, 'h4', '', 'Na sua casa');
+          d.colegas.forEach(function (c) {
+            var l = document.createElement('div');
+            l.className = 'mp-fe-col';
+            txt(l, 'span', '', c.nome);
+            txt(l, 'span', '', c.ultimo_dia_ferias
+              ? dBr(c.saida_ferias) + ' – ' + dBr(c.ultimo_dia_ferias)
+              : 'a partir de ' + dBr(c.saida_ferias));
+            cx.appendChild(l);
+          });
+        }
+      })
+      .catch(function () { /* silencioso: o perfil nunca quebra por causa disto */ });
+  }
+
+  // --- Avisos no celular ---------------------------------------------------
+  // Até 2026-07-25 só chefe/coord assinavam push (fan-out de demanda por
+  // casa). A equipe passou a poder assinar pra receber aviso DIRIGIDO — hoje,
+  // férias. Por isso o botão vive aqui, no perfil, e não na Central.
+  (function () {
+    var bt = document.getElementById('mp-tile-push');
+    var sub = document.getElementById('mp-push-sub');
+    var VAPID = "BDI6gDuv5E4ERk_WNG1QGINUdn1Zo11vR0cv8knc2u3dM9uOZaDC1zGbrnnYXLhN6TnjUf0tnssRQ4biTAGiJA0";
+    if (!bt || !REG_WORKER || !VAPID || !s.pessoa) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    bt.style.display = '';
+
+    function b64(base64) {
+      var pad = '='.repeat((4 - base64.length % 4) % 4);
+      var b = atob((base64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+      return Uint8Array.from(b, function (c) { return c.charCodeAt(0); });
+    }
+    function marcaAtivo() { sub.textContent = 'ativado neste aparelho'; bt.disabled = true; }
+
+    navigator.serviceWorker.ready.then(function (reg) {
+      return reg.pushManager.getSubscription();
+    }).then(function (js) { if (js) marcaAtivo(); }).catch(function () {});
+
+    bt.addEventListener('click', function () {
+      sub.textContent = 'pedindo permissão…';
+      Notification.requestPermission().then(function (p) {
+        if (p !== 'granted') {
+          sub.textContent = 'permissão negada — libere nas configurações do navegador';
+          return;
+        }
+        return navigator.serviceWorker.ready.then(function (reg) {
+          return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(VAPID) });
+        }).then(function (assinatura) {
+          return fetch(REG_WORKER + '/api/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+            body: JSON.stringify({ subscription: assinatura })
+          });
+        }).then(function (r) {
+          if (r && r.ok) marcaAtivo();
+          else sub.textContent = 'não deu para ativar — tente de novo';
+        });
+      }).catch(function () { sub.textContent = 'não deu para ativar — tente de novo'; });
+    });
+  })();
 
   document.getElementById('mp-sair').addEventListener('click', function () {
     window.sessaoLimpar();
@@ -821,6 +970,10 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
 
 (function(){
   var REG = "https://registro-bares.rodrigopcviana.workers.dev";
+  // Férias moram no OUTRO worker (contagem-bares) — o sino busca as duas
+  // fontes e junta no cliente. Alternativa seria dar acesso à base de
+  // Colaboradores ao registro-bares só pra isso; não vale o acoplamento.
+  var CTG = "https://contagem-bares.rodrigopcviana.workers.dev";
   var btn = document.getElementById('sino-btn');
   var pop = document.getElementById('sino-pop');
   if(!btn || !pop) return;
@@ -863,10 +1016,16 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
   var ICO = {
     demanda:'<path d="M5 4h14v16l-7-3-7 3z"/>',
     resposta:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
-    aviso:'<path d="M3 11l18-7-7 18-2-8z"/>'
+    aviso:'<path d="M3 11l18-7-7 18-2-8z"/>',
+    ferias:'<path d="M3 21h18"/><path d="M12 21V9"/><path d="M12 9a7 7 0 0 1 9 3"/><path d="M12 9a7 7 0 0 0-9 3"/>'
   };
   function svg(tp){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICO[tp]||ICO.aviso)+'</svg>'; }
-  function tag(tp){ return tp==='demanda'?'Demanda':(tp==='resposta'?'Resposta':'Aviso'); }
+  function tag(tp){
+    if(tp==='demanda') return 'Demanda';
+    if(tp==='resposta') return 'Resposta';
+    if(tp==='ferias') return 'Férias';
+    return 'Aviso';
+  }
 
   function renderRec(){
     var wrap = document.getElementById('sino-lista-rec');
@@ -911,14 +1070,53 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     if(Array.isArray(niv)) return niv.indexOf(s.nivel)>=0 || niv.indexOf('todos')>=0;
     return niv===s.nivel;
   }
+  // "Suas férias" — item derivado da própria ficha, sem caixa de entrada nova
+  // no servidor. A chave de lido (idR) inclui as datas, então cada mudança de
+  // período conta como não-lida uma vez; reeditar pro MESMO período não volta
+  // a piscar.
+  // NÃO usar dataCurta() aqui: ela faz new Date("2026-07-05"), que o
+  // navegador lê como meia-noite UTC e, em UTC-3, volta pro dia 4 — férias
+  // apareciam começando um dia antes. Uma data pura (sem hora) tem que ser
+  // fatiada como texto, nunca convertida pra Date.
+  function diaMesIso(iso){
+    var p = String(iso||'').split('-');
+    if(p.length !== 3) return String(iso||'');
+    return (+p[2]) + ' ' + MESES[(+p[1]) - 1];
+  }
+  function itemFerias(d){
+    if(!d || !d.eu || !d.eu.saida_ferias) return null;
+    var per = d.eu.ultimo_dia_ferias
+      ? diaMesIso(d.eu.saida_ferias)+' a '+diaMesIso(d.eu.ultimo_dia_ferias)
+      : 'a partir de '+diaMesIso(d.eu.saida_ferias);
+    return {
+      tipo:'ferias',
+      chave:'ferias:'+d.eu.saida_ferias+':'+(d.eu.ultimo_dia_ferias||''),
+      titulo:'Suas férias estão marcadas',
+      descricao:per,
+      quando:d.eu.atualizado_em || null,
+      url:'meu-perfil.html'
+    };
+  }
+  function juntaRec(base, extra){
+    recebidas = extra ? [extra].concat(base) : base;
+    renderRec(); atualiza();
+  }
   function carregar(){
     carregou = true;
+    var pFerias = (CTG && s.pessoa)
+      ? fetch(CTG+'/api/ferias-minhas', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(itemFerias).catch(function(){ return null; })
+      : Promise.resolve(null);
     if(REG){
-      fetch(REG+'/api/notificacoes', { headers:{ 'X-Token': s.token } })
-        .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
-        .then(function(d){ recebidas = (d&&d.itens)||[]; renderRec(); atualiza(); })
-        .catch(function(){ recebidas=[]; renderRec(); atualiza(); });
-    } else { recebidas=[]; renderRec(); }
+      Promise.all([
+        fetch(REG+'/api/notificacoes', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
+          .then(function(d){ return (d&&d.itens)||[]; })
+          .catch(function(){ return []; }),
+        pFerias
+      ]).then(function(res){ juntaRec(res[0], res[1]); });
+    } else { pFerias.then(function(f){ juntaRec([], f); }); }
     fetch('changelog.json', { cache:'no-cache' })
       .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
       .then(function(d){ novidades = ((d&&d.itens)||[]).filter(function(x){ return visivel(x.niveis); }); renderNov(); atualiza(); })
@@ -1533,7 +1731,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'abaf90fd6111';
+  var BUILD = '82e39af79439';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
