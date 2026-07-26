@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Registro Rápido · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=e9ec54a0b688">
+<link rel="stylesheet" href="portal.css?v=d6ea6281d009">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1027,8 +1027,10 @@ direto para a coordenação.</p>
         // já que não há mais o timeout cego de 600ms) e diz o que houve. Tocar
         // Enviar de novo com o mesmo conteúdo NÃO duplica: o onsubmit reusa a
         // chave do item que já está na fila.
-        elEnviar.disabled = false;
-        elMsg.textContent = 'Guardado neste aparelho — vai sozinho quando a internet voltar.';
+        if (chaveEmTela === item.chave_registro) {
+          elEnviar.disabled = false;
+          elMsg.textContent = 'Guardado neste aparelho — vai sozinho quando a internet voltar.';
+        }
         if (item.urgencia === 'hoje') {
           elBannerAlerta.innerHTML = '<div class="rr-banner erro">Necessário hoje e sem envio — ' +
             '<a class="wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">avise o coordenador agora</a></div>';
@@ -1037,8 +1039,16 @@ direto para a coordenação.</p>
         backoffMs = Math.min(backoffMs * 2, 60000);
       }
     }).catch(function () {
+      // Falha de REDE (o caso do celular sem sinal) cai aqui, não no `else`
+      // acima — que trata resposta HTTP ruim. Os dois precisam devolver o
+      // botão e dizer que ficou guardado, senão a tela fica em "Enviando…"
+      // pra sempre e a pessoa reenvia achando que não foi.
       enviando = false;
       bannerPendente(fila.length);
+      if (chaveEmTela === item.chave_registro) {
+        elEnviar.disabled = false;
+        elMsg.textContent = 'Guardado neste aparelho — vai sozinho quando a internet voltar.';
+      }
       setTimeout(processaFila, backoffMs);
       backoffMs = Math.min(backoffMs * 2, 60000);
     });
@@ -1196,7 +1206,13 @@ direto para a coordenação.</p>
     } else {
       // caminho só-texto: fila offline robusta
       var fila = lerFila();
-      fila.push(item);
+      // Mesma guarda do guardaTextoOffline: com a chave reusada, tocar Enviar
+      // de novo empilhava o MESMO registro várias vezes na fila. O worker
+      // deduplica pela Chave, mas seriam idas à rede à toa e um banner de
+      // "pendentes" mentindo o número.
+      if (!fila.some(function (x) { return x.chave_registro === item.chave_registro; })) {
+        fila.push(item);
+      }
       salvarFila(fila);
       chaveEmTela = item.chave_registro;
       elEnviar.disabled = true;
@@ -1634,7 +1650,8 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     resposta:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     aviso:'<path d="M3 11l18-7-7 18-2-8z"/>',
     ferias:'<path d="M3 21h18"/><path d="M12 21V9"/><path d="M12 9a7 7 0 0 1 9 3"/><path d="M12 9a7 7 0 0 0-9 3"/>',
-    acesso:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M18 8v6M15 11h6"/>'
+    acesso:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M18 8v6M15 11h6"/>',
+    tarefa:'<path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="2.5"/>'
   };
   function svg(tp){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICO[tp]||ICO.aviso)+'</svg>'; }
   function tag(tp){
@@ -1642,6 +1659,7 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
     if(tp==='resposta') return 'Resposta';
     if(tp==='ferias') return 'Férias';
     if(tp==='acesso') return 'Acesso';
+    if(tp==='tarefa') return 'Mesa';
     return 'Aviso';
   }
 
@@ -2380,7 +2398,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'e9ec54a0b688';
+  var BUILD = 'd6ea6281d009';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
