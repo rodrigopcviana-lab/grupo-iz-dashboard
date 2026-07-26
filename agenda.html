@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Minha Mesa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=31e7e3587f1a">
+<link rel="stylesheet" href="portal.css?v=d4ddcfda7cd0">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -623,6 +623,16 @@ window.msgAcessoNegado = function (nomePagina) {
   .ag-chkadd button:hover { border-color:var(--acc); color:var(--acc); }
   .ag-evprep { margin-top:6px; font-size:11.5px; color:var(--acc); background:none; border:none;
     cursor:pointer; padding:0; text-decoration:underline; }
+  .ag-anx { display:flex; flex-direction:column; gap:5px; margin-bottom:8px; }
+  .ag-anx:empty { display:none; }
+  .ag-anxit { display:flex; align-items:center; gap:8px; font-size:12.5px; }
+  .ag-anxit a { flex:1; min-width:0; color:var(--text-2); text-decoration:none; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+  .ag-anxit a:hover { color:var(--acc); text-decoration:underline; }
+  .ag-anxit .novo { font-size:10.5px; color:var(--verde); flex:none; }
+  .ag-anxit button { flex:none; border:none; background:none; color:var(--text-3); cursor:pointer;
+    font-size:15px; line-height:1; padding:0 4px; }
+  .ag-anxit button:hover { color:#e08585; }
   .ag-toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--card);
     border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13.5px; box-shadow:0 12px 30px rgba(0,0,0,.5);
     opacity:0; transition:.25s; z-index:70; pointer-events:none; }
@@ -744,6 +754,16 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
       <select id="ag-f-casa"><option value="">— nenhuma —</option><option value="Iz">Iz</option><option value="Grá">Grá</option><option value="1929">1929</option><option value="FAMU">FAMU</option><option value="Fulles">Fulles</option><option value="Nip">Nip</option></select>
       <p class="ag-refchip" id="ag-f-refchip" hidden></p>
     </div>
+    <div class="ag-campo" id="ag-f-anexos" style="display:none"><label>Anexos (opc.)</label>
+      <div class="ag-anx" id="ag-f-anxlista"></div>
+      <div class="ag-fontes">
+        <button type="button" id="ag-anx-cam">Câmera</button>
+        <button type="button" id="ag-anx-gal">Galeria</button>
+      </div>
+      <input type="file" id="ag-anx-icam" accept="image/*" capture="environment" style="display:none">
+      <input type="file" id="ag-anx-igal" accept="image/*" style="display:none">
+      <p class="ag-fresumo" id="ag-anx-msg"></p>
+    </div>
     <div class="ag-campo" id="ag-f-check" style="display:none"><label>Checklist (opc.)</label>
       <div class="ag-chk" id="ag-f-chklista"></div>
       <div class="ag-chkadd">
@@ -817,6 +837,8 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
   var hojeD = new Date(); var HOJE = ymd(hojeD.getFullYear(), hojeD.getMonth(), hojeD.getDate());
   var ano = hojeD.getFullYear(), mes = hojeD.getMonth(), sel = HOJE, view = 'hoje', edId = null;
   var CHK = [], edRef = '';   // checklist e vínculo da tarefa aberta no modal
+  var ANX_ATUAIS = [], ANX_NOVOS = [], ANX_FORA = [];   // anexos (E8)
+  var AGENDA_ANEXOS_MAX = 6;   // espelha o teto do worker
 
   function $(id){ return document.getElementById(id); }
   function ymd(a,m,d){ return a + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'); }
@@ -1246,7 +1268,11 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
     CHK = (e && Array.isArray(e.checklist)) ? e.checklist.map(function(i){
       return { txt: String(i.txt || ''), ok: i.ok === true };
     }).filter(function(i){ return i.txt; }) : [];
+    ANX_ATUAIS = (e && Array.isArray(e.anexos)) ? e.anexos.slice() : [];
+    ANX_NOVOS = []; ANX_FORA = [];
+    $('ag-anx-msg').textContent = '';
     chkRender();
+    anxRender();
     refRender();
     camposTarefa();
     $('ag-f-cancelar').style.display = (e && e.status !== 'Cancelado') ? '' : 'none';
@@ -1256,6 +1282,68 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
   // Tarefa e compromisso não pedem as mesmas coisas: prazo/esforço/prioridade
   // só aparecem para tarefa, e para ela a data de início deixa de ser exigida
   // (tarefa em planejamento não tem dia nenhum).
+  // ---- Anexos da tarefa (E8) --------------------------------------------
+  // Três listas convivem: ANX_ATUAIS (o que já está no Notion), ANX_NOVOS (ids
+  // já subidos nesta edição, ainda não salvos) e ANX_FORA (índices dos atuais
+  // marcados pra sair). Só o Salvar consolida — fechar o modal não mexe em
+  // nada que já estava gravado.
+  function anxRender(){
+    var box = $('ag-f-anxlista'); box.textContent = '';
+    ANX_ATUAIS.forEach(function(a, i){
+      if (ANX_FORA.indexOf(i) > -1) return;
+      var li = el('div', 'ag-anxit');
+      var link = el('a', null, a.nome || 'anexo');
+      // A URL do Notion expira; o link vai sempre pela rota, que assina na hora.
+      link.href = WORKER + '/api/agenda/' + edId + '/anexo/' + i;
+      link.target = '_blank'; link.rel = 'noopener';
+      var x = el('button', null, '×'); x.type = 'button';
+      x.title = 'Tirar'; x.setAttribute('aria-label', 'Tirar ' + (a.nome || 'anexo'));
+      x.onclick = function(){ ANX_FORA.push(i); anxRender(); };
+      li.appendChild(link); li.appendChild(x);
+      box.appendChild(li);
+    });
+    ANX_NOVOS.forEach(function(a, i){
+      var li = el('div', 'ag-anxit');
+      var nome = el('a', null, a.nome || 'anexo'); nome.href = '#';
+      nome.onclick = function(e){ e.preventDefault(); };
+      li.appendChild(nome);
+      li.appendChild(el('span', 'novo', 'a salvar'));
+      var x = el('button', null, '×'); x.type = 'button';
+      x.onclick = function(){ ANX_NOVOS.splice(i, 1); anxRender(); };
+      li.appendChild(x);
+      box.appendChild(li);
+    });
+  }
+
+  // Sobe pelo registro-bares (o uploader que já existe) e guarda só o id.
+  function anxSobe(file){
+    if (!file) return;
+    if (!WREG){ $('ag-anx-msg').textContent = 'anexo indisponível nesta configuração'; return; }
+    var restam = AGENDA_ANEXOS_MAX - (ANX_ATUAIS.length - ANX_FORA.length) - ANX_NOVOS.length;
+    if (restam <= 0){ $('ag-anx-msg').textContent = 'máximo de ' + AGENDA_ANEXOS_MAX + ' anexos'; return; }
+    $('ag-anx-msg').textContent = 'enviando…';
+    reduz(file).then(function(blob){
+      return fetch(WREG + '/api/anexo', {
+        method: 'POST',
+        headers: { 'X-Token': TOKEN, 'Content-Type': 'image/jpeg',
+                   'X-Nome': encodeURIComponent(file.name || 'foto.jpg') },
+        body: blob
+      });
+    }).then(function(r){
+      if (r.status === 401){ window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
+      return r.json().then(function(j){ return { st: r.status, j: j }; });
+    }).then(function(res){
+      if (!res) return;
+      if (res.st !== 201 || !res.j.id){
+        $('ag-anx-msg').textContent = (res.j && res.j.erro) || 'não consegui subir';
+        return;
+      }
+      ANX_NOVOS.push({ id: res.j.id, nome: res.j.name || 'foto' });
+      $('ag-anx-msg').textContent = '';
+      anxRender();
+    }).catch(function(){ $('ag-anx-msg').textContent = 'sem conexão'; });
+  }
+
   // ---- Checklist da tarefa (mesmo formato [{txt,ok}] das Notas) ----------
   function chkRender(){
     var box = $('ag-f-chklista'); box.textContent = '';
@@ -1299,6 +1387,9 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
     $('ag-f-prio').style.display = tarefa ? 'block' : 'none';
     $('ag-f-vinc').style.display = tarefa ? 'block' : 'none';
     $('ag-f-check').style.display = tarefa ? 'block' : 'none';
+    // Anexar em item que ainda não existe exigiria salvar duas vezes; então o
+    // bloco só aparece ao EDITAR. A tela diz isso em vez de sumir sem motivo.
+    $('ag-f-anexos').style.display = (tarefa && edId) ? 'block' : 'none';
     $('ag-mtit').textContent = (edId ? 'Editar ' : 'Nova ') + (tarefa ? 'tarefa' : 'compromisso');
     if (!edId && tarefa) $('ag-mtit').textContent = 'Nova tarefa';
   }
@@ -1329,6 +1420,12 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
       body.casa_vinculo = $('ag-f-casa').value || '';
       body.checklist = CHK;
       body.ref = edRef || '';
+      // Anexo só existe ao editar (ver camposTarefa). O worker soma aos atuais
+      // e tira por índice — nunca substitui a lista às cegas.
+      if (edId){
+        if (ANX_NOVOS.length) body.anexos_novos = ANX_NOVOS;
+        if (ANX_FORA.length) body.anexos_remover = ANX_FORA;
+      }
     }
     var btn = $('ag-f-salvar'); btn.disabled = true; erro.textContent = '';
     var url = WORKER + '/api/agenda' + (edId ? '/' + edId : '');
@@ -1726,6 +1823,10 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
     $('ag-btnnovo').onclick = function(){ abrir(null); };
     $('ag-f-salvar').onclick = salvar; $('ag-f-fechar').onclick = fecha; $('ag-f-cancelar').onclick = cancelar;
     [].forEach.call(document.querySelectorAll('input[name=agtipo]'), function(r){ r.onchange = camposTarefa; });
+    $('ag-anx-cam').onclick = function(){ $('ag-anx-icam').click(); };
+    $('ag-anx-gal').onclick = function(){ $('ag-anx-igal').click(); };
+    $('ag-anx-icam').onchange = function(){ anxSobe(this.files[0]); this.value = ''; };
+    $('ag-anx-igal').onchange = function(){ anxSobe(this.files[0]); this.value = ''; };
     $('ag-f-chkbtn').onclick = chkSoma;
     $('ag-f-chknovo').onkeydown = function(e){
       // Enter aqui soma o passo; sem isso ele submeteria o modal inteiro.
@@ -2803,7 +2904,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '31e7e3587f1a';
+  var BUILD = 'd4ddcfda7cd0';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
