@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Gestão de Produto · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=91f3de8e29f9">
+<link rel="stylesheet" href="portal.css?v=84d95ae48ad0">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -2975,6 +2975,39 @@ window.msgAcessoNegado = function (nomePagina) {
     font-size:12.5px; color:var(--text-3); line-height:1.65; }
   .cnc-cov b { color:var(--text-2); }
   .cnc-foot { font-size:11.5px; color:var(--text-3); margin-top:20px; line-height:1.6; }
+  /* Cardápio físico (4ª fonte) — faixa de envio do mês + modal de envio. */
+  .cnc-btn { font:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:9px;
+    border:1px solid var(--acc); background:var(--acc); color:var(--acc-txt); cursor:pointer; }
+  .cnc-btn.sec { background:var(--card); color:var(--text-2); border-color:var(--border); }
+  .cnc-btn[disabled] { opacity:.5; cursor:default; }
+  .cnc-fis-faixa { background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:12px 14px; margin:0 0 18px; }
+  .cnc-fis-cab { display:flex; align-items:center; justify-content:space-between; gap:12px;
+    flex-wrap:wrap; margin-bottom:10px; }
+  .cnc-fis-tit { font-size:14px; font-weight:700; }
+  .cnc-fis-sub { font-size:12px; color:var(--text-3); margin-top:2px; }
+  .cnc-fis-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(165px,1fr)); gap:8px; }
+  .cnc-fis-cel { border-radius:9px; padding:8px 10px; background:var(--bg); border:1px solid var(--border); }
+  .cnc-fis-cel .q { font-size:12.5px; font-weight:700; }
+  .cnc-fis-cel .d { font-size:11.5px; color:var(--text-3); margin-top:2px; }
+  .cnc-fis-cel.ok { border-color:#2f6d4a; }
+  .cnc-fis-cel.falta { border-color:#7a5a1e; }
+  .cnc-modal { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:60;
+    display:flex; align-items:flex-start; justify-content:center; padding:18px 12px; overflow-y:auto; }
+  .cnc-modal-cx { background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:16px 16px 18px; width:100%; max-width:560px; }
+  .cnc-modal-cx h2 { font-size:16px; margin:0 0 4px; }
+  .cnc-modal-cx label { display:block; font-size:12px; color:var(--text-3); margin:12px 0 4px; }
+  .cnc-modal-cx select, .cnc-modal-cx input, .cnc-modal-cx textarea { font:inherit; font-size:14px;
+    width:100%; padding:8px 10px; border-radius:9px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text-1); box-sizing:border-box; }
+  .cnc-it { display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+  .cnc-it input.nome { flex:1 1 auto; }
+  .cnc-it input.preco { flex:0 0 96px; text-align:right; }
+  .cnc-it.baixa input.nome { border-color:#7a5a1e; }
+  .cnc-it button { font:inherit; font-size:16px; line-height:1; padding:6px 9px; border-radius:8px;
+    border:1px solid var(--border); background:var(--bg); color:var(--text-3); cursor:pointer; }
+  .cnc-modal-msg { font-size:12.5px; color:var(--text-3); margin:10px 0 0; min-height:16px; }
   /* Celular: as duas tabelas viram um card por linha. Nome ESCOPADO
      (.cnc-cards) de propósito — existe uma grade global ".cards{display:grid}"
      no CSS do portal, e usar o nome genérico desalinharia a tabela em toda
@@ -2998,7 +3031,20 @@ window.msgAcessoNegado = function (nomePagina) {
 
   <div class="cnc-guia">
     <span class="p"><b>Cardápio digital</b> — o que o cliente vê no Tagme</span>
+    <span class="p"><b>Cardápio físico</b> — o que está impresso na mesa</span>
+    <span class="p"><b>Ficha</b> — o preço cadastrado no Notion</span>
     <span class="p"><b>Sistema de vendas</b> — o que foi cobrado no mês</span>
+  </div>
+
+  <div class="cnc-fis-faixa" id="cnc-fis-faixa" style="display:none">
+    <div class="cnc-fis-cab">
+      <div>
+        <div class="cnc-fis-tit">Cardápio físico — envio do mês</div>
+        <div class="cnc-fis-sub" id="cnc-fis-resumo"></div>
+      </div>
+      <button type="button" class="cnc-btn" id="cnc-fis-enviar" style="display:none">Enviar cardápio</button>
+    </div>
+    <div class="cnc-fis-grid" id="cnc-fis-grid"></div>
   </div>
 
   <div class="cnc-chips" id="cnc-casas"></div>
@@ -3015,10 +3061,30 @@ window.msgAcessoNegado = function (nomePagina) {
   <p class="cnc-sec-sub" id="cnc-sub-div"></p>
   <div class="panel" style="padding:8px 10px;overflow-x:auto">
     <table class="cnc cnc-cards"><thead><tr>
-      <th>Produto</th><th class="n">Cardápio</th><th class="n">Ficha</th><th class="n">Praticado</th>
+      <th>Produto</th><th class="n">Digital</th><th class="n">Impresso</th><th class="n">Ficha</th><th class="n">Praticado</th>
       <th class="n">Diferença</th><th class="n">Vendidos</th><th class="n">Em jogo</th>
     </tr></thead><tbody id="cnc-lista-div"></tbody></table>
     <p class="cnc-vazio" id="cnc-vazio-div" style="display:none"></p>
+  </div>
+
+  <p class="cnc-sec">Cardápio físico</p>
+  <p class="cnc-sec-sub" id="cnc-sub-fis"></p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <table class="cnc cnc-cards"><thead><tr>
+      <th>Produto</th><th class="n">Impresso</th><th class="n">Digital</th><th class="n">Ficha</th>
+      <th class="n">Praticado</th><th class="n">Em jogo</th>
+    </tr></thead><tbody id="cnc-lista-fis"></tbody></table>
+    <p class="cnc-vazio" id="cnc-vazio-fis" style="display:none"></p>
+    <p class="cnc-nota" id="cnc-fis-sempar" style="margin:8px 2px 0"></p>
+  </div>
+
+  <p class="cnc-sec">Exemplares nas casas</p>
+  <p class="cnc-sec-sub">Quantos cardápios impressos existem em cada casa, do último envio. Cardápio gasto ou faltando é o cliente esperando na mesa — e um cardápio velho é onde o preço desatualizado sobrevive.</p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <table class="cnc cnc-cards"><thead><tr>
+      <th>Casa</th><th>Tipo</th><th class="n">Exemplares</th><th class="n">Gastos</th><th>Enviado</th>
+    </tr></thead><tbody id="cnc-lista-exe"></tbody></table>
+    <p class="cnc-vazio" id="cnc-vazio-exe" style="display:none"></p>
   </div>
 
   <p class="cnc-sec">Mesmo produto, preço diferente entre casas</p>
@@ -3044,6 +3110,52 @@ window.msgAcessoNegado = function (nomePagina) {
   <div class="cnc-cov" id="cnc-cov"></div>
 
   <p class="cnc-foot" id="cnc-foot"></p>
+</div>
+
+<div class="cnc-modal" id="cnc-modal" style="display:none">
+  <div class="cnc-modal-cx">
+    <h2>Enviar cardápio físico</h2>
+    <p class="sub" style="margin:0;font-size:12.5px">Fotografe as páginas do cardápio impresso. A leitura é conferida por você antes de salvar — nada é gravado direto da foto.</p>
+
+    <div id="cnc-m-casa-wrap" style="display:none">
+      <label for="cnc-m-casa">Casa</label>
+      <select id="cnc-m-casa"></select>
+    </div>
+
+    <label for="cnc-m-tipo">Tipo de cardápio</label>
+    <select id="cnc-m-tipo"></select>
+
+    <label for="cnc-m-mes">Mês</label>
+    <input type="month" id="cnc-m-mes">
+
+    <label>Páginas do cardápio</label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="cnc-btn sec" id="cnc-m-camera">Câmera</button>
+      <button type="button" class="cnc-btn sec" id="cnc-m-galeria">Galeria</button>
+      <button type="button" class="cnc-btn sec" id="cnc-m-additem">Adicionar item à mão</button>
+    </div>
+    <p class="cnc-modal-msg" id="cnc-m-foto-msg"></p>
+    <input type="file" id="cnc-m-in-camera" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="cnc-m-in-galeria" accept="image/*" multiple style="display:none">
+
+    <label>Itens lidos <span id="cnc-m-conta" style="color:var(--text-3)"></span></label>
+    <div id="cnc-m-itens"></div>
+
+    <label for="cnc-m-exemplares">Quantos exemplares deste cardápio existem na casa</label>
+    <input type="number" id="cnc-m-exemplares" min="0" inputmode="numeric">
+
+    <label for="cnc-m-gastos">Destes, quantos estão gastos ou rasgados (opcional)</label>
+    <input type="number" id="cnc-m-gastos" min="0" inputmode="numeric">
+
+    <label for="cnc-m-obs">Observação (opcional)</label>
+    <input type="text" id="cnc-m-obs" maxlength="200">
+
+    <p class="cnc-modal-msg" id="cnc-m-msg"></p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button type="button" class="cnc-btn sec" id="cnc-m-cancelar">Cancelar</button>
+      <button type="button" class="cnc-btn" id="cnc-m-salvar">Salvar envio</button>
+    </div>
+  </div>
 </div>
 
 <script type="text/plain" id="perf-src-precos">
@@ -3087,7 +3199,13 @@ window.msgAcessoNegado = function (nomePagina) {
       return (casas[b].resumo || {}).em_jogo - (casas[a].resumo || {}).em_jogo;
     });
     if (!slugs.length) {
-      wrap.innerHTML = '';
+      // Não usar innerHTML='' aqui: isso destruiria a faixa de envio do
+      // cardápio físico, que é justamente a única coisa que uma casa sem
+      // conciliação ainda PODE fazer nesta página.
+      var faixaEl = document.getElementById('cnc-fis-faixa');
+      Array.prototype.slice.call(wrap.children).forEach(function (el) {
+        if (el !== faixaEl) el.parentNode.removeChild(el);
+      });
       var p = document.createElement('p');
       p.className = 'cnc-vazio';
       p.textContent = (d.sem_cobertura && d.sem_cobertura.length)
@@ -3177,7 +3295,21 @@ window.msgAcessoNegado = function (nomePagina) {
         }
         tr.appendChild(tdNome);
 
-        tr.appendChild(td(rs(x.cardapio), 'n', 'Cardápio'));
+        tr.appendChild(td(rs(x.cardapio), 'n', 'Digital'));
+        // Impresso = 4ª fonte (cardápio físico do mês). "—" quando a casa não
+        // enviou ou quando o item não foi lido na foto — nunca se assume que
+        // o impresso repete o digital.
+        var tdFis = document.createElement('td');
+        tdFis.className = 'n';
+        tdFis.setAttribute('data-label', 'Impresso');
+        tdFis.textContent = typeof x.fisico === 'number' ? rs(x.fisico) : '—';
+        if (x.difere_fisico) {
+          var dfe = document.createElement('div');
+          dfe.className = 'cnc-nota';
+          dfe.textContent = 'diferente do digital';
+          tdFis.appendChild(dfe);
+        }
+        tr.appendChild(tdFis);
         // Ficha = preço cadastrado no Notion. Só existe pra cocktail hoje
         // (o B.D.1 não tem De-Para confirmado com o POS) — daí o "—".
         var tdFicha = document.createElement('td');
@@ -3204,6 +3336,98 @@ window.msgAcessoNegado = function (nomePagina) {
       vazioDiv.textContent = (cov.conferidos || 0) > 0
         ? 'Nenhuma divergência: os ' + cov.conferidos + ' itens conferidos batem com o cardápio digital.'
         : 'Nenhum item pôde ser conferido nesta casa ainda — veja a seção abaixo.';
+
+      // --- Cardápio físico (4ª fonte) --------------------------------------
+      // Entre preços ANUNCIADOS (impresso × digital × ficha) não há ruído de
+      // média: qualquer centavo de diferença é divergência de cadastro, não
+      // desconto. Por isso esta seção destaca "difere do digital/da ficha"
+      // mesmo quando o R$ em jogo é zero (item que não vendeu no mês).
+      var fis = c.fisico;
+      var subFis = document.getElementById('cnc-sub-fis');
+      var tbFis = document.getElementById('cnc-lista-fis');
+      var vazioFis = document.getElementById('cnc-vazio-fis');
+      var semParFis = document.getElementById('cnc-fis-sempar');
+      tbFis.textContent = '';
+      semParFis.textContent = '';
+      if (!fis) {
+        subFis.textContent = 'Esta casa ainda não enviou o cardápio impresso. Sem ele, o preço que o cliente lê na mesa não é conferido por ninguém.';
+        vazioFis.style.display = '';
+        vazioFis.textContent = 'Nenhum envio. Use "Enviar cardápio" no topo da página.';
+      } else {
+        subFis.textContent = 'Envio de ' + (fis.mes || '—') + '. ' + fis.itens_lidos
+          + ' item(ns) lido(s), ' + fis.divergencias_anunciado
+          + ' com preço diferente do cardápio digital ou da ficha.'
+          + (fis.sem_preco ? ' ' + fis.sem_preco + ' sem preço legível na foto.' : '');
+        (fis.comparacoes || []).forEach(function (x) {
+          var tr = document.createElement('tr');
+          var tdn = document.createElement('td');
+          tdn.textContent = x.nome;
+          if (x.difere_digital || x.difere_ficha) {
+            var qual = document.createElement('div');
+            qual.style.marginTop = '3px';
+            var tg = document.createElement('span');
+            tg.className = 'cnc-tag acima';
+            tg.textContent = x.difere_digital && x.difere_ficha ? 'difere do digital e da ficha'
+              : x.difere_digital ? 'difere do digital' : 'difere da ficha';
+            qual.appendChild(tg);
+            tdn.appendChild(qual);
+          }
+          if (x.tipo) {
+            var tp = document.createElement('div');
+            tp.className = 'cnc-nota';
+            tp.textContent = 'carta: ' + x.tipo;
+            tdn.appendChild(tp);
+          }
+          tr.appendChild(tdn);
+          tr.appendChild(td(rs(x.fisico), 'n', 'Impresso'));
+          tr.appendChild(td(typeof x.digital === 'number' ? rs(x.digital) : '—', 'n', 'Digital'));
+          tr.appendChild(td(typeof x.ficha === 'number' ? rs(x.ficha) : '—', 'n', 'Ficha'));
+          var tdp = document.createElement('td');
+          tdp.className = 'n';
+          tdp.setAttribute('data-label', 'Praticado');
+          tdp.textContent = typeof x.praticado === 'number' ? rs(x.praticado) : '—';
+          if (typeof x.praticado !== 'number') {
+            var sp = document.createElement('div');
+            sp.className = 'cnc-nota';
+            sp.textContent = 'sem venda no mês conferido';
+            tdp.appendChild(sp);
+          }
+          tr.appendChild(tdp);
+          tr.appendChild(td(x.em_jogo ? rs(x.em_jogo) : '—', 'n', 'Em jogo'));
+          tbFis.appendChild(tr);
+        });
+        vazioFis.style.display = (fis.comparacoes || []).length ? 'none' : '';
+        vazioFis.textContent = 'O envio não trouxe nenhum item com preço que casasse com produto conhecido.';
+        if ((fis.sem_par || []).length) {
+          semParFis.textContent = fis.sem_par.length + ' item(ns) lido(s) na foto não casaram com nenhum produto do '
+            + 'sistema, do cardápio digital nem da ficha, e ficam de fora da conferência: '
+            + fis.sem_par.slice(0, 8).map(function (s) { return s.nome; }).join(', ')
+            + (fis.sem_par.length > 8 ? ' e outros' : '') + '.';
+        }
+      }
+
+      // Exemplares: visão de GRUPO (todas as casas do payload), como a seção
+      // de preço entre casas — quem falta é tão informativo quanto quem tem.
+      var tbExe = document.getElementById('cnc-lista-exe');
+      tbExe.textContent = '';
+      var linhasExe = 0;
+      slugs.forEach(function (s) {
+        var f = (casas[s] || {}).fisico;
+        if (!f) return;
+        (f.tipos || []).forEach(function (t) {
+          var tr = document.createElement('tr');
+          tr.appendChild(td(casas[s].nome || s, '', null));
+          tr.appendChild(td(t.tipo, '', 'Tipo'));
+          tr.appendChild(td(typeof t.exemplares === 'number' ? String(t.exemplares) : '—', 'n', 'Exemplares'));
+          tr.appendChild(td(typeof t.exemplares_gastos === 'number' ? String(t.exemplares_gastos) : '—', 'n', 'Gastos'));
+          tr.appendChild(td((t.enviado_em ? t.enviado_em.slice(8, 10) + '/' + t.enviado_em.slice(5, 7) : '—')
+            + (t.enviado_por ? ' · ' + t.enviado_por : ''), '', 'Enviado'));
+          tbExe.appendChild(tr);
+          linhasExe++;
+        });
+      });
+      document.getElementById('cnc-vazio-exe').style.display = linhasExe ? 'none' : '';
+      document.getElementById('cnc-vazio-exe').textContent = 'Nenhuma casa enviou cardápio impresso ainda.';
 
       // Mesmo produto, preço diferente entre casas. É análise de GRUPO —
       // não filtra pela casa escolhida nos chips, senão a comparação perde
@@ -3311,7 +3535,305 @@ window.msgAcessoNegado = function (nomePagina) {
     desenha();
   }
 
+  // --- Cardápio físico: faixa de envio do mês + modal de envio -------------
+  // A conciliação (payload do KV) é do último robô das 7h; a faixa é AO VIVO
+  // (GET /api/cardapio-fisico), pra quem acabou de enviar ver o próprio envio
+  // sem esperar o dia seguinte. Falha aqui nunca derruba a página: a faixa
+  // simplesmente não aparece.
+  var TOKEN = null;
+  var ENVIOS = null;
+  var itensModal = [];
+  var fotosModal = [];
+  var enviando = false;
+
+  function mesAtual() {
+    var dt = new Date();
+    return dt.getFullYear() + '-' + ('0' + (dt.getMonth() + 1)).slice(-2);
+  }
+  function mesBonito(m) {
+    if (!m || m.length < 7) return '—';
+    var nomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    // Data pura se fatia como TEXTO — new Date('2026-07') é meia-noite UTC e
+    // vira o mês anterior em UTC-3 (armadilha já documentada no projeto).
+    return nomes[parseInt(m.slice(5, 7), 10) - 1] + '/' + m.slice(2, 4);
+  }
+
+  function carregaEnvios(token) {
+    fetch(WORKER + '/api/cardapio-fisico', { headers: { 'X-Token': token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (dd) {
+        if (!dd || dd.sem_config) return;
+        ENVIOS = dd;
+        desenhaFaixa();
+      })
+      .catch(function () { /* sem faixa; a conciliação não depende dela */ });
+  }
+
+  function desenhaFaixa() {
+    var mes = mesAtual();
+    var faixa = document.getElementById('cnc-fis-faixa');
+    var grid = document.getElementById('cnc-fis-grid');
+    var casasCfg = ENVIOS.casas || {};
+    // Chefe vê só a própria casa (o Worker manda casa_fixa) — listar as outras
+    // como "não enviado" seria cobrar dele algo que ele não pode fazer.
+    var slugsCasa = ENVIOS.casa_fixa ? [ENVIOS.casa_fixa] : Object.keys(casasCfg);
+    var doMes = (ENVIOS.envios || []).filter(function (e) { return e.mes === mes; });
+
+    grid.textContent = '';
+    var enviaram = 0;
+    slugsCasa.forEach(function (slug) {
+      var meus = doMes.filter(function (e) { return e.casa === slug; });
+      if (meus.length) enviaram++;
+      if (!meus.length) {
+        var cel = document.createElement('div');
+        cel.className = 'cnc-fis-cel falta';
+        var q = document.createElement('div');
+        q.className = 'q';
+        q.textContent = casasCfg[slug] || slug;
+        var dd2 = document.createElement('div');
+        dd2.className = 'd';
+        dd2.textContent = 'não enviado este mês';
+        cel.appendChild(q); cel.appendChild(dd2);
+        grid.appendChild(cel);
+        return;
+      }
+      meus.forEach(function (e) {
+        var cel2 = document.createElement('div');
+        cel2.className = 'cnc-fis-cel ok';
+        var q2 = document.createElement('div');
+        q2.className = 'q';
+        q2.textContent = (casasCfg[slug] || slug) + ' · ' + (e.tipo || '');
+        var d3 = document.createElement('div');
+        d3.className = 'd';
+        d3.textContent = (e.enviado_em ? e.enviado_em.slice(8, 10) + '/' + e.enviado_em.slice(5, 7) : '—')
+          + (e.enviado_por ? ' · ' + e.enviado_por : '')
+          + (typeof e.exemplares === 'number' ? ' · ' + e.exemplares + ' exemplares' : '');
+        cel2.appendChild(q2); cel2.appendChild(d3);
+        grid.appendChild(cel2);
+      });
+    });
+
+    document.getElementById('cnc-fis-resumo').textContent =
+      mesBonito(mes) + ' — ' + enviaram + ' de ' + slugsCasa.length
+      + (slugsCasa.length === 1 ? ' casa enviou.' : ' casas enviaram.')
+      + ' O impresso é o preço que o cliente lê na mesa.';
+    document.getElementById('cnc-fis-enviar').style.display = ENVIOS.pode_enviar ? '' : 'none';
+    faixa.style.display = '';
+  }
+
+  // Mesmo helper do Registro Rápido/Controle de Doses: 1600px no maior lado,
+  // JPEG 0.82 — o teto da rota é 6 MB e foto de celular passa fácil disso.
+  function reduzImagem(file, cb) {
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    img.onload = function () {
+      URL.revokeObjectURL(url);
+      var max = 1600, w = img.width, h = img.height;
+      if (w > max || h > max) {
+        if (w >= h) { h = Math.round(h * max / w); w = max; }
+        else { w = Math.round(w * max / h); h = max; }
+      }
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      cv.toBlob(function (blob) { cb(blob || file); }, 'image/jpeg', 0.82);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); cb(file); };
+    img.src = url;
+  }
+
+  function renderItens() {
+    var box = document.getElementById('cnc-m-itens');
+    box.textContent = '';
+    itensModal.forEach(function (it, i) {
+      var linha = document.createElement('div');
+      // Item que a leitura marcou como duvidoso nasce destacado — quem confere
+      // precisa saber onde olhar primeiro.
+      linha.className = 'cnc-it' + (it.confianca === 'baixa' ? ' baixa' : '');
+      var nome = document.createElement('input');
+      nome.type = 'text';
+      nome.className = 'nome';
+      nome.value = it.nome || '';
+      nome.placeholder = 'nome do produto';
+      nome.oninput = function () { it.nome = nome.value; };
+      var preco = document.createElement('input');
+      preco.type = 'number';
+      preco.className = 'preco';
+      preco.step = '0.01';
+      preco.min = '0';
+      preco.inputMode = 'decimal';
+      preco.placeholder = 'preço';
+      preco.value = typeof it.preco === 'number' ? it.preco : '';
+      preco.oninput = function () {
+        var v = parseFloat(preco.value);
+        it.preco = isFinite(v) && v > 0 ? v : null;
+      };
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.setAttribute('aria-label', 'remover item');
+      del.textContent = '×';
+      del.onclick = function () { itensModal.splice(i, 1); renderItens(); };
+      linha.appendChild(nome); linha.appendChild(preco); linha.appendChild(del);
+      box.appendChild(linha);
+    });
+    document.getElementById('cnc-m-conta').textContent =
+      itensModal.length ? '(' + itensModal.length + ')' : '';
+  }
+
+  function processaFotos(files) {
+    var lista = Array.prototype.slice.call(files || []);
+    if (!lista.length) return;
+    var fmsg = document.getElementById('cnc-m-foto-msg');
+    var restantes = lista.length;
+    fmsg.textContent = 'Lendo ' + restantes + ' foto(s)…';
+    lista.forEach(function (file) {
+      reduzImagem(file, function (blob) {
+        fetch(WORKER + '/api/cardapio-fisico/foto', {
+          method: 'POST',
+          headers: { 'X-Token': TOKEN, 'Content-Type': 'image/jpeg' },
+          body: blob,
+        }).then(function (r) {
+          return r.json().then(function (dj) { return { ok: r.ok, dados: dj }; });
+        }).then(function (res) {
+          restantes--;
+          if (!res.ok) {
+            // 503 sem_config = falta o ANTHROPIC_API_KEY no Worker. A tela diz
+            // isso em vez de fingir que a foto não presta — e o envio continua
+            // possível digitando os itens à mão.
+            fmsg.textContent = res.dados && res.dados.sem_config
+              ? 'A leitura automática ainda não está ligada — digite os itens à mão.'
+              : (res.dados && res.dados.erro) || 'Não deu para ler esta foto.';
+            return;
+          }
+          if (res.dados.foto_id) fotosModal.push(res.dados.foto_id);
+          (res.dados.itens || []).forEach(function (it) { itensModal.push(it); });
+          renderItens();
+          fmsg.textContent = restantes > 0
+            ? 'Lendo mais ' + restantes + '…'
+            : 'Leitura pronta. Confira cada linha antes de salvar — nada foi gravado ainda.'
+              + (res.dados.aviso ? ' (' + res.dados.aviso + ')' : '');
+        }).catch(function () {
+          restantes--;
+          fmsg.textContent = 'Falha de conexão ao enviar a foto.';
+        });
+      });
+    });
+  }
+
+  function abreModal() {
+    itensModal = [];
+    fotosModal = [];
+    renderItens();
+    document.getElementById('cnc-m-foto-msg').textContent = '';
+    document.getElementById('cnc-m-msg').textContent = '';
+    document.getElementById('cnc-m-exemplares').value = '';
+    document.getElementById('cnc-m-gastos').value = '';
+    document.getElementById('cnc-m-obs').value = '';
+    document.getElementById('cnc-m-mes').value = mesAtual();
+
+    var selTipo = document.getElementById('cnc-m-tipo');
+    selTipo.textContent = '';
+    (ENVIOS.tipos || []).forEach(function (t) {
+      var o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      selTipo.appendChild(o);
+    });
+
+    var wrapCasa = document.getElementById('cnc-m-casa-wrap');
+    var selCasa = document.getElementById('cnc-m-casa');
+    selCasa.textContent = '';
+    if (ENVIOS.casa_fixa) {
+      wrapCasa.style.display = 'none';
+    } else {
+      wrapCasa.style.display = '';
+      Object.keys(ENVIOS.casas || {}).forEach(function (slug) {
+        var o = document.createElement('option');
+        o.value = slug; o.textContent = ENVIOS.casas[slug];
+        selCasa.appendChild(o);
+      });
+    }
+    document.getElementById('cnc-modal').style.display = 'flex';
+  }
+
+  function fechaModal() { document.getElementById('cnc-modal').style.display = 'none'; }
+
+  function salvaEnvio() {
+    if (enviando) return;
+    var msgm = document.getElementById('cnc-m-msg');
+    var itens = itensModal
+      .map(function (it) { return { nome: (it.nome || '').trim(), preco: it.preco, secao: it.secao || '' }; })
+      .filter(function (it) { return it.nome; });
+    var ex = parseInt(document.getElementById('cnc-m-exemplares').value, 10);
+    var ga = parseInt(document.getElementById('cnc-m-gastos').value, 10);
+    if (!itens.length && !isFinite(ex)) {
+      msgm.textContent = 'Envie ao menos os itens do cardápio ou a contagem de exemplares.';
+      return;
+    }
+    enviando = true;
+    document.getElementById('cnc-m-salvar').disabled = true;
+    msgm.textContent = 'Salvando…';
+    fetch(WORKER + '/api/cardapio-fisico', {
+      method: 'POST',
+      headers: { 'X-Token': TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        casa: ENVIOS.casa_fixa || document.getElementById('cnc-m-casa').value,
+        tipo: document.getElementById('cnc-m-tipo').value,
+        mes: document.getElementById('cnc-m-mes').value,
+        exemplares: isFinite(ex) ? ex : null,
+        exemplares_gastos: isFinite(ga) ? ga : null,
+        observacao: document.getElementById('cnc-m-obs').value,
+        itens: itens,
+        fotos: fotosModal,
+      }),
+    }).then(function (r) {
+      return r.json().then(function (dj) { return { ok: r.ok, dados: dj }; });
+    }).then(function (res) {
+      enviando = false;
+      document.getElementById('cnc-m-salvar').disabled = false;
+      if (!res.ok) {
+        msgm.textContent = (res.dados && res.dados.erro) || 'Não deu para salvar.';
+        return;
+      }
+      fechaModal();
+      // A conciliação em si só recalcula no robô das 7h (o cálculo cruza os
+      // parquets de venda, que não moram no Worker) — a faixa, sim, atualiza
+      // agora, pra o envio não parecer perdido.
+      carregaEnvios(TOKEN);
+    }).catch(function () {
+      enviando = false;
+      document.getElementById('cnc-m-salvar').disabled = false;
+      msgm.textContent = 'Sem conexão. Tente de novo.';
+    });
+  }
+
+  document.getElementById('cnc-fis-enviar').onclick = abreModal;
+  document.getElementById('cnc-m-cancelar').onclick = fechaModal;
+  document.getElementById('cnc-m-salvar').onclick = salvaEnvio;
+  // Dois inputs separados de propósito: um <input capture="environment">
+  // sozinho esconde a galeria em vários Android (achado do Controle de Doses).
+  document.getElementById('cnc-m-camera').onclick = function () {
+    document.getElementById('cnc-m-in-camera').click();
+  };
+  document.getElementById('cnc-m-galeria').onclick = function () {
+    document.getElementById('cnc-m-in-galeria').click();
+  };
+  document.getElementById('cnc-m-in-camera').onchange = function () {
+    processaFotos(this.files); this.value = '';
+  };
+  document.getElementById('cnc-m-in-galeria').onchange = function () {
+    processaFotos(this.files); this.value = '';
+  };
+  document.getElementById('cnc-m-additem').onclick = function () {
+    itensModal.push({ nome: '', preco: null, confianca: 'alta' });
+    renderItens();
+  };
+  document.getElementById('cnc-modal').onclick = function (ev) {
+    if (ev.target === this) fechaModal();
+  };
+
   function buscaDados(token) {
+    TOKEN = token;
+    carregaEnvios(token);
     msg.textContent = 'Carregando…';
     fetch(WORKER + '/api/conciliacao-precos', { headers: { 'X-Token': token } })
       .then(function (r) {
@@ -4962,7 +5484,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '91f3de8e29f9';
+  var BUILD = '84d95ae48ad0';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
