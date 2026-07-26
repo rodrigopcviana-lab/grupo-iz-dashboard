@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Registro Rápido · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=1220f138027a">
+<link rel="stylesheet" href="portal.css?v=e9ec54a0b688">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -553,6 +553,13 @@ direto para a coordenação.</p>
       b.classList.toggle('on', b.dataset.tipo === tipo);
     });
     desenhaCategorias();
+    // O texto do botão precisa acompanhar QUALQUER troca de tipo, não só o
+    // clique humano: a restauração da casa lembrada roda antes do tipo padrão
+    // ser aplicado e chamava atualizaTextoEnviar() com estado.tipo ainda null,
+    // caindo no else do ternário. Resultado medido: chip "Ocorrência" aceso e
+    // botão dizendo "Enviar — Solicitação · Grá" em toda carga de página de
+    // quem já registrou uma vez naquele aparelho.
+    if (typeof atualizaTextoEnviar === 'function') atualizaTextoEnviar();
   }
   document.querySelectorAll('.rr-tipo').forEach(function (b) {
     b.onclick = function () { selecionaTipo(b.dataset.tipo); };
@@ -581,9 +588,17 @@ direto para a coordenação.</p>
     };
   });
   (function () {
+    // Ordem: a casa usada por último NESTE aparelho manda (quem cobre duas
+    // casas trocou de propósito); sem ela, cai na casa da própria sessão. Antes
+    // só existia o primeiro caso, então o primeiro registro de cada aparelho
+    // começava com as 7 casas apagadas — um toque a mais em todo mundo, e um
+    // toque errado grava a demanda na fila do chefe de outra casa.
+    // Casa "*" (coord/master) não é casa concreta: segue sem pré-seleção.
     var lembrada = localStorage.getItem(CASA_KEY);
-    if (lembrada) {
-      var btn = document.querySelector('#rr-casas .rr-casa[data-casa="' + lembrada + '"]');
+    var daSessao = (r.sessao && r.sessao.casa && r.sessao.casa !== '*') ? r.sessao.casa : null;
+    var alvo = lembrada || daSessao;
+    if (alvo) {
+      var btn = document.querySelector('#rr-casas .rr-casa[data-casa="' + alvo + '"]');
       if (btn) btn.onclick();
     }
   })();
@@ -965,7 +980,13 @@ direto para a coordenação.</p>
       tipo: item.tipo, casa: item.casa, categoria: item.categoria, urgencia: item.urgencia,
       descricao: item.descricao, registrado_por: item.registrado_por,
       solicitante_manual: item.solicitante_manual,
-      criado_em: item.criado_em, chave_registro: item.chave_registro
+      criado_em: item.criado_em, chave_registro: item.chave_registro,
+      // Anexos que JÁ subiram numa tentativa anterior: os arquivos estão no
+      // Notion e os ids continuam válidos, então o reenvio pela fila tem que
+      // levá-los junto. Sem isso, uma queda no POST final descartava foto e
+      // áudio já enviados — e mídia é o conteúdo principal de mais da metade
+      // dos registros.
+      anexos: item.anexos || []
     };
 
     if (!CFG.worker) {
@@ -1001,6 +1022,13 @@ direto para a coordenação.</p>
         window.irParaLogin(SLUG);
       } else {
         bannerPendente(fila.length);
+        // Ficou na fila: o texto está garantido neste aparelho e sai sozinho.
+        // Devolve o botão (senão ele fica pendurado em "Enviando…" pra sempre,
+        // já que não há mais o timeout cego de 600ms) e diz o que houve. Tocar
+        // Enviar de novo com o mesmo conteúdo NÃO duplica: o onsubmit reusa a
+        // chave do item que já está na fila.
+        elEnviar.disabled = false;
+        elMsg.textContent = 'Guardado neste aparelho — vai sozinho quando a internet voltar.';
         if (item.urgencia === 'hoje') {
           elBannerAlerta.innerHTML = '<div class="rr-banner erro">Necessário hoje e sem envio — ' +
             '<a class="wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">avise o coordenador agora</a></div>';
@@ -1079,6 +1107,12 @@ direto para a coordenação.</p>
   // só é tratado UMA vez mesmo se mais de um upload falhar ao mesmo tempo.
   function enviarComAnexos(item) {
     elEnviar.disabled = true;
+    // Também neste caminho a tela precisa saber qual registro está esperando:
+    // sem isso, quando o envio degradava pra fila e ela drenava depois, o
+    // `chaveEmTela === item.chave_registro` de processaFila dava falso e a
+    // pessoa nunca via a confirmação — ficava com o banner vermelho antigo e o
+    // formulário cheio, e reenviava.
+    chaveEmTela = item.chave_registro;
     elMsg.textContent = 'Enviando foto/áudio…';
     if (!CFG.worker) { falhouAnexo(item); return; }
     var ids = new Array(anexos.length);
@@ -1100,7 +1134,9 @@ direto para a coordenação.</p>
         ids[idx] = { id: d.id, name: d.name };
         pendentes--;
         if (pendentes === 0) criarRegistro();
-      }).catch(function () { if (!falhou) { falhou = true; falhouAnexo(item); } });
+      // `ids` pode ter subido em parte (os uploads são paralelos): o que já
+      // tem id vai junto na fila em vez de ser jogado fora com o resto.
+      }).catch(function () { if (!falhou) { falhou = true; falhouAnexo(item, ids); } });
     });
     function criarRegistro() {
       var body = { tipo: item.tipo, casa: item.casa, categoria: item.categoria, urgencia: item.urgencia,
@@ -1115,8 +1151,8 @@ direto para a coordenação.</p>
         if (r.status === 201) { mostraSucesso(item); }
         else if (r.status === 401) { sessao401(item); }
         else if (r.status === 400) { elEnviar.disabled = false; mostraRejeitado(item); }
-        else { falhouAnexo(item); }
-      }).catch(function () { falhouAnexo(item); });
+        else { falhouAnexo(item, body.anexos); }
+      }).catch(function () { falhouAnexo(item, body.anexos); });
     }
   }
   function sessao401(item) {
@@ -1124,13 +1160,20 @@ direto para a coordenação.</p>
     guardaTextoOffline(item);
     window.irParaLogin(SLUG);
   }
-  function falhouAnexo(item) {
+  function falhouAnexo(item, idsJaSubidos) {
+    // Se os anexos JÁ subiram e só o registro falhou, os arquivos estão no
+    // Notion e os ids continuam valendo: vão junto na fila, e a mídia chega
+    // com o texto em vez de ser descartada. Só quando não há id nenhum é que
+    // a foto/áudio realmente fica pra trás (blob não cabe no localStorage).
+    var salvos = (idsJaSubidos || []).filter(function (x) { return x && x.id; });
+    if (salvos.length) item.anexos = salvos;
     guardaTextoOffline(item);
     elEnviar.disabled = false;
     elMsg.textContent = '';
-    elBannerAlerta.innerHTML = '<div class="rr-banner erro">Sem sinal pra enviar a foto/áudio. ' +
-      'O TEXTO do registro foi guardado neste aparelho e vai sozinho quando a internet voltar. ' +
-      'A foto/áudio não foi enviada desta vez.' +
+    elBannerAlerta.innerHTML = '<div class="rr-banner erro">Sem sinal pra enviar. ' +
+      'O registro foi guardado neste aparelho e vai sozinho quando a internet voltar.' +
+      (salvos.length ? ' A foto/áudio já subiu e vai junto.'
+                     : ' A foto/áudio não foi enviada desta vez.') +
       (item.urgencia === 'hoje'
         ? ' <a class="wa" href="https://wa.me/556281483511" target="_blank" rel="noopener">Avise o coordenador agora</a>' : '') +
       '</div>';
@@ -1151,7 +1194,7 @@ direto para a coordenação.</p>
       // caminho com mídia (online-only; degrada pra texto na fila se cair)
       enviarComAnexos(item);
     } else {
-      // caminho só-texto: fila offline robusta (inalterado)
+      // caminho só-texto: fila offline robusta
       var fila = lerFila();
       fila.push(item);
       salvarFila(fila);
@@ -1159,7 +1202,12 @@ direto para a coordenação.</p>
       elEnviar.disabled = true;
       elMsg.textContent = 'Enviando…';
       processaFila();
-      setTimeout(function () { elEnviar.disabled = false; }, 600);
+      // O botão NÃO volta sozinho depois de 600ms. Ele voltava, e como cada
+      // toque em Enviar gera uma chave_registro nova — que é justamente a
+      // chave da idempotência no worker —, quem estava sem sinal tocava de
+      // novo e criava uma SEGUNDA demanda, não um reenvio. Agora quem
+      // reabilita é o desfecho real (sucesso, recusa do servidor ou a
+      // confirmação de que ficou na fila), em processaFila.
     }
   }
 
@@ -1253,11 +1301,22 @@ direto para a coordenação.</p>
     }
     elMsg.textContent = '';
 
+    // A chave_registro É a idempotência do worker (ele consulta a Chave antes
+    // de criar). Gerar uma nova a cada toque fazia um segundo toque virar uma
+    // SEGUNDA demanda em vez de um reenvio — o caso real de quem está sem
+    // sinal, não vê resposta e toca de novo. Se o mesmo conteúdo já está
+    // esperando na fila, reusa a chave dele: aí o worker deduplica de verdade.
+    var _desc = elDescricao.value.trim();
+    var _igual = lerFila().filter(function (x) {
+      return x.tipo === estado.tipo && x.casa === estado.casa
+        && x.categoria === estado.categoria && x.urgencia === estado.urgencia
+        && (x.descricao || '') === _desc;
+    })[0];
     var item = {
-      chave_registro: uuid(),
-      criado_em: new Date().toISOString(),
+      chave_registro: _igual ? _igual.chave_registro : uuid(),
+      criado_em: _igual ? _igual.criado_em : new Date().toISOString(),
       tipo: estado.tipo, casa: estado.casa, categoria: estado.categoria, urgencia: estado.urgencia,
-      descricao: elDescricao.value.trim(), registrado_por: nomeAtual(),
+      descricao: _desc, registrado_por: nomeAtual(),
       // Sem PESSOA na sessão (roster de "Seu nome"): o nome escolhido vira
       // Solicitante de verdade no Worker — assim a demanda entra no
       // histórico de "Enviadas" daquela pessoa quando ela logar com a
@@ -2321,7 +2380,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '1220f138027a';
+  var BUILD = 'e9ec54a0b688';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

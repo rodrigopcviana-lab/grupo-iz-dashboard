@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Minha Mesa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=1220f138027a">
+<link rel="stylesheet" href="portal.css?v=e9ec54a0b688">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1415,7 +1415,12 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(j){
         if (!j){ PUX.demandas = null; render(); return; }
-        var itens = (j.itens || []).filter(function(d){ return d.status !== 'Resolvido'; });
+        // `demandas`, não `itens`: quem devolve {itens} é /api/notificacoes.
+        // Esta rota é a /api/demandas, que devolve {demandas, has_more,
+        // next_cursor} — a chave errada fazia a lista ser SEMPRE vazia, então
+        // "Obrigação vencendo", "N demandas sem resposta" e "Minhas demandas"
+        // nunca acendiam. Fallback em `itens` só por segurança.
+        var itens = (j.demandas || j.itens || []).filter(function(d){ return d.status !== 'Resolvido'; });
         PUX.demandas = itens;
         PUX.obrigacoes = itens.filter(function(d){
           var v = d.vence_em ? diasAte(d.vence_em) : null;
@@ -2669,7 +2674,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '1220f138027a';
+  var BUILD = 'e9ec54a0b688';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
