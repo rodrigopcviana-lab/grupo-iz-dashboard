@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Minha Mesa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=d6ea6281d009">
+<link rel="stylesheet" href="portal.css?v=1c9632aae338">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -596,6 +596,28 @@ window.msgAcessoNegado = function (nomePagina) {
   .ag-tag.duvida { border-color:#7a5a2a; color:var(--amarelo); }
   .ag-tag.feito { border-color:#3f6357; color:var(--verde); }
   .ag-fresumo { font-size:12px; color:var(--text-3); margin:2px 0 0; }
+  /* Checklist e vínculo da tarefa (os campos que faltavam da D3) */
+  .ag-campo select { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:9px;
+    padding:10px 11px; color:var(--text); font-size:13.5px; font-family:inherit; }
+  .ag-campo select:focus { outline:none; border-color:var(--acc); }
+  .ag-refchip { font-size:11.5px; color:var(--acc); margin:7px 0 0; }
+  .ag-refchip[hidden] { display:none; }
+  .ag-chk { display:flex; flex-direction:column; gap:5px; margin-bottom:7px; }
+  .ag-chk:empty { display:none; }
+  .ag-chkit { display:flex; align-items:center; gap:8px; font-size:13px; }
+  .ag-chkit input[type=checkbox] { accent-color:var(--acc); width:15px; height:15px; flex:none; }
+  .ag-chkit span { flex:1; min-width:0; word-break:break-word; }
+  .ag-chkit.ok span { text-decoration:line-through; color:var(--text-3); }
+  .ag-chkit button { flex:none; border:none; background:none; color:var(--text-3); cursor:pointer;
+    font-size:15px; line-height:1; padding:0 4px; }
+  .ag-chkit button:hover { color:#e08585; }
+  .ag-chkadd { display:flex; gap:7px; }
+  .ag-chkadd input { flex:1; min-width:0; }
+  .ag-chkadd button { padding:0 14px; border:1px solid var(--border); border-radius:9px; background:var(--bg);
+    color:var(--text-2); font-size:12.5px; cursor:pointer; }
+  .ag-chkadd button:hover { border-color:var(--acc); color:var(--acc); }
+  .ag-evprep { margin-top:6px; font-size:11.5px; color:var(--acc); background:none; border:none;
+    cursor:pointer; padding:0; text-decoration:underline; }
   .ag-toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--card);
     border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13.5px; box-shadow:0 12px 30px rgba(0,0,0,.5);
     opacity:0; transition:.25s; z-index:70; pointer-events:none; }
@@ -713,6 +735,17 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
         <label style="--c:var(--text-3)"><input type="radio" name="agprio" value="Baixa"><span class="pill"><i></i>Baixa</span></label>
       </div>
     </div>
+    <div class="ag-campo" id="ag-f-vinc" style="display:none"><label>Casa a que se refere (opc.)</label>
+      <select id="ag-f-casa"><option value="">— nenhuma —</option><option value="Iz">Iz</option><option value="Grá">Grá</option><option value="1929">1929</option><option value="FAMU">FAMU</option><option value="Fulles">Fulles</option><option value="Nip">Nip</option></select>
+      <p class="ag-refchip" id="ag-f-refchip" hidden></p>
+    </div>
+    <div class="ag-campo" id="ag-f-check" style="display:none"><label>Checklist (opc.)</label>
+      <div class="ag-chk" id="ag-f-chklista"></div>
+      <div class="ag-chkadd">
+        <input id="ag-f-chknovo" maxlength="200" placeholder="Somar um passo e apertar Enter">
+        <button type="button" id="ag-f-chkbtn">Somar</button>
+      </div>
+    </div>
     <div class="ag-dois">
       <div class="ag-campo"><label>Início — data</label><input type="date" id="ag-f-data"></div>
       <div class="ag-campo"><label>Hora</label><input type="time" id="ag-f-hora"></div>
@@ -766,6 +799,7 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
 
   var TOKEN = null, ITENS = [];
   var WREG = "https://registro-bares.rodrigopcviana.workers.dev";              // registro-bares (demandas) — outra origem
+  var CASA_LABEL = {"iz": "Iz", "gra-bistro": "Grá", "1929": "1929", "famu": "FAMU", "fulles": "Fulles", "nip": "Nip"};  // slug do worker -> rótulo gravado no Notion
   var MESA = {"prazo_sem_plano_dias": 3, "obrigacao_vencendo_dias": 3, "demanda_parada_dias": 5, "evento_sem_preparo_dias": 7, "rotina_hora_cobranca": 18, "capacidade_dia_min": 360};              // limiares dos alertas (config/mesa.json)
   // Camada "puxado". `null` = ainda não carregou / falhou; array = carregou.
   // A distinção importa: a tela diz "não carregou" em vez de "zero", que seria
@@ -777,6 +811,7 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
   var MES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   var hojeD = new Date(); var HOJE = ymd(hojeD.getFullYear(), hojeD.getMonth(), hojeD.getDate());
   var ano = hojeD.getFullYear(), mes = hojeD.getMonth(), sel = HOJE, view = 'hoje', edId = null;
+  var CHK = [], edRef = '';   // checklist e vínculo da tarefa aberta no modal
 
   function $(id){ return document.getElementById(id); }
   function ymd(a,m,d){ return a + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'); }
@@ -874,22 +909,54 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
         + MESA.demanda_parada_dias + ' dias']);
 
     // A5 — evento perto sem nenhuma tarefa apontando pra ele (campo Ref).
+    // O alerta vem com AÇÃO: sem um jeito de criar o vínculo ele nunca poderia
+    // ser silenciado, e um aviso que não se apaga vira ruído permanente.
     if (PUX.eventos && PUX.eventos.length){
       var refs = {}; ITENS.forEach(function(e){ if (e.ref) refs[e.ref] = 1; });
       var semPreparo = PUX.eventos.filter(function(ev){
         var d = diasAte(ev.data);
-        return d !== null && d >= 0 && d <= MESA.evento_sem_preparo_dias && !refs['evento:' + ev.data + '-' + ev.casa];
+        return d !== null && d >= 0 && d <= MESA.evento_sem_preparo_dias && !refs[refDoEvento(ev)];
       });
       if (semPreparo.length) lista.push(['#cbb8f0', 'Evento sem preparo',
-        semPreparo.length + (semPreparo.length>1 ? ' eventos próximos sem tarefa ligada' : ' evento próximo sem tarefa ligada')]);
+        semPreparo.length + (semPreparo.length>1 ? ' eventos próximos sem tarefa ligada' : ' evento próximo sem tarefa ligada'),
+        semPreparo[0]]);
     }
 
     lista.slice(0, 4).forEach(function(a){
       var c = el('div', 'ag-al'); c.style.setProperty('--c', a[0]);
       c.appendChild(el('div', 'k', a[1]));
       c.appendChild(el('div', 't', a[2]));
+      if (a[3]){
+        var b = el('button', 'ag-evprep', 'Preparar o de ' + a[3].data.slice(8,10) + '/' + a[3].data.slice(5,7));
+        b.type = 'button';
+        b.onclick = (function(ev){ return function(){ abrirParaEvento(ev); }; })(a[3]);
+        c.appendChild(b);
+      }
       box.appendChild(c);
     });
+  }
+
+  // Chave estável do vínculo tarefa <-> evento. Usada nos DOIS lados (ao
+  // procurar quem já tem preparo e ao criar o preparo) — se divergirem, o
+  // alerta nunca apaga.
+  function refDoEvento(ev){ return 'evento:' + ev.data + '-' + ev.casa; }
+
+  // Abre o modal já preenchido pra preparar um evento: tarefa, com prazo no
+  // dia do evento e o vínculo preso. É isso que apaga o alerta A5.
+  function abrirParaEvento(ev){
+    abrir(null);
+    var tipoTarefa = document.querySelector('input[name=agtipo][value="Tarefa"]');
+    if (tipoTarefa) tipoTarefa.checked = true;
+    $('ag-f-titulo').value = 'Preparar ' + (ev.tipo || 'evento') + ' · ' + (ev.casa || '');
+    $('ag-f-data').value = '';
+    $('ag-f-prazo').value = ev.data;
+    edRef = refDoEvento(ev);
+    // O mapa de casas do evento usa o slug do worker; o select guarda o
+    // rótulo. Casa desconhecida fica em branco em vez de virar palpite.
+    $('ag-f-casa').value = (CASA_LABEL[ev.casa] || '');
+    refRender();
+    camposTarefa();
+    $('ag-f-titulo').focus();
   }
 
   function grade(){
@@ -1167,6 +1234,13 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
     $('ag-f-esforco').value = e && typeof e.esforco === 'number' ? e.esforco : '';
     var pr = document.querySelector('input[name=agprio][value="' + ((e && e.prioridade) || 'Média') + '"]');
     if (pr) pr.checked = true;
+    $('ag-f-casa').value = (e && e.casa_vinculo) || '';
+    edRef = (e && e.ref) || '';
+    CHK = (e && Array.isArray(e.checklist)) ? e.checklist.map(function(i){
+      return { txt: String(i.txt || ''), ok: i.ok === true };
+    }).filter(function(i){ return i.txt; }) : [];
+    chkRender();
+    refRender();
     camposTarefa();
     $('ag-f-cancelar').style.display = (e && e.status !== 'Cancelado') ? '' : 'none';
     $('ag-mback').classList.add('on'); $('ag-f-titulo').focus();
@@ -1175,11 +1249,49 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
   // Tarefa e compromisso não pedem as mesmas coisas: prazo/esforço/prioridade
   // só aparecem para tarefa, e para ela a data de início deixa de ser exigida
   // (tarefa em planejamento não tem dia nenhum).
+  // ---- Checklist da tarefa (mesmo formato [{txt,ok}] das Notas) ----------
+  function chkRender(){
+    var box = $('ag-f-chklista'); box.textContent = '';
+    CHK.forEach(function(it, i){
+      var li = el('div', 'ag-chkit' + (it.ok ? ' ok' : ''));
+      var c = document.createElement('input');
+      c.type = 'checkbox'; c.checked = it.ok;
+      c.setAttribute('aria-label', it.txt);
+      c.onchange = function(){ it.ok = c.checked; chkRender(); };
+      var s = el('span', null, it.txt);
+      var x = el('button', null, '×'); x.type = 'button';
+      x.title = 'Tirar'; x.setAttribute('aria-label', 'Tirar ' + it.txt);
+      x.onclick = function(){ CHK.splice(i, 1); chkRender(); };
+      li.appendChild(c); li.appendChild(s); li.appendChild(x);
+      box.appendChild(li);
+    });
+  }
+  function chkSoma(){
+    var campo = $('ag-f-chknovo'), txt = campo.value.trim();
+    if (!txt) return;
+    CHK.push({ txt: txt.slice(0, 200), ok: false });
+    campo.value = ''; chkRender(); campo.focus();
+  }
+
+  // Vínculo com um item de outra página (hoje: evento do Mural). Não é
+  // editável à mão — nasce de "Preparar este evento", que é o que apaga o
+  // alerta A5. Mostrado como chip só pra pessoa saber que a tarefa está ligada.
+  function refRender(){
+    var chip = $('ag-f-refchip');
+    if (!edRef){ chip.hidden = true; chip.textContent = ''; return; }
+    chip.hidden = false;
+    chip.textContent = edRef.indexOf('evento:') === 0
+      ? 'Ligada a um evento do Mural — ela some do alerta "evento sem preparo".'
+      : 'Ligada a: ' + edRef;
+  }
+
   function camposTarefa(){
     var t = document.querySelector('input[name=agtipo]:checked');
     var tarefa = t && t.value === 'Tarefa';
     $('ag-f-tarefa').style.display = tarefa ? 'grid' : 'none';
     $('ag-f-prio').style.display = tarefa ? 'block' : 'none';
+    $('ag-f-vinc').style.display = tarefa ? 'block' : 'none';
+    $('ag-f-check').style.display = tarefa ? 'block' : 'none';
     $('ag-mtit').textContent = (edId ? 'Editar ' : 'Nova ') + (tarefa ? 'tarefa' : 'compromisso');
     if (!edId && tarefa) $('ag-mtit').textContent = 'Nova tarefa';
   }
@@ -1201,12 +1313,15 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
                  local: $('ag-f-local').value.trim(), notas: $('ag-f-notas').value.trim() };
     if (tarefa){
       // Vazio LIMPA no PATCH (o worker distingue ausente de vazio), então
-      // manda-se sempre os três — inclusive vazios — ao editar uma tarefa.
+      // manda-se sempre os campos — inclusive vazios — ao editar uma tarefa.
       body.prazo = $('ag-f-prazo').value || '';
       var esf = $('ag-f-esforco').value;
       body.esforco = esf === '' ? '' : Number(esf);
       var pr = document.querySelector('input[name=agprio]:checked');
       body.prioridade = pr ? pr.value : '';
+      body.casa_vinculo = $('ag-f-casa').value || '';
+      body.checklist = CHK;
+      body.ref = edRef || '';
     }
     var btn = $('ag-f-salvar'); btn.disabled = true; erro.textContent = '';
     var url = WORKER + '/api/agenda' + (edId ? '/' + edId : '');
@@ -1604,6 +1719,11 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
     $('ag-btnnovo').onclick = function(){ abrir(null); };
     $('ag-f-salvar').onclick = salvar; $('ag-f-fechar').onclick = fecha; $('ag-f-cancelar').onclick = cancelar;
     [].forEach.call(document.querySelectorAll('input[name=agtipo]'), function(r){ r.onchange = camposTarefa; });
+    $('ag-f-chkbtn').onclick = chkSoma;
+    $('ag-f-chknovo').onkeydown = function(e){
+      // Enter aqui soma o passo; sem isso ele submeteria o modal inteiro.
+      if (e.key === 'Enter'){ e.preventDefault(); chkSoma(); }
+    };
     $('ag-mback').onclick = function(e){ if (e.target === $('ag-mback')) fecha(); };
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ fecha(); fFecha(); } });
     [].forEach.call(document.querySelectorAll('.ag-seg button'), function(b){
@@ -2676,7 +2796,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'd6ea6281d009';
+  var BUILD = '1c9632aae338';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
