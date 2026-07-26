@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Minha Mesa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=1c9632aae338">
+<link rel="stylesheet" href="portal.css?v=64d03c0679c6">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -499,7 +499,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .ag-campo textarea { resize:vertical; min-height:52px; }
   .ag-dois { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
   .ag-tipos { display:flex; gap:7px; flex-wrap:wrap; }
-  .ag-tipos label { flex:1; min-width:64px; position:relative; }
+  /* 3 por linha: com 5 tipos numa linha só, "Compromisso" (92px de texto)
+     não cabia na pílula de 74px e saía cortado — medido, não suposto. */
+  .ag-tipos label { flex:1 1 30%; min-width:0; position:relative; }
   .ag-tipos input { position:absolute; opacity:0; pointer-events:none; }
   .ag-tipos .pill { display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 4px; border-radius:9px;
     border:1px solid var(--border); background:var(--bg); font-size:12px; color:var(--text-2); cursor:pointer; }
@@ -571,7 +573,10 @@ window.msgAcessoNegado = function (nomePagina) {
   @media (max-width:900px){ .ag-mesa{ grid-template-columns:1fr; } .ag-plano{ grid-template-columns:repeat(2,minmax(0,1fr)); }
     .ag-semana{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media (max-width:559px){ .ag-semana{ grid-template-columns:1fr; } .ag-plano{ grid-template-columns:1fr; }
-    .ag-captura{ flex-direction:column; } }
+    .ag-captura{ flex-direction:column; }
+    /* 2 por linha no celular: a 3 por linha "Compromisso" ainda encostava e
+       saía cortado (medido a 390px). */
+    .ag-tipos label{ flex-basis:47%; } }
 
   /* Foto da lista de papel (Minha Mesa) — lê a folha e devolve os itens para
      CONFERÊNCIA; nada é gravado antes de o Rodrigo confirmar. */
@@ -717,11 +722,11 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
     <div class="ag-campo"><label>Título</label><input id="ag-f-titulo" maxlength="200" placeholder="Ex.: Reunião com fornecedor"></div>
     <div class="ag-campo"><label>Tipo</label>
       <div class="ag-tipos" id="ag-f-tipos">
-        <label style="--c:var(--t-compromisso)"><input type="radio" name="agtipo" value="Compromisso" checked><span class="pill"><i></i>Compromisso</span></label>
+        <label style="--c:var(--t-tarefa)"><input type="radio" name="agtipo" value="Tarefa" checked><span class="pill"><i></i>Tarefa</span></label>
+        <label style="--c:var(--t-compromisso)"><input type="radio" name="agtipo" value="Compromisso"><span class="pill"><i></i>Compromisso</span></label>
         <label style="--c:var(--t-reuniao)"><input type="radio" name="agtipo" value="Reunião"><span class="pill"><i></i>Reunião</span></label>
         <label style="--c:var(--t-agendamento)"><input type="radio" name="agtipo" value="Agendamento"><span class="pill"><i></i>Agend.</span></label>
         <label style="--c:var(--t-lembrete)"><input type="radio" name="agtipo" value="Lembrete"><span class="pill"><i></i>Lembrete</span></label>
-        <label style="--c:var(--t-tarefa)"><input type="radio" name="agtipo" value="Tarefa"><span class="pill"><i></i>Tarefa</span></label>
       </div>
     </div>
     <div class="ag-dois" id="ag-f-tarefa" style="display:none">
@@ -1227,9 +1232,11 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
     $('ag-f-horaf').value = e ? horaDe(e.fim) : '';
     $('ag-f-local').value = e ? (e.local || '') : '';
     $('ag-f-notas').value = e ? (e.notas || '') : '';
-    var tp = e ? (e.tipo || 'Compromisso') : 'Compromisso';
+    // Item novo nasce Tarefa: numa mesa de tarefas é o tipo mais usado, e
+    // virar compromisso é um clique. Item existente mantém o tipo dele.
+    var tp = e ? (e.tipo || 'Compromisso') : 'Tarefa';
     var radio = document.querySelector('input[name=agtipo][value="' + tp + '"]');
-    if (radio) radio.checked = true; else document.querySelector('input[name=agtipo][value="Compromisso"]').checked = true;
+    if (radio) radio.checked = true; else document.querySelector('input[name=agtipo][value="Tarefa"]').checked = true;
     $('ag-f-prazo').value = e && e.prazo ? e.prazo.slice(0,10) : '';
     $('ag-f-esforco').value = e && typeof e.esforco === 'number' ? e.esforco : '';
     var pr = document.querySelector('input[name=agprio][value="' + ((e && e.prioridade) || 'Média') + '"]');
@@ -2796,7 +2803,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '1c9632aae338';
+  var BUILD = '64d03c0679c6';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
