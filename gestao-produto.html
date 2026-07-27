@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Gestão de Produto · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=00e30d6c689d">
+<link rel="stylesheet" href="portal.css?v=6a42daa615d1">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -984,6 +984,12 @@ window.msgAcessoNegado = function (nomePagina) {
     background:none; color:var(--text-2); font-size:14px; cursor:pointer; }
   .cp-pill.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); font-weight:600; }
 
+  .cp-casas-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px;
+    padding-bottom:12px; border-bottom:1px solid var(--border); }
+  .cp-casa-btn { font:inherit; font-size:13px; padding:7px 16px; border-radius:999px;
+    border:1px solid var(--border); background:var(--card); color:var(--text-2); cursor:pointer; }
+  .cp-casa-btn.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); font-weight:600; cursor:default; }
+  .cp-casas-bar .cp-semana-info { margin-left:auto; }
   .cp-topo-casa { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
   .cp-chip-casa { display:inline-flex; align-items:center; gap:8px; padding:7px 14px; border-radius:999px;
     border:1px solid var(--acc); color:var(--text); font-size:13px;
@@ -1084,6 +1090,35 @@ window.msgAcessoNegado = function (nomePagina) {
   .cp-forn-bloco h4 { margin:0 0 8px; font-size:14px; font-family:var(--serif); font-weight:500; color:var(--acc);
     display:flex; justify-content:space-between; }
   .cp-forn-bloco h4 .sub-orc { font-size:12px; color:var(--text-2); font-family:-apple-system,sans-serif; }
+  .cp-rev-tab-wrap { overflow-x:auto; }
+  table.cp-rev-tab { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.cp-rev-tab th { text-align:left; font-size:10px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--text-3); font-weight:600; padding:5px 6px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  table.cp-rev-tab th.n, table.cp-rev-tab td.n { text-align:right; }
+  table.cp-rev-tab th.ap, table.cp-rev-tab td.ap { text-align:center; }
+  table.cp-rev-tab td { padding:5px 6px; border-bottom:1px dashed var(--border); }
+  table.cp-rev-tab tr:last-child td { border-bottom:none; }
+  table.cp-rev-tab td.sug { color:var(--azul); font-family:var(--serif); font-size:14px; }
+  table.cp-rev-tab td.venda { color:var(--roxo); }
+  table.cp-rev-tab td.pd1 { color:var(--text-2); }
+  table.cp-rev-tab td.rs { color:var(--text-3); font-size:11.5px; white-space:nowrap; }
+  table.cp-rev-tab td.rs .sem { color:var(--amarelo); }
+  table.cp-rev-tab tr.dif td.ap { background:color-mix(in srgb, var(--amarelo) 12%, transparent); }
+  .cp-apr-inp { width:64px; padding:4px 6px; font:inherit; font-size:13px; text-align:right;
+    border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text); }
+  .cp-apr-inp:focus { border-color:var(--acc); outline:none; }
+  /* Mobile: 8 colunas não cabem em 375px. Some com o que é contexto (mínimo,
+     venda, R$) e mantém o que decide a quantidade — a tabela cabe sem rolar
+     de lado. Mesma lição do banco-horas. */
+  @media (max-width:640px) {
+    table.cp-rev-tab th.op, table.cp-rev-tab td.op { display:none; }
+    table.cp-rev-tab { table-layout:fixed; font-size:12px; }
+    table.cp-rev-tab th, table.cp-rev-tab td { padding:5px 3px; }
+    table.cp-rev-tab th:first-child, table.cp-rev-tab td:first-child { width:42%; }
+    table.cp-rev-tab th.n, table.cp-rev-tab td.n { width:13%; }
+    table.cp-rev-tab th.ap, table.cp-rev-tab td.ap { width:19%; }
+    .cp-apr-inp { width:100%; max-width:52px; padding:4px 3px; }
+  }
   .cp-rev-item { display:flex; justify-content:space-between; gap:8px; font-size:13px; padding:5px 0; border-bottom:1px dashed var(--border); flex-wrap:wrap; }
   .cp-rev-item:last-child { border-bottom:none; }
   .cp-rev-item .ctx { color:var(--text-3); font-size:11px; }
@@ -1151,6 +1186,11 @@ window.msgAcessoNegado = function (nomePagina) {
   <div class="cp-orc-box">
     <div><span class="tot" id="cp-rev-total">—</span></div>
     <div class="cob" id="cp-rev-cob">Escolha uma casa na aba "Pedido da semana" primeiro.</div>
+  </div>
+  <div class="cp-acoes-massa" id="cp-rev-aprovar-bloco" style="display:none">
+    <button class="cp-btn acc" id="cp-rev-aprovar-ajustes" type="button">Aprovar ajustes</button>
+    <button class="cp-btn oco" id="cp-rev-aprovar-tudo" type="button">Aprovar tudo com o Pedido 1</button>
+    <span class="cp-status" id="cp-rev-aprovar-status"></span>
   </div>
   <div id="cp-rev"></div>
   <h2 style="font-size:15px">Sobras — candidatas a transferência</h2>
@@ -1411,10 +1451,19 @@ window.msgAcessoNegado = function (nomePagina) {
     return true;
   }
   function orcamento() {
+    // qEff, não p.pedido (corrigido 2026-07-27): o orçamento saía do Pedido 1
+    // mesmo quando a coordenação tinha aprovado outra quantidade — o número em
+    // R$ da tela não era o do pedido que ia sair. É a mesma falha que a
+    // revisão de 2026-07-19 corrigiu no texto do WhatsApp e no subtotal por
+    // fornecedor; esta função ficou pra trás e ninguém viu, porque até então
+    // aprovar era raro (um prompt() por item). Com a aprovação em massa isso
+    // apareceria em todo pedido. qEff cai no Pedido 1 quando não há aprovação,
+    // então nada muda pra quem não aprova.
     var tot = 0, com = 0, sem = 0;
     PRODUTOS.forEach(function (p) {
-      if (!(p.pedido > 0)) return;
-      if (p.preco_unit != null) { tot += p.pedido * p.preco_unit; com++; } else sem++;
+      var q = qEff(p);
+      if (!(q > 0)) return;
+      if (p.preco_unit != null) { tot += q * p.preco_unit; com++; } else sem++;
     });
     return { tot: tot, com: com, sem: sem, itens: com + sem };
   }
@@ -1660,11 +1709,23 @@ window.msgAcessoNegado = function (nomePagina) {
   // Constrói a lista inteira — só chamado quando os DADOS mudam (carrega()).
   function construir() {
     mobile = window.innerWidth <= 820;
-    var html = '<div class="cp-topo-casa">' +
-      '<span class="cp-chip-casa"><b>' + esc(nomeCasa(casaSel)) + '</b></span>' +
-      '<span class="cp-semana-info">Semana: <b>' + esc(DADOS.semana.titulo || 'atual') + '</b></span>' +
-      (elEscolha.style.display !== 'none' || casaFixa ? '' :
-        '<button class="cp-btn oco" id="cp-trocar-casa" type="button">trocar de casa</button>') +
+    // Barra de casas sempre visível (pedido do Rodrigo, 2026-07-27). Antes a
+    // troca era um botão "trocar de casa" que limpava a tela e voltava pro
+    // painel "Escolha a casa" — três passos pra ver outra casa. As abas
+    // Everloja/Consumo/Histórico/Preços já tinham chips assim; esta era a
+    // única que escondia. Chefe com casa fixa no token não ganha botão de
+    // outra casa: o Worker recusaria, então oferecer seria mentira na tela.
+    var html = '<div class="cp-casas-bar">';
+    if (casaFixa) {
+      html += '<span class="cp-casa-btn on" aria-current="true">' + esc(nomeCasa(casaSel)) + '</span>';
+    } else {
+      CASAS.forEach(function (c) {
+        html += '<button class="cp-casa-btn' + (c.slug === casaSel ? ' on' : '') +
+          '" type="button" data-casa="' + esc(c.slug) + '"' +
+          (c.slug === casaSel ? ' aria-current="true"' : '') + '>' + esc(c.nome) + '</button>';
+      });
+    }
+    html += '<span class="cp-semana-info">Semana: <b>' + esc(DADOS.semana.titulo || 'atual') + '</b></span>' +
       '<span class="cp-status" id="cp-status"></span></div>';
 
     html += '<div class="cp-kpis">' +
@@ -1706,18 +1767,19 @@ window.msgAcessoNegado = function (nomePagina) {
     html += '<div style="height:56px"></div>'; // espaço pro rodapé fixo
     elTela.innerHTML = html;
 
-    var trocar = document.getElementById('cp-trocar-casa');
-    if (trocar) trocar.onclick = function () {
-      localStorage.removeItem('cp_casa');
-      casaSel = null; DADOS = null; PRODUTOS = [];
-      elTela.innerHTML = '';
-      elEscolha.style.display = '';
-      elEscolha.querySelectorAll('.cp-pill').forEach(function (x) { x.classList.remove('on'); });
-      // bug real (2026-07-13): sem isso, o rodapé fixo ("X itens · R$ Y") da
-      // casa anterior continuava flutuando na tela do seletor.
-      var rodVelho = document.getElementById('cp-rodape-fixo');
-      if (rodVelho) rodVelho.remove();
-    };
+    document.querySelectorAll('.cp-casa-btn[data-casa]').forEach(function (b) {
+      b.onclick = function () {
+        var alvo = b.dataset.casa;
+        if (alvo === casaSel) return;
+        // Fila pendente é da casa que está saindo — cada casa tem a sua
+        // (cp_fila_<casa>), então trocar não perde nada; mas o rodapé fixo da
+        // casa anterior continuava flutuando (bug real de 2026-07-13, quando
+        // isso era o "trocar de casa"). Remover aqui pelo mesmo motivo.
+        var rodVelho = document.getElementById('cp-rodape-fixo');
+        if (rodVelho) rodVelho.remove();
+        entra(alvo);
+      };
+    });
     document.getElementById('cp-busca').oninput = function () { termo = this.value.trim().toLowerCase(); filtra(); };
     document.querySelectorAll('.cp-filtros button').forEach(function (b) {
       b.onclick = function () {
@@ -1805,56 +1867,196 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('cp-rev-titulo').textContent = 'Revisão do pedido — ' + nomeCasa(casaSel) + ' · ' + (DADOS.semana.titulo || '');
     var porForn = {};
     PRODUTOS.forEach(function (p) { if (qEff(p) > 0) { var f = p.fornecedor || '(sem fornecedor)'; (porForn[f] = porForn[f] || []).push(p); } });
-    var h = '', txt = 'Pedido ' + nomeCasa(casaSel) + ' — semana ' + (DADOS.semana.titulo || '') + '\n';
+    var h = '', txt = '';
     var txtForn = {};
-    Object.keys(porForn).sort().forEach(function (f) {
+    var fornOrd = Object.keys(porForn).sort();
+
+    // Texto do WhatsApp montado à parte pra poder ser REFEITO quando a
+    // quantidade aprovada muda na tabela — antes ele nascia junto do HTML e,
+    // sem re-render, ficava com o número velho. `txtForn` é mutado no lugar
+    // porque os botões "Copiar" de cada fornecedor leem esse mesmo objeto.
+    function montaTexto() {
+      txt = 'Pedido ' + nomeCasa(casaSel) + ' — semana ' + (DADOS.semana.titulo || '') + '\n';
+      fornOrd.forEach(function (f) {
+        var tf = 'Pedido ' + nomeCasa(casaSel) + ' — ' + f + ' — semana ' + (DADOS.semana.titulo || '') + '\n\n';
+        txt += '\n*' + f + '*\n';
+        porForn[f].forEach(function (p) {
+          txt += '• ' + p.nome + ' — ' + fmt(qEff(p)) + '\n';
+          tf += '• ' + p.nome + ' — ' + fmt(qEff(p)) + '\n';
+        });
+        txtForn[f] = tf;
+      });
+      var elTxt = document.getElementById('cp-rev-texto');
+      if (elTxt) elTxt.textContent = txt;
+    }
+
+    fornOrd.forEach(function (f, fi) {
       var sub = 0, semP = 0;
       porForn[f].forEach(function (p) { if (p.preco_unit != null) sub += qEff(p) * p.preco_unit; else semP++; });
-      // texto por fornecedor (2026-07-19): a revisão já agrupa por fornecedor,
-      // mas só existia o texto único com todos juntos — na vida real cada
-      // fornecedor recebe a mensagem dele em separado.
-      var txtF = 'Pedido ' + nomeCasa(casaSel) + ' — ' + f + ' — semana ' + (DADOS.semana.titulo || '') + '\n\n';
-      h += '<div class="cp-forn-bloco"><h4>' + esc(f) + '<span class="sub-orc">' + (sub ? rs(sub) : '') +
-        (semP ? ' +' + semP + ' s/ preço' : '') +
+      // O subtotal ganhou id: atualizaTotais() reescreve só ele quando a
+      // quantidade aprovada muda, sem refazer a tabela inteira.
+      h += '<div class="cp-forn-bloco"><h4>' + esc(f) +
+        '<span class="sub-orc" id="cp-sub-' + fi + '">' + (sub ? rs(sub) : '') +
+        (semP ? ' +' + semP + ' s/ preço' : '') + '</span>' +
+        '<span class="sub-orc">' +
         ' <button class="cp-btn oco cp-copiar-forn" data-forn="' + esc(f) + '" type="button" ' +
         'title="Copiar pedido só deste fornecedor" aria-label="Copiar pedido de ' + esc(f) + '" ' +
         'style="padding:2px 8px;font-size:10.5px;margin-left:6px"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg> <span class="cp-cp-lbl">Copiar</span></button></span></h4>';
-      txt += '\n*' + f + '*\n';
+      // Tabela com TODOS os números da semana (pedido do Rodrigo, 2026-07-27):
+      // pra decidir a quantidade aprovada ele precisa ver contagem, venda
+      // provável, sugestão e o Pedido 1 do chefe lado a lado. Antes a revisão
+      // mostrava só contado e mínimo, e aprovar abria um prompt() do
+      // navegador, um item por vez.
+      h += '<div class="cp-rev-tab-wrap"><table class="cp-rev-tab"><thead><tr>' +
+        '<th>Produto</th><th class="n">Cont.</th><th class="n op">Mín</th>' +
+        '<th class="n op">Venda ~</th><th class="n">Sug.</th><th class="n">Pd 1</th>' +
+        '<th class="n ap">Pd ajustado</th><th class="n op">R$</th></tr></thead><tbody>';
       porForn[f].forEach(function (p) {
         var idx = PRODUTOS.indexOf(p);
-        var aprovarBtn = PODE_APROVAR ? '<button class="cp-btn oco cp-aprovar" data-i="' + idx +
-          '" type="button" style="padding:3px 9px;font-size:11px">' +
-          (p.pd_aprovado != null ? 'Aprovado: ' + fmt(p.pd_aprovado) : 'Aprovar') + '</button>' : '';
         var q = qEff(p);
-        // quando a coord aprovou um número diferente do Pedido 1, marca a
-        // origem pra não parecer erro (o que vai pro fornecedor é o aprovado).
-        var difNota = (p.pd_aprovado != null && p.pd_aprovado !== p.pedido)
-          ? ' <span class="ctx" style="color:var(--amarelo)">(aprovado · Pd1 era ' + fmt(p.pedido) + ')</span>' : '';
-        h += '<div class="cp-rev-item"><span>' + esc(p.nome) +
-          ' <span class="ctx">(contado ' + fmt(p.contado) + (p.min != null ? ' · mín ' + fmt(p.min) : '') + ')</span>' + difNota + '</span>' +
-          '<span class="dir"><b class="q">' + fmt(q) + '</b>' +
-          (p.preco_unit != null ? '<span class="rs">' + rs(q * p.preco_unit) + '</span>' : '<span class="rs sem">sem preço no B.D.1</span>') +
-          aprovarBtn + '</span></div>';
-        txt += '• ' + p.nome + ' — ' + fmt(q) + '\n';
-        txtF += '• ' + p.nome + ' — ' + fmt(q) + '\n';
+        // Editável só pra quem aprova E quando a semana tem a coluna no
+        // Notion. Sem a coluna, mostra o número mas não finge que dá pra
+        // gravar (antes o prompt abria e só então avisava).
+        var aprCel = (PODE_APROVAR && DADOS.campo_pd_aprovado)
+          ? '<input type="number" class="cp-apr-inp" data-i="' + idx + '" min="0" step="any" ' +
+            'inputmode="decimal" aria-label="Pedido ajustado de ' + esc(p.nome) + '" ' +
+            'placeholder="' + fmt(p.pedido) + '" value="' + (p.pd_aprovado != null ? p.pd_aprovado : '') + '">'
+          : (p.pd_aprovado != null ? fmt(p.pd_aprovado) : '<span class="ctx">—</span>');
+        // aprovado diferente do Pedido 1 fica marcado — o que vai pro
+        // fornecedor é o aprovado, e a diferença não pode passar despercebida.
+        var dif = (p.pd_aprovado != null && p.pd_aprovado !== p.pedido) ? ' class="dif"' : '';
+        h += '<tr' + dif + '><td>' + esc(p.nome) + '</td>' +
+          '<td class="n">' + fmt(p.contado) + '</td>' +
+          '<td class="n op">' + (p.min != null ? fmt(p.min) : '—') + '</td>' +
+          '<td class="n op venda">' + (p.venda != null ? fmt(p.venda) : '—') + '</td>' +
+          '<td class="n sug">' + (p.sug != null ? fmt(p.sug) : '—') + '</td>' +
+          '<td class="n pd1">' + fmt(p.pedido) + '</td>' +
+          '<td class="n ap">' + aprCel + '</td>' +
+          '<td class="n op rs" id="cp-rs-' + idx + '">' +
+          (p.preco_unit != null ? rs(q * p.preco_unit) : '<span class="sem">sem preço</span>') +
+          '</td></tr>';
       });
-      h += '</div>';
-      txtForn[f] = txtF;
+      h += '</tbody></table></div></div>';
     });
     document.getElementById('cp-rev').innerHTML = h || '<p class="sub">Nenhum item no pedido ainda.</p>';
-    document.querySelectorAll('.cp-aprovar').forEach(function (b) {
-      b.onclick = function () {
-        var p = PRODUTOS[Number(b.dataset.i)];
-        if (!DADOS.campo_pd_aprovado) { alert('Esta semana não tem coluna "Pd Aprovado" cadastrada.'); return; }
-        var novo = prompt('Aprovar pedido de "' + p.nome + '":', p.pedido);
-        if (novo === null) return;
-        var val = Math.round((parseFloat(String(novo).replace(',', '.')) || NaN) * 100) / 100;
-        if (isNaN(val) || val < 0) { alert('Valor inválido.'); return; }
-        p.pd_aprovado = val;
-        agendaGrava(p, DADOS.campo_pd_aprovado, val);
-        revisao();
+    montaTexto();
+    // Edição inline da quantidade aprovada. Atualiza a linha e os totais NO
+    // LUGAR em vez de rechamar revisao(): um re-render destrói os <input>, e
+    // quem passa de um campo pro outro com Tab perderia o foco a cada item —
+    // exatamente o contrário de "alterar a quantidade de forma mais fácil".
+    function atualizaLinha(idx) {
+      var p = PRODUTOS[idx];
+      var cel = document.getElementById('cp-rs-' + idx);
+      if (cel) {
+        cel.innerHTML = p.preco_unit != null
+          ? rs(qEff(p) * p.preco_unit) : '<span class="sem">sem preço</span>';
+      }
+      var inp = document.querySelector('.cp-apr-inp[data-i="' + idx + '"]');
+      var tr = inp ? inp.closest('tr') : null;
+      if (tr) tr.classList.toggle('dif', p.pd_aprovado != null && p.pd_aprovado !== p.pedido);
+      atualizaTotais();
+    }
+
+    function atualizaTotais() {
+      fornOrd.forEach(function (f, i) {
+        var sub = 0, semP = 0;
+        porForn[f].forEach(function (p) {
+          if (p.preco_unit != null) sub += qEff(p) * p.preco_unit; else semP++;
+        });
+        var el = document.getElementById('cp-sub-' + i);
+        if (el) el.textContent = (sub ? rs(sub) : '') + (semP ? ' +' + semP + ' s/ preço' : '');
+      });
+      var o2 = orcamento();
+      var elTot = document.getElementById('cp-rev-total');
+      if (elTot) elTot.textContent = o2.itens ? rs(o2.tot) : rs(0);
+      montaTexto();
+    }
+
+    document.querySelectorAll('.cp-apr-inp').forEach(function (inp) {
+      // 'change' (não 'input'): dispara ao sair do campo, então não grava um
+      // valor pela metade enquanto a pessoa ainda digita.
+      inp.onchange = function () {
+        var i = Number(inp.dataset.i);
+        var p = PRODUTOS[i];
+        var cru = String(inp.value).trim().replace(',', '.');
+        // Vazio ou inválido devolve o valor anterior em vez de gravar lixo —
+        // mesma postura do prompt antigo, que recusava e não mexia em nada.
+        if (cru === '' || isNaN(parseFloat(cru)) || parseFloat(cru) < 0) {
+          inp.value = (p.pd_aprovado != null ? p.pd_aprovado : '');
+          return;
+        }
+        p.pd_aprovado = Math.round(parseFloat(cru) * 100) / 100;
+        inp.value = p.pd_aprovado;
+        agendaGrava(p, DADOS.campo_pd_aprovado, p.pd_aprovado);
+        atualizaLinha(i);
       };
     });
+
+    var blocoApr = document.getElementById('cp-rev-aprovar-bloco');
+    if (blocoApr) {
+      var podeEmMassa = PODE_APROVAR && DADOS.campo_pd_aprovado;
+      blocoApr.style.display = podeEmMassa ? '' : 'none';
+      var btnTudo = document.getElementById('cp-rev-aprovar-tudo');
+      if (podeEmMassa && btnTudo) {
+        var alvo = PRODUTOS.filter(function (p) { return p.pedido > 0; });
+        var jaAjustados = alvo.filter(function (p) { return p.pd_aprovado != null; }).length;
+        document.getElementById('cp-rev-aprovar-status').textContent =
+          alvo.length ? jaAjustados + ' de ' + alvo.length + ' com Pd ajustado' : '';
+        btnTudo.disabled = !alvo.length;
+
+        // "Aprovar ajustes": confirma a coluna Pd ajustado COMO ESTÁ, sem
+        // mexer em número nenhum (decisão do Rodrigo, 2026-07-27). Não existe
+        // hoje um campo de "pedido aprovado" no Notion separado das
+        // quantidades — a própria coluna é a aprovação. Então o que este botão
+        // faz de concreto é: garantir que tudo que foi digitado chegou ao
+        // Notion (drena a fila) e dizer, sem rodeio, o que está aprovado e o
+        // que ficou em branco.
+        var btnAjustes = document.getElementById('cp-rev-aprovar-ajustes');
+        if (btnAjustes) {
+          btnAjustes.disabled = !alvo.length;
+          btnAjustes.onclick = function () {
+            var ajustados = alvo.filter(function (p) { return p.pd_aprovado != null; });
+            var vazios = alvo.length - ajustados.length;
+            var msg = 'Aprovar o pedido com os ajustes como estão?\n\n' +
+              ajustados.length + ' item(ns) com quantidade no Pd ajustado\n' +
+              vazios + ' item(ns) em branco';
+            if (vazios) {
+              // Armadilha real: a tela mostra o Pedido 1 em cinza na linha
+              // vazia (herança), mas o envio ao everloja só leva item com
+              // número gravado nesta coluna — item em branco fica de fora, em
+              // silêncio. Avisar aqui é o mínimo; ver nota no CLAUDE.md.
+              msg += ' — na tela valem o Pedido 1, mas NÃO entram no envio ao ' +
+                'everloja, que só leva item com número nesta coluna.\n\n' +
+                'Para incluir os que faltam, use "Aprovar tudo com o Pedido 1".';
+            }
+            if (!confirm(msg)) return;
+            envia();  // drena a fila: o que foi digitado tem que estar no Notion
+            var st = document.getElementById('cp-rev-aprovar-status');
+            st.textContent = 'ajustes aprovados — ' + ajustados.length + ' com Pd ajustado' +
+              (vazios ? ' · ' + vazios + ' em branco (fora do everloja)' : '');
+            st.className = vazios ? 'cp-status pend' : 'cp-status';
+          };
+        }
+        btnTudo.onclick = function () {
+          // Sobrescrever um número que a coordenação já ajustou à mão é perda
+          // de trabalho — por isso o aviso diz QUANTOS seriam sobrescritos.
+          var mexidos = alvo.filter(function (p) {
+            return p.pd_aprovado != null && p.pd_aprovado !== p.pedido;
+          }).length;
+          var msg = 'Aprovar ' + alvo.length + ' item(ns) com a quantidade do Pedido 1 do chefe?';
+          if (mexidos) {
+            msg += '\n\nAtenção: ' + mexidos + ' item(ns) têm quantidade aprovada diferente ' +
+              'do Pedido 1 e seriam sobrescritos.';
+          }
+          if (!confirm(msg)) return;
+          alvo.forEach(function (p) {
+            p.pd_aprovado = p.pedido;
+            agendaGrava(p, DADOS.campo_pd_aprovado, p.pedido);
+          });
+          revisao();
+        };
+      }
+    }
     document.querySelectorAll('.cp-copiar-forn').forEach(function (b) {
       b.onclick = function () {
         var texto = txtForn[b.dataset.forn] || '';
@@ -1880,8 +2082,6 @@ window.msgAcessoNegado = function (nomePagina) {
         ' <span class="ctx">(contado ' + fmt(p.contado) + ' · mín ' + fmt(p.min) + ')</span></span><b class="q">+' + fmt(p.sobra) + '</b></div>';
     });
     document.getElementById('cp-rev-sobras').innerHTML = sh || '<p class="sub" style="margin:0">Nenhuma sobra nesta contagem.</p>';
-    document.getElementById('cp-rev-texto').textContent = txt;
-
     var btnCopiar = document.getElementById('cp-rev-copiar');
     btnCopiar.onclick = function () {
       var txtEl = document.getElementById('cp-rev-texto');
@@ -5812,7 +6012,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '00e30d6c689d';
+  var BUILD = '6a42daa615d1';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
