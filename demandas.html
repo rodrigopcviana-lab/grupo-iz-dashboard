@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Central de Demandas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=e8f4482351e5">
+<link rel="stylesheet" href="portal.css?v=00e30d6c689d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -644,6 +644,9 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-destino { font-size: 13px; color: var(--text-2); margin: 10px 0 0; }
   .dm-destino b { color: var(--text); font-weight: 600; }
   .dm-destino.orfa span { color: var(--amarelo); }
+  .dm-escalona { font-size: 12.5px; color: var(--amarelo); margin: 5px 0 0;
+                 border-left: 2px solid var(--amarelo); padding-left: 9px; }
+  .dm-escalona b { color: var(--text); font-weight: 600; }
   .dm-caminho-errado { font-size: 13px; color: var(--text); border: 1px solid var(--amarelo);
                         background: rgba(224,176,92,.09); border-radius: 10px; padding: 9px 12px; margin: 8px 0 0; }
   .dm-caminho-errado b { color: var(--amarelo); }
@@ -1023,6 +1026,12 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   // responsável definido" (o card avisa em âmbar; a lista cresce das correções
   // do Rodrigo, o plano não deixa inventar nome). Chave = SLUG do setor.
   var RESPONSAVEIS = {"manutencao": "João Vitor Jorge", "compras_insumos": "João Vitor Jorge", "coordenacao": "Rodrigo Coelho", "rh_pessoas": "Beatriz", "gerencia_casa": null, "operacao_bar": null, "marketing": "Raphael"};
+  // Organograma Fase 2 — escalonamento: quem está de férias hoje (auto) e quem
+  // cobre (config). Os dois vazios = dormente (nada muda no card). Match por
+  // nome normalizado (mesma régua do gera_organograma).
+  var ESC_AUSENTES = {};
+  var ESC_SUBSTITUTOS = {};
+  function _normNome(s) { try { return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); } catch(e) { return String(s||'').toLowerCase().trim(); } }
   // Setores que "ficam na casa" (setores.json:resolve_chefe_da_casa): o dono é
   // o chefe de bar da PRÓPRIA casa da demanda, não um nome fixo — sinal de que
   // NÃO sobe pra coordenação. CHEFE_POR_CASA mapeia label da casa -> nome.
@@ -1948,6 +1957,20 @@ prioridade (urgência primeiro, mais antiga depois).</p>
         dest.innerHTML = 'Vai para <b>' + esc(d.setor) + '</b> · <span>sem responsável definido</span>';
       }
       corpoEl.appendChild(dest);
+      // Organograma Fase 2 — escalonamento: se o responsável resolvido está de
+      // férias hoje E tem substituto definido, mostra pra quem sobe. Dormente
+      // quando os mapas estão vazios (config sem substituicao) — nada aparece.
+      if (rd.nome) {
+        var _k = _normNome(rd.nome);
+        var _aus = ESC_AUSENTES[_k], _sub = ESC_SUBSTITUTOS[_k];
+        if (_aus && _sub) {
+          var _esc = document.createElement('div'); _esc.className = 'dm-escalona';
+          var _ate = _aus.ate ? (typeof diaMesIso === 'function' ? diaMesIso(_aus.ate) : _aus.ate) : '';
+          _esc.innerHTML = esc(rd.nome) + ' está de férias' + (_ate ? ' até ' + esc(_ate) : '') +
+            ' · sobe para <b>' + esc(_sub) + '</b>';
+          corpoEl.appendChild(_esc);
+        }
+      }
     }
 
     // Motor 1 · E4.4 — alerta de CAMINHO ERRADO. Só dispara por regra escrita
@@ -3708,7 +3731,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 26/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 27/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -4664,7 +4687,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'e8f4482351e5';
+  var BUILD = '00e30d6c689d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

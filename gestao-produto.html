@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Gestão de Produto · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=e8f4482351e5">
+<link rel="stylesheet" href="portal.css?v=00e30d6c689d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -2426,6 +2426,41 @@ window.msgAcessoNegado = function (nomePagina) {
   .hcp-rank-bar span { display:block; height:100%; background:var(--acc); }
   .hcp-rank-row .val { width:104px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
   .hcp-dup { font-size:11px; font-weight:600; color:#dc9a8e; margin-top:3px; }
+  .hcp-btn-forte { background:var(--acc); color:var(--acc-txt); border-color:var(--acc); font-weight:700;
+      display:inline-flex; align-items:center; gap:7px; }
+  .hcp-btn-forte:hover { filter:brightness(1.06); color:var(--acc-txt); }
+  .hcp-btn-forte svg { width:16px; height:16px; }
+  .hcp-nota-barra { display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; margin-bottom:16px; }
+  .hcp-nota-dica { font-size:12px; color:var(--text-3); }
+  .hcp-modal { position:fixed; inset:0; background:rgba(0,0,0,.62); display:flex; align-items:flex-end;
+      justify-content:center; z-index:60; }
+  .hcp-modal[hidden] { display:none; }
+  .hcp-modal-card { background:var(--card); border:1px solid var(--border); border-radius:16px 16px 0 0;
+      width:100%; max-width:640px; max-height:92vh; display:flex; flex-direction:column; }
+  .hcp-modal-top { display:flex; align-items:center; justify-content:space-between; padding:14px 16px;
+      border-bottom:1px solid var(--border); font-size:15px; }
+  .hcp-modal-top button { background:none; border:none; color:var(--text-3); font-size:24px; cursor:pointer; line-height:1; }
+  .hcp-modal-corpo { padding:14px 16px; overflow-y:auto; }
+  .hcp-modal-rod { display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border); }
+  .hcp-foto-linha { display:flex; gap:10px; margin-bottom:8px; }
+  .hcp-foto-linha label { cursor:pointer; }
+  .hcp-foto-msg { font-size:12.5px; color:var(--text-3); margin:0 0 12px; min-height:16px; }
+  .hcp-nota-cab { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .hcp-nota-cab label { display:flex; flex-direction:column; font-size:11px; color:var(--text-3);
+      text-transform:uppercase; letter-spacing:.05em; gap:4px; }
+  .hcp-nota-cab label.wide { grid-column:1 / -1; }
+  .hcp-nota-cab input, .hcp-nota-cab select { padding:10px; font-size:14px; border-radius:9px;
+      border:1px solid var(--border); background:var(--bg); color:var(--text); font:inherit; }
+  .hcp-nota-cab select:disabled { opacity:.7; }
+  .hcp-it { border:1px solid var(--border); border-radius:9px; padding:8px; margin-bottom:8px; }
+  .hcp-it.baixa { border-color:var(--amarelo); }
+  .hcp-it .l1 { display:grid; grid-template-columns:1fr 54px 82px 32px; gap:6px; align-items:center; }
+  .hcp-it .l2 { margin-top:6px; }
+  .hcp-it input, .hcp-it select { padding:8px; font-size:13px; border-radius:8px; border:1px solid var(--border);
+      background:var(--bg); color:var(--text); font:inherit; min-width:0; width:100%; }
+  .hcp-it button { background:none; border:1px solid var(--border); border-radius:8px; color:var(--text-3);
+      cursor:pointer; height:34px; padding:0; }
+  .hcp-nota-msg { font-size:12.5px; margin:10px 0 0; min-height:16px; }
   /* Celular: o comparativo (6 colunas) vira um card por produto — a lista
      principal continua com a rolagem horizontal do .panel. Depende do
      data-label posto em td().
@@ -2456,6 +2491,11 @@ window.msgAcessoNegado = function (nomePagina) {
 </div>
 
 <div class="hcp-cov" id="hcp-cov"></div>
+
+<div class="hcp-nota-barra" id="hcp-nota-barra" style="display:none">
+  <button type="button" class="hcp-btn hcp-btn-forte" id="hcp-nota-abrir"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg> Enviar foto da nota</button>
+  <span class="hcp-nota-dica">Fotografe a nota/pedido do fornecedor — a leitura preenche os itens, você confere e salva.</span>
+</div>
 
 <div class="hcp-controles">
   <div class="chips" id="hcp-casas"></div>
@@ -2493,6 +2533,32 @@ window.msgAcessoNegado = function (nomePagina) {
   <p class="hcp-vazio" id="hcp-rank-vazio" style="display:none">Sem produto com 2+ compras de preços diferentes no período.</p>
 </div>
 <p class="hcp-foot" id="hcp-rank-foot"></p>
+
+<div class="hcp-modal" id="hcp-nota-modal" hidden>
+  <div class="hcp-modal-card">
+    <div class="hcp-modal-top"><b>Foto da nota de compra</b>
+      <button type="button" id="hcp-nota-fechar" aria-label="fechar">&times;</button></div>
+    <div class="hcp-modal-corpo">
+      <div class="hcp-foto-linha">
+        <label class="hcp-btn">Câmera<input type="file" accept="image/*" capture="environment" id="hcp-nota-cam" hidden></label>
+        <label class="hcp-btn">Galeria<input type="file" accept="image/*" id="hcp-nota-gal" hidden></label>
+      </div>
+      <p class="hcp-foto-msg" id="hcp-nota-foto-msg"></p>
+      <div class="hcp-nota-cab">
+        <label class="wide">Casa<select id="hcp-nota-casa"></select></label>
+        <label>Fornecedor<input type="text" id="hcp-nota-forn" placeholder="nome do fornecedor"></label>
+        <label>Data da nota<input type="date" id="hcp-nota-data"></label>
+      </div>
+      <div id="hcp-nota-itens"></div>
+      <button type="button" class="hcp-btn" id="hcp-nota-add" style="margin-top:4px">+ item</button>
+      <p class="hcp-nota-msg" id="hcp-nota-msg"></p>
+    </div>
+    <div class="hcp-modal-rod">
+      <button type="button" class="hcp-btn" id="hcp-nota-cancelar">Cancelar</button>
+      <button type="button" class="hcp-btn hcp-btn-forte" id="hcp-nota-salvar" disabled>Salvar itens</button>
+    </div>
+  </div>
+</div>
 </div><!-- hcp-corpo -->
 
 <script type="text/plain" id="perf-src-historico">
@@ -2501,7 +2567,9 @@ window.msgAcessoNegado = function (nomePagina) {
   var NIVEIS_OK = ['chefe', 'coord', 'controladoria'];
   var SLUG = 'gestao-produto.html?tab=historico';
   var CASA_NOME = {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "fulles": "Fulles", "nip": "NIP"};
+  var NOTA_CASAS = {"iz": "IZ", "gra-bistro": "Grá", "1929": "1929", "famu": "FAMU", "fulles": "Fulles", "nip": "NIP"};
   var ICONE_ALERTA = "<svg class=\"ic\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3.5l9 15.5H3z\"/><path d=\"M12 10v4M12 16.5h.01\"/></svg>";
+  var SESSAO = null;
   var msg = document.getElementById('hcp-msg');
   var gate = document.getElementById('hcp-gate');
   var wrap = document.getElementById('hcp-corpo');
@@ -2918,6 +2986,156 @@ window.msgAcessoNegado = function (nomePagina) {
     desenha();
   }
 
+  // ---- Foto da nota -> Histórico (só chefe/coord; controladoria é leitura) ----
+  // Mesmo padrão do Cardápio Físico: /foto SÓ LÊ por visão; /nota grava as
+  // linhas que a pessoa conferiu. Nada é gravado sem conferência humana.
+  var notaId = null;
+  var notaItens = [];
+
+  function reduzImagem(file, cb) {
+    var img = new Image(), url = URL.createObjectURL(file);
+    img.onload = function () {
+      URL.revokeObjectURL(url);
+      var max = 1600, w = img.width, h = img.height;
+      if (w > max || h > max) { if (w >= h) { h = Math.round(h * max / w); w = max; } else { w = Math.round(w * max / h); h = max; } }
+      var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      cv.toBlob(function (b) { cb(b || file); }, 'image/jpeg', 0.82);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); cb(file); };
+    img.src = url;
+  }
+
+  function hojeIso() {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+
+  function renderNota() {
+    var box = document.getElementById('hcp-nota-itens'); box.textContent = '';
+    notaItens.forEach(function (it, i) {
+      var card = document.createElement('div'); card.className = 'hcp-it' + (it.confianca === 'baixa' ? ' baixa' : '');
+      var l1 = document.createElement('div'); l1.className = 'l1';
+      var prod = document.createElement('input'); prod.type = 'text'; prod.placeholder = 'produto'; prod.value = it.produto || '';
+      prod.oninput = function () { it.produto = prod.value; atualizaSalvar(); };
+      var qt = document.createElement('input'); qt.type = 'number'; qt.step = 'any'; qt.min = '0'; qt.inputMode = 'decimal'; qt.placeholder = 'qtd';
+      qt.value = it.quantidade != null ? it.quantidade : '';
+      qt.oninput = function () { var v = parseFloat(qt.value); it.quantidade = isFinite(v) && v > 0 ? v : null; };
+      var vl = document.createElement('input'); vl.type = 'number'; vl.step = '0.01'; vl.min = '0'; vl.inputMode = 'decimal'; vl.placeholder = 'R$ total';
+      vl.value = it.valor != null ? it.valor : '';
+      vl.oninput = function () { var v = parseFloat(vl.value); it.valor = isFinite(v) && v > 0 ? v : null; atualizaSalvar(); };
+      var del = document.createElement('button'); del.type = 'button'; del.textContent = '\u00d7'; del.setAttribute('aria-label', 'remover');
+      del.onclick = function () { notaItens.splice(i, 1); renderNota(); };
+      l1.appendChild(prod); l1.appendChild(qt); l1.appendChild(vl); l1.appendChild(del);
+      var l2 = document.createElement('div'); l2.className = 'l2';
+      var cat = document.createElement('select');
+      ['Bebidas alcoólicas', 'Bebidas não alcoólicas', 'Diversos'].forEach(function (c) {
+        var o = document.createElement('option'); o.value = c; o.textContent = c; if (it.categoria === c) o.selected = true; cat.appendChild(o);
+      });
+      cat.onchange = function () { it.categoria = cat.value; };
+      l2.appendChild(cat);
+      card.appendChild(l1); card.appendChild(l2); box.appendChild(card);
+    });
+    atualizaSalvar();
+  }
+
+  function itensValidos() { return notaItens.filter(function (it) { return it.produto && it.produto.trim() && it.valor != null; }); }
+
+  function atualizaSalvar() {
+    var salvar = document.getElementById('hcp-nota-salvar'), n = itensValidos().length;
+    salvar.disabled = !n;
+    salvar.textContent = n ? 'Salvar ' + n + (n > 1 ? ' itens' : ' item') : 'Salvar itens';
+  }
+
+  function lerFoto(files) {
+    var file = files && files[0]; if (!file) return;
+    var fmsg = document.getElementById('hcp-nota-foto-msg');
+    fmsg.textContent = 'Lendo a nota…';
+    reduzImagem(file, function (blob) {
+      var mime = (blob && blob.type) || 'image/jpeg';
+      fetch(WORKER + '/api/compras-historico/foto', { method: 'POST', headers: { 'X-Token': SESSAO.token, 'Content-Type': mime }, body: blob })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            fmsg.textContent = res.d && res.d.sem_config
+              ? 'A leitura automática ainda não está ligada — digite os itens à mão.'
+              : (res.d && res.d.erro) || 'Não deu pra ler esta foto.';
+            return;
+          }
+          if (res.d.fornecedor) document.getElementById('hcp-nota-forn').value = res.d.fornecedor;
+          if (res.d.data) document.getElementById('hcp-nota-data').value = res.d.data;
+          (res.d.itens || []).forEach(function (it) { notaItens.push(it); });
+          renderNota();
+          fmsg.textContent = 'Leitura pronta. Confira cada linha — nada foi salvo ainda.'
+            + (res.d.aviso ? ' (' + res.d.aviso + ')' : '');
+        })
+        .catch(function () { fmsg.textContent = 'Falha de conexão ao enviar a foto.'; });
+    });
+  }
+
+  function salvaNota() {
+    var msgEl = document.getElementById('hcp-nota-msg');
+    var forn = document.getElementById('hcp-nota-forn').value.trim();
+    var data = document.getElementById('hcp-nota-data').value;
+    var casa = document.getElementById('hcp-nota-casa').value;
+    var itens = itensValidos();
+    msgEl.style.color = '#dc9a8e';
+    if (!itens.length) { msgEl.textContent = 'Preencha ao menos um produto com valor.'; return; }
+    if (!data) { msgEl.textContent = 'Informe a data da nota.'; return; }
+    if (!casa) { msgEl.textContent = 'Escolha a casa.'; return; }
+    var salvar = document.getElementById('hcp-nota-salvar');
+    salvar.disabled = true; msgEl.style.color = 'var(--text-3)'; msgEl.textContent = 'Salvando…';
+    fetch(WORKER + '/api/compras-historico/nota', {
+      method: 'POST', headers: { 'X-Token': SESSAO.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ casa: casa, fornecedor: forn, data: data, nota_id: notaId, itens: itens })
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          salvar.disabled = false; msgEl.style.color = '#dc9a8e';
+          msgEl.textContent = (res.d && res.d.erro) || 'Não deu pra salvar.';
+          return;
+        }
+        msgEl.style.color = 'var(--verde)';
+        msgEl.textContent = 'Salvo! ' + (res.d.criadas || 0) + (res.d.criadas === 1 ? ' item' : ' itens') + ' na base.';
+        setTimeout(function () { document.getElementById('hcp-nota-modal').hidden = true; buscaDados(SESSAO.token); }, 950);
+      })
+      .catch(function () { salvar.disabled = false; msgEl.style.color = '#dc9a8e'; msgEl.textContent = 'Falha de conexão.'; });
+  }
+
+  function notaSetup() {
+    if (!SESSAO || (SESSAO.nivel !== 'chefe' && SESSAO.nivel !== 'coord')) return; // controladoria não lança
+    document.getElementById('hcp-nota-barra').style.display = '';
+    var modal = document.getElementById('hcp-nota-modal');
+    var selCasa = document.getElementById('hcp-nota-casa');
+    Object.keys(NOTA_CASAS).forEach(function (slug) {
+      var o = document.createElement('option'); o.value = slug; o.textContent = NOTA_CASAS[slug]; selCasa.appendChild(o);
+    });
+    var casaFixa = (SESSAO.casa && SESSAO.casa !== '*') ? SESSAO.casa : null;
+    if (casaFixa && NOTA_CASAS[casaFixa]) { selCasa.value = casaFixa; selCasa.disabled = true; }
+
+    document.getElementById('hcp-nota-abrir').onclick = function () {
+      notaId = 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      notaItens = [];
+      document.getElementById('hcp-nota-forn').value = '';
+      document.getElementById('hcp-nota-data').value = hojeIso();
+      document.getElementById('hcp-nota-foto-msg').textContent = '';
+      document.getElementById('hcp-nota-msg').textContent = '';
+      if (!selCasa.disabled) selCasa.selectedIndex = 0;
+      renderNota();
+      modal.hidden = false;
+    };
+    var fecha = function () { modal.hidden = true; };
+    document.getElementById('hcp-nota-fechar').onclick = fecha;
+    document.getElementById('hcp-nota-cancelar').onclick = fecha;
+    document.getElementById('hcp-nota-add').onclick = function () {
+      notaItens.push({ produto: '', quantidade: null, valor: null, categoria: 'Diversos', confianca: 'alta' });
+      renderNota();
+    };
+    document.getElementById('hcp-nota-cam').onchange = function (e) { lerFoto(e.target.files); e.target.value = ''; };
+    document.getElementById('hcp-nota-gal').onchange = function (e) { lerFoto(e.target.files); e.target.value = ''; };
+    document.getElementById('hcp-nota-salvar').onclick = salvaNota;
+  }
+
   function buscaDados(token) {
     msg.textContent = 'Carregando…';
     fetch(WORKER + '/api/compras-historico', { headers: { 'X-Token': token } })
@@ -2934,7 +3152,7 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   var r = window.exigirNivel(NIVEIS_OK, SLUG);
-  if (r.ok) buscaDados(r.sessao.token);
+  if (r.ok) { SESSAO = r.sessao; buscaDados(r.sessao.token); notaSetup(); }
   else if (!r.redirecionou) msg.innerHTML = window.msgAcessoNegado('o Histórico de Compras');
 })();
 </script></div><div id="perf-panel-precos" class="perf-panel" hidden>
@@ -4638,7 +4856,7 @@ a contagem daquela semana.</p>
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 26/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 27/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -5594,7 +5812,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'e8f4482351e5';
+  var BUILD = '00e30d6c689d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
