@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Acessos · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=00e30d6c689d">
+<link rel="stylesheet" href="portal.css?v=86a7451b648c">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -451,6 +451,7 @@ existia nas senhas antigas.</p>
 
 <div id="ac-app" style="display:none">
   <div class="ac-topo-bts">
+    <button type="button" class="ac-bt sim" id="ac-criar">Criar acesso</button>
     <button type="button" class="ac-bt" id="ac-revelar">Mostrar senhas</button>
     <button type="button" class="ac-bt" id="ac-recarregar">Atualizar</button>
   </div>
@@ -464,6 +465,23 @@ existia nas senhas antigas.</p>
       <button type="button" class="ac-bt" id="ac-revelar-nao">Cancelar</button>
     </div>
     <p class="sub" id="ac-revelar-msg" style="margin:6px 0 0" role="status" aria-live="polite"></p>
+  </div>
+
+  <div id="ac-criar-box" class="ac-linha" style="display:none;margin-top:8px">
+    <div class="ac-sec" style="margin-top:0">CRIAR ACESSO</div>
+    <input type="text" id="ac-criar-nome" class="pa-input" placeholder="Nome completo"
+           style="width:100%;font:inherit;padding:9px 12px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text)"
+           autocomplete="off">
+    <div class="ac-rot2" style="font-size:11px;letter-spacing:.1em;color:var(--text-3);margin:10px 0 4px">CASA</div>
+    <div id="ac-criar-casa" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    <div class="ac-rot2" style="font-size:11px;letter-spacing:.1em;color:var(--text-3);margin:10px 0 4px">NÍVEL</div>
+    <div id="ac-criar-nivel" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    <div class="ac-topo-bts" style="margin-top:12px">
+      <button type="button" class="ac-bt sim" id="ac-criar-ok">Criar e gerar senha</button>
+      <button type="button" class="ac-bt" id="ac-criar-cancel">Cancelar</button>
+    </div>
+    <p class="sub" id="ac-criar-msg" style="margin:8px 0 0" role="status" aria-live="polite"></p>
+    <div class="ac-nova" id="ac-criar-res"></div>
   </div>
 
   <div class="ac-kpis" id="ac-kpis"></div>
@@ -689,6 +707,63 @@ existia nas senhas antigas.</p>
         pinta();
       })
       .catch(function () { m.textContent = 'Sem conexão.'; });
+  };
+
+  // --- Criar acesso do zero (dono) — POST /api/acesso/criar ---------------
+  var criarSel = { casa: null, nivel: null };
+  function renderCriarChips() {
+    document.getElementById('ac-criar-casa').innerHTML =
+      '<button type="button" class="ac-mini ac-cmini' + (criarSel.casa === '*' ? ' on' : '') +
+      '" data-c="casa" data-v="*">todas as casas</button>' +
+      (dados.casas || []).map(function (c) {
+        return '<button type="button" class="ac-mini ac-cmini' + (criarSel.casa === c.slug ? ' on' : '') +
+          '" data-c="casa" data-v="' + esc(c.slug) + '">' + esc(c.nome) + '</button>';
+      }).join('');
+    document.getElementById('ac-criar-nivel').innerHTML =
+      (dados.niveis || []).map(function (n) {
+        return '<button type="button" class="ac-mini ac-cmini' + (criarSel.nivel === n ? ' on' : '') +
+          '" data-c="nivel" data-v="' + esc(n) + '">' + esc(n) + '</button>';
+      }).join('');
+  }
+  document.getElementById('ac-criar').onclick = function () {
+    var box = document.getElementById('ac-criar-box');
+    var abrir = box.style.display === 'none';
+    box.style.display = abrir ? 'block' : 'none';
+    if (abrir && dados) { renderCriarChips(); document.getElementById('ac-criar-nome').focus(); }
+  };
+  document.getElementById('ac-criar-cancel').onclick = function () {
+    document.getElementById('ac-criar-box').style.display = 'none';
+  };
+  function onCriarChip(ev) {
+    var b = ev.target.closest('.ac-cmini'); if (!b) return;
+    criarSel[b.dataset.c] = b.dataset.v; renderCriarChips();
+  }
+  document.getElementById('ac-criar-casa').addEventListener('click', onCriarChip);
+  document.getElementById('ac-criar-nivel').addEventListener('click', onCriarChip);
+  document.getElementById('ac-criar-ok').onclick = function () {
+    var nome = document.getElementById('ac-criar-nome').value.trim();
+    var m = document.getElementById('ac-criar-msg');
+    if (nome.length < 3) { m.textContent = 'Digite o nome completo.'; return; }
+    if (!criarSel.nivel) { m.textContent = 'Escolha o nível.'; return; }
+    var btn = this; btn.disabled = true; m.textContent = 'Criando…';
+    fetch(WORKER + '/api/acesso/criar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      body: JSON.stringify({ nome: nome, nivel: criarSel.nivel, casa: criarSel.casa })
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        btn.disabled = false;
+        if (!res.ok) { m.textContent = res.d.mensagem || res.d.erro || 'Não deu certo.'; return; }
+        m.textContent = '';
+        document.getElementById('ac-criar-nome').value = '';
+        criarSel = { casa: null, nivel: null };
+        return carrega().then(function () {
+          var r = document.getElementById('ac-criar-res');
+          if (r) r.textContent = 'Criado! Senha de ' + res.d.nome + ': ' + res.d.senha +
+            ' — anote, aparece uma vez só.';
+        });
+      })
+      .catch(function () { btn.disabled = false; m.textContent = 'Sem conexão.'; });
   };
 
   carrega();
@@ -1741,7 +1816,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '00e30d6c689d';
+  var BUILD = '86a7451b648c';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
