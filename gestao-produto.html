@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Gestão de Produto · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=6a42daa615d1">
+<link rel="stylesheet" href="portal.css?v=1b32bb2f1cad">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1206,7 +1206,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <span class="cp-status" id="cp-rev-status"></span>
   </div>
   <div class="cp-acoes-massa" id="cp-everloja-bloco" style="display:none">
-    <button class="cp-btn oco" id="cp-everloja-btn" type="button"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M12 15V4M8 8l4-4 4 4"/></svg> <span>Incluir pedido no everloja</span></button>
+    <button class="cp-btn oco" id="cp-everloja-btn" type="button"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M12 15V4M8 8l4-4 4 4"/></svg> <span>Enviar pedido para a fila do everloja</span></button>
     <span class="cp-status" id="cp-everloja-status"></span>
   </div>
 </div>
@@ -2106,15 +2106,25 @@ window.msgAcessoNegado = function (nomePagina) {
       everlojaBtn.onclick = function () {
         everlojaBtn.disabled = true;
         everlojaStatus.className = 'cp-status pend';
-        everlojaStatus.textContent = 'Incluindo…';
+        everlojaStatus.textContent = 'Enviando pra fila…';
         api('POST', '/api/everloja/incluir', { casa: casaSel })
           .then(function (r) { return r.json().then(function (d) { return { status: r.status, corpo: d }; }); })
           .then(function (res) {
             everlojaBtn.disabled = false;
             if (res.status === 200 || res.status === 201) {
-              everlojaStatus.className = 'cp-status';
+              // O texto diz o que ACONTECEU, não o que se espera que aconteça.
+              // Até 2026-07-27 dizia "✓ incluído (N itens)", e o Rodrigo
+              // clicou três vezes procurando o pedido no site do everloja —
+              // com razão: "incluído" só pode significar que chegou lá. Esta
+              // rota não fala com o everloja; ela grava um snapshot numa fila
+              // no Notion. Quem abre o everloja é o robô local, que ainda não
+              // completou uma execução. Prometer entrega que não houve manda a
+              // pessoa procurar defeito no lugar errado.
+              everlojaStatus.className = 'cp-status pend';
               everlojaStatus.textContent = '';
-              everlojaStatus.appendChild(document.createTextNode('✓ incluído (' + res.corpo.itens + ' itens) — acompanhe em '));
+              everlojaStatus.appendChild(document.createTextNode(
+                '✓ ' + res.corpo.itens + ' itens na fila — ainda NÃO estão no everloja. ' +
+                'O robô monta a solicitação depois; acompanhe em '));
               var a = document.createElement('a');
               a.href = 'everloja-conferencia.html?casa=' + portalSlug(casaSel);
               a.textContent = 'Conferência everloja';
@@ -4552,7 +4562,7 @@ window.msgAcessoNegado = function (nomePagina) {
 })();
 </script></div><div id="perf-panel-everloja" class="perf-panel" hidden>
 <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M12 15V4M8 8l4-4 4 4"/></svg> Conferência everloja</h1>
-<p class="sub">Acompanha o pedido incluído no everloja a partir do Pedido de Compras aprovado. Confirmar aqui é o único jeito de autorizar a compra de verdade.</p>
+<p class="sub">Acompanha o pedido que saiu do Pedido de Compras e está na fila do everloja. Enviar pra fila não põe nada no site do everloja — quem monta a solicitação lá é o robô, e só depois disso a compra pode ser autorizada aqui.</p>
 
 <div class="panel" id="evc-gate">
   <h2>Acesso restrito</h2>
@@ -4640,7 +4650,7 @@ window.msgAcessoNegado = function (nomePagina) {
     if (!pedido) {
       var vazio = document.createElement('p');
       vazio.className = 'evc-vazio';
-      vazio.textContent = 'Nenhum pedido incluído ainda pra esta casa. Aprove o Pedido de Compras e clique em "Incluir pedido no everloja".';
+      vazio.textContent = 'Nenhum pedido na fila pra esta casa. Aprove o Pedido de Compras e clique em "Enviar pedido para a fila do everloja".';
       view.appendChild(vazio);
       return;
     }
@@ -6012,7 +6022,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '6a42daa615d1';
+  var BUILD = '1b32bb2f1cad';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
