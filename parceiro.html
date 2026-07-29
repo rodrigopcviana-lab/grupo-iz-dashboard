@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Parceiro · Grupo IZ</title>
+<meta name="theme-color" content="#16130f">
+<style>
+:root{
+  --bg:#16130f; --card:#211c15; --border:#3a3428;
+  --text:#f3ede2; --text-2:#c3baa9; --text-3:#8f8672;
+  --acc:#d0a352; --verde:#9fe1cb; --amarelo:#e0b05c; --vermelho:#e08585;
+  --serif:Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+.wrap{max-width:640px;margin:0 auto;padding:20px 18px 60px}
+h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
+.sub{color:var(--text-3);font-size:13px;margin:0 0 24px}
+
+/* --- gate de login --- */
+.gate{max-width:340px;margin:80px auto;text-align:center;padding:0 18px}
+.gate h1{font-size:20px}
+.gate input{font:inherit;font-size:16px;width:100%;background:var(--card);
+  border:1px solid var(--border);border-radius:10px;color:var(--text);
+  padding:12px 14px;margin:16px 0 10px;text-align:center}
+.gate button{font:inherit;font-size:14px;font-weight:600;padding:11px 24px;
+  border-radius:10px;border:none;background:var(--acc);color:#241a06;cursor:pointer;width:100%}
+.gate .erro{color:var(--vermelho);font-size:12.5px;min-height:16px;margin-top:8px}
+
+/* --- painel --- */
+.cabecalho{border-radius:14px;overflow:hidden;background:var(--card);
+  border:1px solid var(--border);margin-bottom:20px}
+.faixa{height:5px}
+.cab-corpo{padding:16px 18px}
+.cab-marca{font-family:var(--serif);font-size:20px;margin:0}
+.chip{display:inline-block;font-size:11px;padding:3px 10px;border-radius:999px;margin-left:8px;vertical-align:2px}
+.cab-sub{font-size:12.5px;color:var(--text-3);margin:4px 0 0}
+
+.nota{font-size:13px;color:var(--text-2);background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:11px 13px;margin:0 0 18px;line-height:1.6}
+
+.secao{font-size:11.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;
+  margin:22px 0 8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:12px 14px;margin-bottom:8px}
+.card .topo{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.card .titulo{font-size:14px}
+.card .meta{font-size:12px;color:var(--text-2);margin-top:4px}
+.bar{height:5px;border-radius:3px;background:var(--bg);margin-top:7px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px}
+.status{font-size:11px;padding:3px 9px;border-radius:999px;flex:none}
+
+.ficha{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
+.ficha .nome{font-size:14px}
+.ficha .desc{font-size:12px;color:var(--text-3);margin-top:2px}
+.ficha .venda{font-size:13px;color:var(--text-2);white-space:nowrap}
+
+.serie{display:flex;gap:3px;align-items:flex-end;height:36px;margin-top:8px}
+.serie .col{flex:1;background:var(--border);border-radius:2px;min-height:2px}
+.serie-rotulo{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-3);margin-top:3px}
+
+.vazio{color:var(--text-3);font-size:13px;padding:14px 0}
+.rodape{font-size:11.5px;color:var(--text-3);margin-top:28px;padding-top:14px;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <h1>Parceiro · Grupo IZ</h1>
+  <p class="sub" style="margin:6px 0 0">Acompanhamento das contrapartidas com sua marca.</p>
+  <input id="g-senha" type="password" placeholder="Senha" autocomplete="off" autocapitalize="off">
+  <button id="g-entrar" type="button">Entrar</button>
+  <p class="erro" id="g-erro"></p>
+</div>
+
+<div id="painel" class="wrap" style="display:none"></div>
+
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var CHAVE_SESSAO = 'parceiro_sessao';
+  var gate = document.getElementById('gate');
+  var painel = document.getElementById('painel');
+  var erro = document.getElementById('g-erro');
+
+  var ROTULO_STATUS = {
+    nao_iniciado: 'Não iniciado', em_andamento: 'Em andamento', entregue: 'Entregue',
+    atrasado: 'Atrasado', em_negociacao: 'Em negociação',
+  };
+  var COR_STATUS = {
+    nao_iniciado: '#8f8672', em_andamento: '#7fb8e0', entregue: '#9fe1cb',
+    atrasado: '#e08585', em_negociacao: '#e0b05c',
+  };
+  var ROTULO_CONTRATO = {
+    ativo: 'Acordo ativo', em_assinatura: 'Contrato em assinatura', em_negociacao: 'Em negociação',
+  };
+
+  function sessaoLer() {
+    try {
+      var s = JSON.parse(localStorage.getItem(CHAVE_SESSAO) || 'null');
+      if (s && s.exp && s.exp > Date.now()) return s;
+    } catch (e) {}
+    return null;
+  }
+  function sessaoSalvar(s) { localStorage.setItem(CHAVE_SESSAO, JSON.stringify(s)); }
+  function sessaoLimpar() { localStorage.removeItem(CHAVE_SESSAO); }
+
+  function fmtData(iso) {
+    if (!iso) return '—';
+    var p = iso.split('-');
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+
+  // Clareia a cor da marca quando ela é escura demais pra servir de TEXTO
+  // sobre o fundo escuro do painel (achado testando com o azul-marinho da
+  // Red Bull: chip/link ficavam quase ilegíveis). Só pra texto/borda — o
+  // preenchimento sólido (faixa do topo, barra de progresso) usa a cor crua,
+  // que é um bloco opaco e não sofre esse problema de contraste.
+  function corLegivel(hex) {
+    hex = String(hex || '').replace('#', '');
+    if (hex.length !== 6) return hex ? ('#' + hex) : '#d0a352';
+    var r = parseInt(hex.substr(0, 2), 16), g = parseInt(hex.substr(2, 2), 16), b = parseInt(hex.substr(4, 2), 16);
+    var luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    if (luminancia < 0.45) {
+      var f = 0.55;
+      r = Math.round(r + (255 - r) * f); g = Math.round(g + (255 - g) * f); b = Math.round(b + (255 - b) * f);
+    }
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+
+  function el(tag, cls, texto) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (texto != null) e.textContent = texto;
+    return e;
+  }
+
+  function montaContrapartida(item, cor) {
+    var corTxt = corLegivel(cor);
+    var card = el('div', 'card');
+    var topo = el('div', 'topo');
+    topo.appendChild(el('div', 'titulo', item.descricao || item.tipo));
+    var tag = el('span', 'status', ROTULO_STATUS[item.status] || item.status || '—');
+    tag.style.background = (COR_STATUS[item.status] || '#8f8672') + '33';
+    tag.style.color = COR_STATUS[item.status] || '#8f8672';
+    topo.appendChild(tag);
+    card.appendChild(topo);
+    if (item.casa) card.appendChild(el('div', 'meta', item.casa));
+    if (item.meta != null) {
+      var realizado = item.realizado != null ? item.realizado : 0;
+      var linha = realizado + ' de ' + item.meta + (item.unidade ? ' ' + item.unidade : '');
+      if (item.prazo) linha += ' · prazo ' + fmtData(item.prazo);
+      card.appendChild(el('div', 'meta', linha));
+      var bar = el('div', 'bar');
+      var fill = el('div', 'bar-fill');
+      var pct = item.meta > 0 ? Math.min(100, Math.round((realizado / item.meta) * 100)) : 0;
+      fill.style.width = pct + '%'; fill.style.background = cor;
+      bar.appendChild(fill); card.appendChild(bar);
+    } else if (item.prazo) {
+      card.appendChild(el('div', 'meta', 'prazo ' + fmtData(item.prazo)));
+    }
+    if (item.nota_publica) card.appendChild(el('div', 'meta', item.nota_publica));
+    (item.evidencia || []).forEach(function (url) {
+      var a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ver evidência ↗';
+      a.style.cssText = 'display:inline-block;font-size:12px;color:' + corTxt + ';margin-top:6px';
+      card.appendChild(a);
+    });
+    return card;
+  }
+
+  function montaSerieBackbar(casa, serie, cor) {
+    var wrap = el('div', 'card');
+    wrap.appendChild(el('div', 'titulo', casa));
+    if (!serie.length) {
+      wrap.appendChild(el('div', 'meta', 'Ainda sem contagem semanal registrada.'));
+      return wrap;
+    }
+    var ultimo = serie[serie.length - 1];
+    wrap.appendChild(el('div', 'meta', (ultimo.percentual == null ? '—' : ultimo.percentual + '%') + ' na última contagem'));
+    var faixa = el('div', 'serie');
+    serie.forEach(function (s) {
+      var col = el('div', 'col');
+      var pct = s.percentual || 0;
+      col.style.height = Math.max(2, Math.round(pct * 0.34)) + 'px';
+      col.style.background = cor;
+      faixa.appendChild(col);
+    });
+    wrap.appendChild(faixa);
+    var rot = el('div', 'serie-rotulo');
+    rot.appendChild(document.createTextNode(fmtData(serie[0].semana)));
+    rot.appendChild(document.createTextNode(fmtData(serie[serie.length - 1].semana)));
+    wrap.appendChild(rot);
+    return wrap;
+  }
+
+  function renderiza(d) {
+    painel.innerHTML = '';
+    var cor = d.cor || '#d0a352';
+    var corTxt = corLegivel(cor);
+
+    var cab = el('div', 'cabecalho');
+    var faixa = el('div', 'faixa'); faixa.style.background = cor;
+    cab.appendChild(faixa);
+    var corpo = el('div', 'cab-corpo');
+    var titulo = el('p', 'cab-marca', d.marca);
+    var status = el('span', 'chip', ROTULO_CONTRATO[d.contrato_status] || d.contrato_status || '');
+    status.style.background = cor + '33'; status.style.color = corTxt;
+    titulo.appendChild(status);
+    corpo.appendChild(titulo);
+    corpo.appendChild(el('p', 'cab-sub', 'Parceria com Grupo IZ' + (d.on_trade ? ' · ' + d.on_trade : '')));
+    cab.appendChild(corpo);
+    painel.appendChild(cab);
+
+    if (d.contrato_status !== 'ativo') {
+      painel.appendChild(el('p', 'nota',
+        d.contrato_status === 'em_negociacao'
+          ? 'Ainda não temos contrapartidas fechadas. Assim que o acordo for definido, elas aparecem aqui, no mesmo formato desta página.'
+          : 'O contrato ainda não foi assinado. As contrapartidas abaixo são as previstas e ainda não contam como pendência de entrega.'));
+    }
+
+    var contrapartidas = d.contrapartidas || [];
+    if (contrapartidas.length) {
+      painel.appendChild(el('div', 'secao', 'Contrapartidas'));
+      contrapartidas.forEach(function (item) { painel.appendChild(montaContrapartida(item, cor)); });
+    }
+
+    var backbar = d.backbar || {};
+    var casasBackbar = Object.keys(backbar);
+    if (casasBackbar.length) {
+      painel.appendChild(el('div', 'secao', 'Visibilidade de backbar'));
+      casasBackbar.forEach(function (casa) { painel.appendChild(montaSerieBackbar(casa, backbar[casa], cor)); });
+    }
+
+    var fichas = d.fichas_tecnicas || [];
+    if (fichas.length) {
+      painel.appendChild(el('div', 'secao', 'Cocktails no cardápio'));
+      fichas.forEach(function (f) {
+        var card = el('div', 'card');
+        var lin = el('div', 'ficha');
+        var esq = el('div');
+        esq.appendChild(el('div', 'nome', f.nome + (f.casa ? ' · ' + f.casa : '')));
+        if (f.descricao) esq.appendChild(el('div', 'desc', f.descricao));
+        lin.appendChild(esq);
+        if (f.venda != null) {
+          lin.appendChild(el('div', 'venda', f.venda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })));
+        }
+        card.appendChild(lin);
+        painel.appendChild(card);
+      });
+    }
+
+    if (d.compra_minima) {
+      painel.appendChild(el('div', 'secao', 'Compra mínima · ' + fmtData(d.compra_minima.ciclo_inicio) + ' a ' + fmtData(d.compra_minima.ciclo_fim)));
+      var card = el('div', 'card');
+      (d.compra_minima.itens || []).forEach(function (it, i) {
+        var lin = el('div', 'topo');
+        if (i > 0) lin.style.marginTop = '8px';
+        lin.appendChild(el('div', 'titulo', it.nome));
+        var tag = el('span', 'status', it.entregue ? 'Entregue' : 'Pendente');
+        tag.style.background = (it.entregue ? '#9fe1cb' : '#8f8672') + '33';
+        tag.style.color = it.entregue ? '#9fe1cb' : '#8f8672';
+        lin.appendChild(tag);
+        card.appendChild(lin);
+      });
+      painel.appendChild(card);
+      painel.appendChild(el('p', 'meta', ''));
+    }
+
+    if (!contrapartidas.length && !casasBackbar.length && !fichas.length && !d.compra_minima) {
+      painel.appendChild(el('p', 'vazio', 'Ainda não há nada registrado por aqui.'));
+    }
+
+    var rodape = el('p', 'rodape', 'Atualizado em ' + fmtData((d.atualizado_em || '').slice(0, 10)) + '.');
+    painel.appendChild(rodape);
+  }
+
+  function buscar(sessao) {
+    fetch(WORKER + '/api/parceiro', { headers: { 'X-Token': sessao.token } })
+      .then(function (r) {
+        if (r.status === 401) { sessaoLimpar(); location.reload(); return; }
+        if (!r.ok) { erro.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return; }
+        return r.json().then(function (d) {
+          gate.style.display = 'none';
+          painel.style.display = '';
+          renderiza(d);
+        });
+      })
+      .catch(function () { erro.textContent = 'Sem conexão. Tente de novo.'; });
+  }
+
+  function entrar() {
+    var senha = document.getElementById('g-senha').value.trim();
+    if (!senha) return;
+    erro.textContent = '';
+    fetch(WORKER + '/api/nivel', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: senha }),
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok || res.d.nivel !== 'parceiro') { erro.textContent = 'Senha inválida.'; return; }
+        var sessao = { token: res.d.token, exp: res.d.exp, marca: res.d.marca, pessoa: res.d.pessoa };
+        sessaoSalvar(sessao);
+        buscar(sessao);
+      })
+      .catch(function () { erro.textContent = 'Sem conexão. Tente de novo.'; });
+  }
+
+  document.getElementById('g-entrar').addEventListener('click', entrar);
+  document.getElementById('g-senha').addEventListener('keydown', function (e) { if (e.key === 'Enter') entrar(); });
+
+  if (!WORKER) { erro.textContent = 'Em configuração.'; return; }
+  var sessaoAtual = sessaoLer();
+  if (sessaoAtual) { gate.style.display = 'none'; painel.style.display = ''; buscar(sessaoAtual); }
+})();
+</script>
+</body>
+</html>

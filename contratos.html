@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Contratos On Trade · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=ad301694a05d">
+<link rel="stylesheet" href="portal.css?v=c0a00d59acd8">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -413,6 +413,14 @@ window.msgAcessoNegado = function (nomePagina) {
 </div>
 
 <div id="ct-corpo" style="display:none">
+<div class="ct-abas" style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--border)">
+  <button type="button" class="ct-aba-btn ativo" data-aba="vigencia"
+    style="background:none;border:none;padding:10px 4px;font-size:14px;color:var(--text);cursor:pointer;border-bottom:2px solid var(--acc);margin-bottom:-1px">Vigência</button>
+  <button type="button" class="ct-aba-btn" data-aba="contra"
+    style="background:none;border:none;padding:10px 4px;font-size:14px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">Contrapartidas</button>
+</div>
+
+<div id="ct-aba-vigencia">
 <style>
   .ck { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:16px; }
   .ck .c { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
@@ -456,6 +464,96 @@ window.msgAcessoNegado = function (nomePagina) {
 <p class="ct-vazio" id="ct-vazio" style="display:none">Nenhum contrato nesse filtro.</p>
 
 <p class="ct-foot" id="ct-foot"></p>
+</div><!-- ct-aba-vigencia -->
+
+<div id="ct-aba-contra" style="display:none">
+<style>
+  .ctp-marcas { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .ctp-marca-btn { padding:8px 14px; border-radius:999px; font-size:13px; cursor:pointer;
+      border:1px solid var(--border); background:var(--card); color:var(--text-2); }
+  .ctp-marca-btn.ativo { color:var(--bg); border-color:transparent; }
+  .ctp-status-tag { display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:600; }
+  .ctp-casa-grupo { margin-bottom:18px; }
+  .ctp-casa-titulo { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-3); margin-bottom:8px; }
+  .ctp-card { background:var(--card); border:1px solid var(--border); border-radius:12px;
+      padding:12px 14px; margin-bottom:8px; }
+  .ctp-card .topo { display:flex; align-items:center; gap:10px; justify-content:space-between; }
+  .ctp-card .desc { font-size:14px; }
+  .ctp-card .meta { font-size:12px; color:var(--text-2); margin-top:4px; }
+  .ctp-card .bar { height:5px; border-radius:3px; background:var(--surface,#1a1a1a); margin-top:8px; overflow:hidden; }
+  .ctp-card .bar-fill { height:100%; border-radius:3px; }
+  .ctp-card .acoes { margin-top:8px; }
+  .ctp-card .acoes button { font-size:12px; padding:5px 10px; border-radius:8px;
+      border:1px solid var(--border); background:none; color:var(--text-2); cursor:pointer; }
+  .ctp-form { background:var(--card); border:1px solid var(--border); border-radius:14px;
+      padding:16px; margin-bottom:20px; }
+  .ctp-form h3 { margin:0 0 12px; font-size:15px; }
+  .ctp-linha { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .ctp-linha > * { flex:1; min-width:140px; }
+  .ctp-form select, .ctp-form input, .ctp-form textarea { width:100%; padding:9px 10px; font-size:13.5px;
+      border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); box-sizing:border-box; }
+  .ctp-form textarea { min-height:52px; resize:vertical; }
+  .ctp-form label { font-size:11.5px; color:var(--text-3); display:block; margin-bottom:3px; }
+  .ctp-form .botoes { display:flex; gap:8px; margin-top:6px; }
+  .ctp-form .botoes button { padding:9px 16px; border-radius:8px; font-size:13.5px; cursor:pointer; }
+  .ctp-btn-salvar { background:var(--acc); color:var(--bg); border:none; }
+  .ctp-btn-cancelar { background:none; border:1px solid var(--border); color:var(--text-2); }
+  .ctp-evid-lista { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .ctp-evid-lista a { font-size:12px; color:var(--acc); }
+  .ctp-msg-form { font-size:12.5px; margin-top:6px; }
+</style>
+
+<p id="ctp-somente-leitura" class="sub" style="display:none;margin:0 0 12px">
+  Controladoria acompanha esta aba — quem cadastra e edita é a coordenação.
+</p>
+
+<div class="ctp-marcas" id="ctp-marcas"></div>
+
+<div class="ctp-form" id="ctp-form" style="display:none">
+  <h3 id="ctp-form-titulo">Nova contrapartida</h3>
+  <div class="ctp-linha">
+    <div><label>Casa</label><select id="ctp-f-casa"></select></div>
+    <div><label>Tipo</label><select id="ctp-f-tipo"></select></div>
+    <div><label>Status</label><select id="ctp-f-status"></select></div>
+  </div>
+  <div class="ctp-linha">
+    <div><label>Identificador (só na criação)</label><input id="ctp-f-slug" placeholder="ex.: mocktail-nip"></div>
+    <div><label>Origem</label>
+      <select id="ctp-f-origem"><option value="">—</option><option value="contrato">Contrato</option><option value="reuniao">Reunião</option></select>
+    </div>
+    <div><label>Prazo</label><input id="ctp-f-prazo" type="date"></div>
+  </div>
+  <div class="ctp-linha">
+    <div style="flex:2"><label>Descrição</label><input id="ctp-f-descricao" placeholder="ex.: 1 mocktail no cardápio do NIP"></div>
+    <div><label>Meta</label><input id="ctp-f-meta" type="number" step="any"></div>
+    <div><label>Realizado</label><input id="ctp-f-realizado" type="number" step="any"></div>
+    <div><label>Unidade</label>
+      <select id="ctp-f-unidade"><option value="">—</option><option value="un">un</option><option value="%">%</option><option value="garrafa">garrafa</option><option value="post">post</option></select>
+    </div>
+  </div>
+  <div class="ctp-linha">
+    <div><label>Nota pública (o parceiro lê)</label><textarea id="ctp-f-nota-publica"></textarea></div>
+    <div><label>Nota interna (só a coordenação vê)</label><textarea id="ctp-f-nota-interna"></textarea></div>
+  </div>
+  <div class="ctp-linha">
+    <div><label>Evidência (foto/print)</label><input id="ctp-f-evidencia" type="file" accept="image/*"></div>
+  </div>
+  <div class="ctp-evid-lista" id="ctp-evid-existente"></div>
+  <div class="botoes">
+    <button type="button" class="ctp-btn-salvar" id="ctp-salvar">Salvar</button>
+    <button type="button" class="ctp-btn-cancelar" id="ctp-cancelar">Cancelar</button>
+  </div>
+  <p class="ctp-msg-form" id="ctp-form-msg"></p>
+</div>
+
+<button type="button" id="ctp-nova-btn" class="ctp-btn-salvar" style="padding:9px 16px;border-radius:8px;border:none;font-size:13.5px;cursor:pointer;margin-bottom:16px">
+  + Nova contrapartida
+</button>
+
+<div id="ctp-lista"></div>
+<p class="ct-vazio" id="ctp-vazio" style="display:none">Nenhuma contrapartida cadastrada pra esta marca ainda.</p>
+</div><!-- ct-aba-contra -->
+
 </div><!-- ct-corpo -->
 
 <script>
@@ -471,6 +569,19 @@ window.msgAcessoNegado = function (nomePagina) {
     gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">Contratos On Trade ainda não foi ativado.</p>';
     return;
   }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.ct-aba-btn'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.ct-aba-btn'), function (b) {
+        b.classList.remove('ativo'); b.style.color = 'var(--text-2)'; b.style.borderBottomColor = 'transparent';
+      });
+      btn.classList.add('ativo'); btn.style.color = 'var(--text)'; btn.style.borderBottomColor = 'var(--acc)';
+      var aba = btn.getAttribute('data-aba');
+      document.getElementById('ct-aba-vigencia').style.display = aba === 'vigencia' ? '' : 'none';
+      document.getElementById('ct-aba-contra').style.display = aba === 'contra' ? '' : 'none';
+      if (aba === 'contra' && window._ctpIniciar) window._ctpIniciar();
+    });
+  });
 
   function fmtBRL(v) {
     return v == null ? '—' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -615,6 +726,243 @@ window.msgAcessoNegado = function (nomePagina) {
       .catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; });
   }
 
+  // --- Aba Contrapartidas (PLANO_ONTRADE_PARCEIROS.md §3.2) -----------------
+  (function () {
+    var MARCAS = {"redbull": {"nome": "Red Bull", "cor": "#0A2A5E", "on_trade": "Alice", "casas": ["nip"], "contrato_status": "ativo"}, "diageo": {"nome": "Diageo", "cor": "#1D4A3C", "on_trade": "Kelssen", "casas": ["nip", "gra-bistro", "1929"], "contrato_status": "em_assinatura"}, "beamsuntory": {"nome": "Beam Suntory", "cor": "#B0741A", "on_trade": "Bruna", "casas": ["iz"], "contrato_status": "em_negociacao"}};
+    var CASAS = {"iz": "Iz", "gra-bistro": "Grá", "1929": "1929", "famu": "FAMU", "fulles": "Fulles", "nip": "Nip"};
+    var TIPOS = ["cocktail", "backbar", "cardapio_digital", "cardapio_impresso", "instagram", "compra_minima", "outro"];
+    var STATUS = ["nao_iniciado", "em_andamento", "entregue", "atrasado", "em_negociacao"];
+    var ROTULO_STATUS = {
+      nao_iniciado: 'Não iniciado', em_andamento: 'Em andamento', entregue: 'Entregue',
+      atrasado: 'Atrasado', em_negociacao: 'Em negociação',
+    };
+    var COR_STATUS = {
+      nao_iniciado: '#5f5e5a', em_andamento: '#7fb8e0', entregue: '#5dcaa5',
+      atrasado: '#e08585', em_negociacao: '#efb84f',
+    };
+    var marcasSlugs = Object.keys(MARCAS);
+    var st = { sessao: null, marca: marcasSlugs[0] || null, itens: null, editandoId: null };
+
+    var elMarcas = document.getElementById('ctp-marcas');
+    var elLista = document.getElementById('ctp-lista');
+    var elVazio = document.getElementById('ctp-vazio');
+    var elSomenteLeitura = document.getElementById('ctp-somente-leitura');
+    var elNovaBtn = document.getElementById('ctp-nova-btn');
+    var elForm = document.getElementById('ctp-form');
+    var elFormTitulo = document.getElementById('ctp-form-titulo');
+    var elFormMsg = document.getElementById('ctp-form-msg');
+    var fCasa = document.getElementById('ctp-f-casa');
+    var fTipo = document.getElementById('ctp-f-tipo');
+    var fStatus = document.getElementById('ctp-f-status');
+    var fSlug = document.getElementById('ctp-f-slug');
+    var fOrigem = document.getElementById('ctp-f-origem');
+    var fPrazo = document.getElementById('ctp-f-prazo');
+    var fDescricao = document.getElementById('ctp-f-descricao');
+    var fMeta = document.getElementById('ctp-f-meta');
+    var fRealizado = document.getElementById('ctp-f-realizado');
+    var fUnidade = document.getElementById('ctp-f-unidade');
+    var fNotaPublica = document.getElementById('ctp-f-nota-publica');
+    var fNotaInterna = document.getElementById('ctp-f-nota-interna');
+    var fEvidencia = document.getElementById('ctp-f-evidencia');
+    var elEvidExistente = document.getElementById('ctp-evid-existente');
+
+    TIPOS.forEach(function (t) { var o = document.createElement('option'); o.value = t; o.textContent = t; fTipo.appendChild(o); });
+    STATUS.forEach(function (s) { var o = document.createElement('option'); o.value = s; o.textContent = ROTULO_STATUS[s] || s; fStatus.appendChild(o); });
+
+    function montarMarcas() {
+      elMarcas.innerHTML = '';
+      marcasSlugs.forEach(function (slug) {
+        var m = MARCAS[slug];
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'ctp-marca-btn' + (slug === st.marca ? ' ativo' : '');
+        b.textContent = m.nome;
+        if (slug === st.marca) { b.style.background = m.cor; b.style.color = '#fff'; }
+        b.addEventListener('click', function () { st.marca = slug; fecharForm(); montarMarcas(); desenha(); });
+        elMarcas.appendChild(b);
+      });
+    }
+
+    function podeEditar() { return st.sessao && st.sessao.nivel === 'coord'; }
+
+    function desenha() {
+      elLista.innerHTML = '';
+      var marca = MARCAS[st.marca];
+      if (!marca) return;
+      elSomenteLeitura.style.display = podeEditar() ? 'none' : '';
+      elNovaBtn.style.display = podeEditar() ? '' : 'none';
+      var todos = (st.itens || []).filter(function (i) { return i.marca === marca.nome; });
+      elVazio.style.display = todos.length ? 'none' : '';
+
+      (marca.casas || []).forEach(function (casaSlug) {
+        var casaLabel = CASAS[casaSlug] || casaSlug;
+        var doCasa = todos.filter(function (i) { return i.casa === casaLabel; });
+        var grupo = document.createElement('div'); grupo.className = 'ctp-casa-grupo';
+        var titulo = document.createElement('div'); titulo.className = 'ctp-casa-titulo'; titulo.textContent = casaLabel;
+        grupo.appendChild(titulo);
+        if (!doCasa.length) {
+          var vaziaCasa = document.createElement('div'); vaziaCasa.style.cssText = 'font-size:13px;color:var(--text-3)';
+          vaziaCasa.textContent = 'Nenhuma contrapartida cadastrada.';
+          grupo.appendChild(vaziaCasa);
+        }
+        doCasa.forEach(function (item) {
+          var card = document.createElement('div'); card.className = 'ctp-card';
+          var topo = document.createElement('div'); topo.className = 'topo';
+          var desc = document.createElement('div'); desc.className = 'desc';
+          desc.textContent = item.descricao || ('(' + item.tipo + ')');
+          var tag = document.createElement('span'); tag.className = 'ctp-status-tag';
+          tag.textContent = ROTULO_STATUS[item.status] || item.status || '—';
+          tag.style.background = (COR_STATUS[item.status] || '#5f5e5a') + '33';
+          tag.style.color = COR_STATUS[item.status] || '#5f5e5a';
+          topo.appendChild(desc); topo.appendChild(tag);
+          card.appendChild(topo);
+
+          if (item.meta != null) {
+            var meta = document.createElement('div'); meta.className = 'meta';
+            var realizado = item.realizado != null ? item.realizado : 0;
+            meta.textContent = realizado + ' de ' + item.meta + (item.unidade ? ' ' + item.unidade : '');
+            if (item.prazo) meta.textContent += ' · prazo ' + item.prazo.split('-').reverse().join('/');
+            card.appendChild(meta);
+            var bar = document.createElement('div'); bar.className = 'bar';
+            var fill = document.createElement('div'); fill.className = 'bar-fill';
+            var pct = item.meta > 0 ? Math.min(100, Math.round((realizado / item.meta) * 100)) : 0;
+            fill.style.width = pct + '%'; fill.style.background = marca.cor;
+            bar.appendChild(fill); card.appendChild(bar);
+          } else if (item.prazo) {
+            var metaP = document.createElement('div'); metaP.className = 'meta';
+            metaP.textContent = 'prazo ' + item.prazo.split('-').reverse().join('/');
+            card.appendChild(metaP);
+          }
+
+          if (podeEditar()) {
+            var acoes = document.createElement('div'); acoes.className = 'acoes';
+            var btnEditar = document.createElement('button'); btnEditar.type = 'button'; btnEditar.textContent = 'Editar';
+            btnEditar.addEventListener('click', function () { abrirForm(item); });
+            acoes.appendChild(btnEditar);
+            card.appendChild(acoes);
+          }
+          grupo.appendChild(card);
+        });
+        elLista.appendChild(grupo);
+      });
+    }
+
+    function preencherCasaSelect() {
+      fCasa.innerHTML = '';
+      var marca = MARCAS[st.marca];
+      (marca ? marca.casas : []).forEach(function (slug) {
+        var o = document.createElement('option'); o.value = slug; o.textContent = CASAS[slug] || slug;
+        fCasa.appendChild(o);
+      });
+    }
+
+    function abrirForm(item) {
+      preencherCasaSelect();
+      elEvidExistente.innerHTML = '';
+      fEvidencia.value = '';
+      elFormMsg.textContent = '';
+      if (item) {
+        st.editandoId = item.id;
+        elFormTitulo.textContent = 'Editar contrapartida';
+        fSlug.value = ''; fSlug.disabled = true; fSlug.placeholder = '(mantido — edição usa o registro existente)';
+        fCasa.value = Object.keys(CASAS).filter(function (s) { return CASAS[s] === item.casa; })[0] || '';
+        fTipo.value = item.tipo || ''; fStatus.value = item.status || '';
+        fOrigem.value = item.origem || ''; fPrazo.value = item.prazo || '';
+        fDescricao.value = item.descricao || ''; fMeta.value = item.meta != null ? item.meta : '';
+        fRealizado.value = item.realizado != null ? item.realizado : ''; fUnidade.value = item.unidade || '';
+        fNotaPublica.value = item.nota_publica || ''; fNotaInterna.value = item.nota_interna || '';
+        (item.evidencia || []).forEach(function (url) {
+          var a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener';
+          a.textContent = 'evidência ↗'; elEvidExistente.appendChild(a);
+        });
+      } else {
+        st.editandoId = null;
+        elFormTitulo.textContent = 'Nova contrapartida';
+        fSlug.value = ''; fSlug.disabled = false; fSlug.placeholder = 'ex.: mocktail-nip';
+        fTipo.value = ''; fStatus.value = 'nao_iniciado'; fOrigem.value = ''; fPrazo.value = '';
+        fDescricao.value = ''; fMeta.value = ''; fRealizado.value = ''; fUnidade.value = '';
+        fNotaPublica.value = ''; fNotaInterna.value = '';
+      }
+      elForm.style.display = '';
+      elForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function fecharForm() { elForm.style.display = 'none'; st.editandoId = null; }
+
+    function salvar() {
+      var body = {
+        marca: st.marca, casa: fCasa.value, tipo: fTipo.value, status: fStatus.value,
+        origem: fOrigem.value || undefined, prazo: fPrazo.value || undefined,
+        descricao: fDescricao.value || undefined,
+        meta: fMeta.value !== '' ? Number(fMeta.value) : undefined,
+        realizado: fRealizado.value !== '' ? Number(fRealizado.value) : undefined,
+        unidade: fUnidade.value || undefined,
+        nota_publica: fNotaPublica.value || undefined,
+        nota_interna: fNotaInterna.value || undefined,
+      };
+      if (st.editandoId) { body.id = st.editandoId; } else { body.slug = fSlug.value.trim(); }
+      if (!body.casa || !body.tipo || !body.status) {
+        elFormMsg.textContent = 'Preencha casa, tipo e status.'; return;
+      }
+      if (!st.editandoId && !body.slug) {
+        elFormMsg.textContent = 'Preencha o identificador (ex.: mocktail-nip).'; return;
+      }
+      elFormMsg.textContent = 'Salvando…';
+      var arquivo = fEvidencia.files && fEvidencia.files[0];
+
+      function gravar() {
+        fetch(WORKER + '/api/contrapartida', {
+          method: 'POST', headers: { 'X-Token': st.sessao.token, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+          .then(function (res) {
+            if (!res.ok) { elFormMsg.textContent = 'Erro: ' + (res.d.erro || 'falha ao salvar'); return; }
+            fecharForm(); st.itens = null; carregar();
+          })
+          .catch(function () { elFormMsg.textContent = 'Sem conexão. Tente de novo.'; });
+      }
+
+      if (arquivo) {
+        elFormMsg.textContent = 'Enviando evidência (substitui a anterior)…';
+        fetch(WORKER + '/api/contrapartida/evidencia', {
+          method: 'POST', headers: { 'X-Token': st.sessao.token, 'Content-Type': arquivo.type || 'image/jpeg' },
+          body: arquivo,
+        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+          .then(function (res) {
+            if (!res.ok) { elFormMsg.textContent = 'Erro ao subir a evidência: ' + (res.d.erro || '?'); return; }
+            body.evidencia_ids = [res.d.id];
+            gravar();
+          })
+          .catch(function () { elFormMsg.textContent = 'Sem conexão pra subir a evidência.'; });
+      } else {
+        gravar();
+      }
+    }
+
+    elNovaBtn.addEventListener('click', function () { abrirForm(null); });
+    document.getElementById('ctp-cancelar').addEventListener('click', fecharForm);
+    document.getElementById('ctp-salvar').addEventListener('click', salvar);
+
+    function carregar() {
+      elLista.textContent = 'Carregando…';
+      fetch(WORKER + '/api/contrapartidas', { headers: { 'X-Token': st.sessao.token } })
+        .then(function (r) {
+          if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
+          if (!r.ok) { elLista.textContent = 'Erro ao carregar (' + r.status + ').'; return; }
+          return r.json().then(function (d) { st.itens = d.itens || []; montarMarcas(); desenha(); });
+        })
+        .catch(function () { elLista.textContent = 'Sem conexão. Tente de novo.'; });
+    }
+
+    window._ctpIniciar = function () {
+      if (!st.sessao) {
+        var s = window.sessaoLer();
+        if (!s) return;
+        st.sessao = s;
+      }
+      if (!marcasSlugs.length) { elLista.textContent = 'Nenhuma marca parceira configurada ainda.'; return; }
+      if (st.itens === null) carregar(); else { montarMarcas(); desenha(); }
+    };
+  })();
+
   var r = window.exigirNivel(NIVEIS_OK, SLUG);
   if (r.ok) buscaDados(r.sessao.token);
   else if (!r.redirecionou) msg.innerHTML = window.msgAcessoNegado('os Contratos On Trade');
@@ -711,7 +1059,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 28/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 29/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -1667,7 +2015,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'ad301694a05d';
+  var BUILD = 'c0a00d59acd8';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
