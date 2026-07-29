@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Registro de Dose · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=9d8b35015ff0">
+<link rel="stylesheet" href="portal.css?v=33e37b460cc7">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -82,12 +82,35 @@
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
+// Níveis de gente de FORA da empresa (PLANO_ONTRADE_PARCEIROS.md §0.1: o nível
+// é LATERAL, só-leitura, e "o recorte é literalmente uma página"). Espelha o
+// NIVEIS_EXTERNOS do contagem-worker.
+//
+// Por que isto vive no sessaoLer e não em cada página: o mural NÃO usa
+// exigirNivel — ele abre o conteúdo interno só testando se existe sessão
+// (`if (s)`). Um parceiro logando pela tela de entrada do portal caía nesse
+// teste e recebia o mural inteiro: Nova demanda, Central de Demandas, Avarias,
+// Dose, sino, Top Cocktails por casa. As rotas todas devolviam 401 (o Worker
+// barra), mas a INTERFACE interna aparecia, oferecendo ações que só falhariam
+// e revelando a estrutura de dentro pra um fornecedor. Achado pelo Rodrigo em
+// 2026-07-29, com a Alice (Red Bull) logada no mural.
+//
+// Recusar aqui conserta os dois lados de uma vez: quem logar agora é desviado
+// pra parceiro.html, e quem JÁ tem a sessão externa guardada (como a Alice
+// naquele aparelho) para de abrir o mural na próxima carga, sozinho.
+window.NIVEIS_EXTERNOS = ['parceiro'];
+window.PAGINA_EXTERNA = { parceiro: 'parceiro.html' };
 window.sessaoLer = function () {
   try {
     var raw = localStorage.getItem(window.SESSAO_LS);
     if (!raw) return null;
     var s = JSON.parse(raw);
     if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    // Sessão externa nunca vale como sessão do portal interno. Além de
+    // recusar, APAGA — senão a sessão de parceiro guardada antes deste fix
+    // ficaria no aparelho até expirar (12h), e cada carga do mural teria que
+    // recusá-la de novo. Auto-cura: a próxima carga já nasce limpa.
+    if (window.NIVEIS_EXTERNOS.indexOf(s.nivel) >= 0) { window.sessaoLimpar(); return null; }
     return s;
   } catch (e) { return null; }
 };
@@ -112,6 +135,24 @@ window.loginSenha = function (worker, senha) {
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
     return r.json().then(function (d) {
+      // Senha de FORA da empresa: nunca vira sessão do portal interno. Grava na
+      // chave própria daquela superfície (a mesma que parceiro.html lê) e
+      // devolve `externo` + `destino` pra quem chamou desviar. Sem isto o
+      // parceiro entrava no mural interno — ver a nota em NIVEIS_EXTERNOS.
+      if (d.token && window.NIVEIS_EXTERNOS.indexOf(d.nivel) >= 0) {
+        var destino = window.PAGINA_EXTERNA[d.nivel] || null;
+        try {
+          localStorage.setItem('parceiro_sessao', JSON.stringify({
+            token: d.token, exp: d.exp, marca: d.marca || null, pessoa: d.pessoa || null,
+          }));
+        } catch (e) {}
+        // Uma sessão interna anterior no mesmo aparelho não pode sobreviver a um
+        // login externo (foi assim que o mural apareceu pra Alice com o Top
+        // Cocktails já renderizado de uma sessão de coord anterior).
+        window.sessaoLimpar();
+        return { ok: true, externo: true, nivel: d.nivel, destino: destino,
+                 marca: d.marca || null, pessoa: d.pessoa || null };
+      }
       if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa, d.pessoa);
       return { ok: true, nivel: d.nivel, casa: d.casa, pessoa: d.pessoa, token: d.token };
     });
@@ -1685,7 +1726,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '9d8b35015ff0';
+  var BUILD = '33e37b460cc7';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
