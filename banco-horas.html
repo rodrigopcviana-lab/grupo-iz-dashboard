@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Banco de Horas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=33e37b460cc7">
+<link rel="stylesheet" href="portal.css?v=fe9aefc0230f">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -505,6 +505,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-badge.ok { background:#17352b; color:var(--verde); }
   .bh-badge.atencao { background:#3a2d12; color:var(--amarelo); }
   .bh-badge.critico { background:#3a1414; color:var(--verm); }
+  .bh-badge.divergencia { background:#3a1414; color:var(--verm); cursor:help; }
+  .bh-nome-wrap { display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
   .bh-tend { font-size:12px; }
   .bh-tend.melhorando { color:var(--verde); }
   .bh-tend.piorando { color:var(--verm); }
@@ -994,6 +996,7 @@ window.msgAcessoNegado = function (nomePagina) {
           casa: nomeCasa, casa_slug: slug, matricula: b.matricula, nome: b.nome,
           saldo_texto: b.saldo_atual_texto, saldo_minutos: b.saldo_atual_minutos,
           situacao: b.situacao, tendencia: tendenciaDe(b.historico), custo: custo,
+          divergencia: b.divergencia_gestao || null,
         });
         if (b.plano_zerar_horas && b.plano_zerar_horas.minutos_por_dia) {
           planoPessoas.push({
@@ -1069,8 +1072,16 @@ window.msgAcessoNegado = function (nomePagina) {
         var tr = document.createElement('tr');
         tr.appendChild(td(p.casa));
         var tdNome = document.createElement('td');
+        var nomeWrap = document.createElement('div'); nomeWrap.className = 'bh-nome-wrap';
         var nomeEl = document.createElement('div'); nomeEl.className = 'bh-nome'; nomeEl.textContent = p.nome;
-        tdNome.appendChild(nomeEl);
+        nomeWrap.appendChild(nomeEl);
+        if (p.divergencia) {
+          var divBadge = document.createElement('span');
+          divBadge.className = 'bh-badge divergencia'; divBadge.textContent = 'Divergência';
+          divBadge.title = p.divergencia;
+          nomeWrap.appendChild(divBadge);
+        }
+        tdNome.appendChild(nomeWrap);
         tr.appendChild(tdNome);
         var tdSaldo = document.createElement('td'); tdSaldo.className = 'n';
         var saldoEl = document.createElement('span'); saldoEl.className = 'bh-saldo neg';
@@ -1190,8 +1201,16 @@ window.msgAcessoNegado = function (nomePagina) {
         var tr = document.createElement('tr');
         tr.appendChild(td(p.casa || '—'));
         var tdNome = document.createElement('td');
+        var nomeWrap = document.createElement('div'); nomeWrap.className = 'bh-nome-wrap';
         var nomeEl = document.createElement('div'); nomeEl.className = 'bh-nome'; nomeEl.textContent = p.nome || '—';
-        tdNome.appendChild(nomeEl);
+        nomeWrap.appendChild(nomeEl);
+        if (p.divergencia) {
+          var divBadge = document.createElement('span');
+          divBadge.className = 'bh-badge divergencia'; divBadge.textContent = 'Divergência';
+          divBadge.title = p.divergencia;
+          nomeWrap.appendChild(divBadge);
+        }
+        tdNome.appendChild(nomeWrap);
         tr.appendChild(tdNome);
         tr.appendChild(td(p.matricula || '—'));
 
@@ -2325,7 +2344,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '33e37b460cc7';
+  var BUILD = 'fe9aefc0230f';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
