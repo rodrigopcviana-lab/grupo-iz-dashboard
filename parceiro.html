@@ -56,7 +56,6 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .ficha{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
 .ficha .nome{font-size:14px}
 .ficha .desc{font-size:12px;color:var(--text-3);margin-top:2px}
-.ficha .venda{font-size:13px;color:var(--text-2);white-space:nowrap}
 
 .serie{display:flex;gap:3px;align-items:flex-end;height:36px;margin-top:8px}
 .serie .col{flex:1;background:var(--border);border-radius:2px;min-height:2px}
@@ -245,9 +244,10 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
         esq.appendChild(el('div', 'nome', f.nome + (f.casa ? ' · ' + f.casa : '')));
         if (f.descricao) esq.appendChild(el('div', 'desc', f.descricao));
         lin.appendChild(esq);
-        if (f.venda != null) {
-          lin.appendChild(el('div', 'venda', f.venda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })));
-        }
+        // SEM preço de propósito: o parceiro é gente de fora e o plano
+        // (§0.4/§3.1b) manda a página não ter R$ nenhum. O payload já nasce
+        // sem `venda` (parceiros_gen.py); este render não a reintroduz nem
+        // se um dia o campo voltar. Achado na revisão adversarial E8.
         card.appendChild(lin);
         painel.appendChild(card);
       });

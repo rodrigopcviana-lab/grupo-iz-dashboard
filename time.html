@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Time · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=c0a00d59acd8">
+<link rel="stylesheet" href="portal.css?v=8db89cefa37a">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -498,6 +498,8 @@ window.msgAcessoNegado = function (nomePagina) {
 
   <div class="fp-tiles" id="fp-tiles"></div>
 
+  <div class="fp-faixa" id="fp-faixa" hidden></div>
+
   <div id="fp-alertas"></div>
 
   <div class="fp-barra">
@@ -556,11 +558,21 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <style>
   .fp-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 18px; }
-  .fp-tile { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+  .fp-tile { display:block; width:100%; text-align:left; font:inherit; cursor:pointer;
+    background:var(--card); border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; }
   .fp-tile b { display:block; font-size:26px; line-height:1.1; }
-  .fp-tile span { font-size:12px; color:var(--text-2); }
+  .fp-tile span { font-size:12px; color:var(--text-2); display:flex; align-items:center; gap:4px; }
   .fp-tile.aviso b { color:#c2410c; }
   .fp-tile.ruim b { color:#b91c1c; }
+  .fp-tile.on { border-color:var(--acc); background:var(--card); }
+  .fp-tile.on span { color:var(--acc); }
+
+  .fp-faixa { display:flex; gap:9px; align-items:flex-start; border-radius:10px;
+    padding:10px 13px; margin:0 0 14px; background:var(--acc-fraco, rgba(59,130,246,.08)); }
+  .fp-faixa svg { flex:none; margin-top:2px; color:var(--acc); }
+  .fp-faixa p { margin:0; font-size:13px; line-height:1.5; color:var(--text-2); flex:1; }
+  .fp-faixa button { flex:none; font:inherit; font-size:12px; padding:4px 11px; border:1px solid var(--border);
+    border-radius:999px; background:var(--card); color:var(--text-2); cursor:pointer; align-self:center; }
 
   .fp-alerta { display:flex; gap:9px; align-items:flex-start; border:1px solid var(--border);
     border-left:3px solid #c2410c; border-radius:10px; padding:10px 13px; margin:0 0 10px; background:var(--card); }
@@ -654,6 +666,7 @@ window.msgAcessoNegado = function (nomePagina) {
   var casaFiltro = null;
   var soFalta = false;
   var editando = null;
+  var recorte = null; // 'com' | 'sem' | 'limite' | 'sobrep' | null (todos)
 
   // ---- datas: tudo em AAAA-MM-DD, comparado como texto (ordem lexicográfica
   // = ordem cronológica nesse formato) pra não esbarrar em fuso horário.
@@ -736,22 +749,81 @@ window.msgAcessoNegado = function (nomePagina) {
     return { comFerias: comFerias, semFerias: semFerias, limiteRisco: limiteRisco, sobrep: sobrep };
   }
 
+  // pessoas de cada recorte (não só a contagem) — o que a faixa/tabela usam
+  // pra explicar e filtrar. sobrep vem de PARES; achata pra pessoas únicas.
+  function pessoasSobrep(an) {
+    var vistos = {}, lista = [];
+    an.sobrep.forEach(function (s) {
+      [s.a, s.b].forEach(function (p) {
+        if (!vistos[p.id]) { vistos[p.id] = true; lista.push(p); }
+      });
+    });
+    return lista;
+  }
+
+  var RECORTES = {
+    com: { rot: 'com férias planejadas', tom: '',
+      exp: 'Quem já tem saída e último dia gravados no Quadro de Equipes.' },
+    sem: { rot: 'ainda sem plano', tom: 'aviso',
+      exp: 'Ninguém marcou período de férias pra essas pessoas ainda — é a fila de trabalho do planejamento.' },
+    limite: { rot: 'no limite (90 dias)', tom: 'ruim',
+      exp: 'Limite legal: as férias precisam começar até 12 meses após o fim do período aquisitivo. Estas pessoas vencem em até 90 dias e não têm férias marcadas dentro do prazo.' },
+    sobrep: { rot: 'sobreposições na casa', tom: 'ruim',
+      exp: 'Duas ou mais pessoas da mesma casa de férias ao mesmo tempo — o conflito que atrapalha a escala.' },
+  };
+
+  function listaDoRecorte(an, chave) {
+    if (chave === 'com') return an.comFerias;
+    if (chave === 'sem') return an.semFerias;
+    if (chave === 'limite') return an.limiteRisco;
+    if (chave === 'sobrep') return pessoasSobrep(an);
+    return null;
+  }
+
   function renderTiles(an) {
     var alvo = document.getElementById('fp-tiles');
     alvo.textContent = '';
     [
-      { n: an.comFerias.length, r: 'com férias planejadas', c: '' },
-      { n: an.semFerias.length, r: 'ainda sem plano', c: an.semFerias.length ? 'aviso' : '' },
-      { n: an.limiteRisco.length, r: 'no limite (90 dias)', c: an.limiteRisco.length ? 'ruim' : '' },
-      { n: an.sobrep.length, r: 'sobreposições na casa', c: an.sobrep.length ? 'ruim' : '' },
-    ].forEach(function (t) {
-      var d = document.createElement('div');
-      d.className = 'fp-tile' + (t.c ? ' ' + t.c : '');
-      var b = document.createElement('b'); b.textContent = String(t.n);
-      var s = document.createElement('span'); s.textContent = t.r;
-      d.appendChild(b); d.appendChild(s);
-      alvo.appendChild(d);
+      ['com', an.comFerias.length],
+      ['sem', an.semFerias.length],
+      ['limite', an.limiteRisco.length],
+      ['sobrep', an.sobrep.length],
+    ].forEach(function (par) {
+      var chave = par[0], n = par[1], info = RECORTES[chave];
+      var cor = (chave === 'sem' || chave === 'limite' || chave === 'sobrep') && n ? info.tom : '';
+      var on = recorte === chave;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'fp-tile' + (cor ? ' ' + cor : '') + (on ? ' on' : '');
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var bEl = document.createElement('b'); bEl.textContent = String(n);
+      var s = document.createElement('span'); s.textContent = info.rot;
+      b.appendChild(bEl); b.appendChild(s);
+      b.addEventListener('click', function () { recorte = on ? null : chave; render(); });
+      alvo.appendChild(b);
     });
+  }
+
+  function renderFaixa(an) {
+    var alvo = document.getElementById('fp-faixa');
+    if (!recorte) { alvo.hidden = true; alvo.textContent = ''; return; }
+    var info = RECORTES[recorte];
+    alvo.hidden = false;
+    alvo.textContent = '';
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '17'); svg.setAttribute('height', '17'); svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '1.8');
+    svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round');
+    svg.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>';
+    var p = document.createElement('p');
+    var bTxt = document.createElement('b'); bTxt.textContent = info.rot; bTxt.style.fontWeight = '600';
+    p.appendChild(document.createTextNode('Mostrando '));
+    p.appendChild(bTxt);
+    p.appendChild(document.createTextNode('. ' + info.exp));
+    var bt = document.createElement('button');
+    bt.type = 'button'; bt.textContent = 'Ver todos';
+    bt.addEventListener('click', function () { recorte = null; render(); });
+    alvo.appendChild(svg); alvo.appendChild(p); alvo.appendChild(bt);
   }
 
   function alerta(texto) {
@@ -797,10 +869,11 @@ window.msgAcessoNegado = function (nomePagina) {
     });
   }
 
-  function renderTabela() {
+  function renderTabela(an) {
     var tbody = document.getElementById('fp-linhas');
     tbody.textContent = '';
-    var lista = PESSOAS.filter(function (p) {
+    var base = recorte ? listaDoRecorte(an, recorte) : PESSOAS;
+    var lista = base.filter(function (p) {
       if (casaFiltro !== null && p.casa !== casaFiltro) return false;
       if (soFalta && p.saida_ferias) return false;
       return true;
@@ -873,7 +946,8 @@ window.msgAcessoNegado = function (nomePagina) {
       tdv.colSpan = 7;
       tdv.className = 'fp-vazio';
       tdv.style.padding = '18px 10px';
-      tdv.textContent = soFalta ? 'Todo mundo desse recorte já tem férias planejadas.' : 'Ninguém nesse recorte.';
+      tdv.textContent = recorte ? 'Nada neste recorte.'
+        : (soFalta ? 'Todo mundo desse recorte já tem férias planejadas.' : 'Ninguém nesse recorte.');
       trv.appendChild(tdv); tbody.appendChild(trv);
     }
   }
@@ -881,9 +955,10 @@ window.msgAcessoNegado = function (nomePagina) {
   function render() {
     var an = analisa();
     renderTiles(an);
+    renderFaixa(an);
     renderAlertas(an);
     renderChips();
-    renderTabela();
+    renderTabela(an);
     var rod = document.getElementById('fp-rodape');
     rod.textContent = PESSOAS.length + ' pessoas no quadro. ' + (PODE_EDITAR
       ? 'Editar aqui grava direto no Quadro de Equipes — é a mesma ficha que a aba Equipe e o gestor de escalas leem.'
@@ -2132,7 +2207,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c0a00d59acd8';
+  var BUILD = '8db89cefa37a';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
