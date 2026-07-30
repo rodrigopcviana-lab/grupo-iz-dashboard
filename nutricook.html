@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Nutricook · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=59e35acf0e80">
+<link rel="stylesheet" href="portal.css?v=44d68cfed093">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -453,6 +453,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .ntc-set .p { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; }
   .ntc-set .b { height:4px; border-radius:3px; background:var(--bg); margin-top:7px; overflow:hidden; }
   .ntc-set .b i { display:block; height:100%; border-radius:3px; }
+  .ntc-set .pts { font-size:10.5px; color:var(--text-3); margin-top:5px; }
   .ntc-set.crit .p { color:#ff9aa8; } .ntc-set.crit .b i { background:#c4586a; }
   .ntc-set.aten .p { color:#f0cf8a; } .ntc-set.aten .b i { background:#b99a4e; }
   .ntc-set.bom  .p { color:#8fd6a8; } .ntc-set.bom  .b i { background:#4f9b6d; }
@@ -673,6 +674,16 @@ window.msgAcessoNegado = function (nomePagina) {
       i.style.width = Math.max(0, Math.min(100, s.nota || 0)) + '%';
       b.appendChild(i);
       c.appendChild(b);
+      // A2 (2026-07-30): pontos exatos, não só o percentual arredondado — e
+      // NA (não aplicável) declarado, nunca escondido. Achado real: NA já
+      // aparece > 0 em auditorias de verdade (não é caso hipotético) — sem
+      // mostrar isso, "27 de 27 pontos" pareceria nota máxima quando na
+      // verdade 1 item nem foi avaliado naquele dia.
+      if (typeof s.pr === 'number' && typeof s.pp === 'number') {
+        var pts = el('div', 'pts', s.pr + ' de ' + s.pp + ' pts' +
+          (s.na ? ' · ' + s.na + ' não aplicável(is)' : ''));
+        c.appendChild(pts);
+      }
       g.appendChild(c);
     });
     return g;
@@ -796,7 +807,7 @@ window.msgAcessoNegado = function (nomePagina) {
       var itensResto = (ult.nao_conformes || []).filter(function (x) { return x.setor !== 'Bar'; });
 
       c.appendChild(el('div', 'ntc-sec', 'O que foi reprovado no seu bar'));
-      var ncBarBloco = blocoItensSetor(itensBar);
+      var ncBarBloco = blocoItensSetor(itensBar.map(function (x) { return x.item; }));
       if (ncBarBloco) {
         c.appendChild(el('p', 'ntc-sec-sub', 'Item a item, como está no relatório da auditoria de ' + diaMes(ult.data) + '.'));
         c.appendChild(ncBarBloco);
@@ -2087,7 +2098,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '59e35acf0e80';
+  var BUILD = '44d68cfed093';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

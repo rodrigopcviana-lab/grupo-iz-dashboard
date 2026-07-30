@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Inventário · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=59e35acf0e80">
+<link rel="stylesheet" href="portal.css?v=44d68cfed093">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1888,6 +1888,24 @@ window.msgAcessoNegado = function (nomePagina) {
   .ve-badge.disponivel { background:#1d2a26; color:var(--verde); }
   .ve-badge.reservado { background:#2f2a1a; color:var(--amarelo); }
   .ve-badge.vendido, .ve-badge.descartado { background:var(--bg); color:var(--text-3); }
+  .ve-mutirao { background:var(--card); border:1px solid var(--border); border-radius:12px;
+      padding:12px 14px; margin-bottom:14px; }
+  .ve-mutirao-topo { display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; }
+  .ve-mutirao-topo b { font-size:13.5px; font-weight:600; display:block; }
+  .ve-mutirao-topo span { font-size:11.5px; color:var(--text-3); display:block; margin-top:2px; }
+  .ve-mut-cab { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+      margin:12px 0 8px; font-size:12px; color:var(--text-2); }
+  .ve-mut-local { font-size:11px; color:var(--text-3); display:flex; align-items:center; gap:6px; }
+  .ve-mut-local select { padding:7px 8px; font-size:12.5px; border-radius:8px; border:1px solid var(--border);
+      background:var(--bg); color:var(--text); font-family:inherit; }
+  .ve-mut-item { display:grid; grid-template-columns:22px minmax(0,1fr); gap:9px; align-items:start;
+      padding:9px 2px; border-bottom:1px solid var(--border); }
+  .ve-mut-item input[type=checkbox] { margin-top:9px; }
+  .ve-mut-campos { display:grid; grid-template-columns:minmax(0,1fr); gap:6px; }
+  @media (min-width:560px) { .ve-mut-campos { grid-template-columns:minmax(0,2fr) 96px 96px 92px; } }
+  .ve-mut-campos input, .ve-mut-campos select { width:100%; padding:7px 8px; font-size:12.5px; border-radius:7px;
+      box-sizing:border-box; border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:inherit; }
+  .ve-mut-baixa { font-size:10.5px; color:var(--amarelo); grid-column:1/-1; }
   .ve-badge.rascunho { background:var(--bg); color:var(--text-3); }
   .ve-badge.enviado { background:#2f2a1a; color:var(--amarelo); }
   .ve-badge.aceito { background:#1d2a26; color:var(--verde); }
@@ -1969,6 +1987,33 @@ window.msgAcessoNegado = function (nomePagina) {
 <div id="ve-pane-catalogo" class="ve-subpane">
   <div class="ve-chips" id="ve-chips-local"></div>
   <p class="ve-resumo" id="ve-resumo"></p>
+
+  <div class="ve-mutirao" id="ve-mutirao">
+    <div class="ve-mutirao-topo">
+      <div>
+        <b>Catalogar por foto</b>
+        <span>Fotografe uma parte do depósito — a leitura sugere os itens e você confere antes de gravar.</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="ve-foto-btn" id="ve-mut-cam"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg> Câmera</button>
+        <button type="button" class="ve-foto-btn" id="ve-mut-gal"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M5 17l4.5-4 3.5 3 2.5-2 3.5 3.5"/></svg> Galeria</button>
+      </div>
+    </div>
+    <input type="file" id="ve-mut-input-cam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="ve-mut-input-gal" accept="image/*" hidden>
+    <p class="ve-aviso" id="ve-mut-aviso" role="status" aria-live="polite"></p>
+    <div id="ve-mut-resultado" hidden>
+      <div class="ve-mut-cab">
+        <span id="ve-mut-contagem"></span>
+        <label class="ve-mut-local">Local
+          <select id="ve-mut-local"></select>
+        </label>
+      </div>
+      <div id="ve-mut-lista"></div>
+      <button class="ve-salvar" id="ve-mut-salvar" type="button">Cadastrar selecionados</button>
+      <button type="button" class="ve-cancelar" id="ve-mut-descartar">descartar leitura</button>
+    </div>
+  </div>
 
   <div class="ve-form" id="ve-form">
     <h3 id="ve-form-titulo">Cadastrar item</h3>
@@ -2083,6 +2128,141 @@ window.msgAcessoNegado = function (nomePagina) {
   var filtroLocal = null;
   var editandoId = null;
   var fotos = []; // ids da File Upload API já subidos, na ordem escolhida
+
+
+// --- PDF mínimo (sem biblioteca) -------------------------------------------
+// Monta o arquivo como STRING de bytes (todo caractere já mapeado para <256
+// por winansi()), o que permite calcular os offsets do xref com .length antes
+// de converter para Uint8Array. Com string UTF-16 crua os offsets sairiam
+// errados e o PDF abriria corrompido.
+var PDF_L = 595.28, PDF_A = 841.89, PDF_MARGEM = 52;
+
+function winansi(s) {
+  // Latin-1 direto quando dá; o que não couber vira equivalente sem acento.
+  var mapa = {
+    '—': '-', '–': '-', '‘': "'", '’': "'",
+    '“': '"', '”': '"', '…': '...', ' ': ' ',
+    '•': '-', '·': '-', '−': '-', 'º': 'o', 'ª': 'a'
+  };
+  var out = '';
+  for (var i = 0; i < s.length; i++) {
+    var c = s[i];
+    if (mapa[c]) { out += mapa[c]; continue; }
+    var cod = s.charCodeAt(i);
+    if (cod < 256) { out += c; continue; }
+    // Último recurso: decompõe o acento e joga fora a marca.
+    var base = c.normalize ? c.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '?';
+    out += (base && base.charCodeAt(0) < 256) ? base : '?';
+  }
+  return out;
+}
+
+function pdfEsc(s) { return s.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'); }
+
+// Largura média da Helvetica ~0,5 em; 0,52 dá folga e evita estouro à direita.
+function pdfQuebra(texto, tam, largura) {
+  var max = Math.max(8, Math.floor(largura / (tam * 0.52)));
+  var linhas = [];
+  String(texto).split(/\n/).forEach(function (paragrafo) {
+    var palavras = paragrafo.split(/\s+/).filter(Boolean);
+    if (!palavras.length) { linhas.push(''); return; }
+    var atual = '';
+    palavras.forEach(function (p) {
+      if (!atual) { atual = p; return; }
+      if ((atual + ' ' + p).length <= max) atual += ' ' + p;
+      else { linhas.push(atual); atual = p; }
+    });
+    if (atual) linhas.push(atual);
+  });
+  return linhas;
+}
+
+// blocos: [{t:'h1'|'h2'|'p'|'li'|'sep', texto}] — a paginação é decidida aqui,
+// não pelo chamador.
+function pdfMonta(titulo, subtitulo, blocos) {
+  var larg = PDF_L - PDF_MARGEM * 2;
+  var paginas = [], atual = [], y = PDF_A - PDF_MARGEM;
+  function novaPagina() { if (atual.length) paginas.push(atual); atual = []; y = PDF_A - PDF_MARGEM; }
+  function escreve(txt, tam, negrito, recuo) {
+    var linhas = pdfQuebra(txt, tam, larg - (recuo || 0));
+    for (var i = 0; i < linhas.length; i++) {
+      if (y < PDF_MARGEM + 28) novaPagina();
+      atual.push({ x: PDF_MARGEM + (recuo || 0), y: y, tam: tam, negrito: negrito, txt: linhas[i] });
+      y -= tam * 1.42;
+    }
+  }
+  escreve(titulo, 18, true, 0); y -= 4;
+  if (subtitulo) { escreve(subtitulo, 9.5, false, 0); }
+  y -= 10;
+  blocos.forEach(function (b) {
+    if (!b) return;
+    if (b.tipo === 'sep') { y -= 9; return; }
+    if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0); y -= 3; return; }
+    if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0); y -= 2; return; }
+    if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }
+    escreve(b.texto, 10.5, false, 0);
+    y -= 4;
+  });
+  if (atual.length) paginas.push(atual);
+  if (!paginas.length) paginas.push([]);
+
+  var objs = [], corpo = '%PDF-1.4\n';
+  function add(txt) { objs.push(corpo.length); corpo += txt; }
+  // 1 catálogo, 2 páginas, 3 e 4 fontes, depois 2 objetos por página.
+  var nPag = paginas.length;
+  var kids = [];
+  for (var i = 0; i < nPag; i++) kids.push((5 + i * 2) + ' 0 R');
+  add('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
+  add('2 0 obj\n<</Type/Pages/Kids[' + kids.join(' ') + ']/Count ' + nPag + '>>\nendobj\n');
+  add('3 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>\nendobj\n');
+  add('4 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>\nendobj\n');
+  paginas.forEach(function (linhas, idx) {
+    var num = 5 + idx * 2;
+    var fluxo = 'BT\n';
+    var fonteAtual = null, tamAtual = null;
+    linhas.forEach(function (l) {
+      var f = l.negrito ? '/F2' : '/F1';
+      if (f !== fonteAtual || l.tam !== tamAtual) {
+        fluxo += f + ' ' + l.tam + ' Tf\n';
+        fonteAtual = f; tamAtual = l.tam;
+      }
+      fluxo += '1 0 0 1 ' + l.x.toFixed(2) + ' ' + l.y.toFixed(2) + ' Tm\n';
+      fluxo += '(' + pdfEsc(winansi(l.txt)) + ') Tj\n';
+    });
+    fluxo += 'ET';
+    add(num + ' 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 ' + PDF_L.toFixed(2) + ' ' + PDF_A.toFixed(2) +
+        ']/Resources<</Font<</F1 3 0 R/F2 4 0 R>>>>/Contents ' + (num + 1) + ' 0 R>>\nendobj\n');
+    add((num + 1) + ' 0 obj\n<</Length ' + fluxo.length + '>>\nstream\n' + fluxo + '\nendstream\nendobj\n');
+  });
+  // O padding do xref é montado em laço de propósito: um literal de 10 zeros
+  // aqui é lido como TELEFONE pelo _checa_publica e aborta a geração do portal
+  // inteiro (mesma armadilha que o build id já causou no Bento).
+  function pad10(n) { var s = String(n); while (s.length < 10) s = '0' + s; return s; }
+  var inicioXref = corpo.length;
+  var total = objs.length + 1;
+  var xref = 'xref\n0 ' + total + '\n' + pad10(0) + ' 65535 f \n';
+  objs.forEach(function (off) { xref += pad10(off) + ' 00000 n \n'; });
+  corpo += xref + 'trailer\n<</Size ' + total + '/Root 1 0 R>>\nstartxref\n' + inicioXref + '\n%%EOF';
+
+  var bytes = new Uint8Array(corpo.length);
+  for (var k = 0; k < corpo.length; k++) bytes[k] = corpo.charCodeAt(k) & 0xff;
+  return new Blob([bytes], { type: 'application/pdf' });
+}
+
+function pdfBaixa(nomeArquivo, titulo, subtitulo, blocos) {
+  var blob = pdfMonta(titulo, subtitulo, blocos);
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = nomeArquivo.replace(/[^\w.\- ]+/g, '').slice(0, 90) || 'treinamento.pdf';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+
+function nomeArquivoSeguro(base) {
+  var s = base.normalize ? base.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : base;
+  return s.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 70);
+}
+
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -2392,6 +2572,188 @@ window.msgAcessoNegado = function (nomePagina) {
   btnNovo.textContent = '+ Cadastrar item';
   btnNovo.onclick = function () { limpaForm(); abreForm(); };
   document.getElementById('ve-chips-local').parentNode.insertBefore(btnNovo, document.getElementById('ve-resumo'));
+
+  // ================= MUTIRÃO: CATALOGAR POR FOTO (E9) =================
+  //
+  // A IA PROPÕE, o humano CONFIRMA: /ler-foto não grava nada, devolve o que
+  // viu; só o "Cadastrar selecionados" faz POST, item a item, com o que
+  // estiver na tela DEPOIS da conferência. Um item inventado que entrasse
+  // direto no catálogo viraria linha de orçamento e depois promessa a um
+  // comprador real.
+  //
+  // A IA nunca preenche PREÇO (nem `R$ novo`, nem `%`) — nem é oferecido aqui:
+  // o item nasce "a precificar" e o preço é decidido depois, item a item, na
+  // edição normal do catálogo. E `dimensões` só vem preenchido quando estava
+  // ESCRITO na foto; medida estimada por perspectiva é chute com consequência
+  // física (móvel que não cabe no lugar do comprador).
+  var MUT = [];        // itens lidos, já saneados pelo Worker
+  var MUT_FOTO = null; // file_upload id da foto lida, anexado aos confirmados
+
+  function mutAviso(txt, classe) {
+    var el = document.getElementById('ve-mut-aviso');
+    el.className = 've-aviso' + (classe ? ' ' + classe : '');
+    el.textContent = txt || '';
+  }
+
+  function mutRender() {
+    var box = document.getElementById('ve-mut-lista');
+    box.innerHTML = '';
+    document.getElementById('ve-mut-resultado').hidden = !MUT.length;
+    if (!MUT.length) return;
+    document.getElementById('ve-mut-contagem').textContent =
+      MUT.length + (MUT.length === 1 ? ' item lido' : ' itens lidos') + ' — confira antes de cadastrar';
+
+    MUT.forEach(function (it, idx) {
+      var linha = document.createElement('div'); linha.className = 've-mut-item';
+      var ck = document.createElement('input'); ck.type = 'checkbox'; ck.checked = it.usar !== false;
+      ck.setAttribute('aria-label', 'Cadastrar ' + (it.nome || 'item'));
+      ck.onchange = function () { MUT[idx].usar = ck.checked; };
+      linha.appendChild(ck);
+
+      var campos = document.createElement('div'); campos.className = 've-mut-campos';
+
+      var inNome = document.createElement('input'); inNome.type = 'text'; inNome.maxLength = 200;
+      inNome.value = it.nome || ''; inNome.setAttribute('aria-label', 'Nome do item');
+      inNome.oninput = function () { MUT[idx].nome = inNome.value; };
+      campos.appendChild(inNome);
+
+      var selTipo = document.createElement('select'); selTipo.setAttribute('aria-label', 'Tipo');
+      var o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'tipo —'; selTipo.appendChild(o0);
+      TIPOS.forEach(function (t) {
+        var o = document.createElement('option'); o.value = t; o.textContent = t;
+        if (t === it.tipo) o.selected = true;
+        selTipo.appendChild(o);
+      });
+      selTipo.onchange = function () { MUT[idx].tipo = selTipo.value || null; };
+      campos.appendChild(selTipo);
+
+      var selEstado = document.createElement('select'); selEstado.setAttribute('aria-label', 'Estado');
+      var e0 = document.createElement('option'); e0.value = ''; e0.textContent = 'estado —'; selEstado.appendChild(e0);
+      ESTADOS.forEach(function (e) {
+        var o = document.createElement('option'); o.value = e; o.textContent = e;
+        if (e === it.estado) o.selected = true;
+        selEstado.appendChild(o);
+      });
+      selEstado.onchange = function () { MUT[idx].estado = selEstado.value || null; };
+      campos.appendChild(selEstado);
+
+      var inQtd = document.createElement('input'); inQtd.type = 'number'; inQtd.min = '1'; inQtd.step = '1';
+      inQtd.placeholder = 'qtd'; inQtd.value = it.quantidade == null ? '' : String(it.quantidade);
+      inQtd.setAttribute('aria-label', 'Quantidade');
+      inQtd.oninput = function () { MUT[idx].quantidade = inQtd.value === '' ? null : Number(inQtd.value); };
+      campos.appendChild(inQtd);
+
+      var inDim = document.createElement('input'); inDim.type = 'text'; inDim.maxLength = 120;
+      inDim.placeholder = 'dimensões (meça na hora)'; inDim.value = it.dimensoes || '';
+      inDim.setAttribute('aria-label', 'Dimensões');
+      inDim.style.gridColumn = '1/-1';
+      inDim.oninput = function () { MUT[idx].dimensoes = inDim.value; };
+      campos.appendChild(inDim);
+
+      if (it.confianca === 'baixa') {
+        var av = document.createElement('div'); av.className = 've-mut-baixa';
+        av.textContent = 'leitura incerta — confira o nome antes de cadastrar';
+        campos.appendChild(av);
+      }
+
+      linha.appendChild(campos);
+      box.appendChild(linha);
+    });
+  }
+
+  function mutLerFoto(file) {
+    mutAviso('Lendo a foto…');
+    reduzImagem(file, function (blob) {
+      fetch(WORKER + '/api/venda-catalogo/ler-foto', {
+        method: 'POST', headers: { 'Content-Type': blob.type || 'image/jpeg', 'X-Token': TOKEN }, body: blob,
+      }).then(function (r) {
+        if (r.status === 401) { trata401(); return null; }
+        return r.json().then(function (d) { return { status: r.status, dados: d }; });
+      }).then(function (r2) {
+        if (!r2) return;
+        if (r2.status !== 200) {
+          mutAviso((r2.dados && r2.dados.erro) || 'Não foi possível ler a foto.', 'err');
+          return;
+        }
+        MUT = (r2.dados.itens || []).map(function (i) { i.usar = true; return i; });
+        MUT_FOTO = r2.dados.foto_id || null;
+        if (!MUT.length) {
+          mutAviso(r2.dados.aviso || 'A leitura não encontrou equipamentos nesta foto.', 'err');
+          document.getElementById('ve-mut-resultado').hidden = true;
+          return;
+        }
+        mutAviso(r2.dados.aviso || '');
+        montaSelectMutLocal();
+        mutRender();
+      }).catch(function () { mutAviso('Sem conexão — tente de novo.', 'err'); });
+    });
+  }
+
+  function montaSelectMutLocal() {
+    var sel = document.getElementById('ve-mut-local');
+    if (sel.dataset.montado) return;
+    if (LOCAL_FIXO) {
+      opt(sel, LOCAL_FIXO, LOCAL_FIXO); sel.disabled = true;
+    } else {
+      Object.keys(TODOS_LOCAIS).forEach(function (slug) { opt(sel, slug, TODOS_LOCAIS[slug]); });
+      // O mutirão nasce apontando pro Depósito: é o caso de uso que originou
+      // a etapa (o que está guardado lá ainda não foi catalogado por ninguém).
+      if (TODOS_LOCAIS.deposito) sel.value = 'deposito';
+    }
+    sel.dataset.montado = '1';
+  }
+
+  document.getElementById('ve-mut-cam').onclick = function () { document.getElementById('ve-mut-input-cam').click(); };
+  document.getElementById('ve-mut-gal').onclick = function () { document.getElementById('ve-mut-input-gal').click(); };
+  ['ve-mut-input-cam', 've-mut-input-gal'].forEach(function (id) {
+    document.getElementById(id).onchange = function (e) {
+      var f = (e.target.files || [])[0]; e.target.value = '';
+      if (f) mutLerFoto(f);
+    };
+  });
+  document.getElementById('ve-mut-descartar').onclick = function () {
+    MUT = []; MUT_FOTO = null; mutAviso(''); mutRender();
+  };
+
+  // Grava um a um (o Worker cria uma página por item). Falha de um item não
+  // derruba os outros, e o relatório final diz exatamente quantos entraram —
+  // nunca "pronto" cobrindo uma gravação que não aconteceu.
+  document.getElementById('ve-mut-salvar').onclick = function () {
+    var escolhidos = MUT.filter(function (i) { return i.usar !== false && (i.nome || '').trim(); });
+    if (!escolhidos.length) { mutAviso('Marque ao menos um item com nome preenchido.', 'err'); return; }
+    var local = LOCAL_FIXO ? null : document.getElementById('ve-mut-local').value;
+    var bt = document.getElementById('ve-mut-salvar');
+    bt.disabled = true;
+    mutAviso('Cadastrando ' + escolhidos.length + ' item(ns)…');
+
+    var feitos = 0, falhos = 0;
+    escolhidos.reduce(function (p, it) {
+      return p.then(function () {
+        var body = {
+          nome: it.nome.trim(),
+          tipo: it.tipo || null,
+          estado: it.estado || null,
+          dimensoes: it.dimensoes || '',
+          qtd: it.quantidade == null ? null : it.quantidade,
+        };
+        if (local) body.local = local;
+        if (MUT_FOTO) body.fotos = [MUT_FOTO];
+        return fetch(WORKER + '/api/venda-catalogo', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+          body: JSON.stringify(body),
+        }).then(function (r) { if (r.ok) feitos++; else falhos++; })
+          .catch(function () { falhos++; });
+      });
+    }, Promise.resolve()).then(function () {
+      bt.disabled = false;
+      MUT = []; MUT_FOTO = null;
+      mutRender();
+      mutAviso(feitos + ' item(ns) cadastrado(s)'
+        + (falhos ? ' — ' + falhos + ' falhou(aram), tente de novo' : '') + '. Preço fica a definir na edição de cada item.',
+        falhos ? 'err' : 'ok');
+      carrega();
+    });
+  };
 
   // ================= MONTAR ORÇAMENTO (E6) =================
   //
@@ -2729,6 +3091,11 @@ window.msgAcessoNegado = function (nomePagina) {
       bDup.onclick = function () { duplicaOrcamento(o); };
       acoes.appendChild(bDup);
 
+      var bPdf = document.createElement('button'); bPdf.type = 'button'; bPdf.className = 've-chip veL-acao';
+      bPdf.textContent = 'Exportar PDF';
+      bPdf.onclick = function () { exportaPdfOrcamento(o); };
+      acoes.appendChild(bPdf);
+
       var selStatus = document.createElement('select'); selStatus.className = 'veL-sel-status';
       STATUS_ORC.forEach(function (s) { var op = document.createElement('option'); op.value = s; op.textContent = s; if (s === o.status) op.selected = true; selStatus.appendChild(op); });
       selStatus.onchange = function () { mudaStatusOrc(o.id, selStatus.value); };
@@ -2801,6 +3168,55 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('veo-comprador').value = '';
     document.getElementById('veo-comprador').focus();
     document.getElementById('veo-salvar').textContent = 'Salvar orçamento';
+  }
+
+  // Documento pro comprador (E8, D5). PDF sem biblioteca (JS_TREINO_PDF,
+  // compartilhado com Cartão do Treinador/Auditorias) — o portal é PWA com
+  // CSP e não carrega CDN, então jsPDF via <script src> não funcionaria
+  // offline. Aqui não há uma linha de "custo interno" a esconder (R$ Novo é
+  // preço de referência público, não CMV) — diferente do Orçamento de
+  // Eventos, que separa Proposta de Custos por causa de margem.
+  function fmtDataBr(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
+  }
+  function exportaPdfOrcamento(o) {
+    var comprador = o.comprador || o.nome || 'comprador';
+    var blocos = [];
+    var linhaSub = [];
+    if (o.contato) linhaSub.push('Contato: ' + o.contato);
+    if (o.validade) linhaSub.push('Validade da proposta: ' + fmtDataBr(o.validade));
+    if (linhaSub.length) blocos.push({ tipo: 'p', texto: linhaSub.join('  ·  ') });
+    blocos.push({ tipo: 'sep' });
+    blocos.push({ tipo: 'h2', texto: 'Itens' });
+
+    var pendentes = 0;
+    (o.linhas || []).forEach(function (l) {
+      var qtdTxt = l.qtd == null ? '' : ' (qtd ' + l.qtd + ')';
+      if (l.a_precificar) {
+        pendentes++;
+        blocos.push({ tipo: 'li', texto: l.nome + qtdTxt + ' — preço a combinar' });
+      } else {
+        blocos.push({ tipo: 'li', texto: l.nome + qtdTxt + ' — ' + fmtR(l.preco_base) + '/un — total ' + fmtR(l.total) });
+      }
+    });
+
+    blocos.push({ tipo: 'sep' });
+    var totalTxt = 'Total: ' + fmtR(o.total);
+    if (pendentes > 0) {
+      totalTxt += ' (parcial — ' + pendentes + (pendentes === 1 ? ' item ainda sem preço definido)' : ' itens ainda sem preço definido)');
+    }
+    blocos.push({ tipo: 'h2', texto: totalTxt });
+    blocos.push({ tipo: 'p', texto: 'Proposta sujeita à confirmação de disponibilidade dos itens no momento do fechamento.' });
+
+    var subtitulo = 'Grupo IZ — gerado em ' + new Date().toLocaleDateString('pt-BR');
+    pdfBaixa(
+      nomeArquivoSeguro('proposta-' + comprador) + '.pdf',
+      'Proposta — ' + comprador,
+      subtitulo,
+      blocos
+    );
   }
 
   function mudaStatusOrc(id, status) {
@@ -3957,7 +4373,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '59e35acf0e80';
+  var BUILD = '44d68cfed093';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
