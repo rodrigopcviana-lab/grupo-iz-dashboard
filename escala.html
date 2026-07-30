@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Escala · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=4a762e11f43e">
+<link rel="stylesheet" href="portal.css?v=f8502d79be5f">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -440,6 +440,18 @@ visível e o motivo fica gravado no dia. Chefe de bar vê a própria casa; coord
 
 <div id="es-corpo" style="display:none">
 <style>
+  /* Modo leitura (rh, PLANO_MURAL_RH.md E1): esconde TODO controle de
+     escrita. Esconder e não só desabilitar porque um botão cinza convida ao
+     clique e o 401 do Worker não explica nada. A garantia real é do Worker
+     (rh não está em ESCALA_NIVEIS) — isto é honestidade de tela. */
+  body.es-so-leitura .es-cel-salvar,
+  body.es-so-leitura #es-salvar-tudo,
+  body.es-so-leitura #es-padrao-salvar,
+  body.es-so-leitura #es-versao-nova,
+  body.es-so-leitura #es-versao-oficial,
+  body.es-so-leitura #es-versao-excluir { display: none !important; }
+  body.es-so-leitura .es-cel select { pointer-events: none; opacity: .75; }
+
   .es-top { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
   .es-top label { font-size:12px; color:var(--text-3); }
   .es-top select { padding:11px 10px; font-size:14px; border-radius:10px;
@@ -756,6 +768,7 @@ visível e o motivo fica gravado no dia. Chefe de bar vê a própria casa; coord
 
   var TOKEN = null;
   var casaFixa = null; // slug se chefe individual (preso à própria casa)
+  var SO_LEITURA = false; // rh: vê a escala, não edita (ver inicia())
   function casaSel() { return casaFixa || document.getElementById('es-casa').value; }
   function opt(sel, valor, rotulo) {
     var o = document.createElement('option'); o.value = valor; o.textContent = rotulo; sel.appendChild(o);
@@ -1428,6 +1441,19 @@ visível e o motivo fica gravado no dia. Chefe de bar vê a própria casa; coord
   function inicia(sessao) {
     TOKEN = sessao.token;
     casaFixa = (sessao.casa && sessao.casa !== '*') ? sessao.casa : null;
+
+    // rh vê a escala e NÃO edita (PLANO_MURAL_RH.md, E1): o Worker deu rh a
+    // handleEscalaGet mas NÃO a ESCALA_NIVEIS, que gateia as 5 rotas de
+    // escrita. Sem esta trava de UI a página abre com todos os botões de
+    // salvar ativos e o RH só descobre no clique, levando 401 sem explicação.
+    // A garantia real continua sendo a do Worker — isto aqui é só honestidade
+    // de tela (mesmo padrão de `somenteLeitura` da Central de Demandas).
+    SO_LEITURA = sessao.nivel === 'rh';
+    if (SO_LEITURA) {
+      document.body.classList.add('es-so-leitura');
+      var av = document.getElementById('es-msg');
+      if (av) av.textContent = 'Você está vendo a escala em modo leitura — quem edita é o chefe da casa ou a coordenação.';
+    }
 
     var selCasa = document.getElementById('es-casa');
     Object.keys(CASAS).forEach(function (slug) { opt(selCasa, slug, CASAS[slug]); });
@@ -2527,7 +2553,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '4a762e11f43e';
+  var BUILD = 'f8502d79be5f';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
