@@ -70,6 +70,13 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .bar-fill{height:100%;border-radius:3px}
 .status{font-size:11px;padding:3px 9px;border-radius:999px;flex:none}
 
+/* Resposta da coordenação a um envio do parceiro (E3). Recuo à esquerda pra
+   ler como réplica, e não como mais um campo do card. */
+.resposta{margin-top:10px;padding:9px 11px;background:var(--bg);border-radius:9px;
+  border-left:2px solid var(--acc)}
+.resposta-cab{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em}
+.resposta-txt{font-size:13.5px;color:var(--text-1);margin-top:5px;line-height:1.55;white-space:pre-wrap}
+
 .ficha{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
 .ficha .nome{font-size:14px}
 .ficha .desc{font-size:12px;color:var(--text-3);margin-top:2px}
@@ -209,6 +216,12 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
       <span class="criar-opi" style="background:rgba(224,176,92,.16)">
         <svg viewBox="0 0 24 24" fill="none" stroke="#e0b05c" stroke-width="1.6"><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>
       <div><p class="criar-opt">Nota</p><p class="criar-opd">Anotação sua, privada — ninguém do grupo vê</p></div>
+    </div>
+    <div class="criar-op" data-tipo="Pergunta" role="button" tabindex="0">
+      <span class="criar-opi" style="background:rgba(200,160,220,.16)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c8a0dc" stroke-width="1.6"><path d="M9.2 9a2.8 2.8 0 1 1 3.8 2.6c-.7.3-1 .9-1 1.6v.6"/><path d="M12 17.2v.1"/><circle cx="12" cy="12" r="9"/></svg></span>
+      <div><p class="criar-opt">Pergunta</p>
+        <p class="criar-opd">Dúvida sobre o acordo — fica registrada aqui e a coordenação responde nesta página</p></div>
     </div>
     <p class="criar-fn">Nada é enviado sem você confirmar.</p>
   </div>
@@ -536,13 +549,17 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
     if (d.contrato_status !== 'ativo') {
       painel.appendChild(el('p', 'nota',
         d.contrato_status === 'em_negociacao'
-          ? 'Ainda não temos contrapartidas fechadas. Assim que o acordo for definido, elas aparecem aqui, no mesmo formato desta página.'
+          ? 'Ainda não temos contrapartidas fechadas. Assim que o acordo for definido, elas aparecem aqui, no mesmo formato desta página. Enquanto isso, esta página já é sua: use "Criar" para mandar uma ideia, propor um cocktail ou tirar uma dúvida — tudo fica registrado e a coordenação responde por aqui.'
           : 'O contrato ainda não foi assinado. As contrapartidas abaixo são as previstas e ainda não contam como pendência de entrega.'));
     }
 
     // Agenda (E7): populado por buscarAgenda(), chamada logo depois desta
     // função — o container nasce aqui, vazio, pra existir no DOM a tempo.
     painel.appendChild(el('div', '', null)).id = 'ag-holder';
+    // "O que você enviou" (E3): mesmo desenho — nasce vazio, carregaEnviados()
+    // preenche. Fica no fim do painel (é histórico, não é o acordo).
+    var envHolder = el('div', '', null);
+    envHolder.id = 'env-holder';
 
     // Itens individuais só. Metas agregadas (backbar %, cocktails por casa,
     // compra mínima) NUNCA entram aqui: têm seção própria mais abaixo,
@@ -627,6 +644,7 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
       rodapeTexto += ' ' + comEvidencia + ' de ' + contrapartidas.length +
         (contrapartidas.length === 1 ? ' item com' : ' itens com') + ' evidência anexada.';
     }
+    painel.appendChild(envHolder);
     painel.appendChild(el('p', 'rodape', rodapeTexto));
   }
 
@@ -682,6 +700,50 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
         });
       })
       .catch(function () { /* agenda é complemento — falha aqui não derruba o painel */ });
+  }
+
+  // --- O que você enviou (E3) ----------------------------------------------
+  // Antes disto o parceiro via só um contador no perfil: mandava ideia,
+  // receita ou dúvida e nunca sabia o que tinha acontecido. Agora a lista fica
+  // no painel, com o status e a resposta da coordenação quando houver.
+  var COR_STATUS = {
+    'Nova': '#8f8672', 'Em análise': '#7fb8e0',
+    'Respondida': '#9fe1cb', 'Arquivada': '#8f8672',
+  };
+  function carregaEnviados() {
+    var holder = document.getElementById('env-holder');
+    if (!holder || !sessaoAtualGlobal) return;
+    fetch(WORKER + '/api/ideias', { headers: { 'X-Token': sessaoAtualGlobal.token } })
+      .then(function (r) { return r.ok ? r.json() : { ideias: [] }; })
+      .then(function (j) {
+        holder.innerHTML = '';
+        var itens = j.ideias || [];
+        if (!itens.length) return;   // nunca enviou nada: não ocupa a tela
+        holder.appendChild(el('div', 'secao', 'O que você enviou'));
+        itens.slice(0, 12).forEach(function (it) {
+          var card = el('div', 'card');
+          var topo = el('div', 'topo');
+          topo.appendChild(el('div', 'titulo', it.titulo || it.tipo));
+          var st = it.status || 'Nova';
+          var tag = el('span', 'status', st);
+          var cs = COR_STATUS[st] || '#8f8672';
+          tag.style.background = cs + '33'; tag.style.color = cs;
+          topo.appendChild(tag);
+          card.appendChild(topo);
+          card.appendChild(el('div', 'meta', it.tipo + (it.criado ? ' · ' + fmtData((it.criado || '').slice(0, 10)) : '')));
+          if (it.descricao) card.appendChild(el('div', 'desc', it.descricao));
+          if (it.resposta) {
+            var resp = el('div', 'resposta');
+            resp.appendChild(el('div', 'resposta-cab', 'Resposta da coordenação'
+              + (it.respondido_por ? ' · ' + it.respondido_por : '')
+              + (it.respondido_em ? ' · ' + fmtData((it.respondido_em || '').slice(0, 10)) : '')));
+            resp.appendChild(el('div', 'resposta-txt', it.resposta));
+            card.appendChild(resp);
+          }
+          holder.appendChild(card);
+        });
+      })
+      .catch(function () { /* complemento: falha aqui não derruba o painel */ });
   }
 
   // Contadores do "O que você criou" no Meu perfil — sem cache: são só 2
@@ -878,6 +940,7 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
     Ideia: { label: 'O que você imagina', nota: 'Vai para a coordenação como sugestão.' },
     Receita: { label: 'Descreva o cocktail', nota: 'Proposta — a coordenação decide se ela entra no cardápio.' },
     Nota: { label: 'Sua nota', nota: 'Privada — só você vê, ninguém do grupo tem acesso.' },
+    Pergunta: { label: 'Sua dúvida', nota: 'A resposta aparece aqui mesmo, em "O que você enviou".' },
   };
 
   // Drawer abre sempre no MENU (as 3 opções) — a forma escolhida só aparece
@@ -958,9 +1021,13 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
     pronto.then(function (r) {
       if (!r.ok) throw new Error('falhou');
       aviso.className = 'criar-aviso ok';
-      aviso.textContent = tipoAtual === 'Nota' ? 'Nota salva.' : (tipoAtual === 'Receita' ? 'Receita enviada.' : 'Ideia enviada.');
+      aviso.textContent = { Nota: 'Nota salva.', Receita: 'Receita enviada.',
+        Pergunta: 'Pergunta enviada — a resposta aparece nesta página.' }[tipoAtual] || 'Ideia enviada.';
       document.getElementById('cr-titulo').value = '';
       document.getElementById('cr-desc').value = '';
+      // A lista "O que você enviou" fica logo abaixo do painel: sem recarregar
+      // ela, o que a pessoa acabou de mandar não aparece e parece que sumiu.
+      if (tipoAtual !== 'Nota') carregaEnviados();
       setTimeout(fechaCriar, 900);
     }).catch(function () {
       aviso.className = 'criar-aviso err'; aviso.textContent = 'Não deu pra enviar agora. Tente de novo.';
@@ -982,6 +1049,7 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
           renderiza(d);
           renderPill();
           buscarAgenda();
+          carregaEnviados();
         });
       })
       .catch(function () { erro.textContent = 'Sem conexão. Tente de novo.'; });
