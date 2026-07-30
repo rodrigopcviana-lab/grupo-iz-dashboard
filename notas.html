@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Minhas notas · Bar.IZ</title>
-<link rel="stylesheet" href="portal.css?v=7e54dad37bce">
+<link rel="stylesheet" href="portal.css?v=0aadfe2335a0">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -643,7 +643,7 @@ guardadas na sua sessão, em qualquer aparelho que você logar.</p>
   elApp.style.display = 'block';
 
   // Paginação (2026-07-19, pedido do Rodrigo): a lista renderiza aos poucos
-  // (client-side — o GET já traz tudo, NOTAS_MAX=50 no worker; paginar aqui é
+  // (client-side — o GET já traz tudo, NOTAS_MAX=200 no worker; paginar aqui é
   // só pra não empilhar 50 cards de uma vez no DOM/scroll).
   var NT_PAGINA = 12;
   var NT = { notas: [], ativa: null, filtro: 'todas', busca: '', timer: null, dirty: false, mostrando: NT_PAGINA };
@@ -817,7 +817,9 @@ guardadas na sua sessão, em qualquer aparelho que você logar.</p>
       .then(function (resp) { return resp.json().catch(function () { return null; }); })
       .then(function (d) {
         if (d && d.ok) { NT.notas = d.notas || NT.notas; NT.dirty = false; setStatus('Salvo', 2500); if (cb) cb(true); }
-        else { setStatus('Erro'); toast('Falha ao salvar.', true); if (cb) cb(false); }
+        // Mostra o motivo que o servidor deu (ex.: teto de notas) — um "Falha
+        // ao salvar" mudo já escondeu o caderno cheio, que era o caso real.
+        else { setStatus('Erro'); toast((d && d.erro) ? ('Não salvou: ' + d.erro) : 'Falha ao salvar.', true); if (cb) cb(false); }
       })
       .catch(function () { setStatus('Erro'); toast('Falha ao salvar.', true); if (cb) cb(false); });
   }
@@ -2135,7 +2137,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '7e54dad37bce';
+  var BUILD = '0aadfe2335a0';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
