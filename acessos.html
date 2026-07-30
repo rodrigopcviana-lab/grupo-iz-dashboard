@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Acessos · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=f6a8fea13941">
+<link rel="stylesheet" href="portal.css?v=2e2959fcd4b5">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -431,10 +431,20 @@ existia nas senhas antigas.</p>
 
 <style>
   .ac-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-             gap: 8px; margin: 16px 0 22px; }
-  .ac-kpi { background: var(--card); border-radius: 10px; padding: 11px 13px; }
+             gap: 8px; margin: 16px 0 10px; }
+  .ac-kpi { display: block; width: 100%; text-align: left; font: inherit; cursor: pointer;
+            background: var(--card); border: 1.5px solid transparent; border-radius: 10px; padding: 11px 13px; }
+  .ac-kpi.on { border-color: var(--acc); }
   .ac-kpi span { display: block; font-size: 11px; letter-spacing: .1em; color: var(--text-3); }
+  .ac-kpi.on span { color: var(--acc); }
   .ac-kpi b { font-family: var(--serif); font-size: 23px; font-weight: 500; }
+  .ac-faixa { display: flex; gap: 9px; align-items: flex-start; border-radius: 10px;
+              padding: 10px 13px; margin: 0 0 18px; background: rgba(208,163,82,.10); }
+  .ac-faixa svg { flex: none; margin-top: 2px; color: var(--acc); }
+  .ac-faixa p { margin: 0; font-size: 13px; color: var(--text-2); flex: 1; }
+  .ac-faixa b { font-weight: 600; color: var(--text); }
+  .ac-faixa button { flex: none; font: inherit; font-size: 12px; padding: 4px 11px; border: 1px solid var(--border);
+                     border-radius: 999px; background: var(--card); color: var(--text-2); cursor: pointer; align-self: center; }
   .ac-sec { font-size: 11px; letter-spacing: .12em; color: var(--text-3); margin: 22px 0 9px; }
   .ac-linha { background: var(--card); border: 1px solid var(--border); border-radius: 11px;
               padding: 11px 13px; margin-bottom: 7px; }
@@ -506,14 +516,15 @@ existia nas senhas antigas.</p>
   </div>
 
   <div class="ac-kpis" id="ac-kpis"></div>
+  <div class="ac-faixa" id="ac-faixa" style="display:none"></div>
 
-  <div class="ac-sec">PEDIDOS PENDENTES</div>
+  <div class="ac-sec" id="ac-sec-pend">PEDIDOS PENDENTES</div>
   <div id="ac-pendentes"></div>
 
-  <div class="ac-sec">CRIADOS PELO SITE</div>
+  <div class="ac-sec" id="ac-sec-criados">CRIADOS PELO SITE</div>
   <div id="ac-criados"></div>
 
-  <div class="ac-sec">SENHAS QUE JÁ EXISTEM</div>
+  <div class="ac-sec" id="ac-sec-secrets">SENHAS QUE JÁ EXISTEM</div>
   <div id="ac-secrets"></div>
 </div>
 
@@ -524,6 +535,17 @@ existia nas senhas antigas.</p>
   var msg = document.getElementById('ac-msg');
   var gate = document.getElementById('ac-gate');
   var dados = null, revelado = false;
+  var recorte = null; // 'pend' | 'criados' | 'secrets' | 'parados' | null (todos)
+  var RECORTES_AC = {
+    pend: { rot: 'pedidos pendentes',
+      exp: 'Pedido de acesso feito pela tela de login, esperando você aprovar ou recusar.' },
+    criados: { rot: 'criados pelo site',
+      exp: 'Todo acesso que já passou pela aprovação (ou nasceu automático) — ativo, desativado ou recusado.' },
+    secrets: { rot: 'senhas antigas',
+      exp: 'Senhas que já existiam antes do autosserviço (secrets do Worker) — só listadas, não passam por aqui.' },
+    parados: { rot: 'nunca entraram',
+      exp: 'Acesso criado e ativo, mas a pessoa nunca usou a senha pra entrar — ou não recebeu, ou não sabe que existe.' },
+  };
 
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
   function quando(ms) {
@@ -587,25 +609,55 @@ existia nas senhas antigas.</p>
     var parados = ativos.filter(function (a) { return !a.ultimo_acesso; });
 
     document.getElementById('ac-kpis').innerHTML =
-      kpi('PENDENTES', pend.length, pend.length ? 'var(--amarelo)' : '') +
-      kpi('CRIADOS PELO SITE', acessos.length, '') +
-      kpi('SENHAS ANTIGAS', (dados.secrets || []).length, '') +
-      kpi('NUNCA ENTRARAM', parados.length, '');
+      kpi('PENDENTES', pend.length, pend.length ? 'var(--amarelo)' : '', 'pend') +
+      kpi('CRIADOS PELO SITE', acessos.length, '', 'criados') +
+      kpi('SENHAS ANTIGAS', (dados.secrets || []).length, '', 'secrets') +
+      kpi('NUNCA ENTRARAM', parados.length, '', 'parados');
+
+    renderFaixaAc();
+
+    var mostraPend = !recorte || recorte === 'pend';
+    var mostraCriados = !recorte || recorte === 'criados' || recorte === 'parados';
+    var mostraSecrets = !recorte || recorte === 'secrets';
+
+    document.getElementById('ac-sec-pend').style.display = mostraPend ? '' : 'none';
+    document.getElementById('ac-pendentes').style.display = mostraPend ? '' : 'none';
+    document.getElementById('ac-sec-criados').style.display = mostraCriados ? '' : 'none';
+    document.getElementById('ac-criados').style.display = mostraCriados ? '' : 'none';
+    document.getElementById('ac-sec-secrets').style.display = mostraSecrets ? '' : 'none';
+    document.getElementById('ac-secrets').style.display = mostraSecrets ? '' : 'none';
 
     document.getElementById('ac-pendentes').innerHTML = pend.length
       ? pend.map(linhaPendente).join('')
       : '<p class="ac-vazio">Nenhum pedido esperando.</p>';
 
-    document.getElementById('ac-criados').innerHTML = resto.length
-      ? resto.map(linhaCriado).join('')
-      : '<p class="ac-vazio">Ninguém criou login pelo site ainda.</p>';
+    document.getElementById('ac-sec-criados').textContent = recorte === 'parados' ? 'NUNCA ENTRARAM' : 'CRIADOS PELO SITE';
+    var listaCriados = recorte === 'parados' ? parados : resto;
+    document.getElementById('ac-criados').innerHTML = listaCriados.length
+      ? listaCriados.map(linhaCriado).join('')
+      : (recorte === 'parados'
+          ? '<p class="ac-vazio">Nenhum acesso ativo sem primeiro login.</p>'
+          : '<p class="ac-vazio">Ninguém criou login pelo site ainda.</p>');
 
     document.getElementById('ac-secrets').innerHTML = (dados.secrets || []).map(linhaSecret).join('');
   }
 
-  function kpi(rot, n, cor) {
-    return '<div class="ac-kpi"><span>' + rot + '</span><b' +
-      (cor ? ' style="color:' + cor + '"' : '') + '>' + n + '</b></div>';
+  function kpi(rot, n, cor, chave) {
+    var on = recorte === chave;
+    return '<button type="button" class="ac-kpi' + (on ? ' on' : '') + '" data-recorte="' + chave +
+      '" aria-pressed="' + (on ? 'true' : 'false') + '"><span>' + rot + '</span><b' +
+      (cor ? ' style="color:' + cor + '"' : '') + '>' + n + '</b></button>';
+  }
+
+  function renderFaixaAc() {
+    var alvo = document.getElementById('ac-faixa');
+    if (!recorte) { alvo.style.display = 'none'; alvo.innerHTML = ''; return; }
+    var info = RECORTES_AC[recorte];
+    alvo.style.display = 'flex';
+    alvo.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
+      '<p>Mostrando <b>' + esc(info.rot) + '</b>. ' + esc(info.exp) + '</p>' +
+      '<button type="button" id="ac-faixa-limpar">Ver tudo</button>';
+    document.getElementById('ac-faixa-limpar').onclick = function () { recorte = null; pinta(); };
   }
 
   function senhaHtml(a) {
@@ -663,6 +715,13 @@ existia nas senhas antigas.</p>
   }
 
   document.getElementById('ac-app').addEventListener('click', function (ev) {
+    var kpiBt = ev.target.closest('[data-recorte]');
+    if (kpiBt) {
+      var chave = kpiBt.dataset.recorte;
+      recorte = recorte === chave ? null : chave;
+      pinta();
+      return;
+    }
     var mini = ev.target.closest('.ac-mini');
     if (mini) {
       var e = escolhas[mini.dataset.id];
@@ -1837,7 +1896,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'f6a8fea13941';
+  var BUILD = '2e2959fcd4b5';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
