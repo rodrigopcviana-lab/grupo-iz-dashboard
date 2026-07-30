@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Contratos On Trade · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=3f956421da60">
+<link rel="stylesheet" href="portal.css?v=157bb17e4aec">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -439,6 +439,8 @@ window.msgAcessoNegado = function (nomePagina) {
     style="background:none;border:none;padding:10px 4px;font-size:14px;color:var(--text);cursor:pointer;border-bottom:2px solid var(--acc);margin-bottom:-1px">Vigência</button>
   <button type="button" class="ct-aba-btn" data-aba="contra"
     style="background:none;border:none;padding:10px 4px;font-size:14px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">Contrapartidas</button>
+  <button type="button" class="ct-aba-btn" data-aba="recebido"
+    style="background:none;border:none;padding:10px 4px;font-size:14px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">Recebido<span id="ct-badge-rec" style="display:none;margin-left:6px;background:var(--acc);color:var(--bg);border-radius:999px;padding:1px 7px;font-size:11px"></span></button>
 </div>
 
 <div id="ct-aba-vigencia">
@@ -575,6 +577,46 @@ window.msgAcessoNegado = function (nomePagina) {
 <p class="ct-vazio" id="ctp-vazio" style="display:none">Nenhuma contrapartida cadastrada pra esta marca ainda.</p>
 </div><!-- ct-aba-contra -->
 
+<div id="ct-aba-recebido" style="display:none">
+<style>
+  .rec-filtros { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .rec-filtros select { padding:11px 10px; font-size:14px; border-radius:10px;
+      border:1px solid var(--border); background:var(--card); color:var(--text); }
+  .rec-card { background:var(--card); border:1px solid var(--border); border-radius:12px;
+      padding:13px 15px; margin-bottom:9px; }
+  .rec-topo { display:flex; align-items:center; gap:10px; justify-content:space-between; }
+  .rec-tit { font-size:14.5px; }
+  .rec-meta { font-size:12px; color:var(--text-2); margin-top:3px; }
+  .rec-desc { font-size:13.5px; color:var(--text-2); margin-top:8px; line-height:1.55; white-space:pre-wrap; }
+  .rec-tag { display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px; flex:none; }
+  .rec-resp { margin-top:10px; padding:9px 11px; background:var(--bg); border-radius:9px;
+      border-left:2px solid var(--acc); font-size:13px; white-space:pre-wrap; }
+  .rec-acoes { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .rec-acoes button { padding:8px 13px; border-radius:8px; font-size:13px; cursor:pointer;
+      border:1px solid var(--border); background:var(--card); color:var(--text); }
+  .rec-form textarea { width:100%; box-sizing:border-box; min-height:78px; padding:10px;
+      border-radius:9px; border:1px solid var(--border); background:var(--bg); color:var(--text);
+      font-size:14px; font-family:inherit; resize:vertical; margin-top:8px; }
+  .rec-msg { font-size:12.5px; margin-top:7px; }
+</style>
+
+<p class="sub" style="margin:0 0 14px">O que as marcas mandaram pelo painel delas — ideia, proposta de cocktail e dúvida. Responder aqui avisa a marca na página dela.</p>
+
+<div class="rec-filtros">
+  <select id="rec-marca"><option value="">Todas as marcas</option></select>
+  <select id="rec-status">
+    <option value="">Todos os status</option>
+    <option value="Nova">Nova</option>
+    <option value="Em análise">Em análise</option>
+    <option value="Respondida">Respondida</option>
+    <option value="Arquivada">Arquivada</option>
+  </select>
+</div>
+
+<div id="rec-lista"></div>
+<p class="ct-vazio" id="rec-vazio" style="display:none">Nada recebido nesse filtro.</p>
+</div><!-- ct-aba-recebido -->
+
 </div><!-- ct-corpo -->
 
 <script>
@@ -600,7 +642,9 @@ window.msgAcessoNegado = function (nomePagina) {
       var aba = btn.getAttribute('data-aba');
       document.getElementById('ct-aba-vigencia').style.display = aba === 'vigencia' ? '' : 'none';
       document.getElementById('ct-aba-contra').style.display = aba === 'contra' ? '' : 'none';
+      document.getElementById('ct-aba-recebido').style.display = aba === 'recebido' ? '' : 'none';
       if (aba === 'contra' && window._ctpIniciar) window._ctpIniciar();
+      if (aba === 'recebido' && window._recIniciar) window._recIniciar();
     });
   });
 
@@ -981,6 +1025,170 @@ window.msgAcessoNegado = function (nomePagina) {
       }
       if (!marcasSlugs.length) { elLista.textContent = 'Nenhuma marca parceira configurada ainda.'; return; }
       if (st.itens === null) carregar(); else { montarMarcas(); desenha(); }
+    };
+  })();
+
+  // --- Aba "Recebido" (PLANO_PARCEIRO_CICLO.md E4) --------------------------
+  // A fila do que as marcas mandam pelo painel delas. Até 2026-07-30 a base de
+  // Ideias não tinha tela nenhuma: o parceiro enviava e ninguém via.
+  (function () {
+    var REG = "https://registro-bares.rodrigopcviana.workers.dev";
+    var MARCAS = {"redbull": "Red Bull", "diageo": "Diageo", "beamsuntory": "Beam Suntory"};
+    var elLista = document.getElementById('rec-lista');
+    var elVazio = document.getElementById('rec-vazio');
+    var elBadge = document.getElementById('ct-badge-rec');
+    var selMarca = document.getElementById('rec-marca');
+    var selStatus = document.getElementById('rec-status');
+    var COR_ST = { 'Nova': '#e0b05c', 'Em análise': '#7fb8e0',
+                    'Respondida': '#9fe1cb', 'Arquivada': '#8f8672' };
+    var st = { itens: null, sessao: null, carregando: false };
+
+    Object.keys(MARCAS).forEach(function (slug) {
+      var o = document.createElement('option');
+      o.value = slug; o.textContent = MARCAS[slug];
+      selMarca.appendChild(o);
+    });
+
+    function elx(tag, cls, txt) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (txt != null) n.textContent = txt;
+      return n;
+    }
+
+    function carregar() {
+      if (st.carregando) return;
+      st.carregando = true;
+      var qs = [];
+      if (selMarca.value) qs.push('marca=' + encodeURIComponent(selMarca.value));
+      if (selStatus.value) qs.push('status=' + encodeURIComponent(selStatus.value));
+      elLista.textContent = 'Carregando…';
+      fetch(REG + '/api/ideias/triagem' + (qs.length ? '?' + qs.join('&') : ''),
+            { headers: { 'X-Token': st.sessao.token } })
+        .then(function (r) {
+          if (!r.ok) throw new Error(r.status);
+          return r.json();
+        })
+        .then(function (j) { st.itens = j.itens || []; st.visitas = j.visitas || {}; desenha(); })
+        .catch(function () { elLista.textContent = 'Não deu pra carregar. Tente de novo.'; })
+        .finally(function () { st.carregando = false; });
+    }
+
+    function desenha() {
+      elLista.innerHTML = '';
+      var itens = st.itens || [];
+      // Última visita por marca (E6): responde "essa marca está usando isto?"
+      // — a pergunta que decide se vale continuar investindo no painel.
+      var visitas = st.visitas || {};
+      var linhas = Object.keys(MARCAS).map(function (slug) {
+        var v = visitas[slug];
+        if (!v || !v.em) return MARCAS[slug] + ': nunca abriu o painel';
+        var d = new Date(v.em);
+        var dias = Math.floor((Date.now() - d.getTime()) / 86400000);
+        var quando = dias <= 0 ? 'hoje' : (dias === 1 ? 'ontem' : 'há ' + dias + ' dias');
+        return MARCAS[slug] + ': ' + quando + (v.pessoa ? ' (' + v.pessoa + ')' : '');
+      });
+      var vis = elx('p', 'rec-meta', 'Última visita — ' + linhas.join(' · '));
+      vis.style.marginBottom = '12px';
+      elLista.appendChild(vis);
+      // O badge conta só o que ninguém tocou ainda — é a fila de verdade.
+      var novas = itens.filter(function (i) { return (i.status || 'Nova') === 'Nova'; }).length;
+      if (novas) { elBadge.textContent = String(novas); elBadge.style.display = ''; }
+      else elBadge.style.display = 'none';
+      elVazio.style.display = itens.length ? 'none' : '';
+      itens.forEach(function (it) { elLista.appendChild(card(it)); });
+    }
+
+    function card(it) {
+      var c = elx('div', 'rec-card');
+      var topo = elx('div', 'rec-topo');
+      var esq = elx('div');
+      esq.appendChild(elx('div', 'rec-tit', it.titulo || it.tipo));
+      var quando = (it.criado || '').slice(0, 10).split('-').reverse().join('/');
+      esq.appendChild(elx('div', 'rec-meta',
+        [it.tipo, it.marca, it.de, quando].filter(Boolean).join(' · ')
+        + (it.anexos ? ' · ' + it.anexos + ' anexo(s)' : '')));
+      topo.appendChild(esq);
+      var stx = it.status || 'Nova';
+      var tag = elx('span', 'rec-tag', stx);
+      var cor = COR_ST[stx] || '#8f8672';
+      tag.style.background = cor + '33'; tag.style.color = cor;
+      topo.appendChild(tag);
+      c.appendChild(topo);
+      if (it.descricao) c.appendChild(elx('div', 'rec-desc', it.descricao));
+      if (it.resposta) {
+        var r = elx('div', 'rec-resp', it.resposta);
+        var quem = [it.respondido_por, (it.respondido_em || '').slice(0, 10).split('-').reverse().join('/')]
+          .filter(Boolean).join(' · ');
+        if (quem) r.appendChild(elx('div', 'rec-meta', quem));
+        c.appendChild(r);
+      }
+
+      var acoes = elx('div', 'rec-acoes');
+      var btResp = elx('button', null, it.resposta ? 'Editar resposta' : 'Responder');
+      var btAnalise = elx('button', null, 'Em análise');
+      var btArq = elx('button', null, 'Arquivar');
+      acoes.appendChild(btResp);
+      if (stx !== 'Em análise') acoes.appendChild(btAnalise);
+      if (stx !== 'Arquivada') acoes.appendChild(btArq);
+      c.appendChild(acoes);
+
+      var form = elx('div', 'rec-form');
+      form.style.display = 'none';
+      var ta = document.createElement('textarea');
+      ta.value = it.resposta || '';
+      ta.placeholder = 'A marca lê isto na página dela — escreva como você falaria com ela.';
+      form.appendChild(ta);
+      var msg = elx('p', 'rec-msg');
+      var btEnviar = elx('button', null, 'Enviar resposta');
+      btEnviar.style.marginTop = '8px';
+      form.appendChild(btEnviar);
+      form.appendChild(msg);
+      c.appendChild(form);
+
+      btResp.onclick = function () {
+        form.style.display = form.style.display === 'none' ? '' : 'none';
+        if (form.style.display === '') ta.focus();
+      };
+      btEnviar.onclick = function () {
+        var txt = ta.value.trim();
+        if (!txt) { msg.style.color = 'var(--erro,#e08c8c)'; msg.textContent = 'Escreva a resposta antes de enviar.'; return; }
+        btEnviar.disabled = true; msg.style.color = 'var(--text-2)'; msg.textContent = 'Enviando…';
+        patch(it.chave, { resposta: txt }, msg, btEnviar);
+      };
+      btAnalise.onclick = function () { patch(it.chave, { status: 'Em análise' }, null, btAnalise); };
+      btArq.onclick = function () { patch(it.chave, { status: 'Arquivada' }, null, btArq); };
+      return c;
+    }
+
+    function patch(chave, corpo, msg, bt) {
+      fetch(REG + '/api/ideia/' + encodeURIComponent(chave), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Token': st.sessao.token },
+        body: JSON.stringify(corpo),
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error(r.status);
+          if (msg) { msg.style.color = 'var(--ok,#9fe1cb)'; msg.textContent = 'Respondido — a marca foi avisada.'; }
+          st.itens = null;
+          setTimeout(carregar, 500);
+        })
+        .catch(function () {
+          if (msg) { msg.style.color = 'var(--erro,#e08c8c)'; msg.textContent = 'Não deu pra salvar. Tente de novo.'; }
+        })
+        .finally(function () { if (bt) bt.disabled = false; });
+    }
+
+    selMarca.onchange = function () { st.itens = null; carregar(); };
+    selStatus.onchange = function () { st.itens = null; carregar(); };
+
+    window._recIniciar = function () {
+      if (!st.sessao) {
+        var s = window.sessaoLer();
+        if (!s) return;
+        st.sessao = s;
+      }
+      if (st.itens === null) carregar(); else desenha();
     };
   })();
 
@@ -2070,7 +2278,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '3f956421da60';
+  var BUILD = '157bb17e4aec';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

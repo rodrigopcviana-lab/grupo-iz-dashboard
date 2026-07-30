@@ -243,6 +243,140 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 </div>
 
 <script>
+
+// --- PDF mínimo (sem biblioteca) -------------------------------------------
+// Monta o arquivo como STRING de bytes (todo caractere já mapeado para <256
+// por winansi()), o que permite calcular os offsets do xref com .length antes
+// de converter para Uint8Array. Com string UTF-16 crua os offsets sairiam
+// errados e o PDF abriria corrompido.
+var PDF_L = 595.28, PDF_A = 841.89, PDF_MARGEM = 52;
+
+function winansi(s) {
+  // Latin-1 direto quando dá; o que não couber vira equivalente sem acento.
+  var mapa = {
+    '—': '-', '–': '-', '‘': "'", '’': "'",
+    '“': '"', '”': '"', '…': '...', ' ': ' ',
+    '•': '-', '·': '-', '−': '-', 'º': 'o', 'ª': 'a'
+  };
+  var out = '';
+  for (var i = 0; i < s.length; i++) {
+    var c = s[i];
+    if (mapa[c]) { out += mapa[c]; continue; }
+    var cod = s.charCodeAt(i);
+    if (cod < 256) { out += c; continue; }
+    // Último recurso: decompõe o acento e joga fora a marca.
+    var base = c.normalize ? c.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '?';
+    out += (base && base.charCodeAt(0) < 256) ? base : '?';
+  }
+  return out;
+}
+
+function pdfEsc(s) { return s.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'); }
+
+// Largura média da Helvetica ~0,5 em; 0,52 dá folga e evita estouro à direita.
+function pdfQuebra(texto, tam, largura) {
+  var max = Math.max(8, Math.floor(largura / (tam * 0.52)));
+  var linhas = [];
+  String(texto).split(/\n/).forEach(function (paragrafo) {
+    var palavras = paragrafo.split(/\s+/).filter(Boolean);
+    if (!palavras.length) { linhas.push(''); return; }
+    var atual = '';
+    palavras.forEach(function (p) {
+      if (!atual) { atual = p; return; }
+      if ((atual + ' ' + p).length <= max) atual += ' ' + p;
+      else { linhas.push(atual); atual = p; }
+    });
+    if (atual) linhas.push(atual);
+  });
+  return linhas;
+}
+
+// blocos: [{t:'h1'|'h2'|'p'|'li'|'sep', texto}] — a paginação é decidida aqui,
+// não pelo chamador.
+function pdfMonta(titulo, subtitulo, blocos) {
+  var larg = PDF_L - PDF_MARGEM * 2;
+  var paginas = [], atual = [], y = PDF_A - PDF_MARGEM;
+  function novaPagina() { if (atual.length) paginas.push(atual); atual = []; y = PDF_A - PDF_MARGEM; }
+  function escreve(txt, tam, negrito, recuo) {
+    var linhas = pdfQuebra(txt, tam, larg - (recuo || 0));
+    for (var i = 0; i < linhas.length; i++) {
+      if (y < PDF_MARGEM + 28) novaPagina();
+      atual.push({ x: PDF_MARGEM + (recuo || 0), y: y, tam: tam, negrito: negrito, txt: linhas[i] });
+      y -= tam * 1.42;
+    }
+  }
+  escreve(titulo, 18, true, 0); y -= 4;
+  if (subtitulo) { escreve(subtitulo, 9.5, false, 0); }
+  y -= 10;
+  blocos.forEach(function (b) {
+    if (!b) return;
+    if (b.tipo === 'sep') { y -= 9; return; }
+    if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0); y -= 3; return; }
+    if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0); y -= 2; return; }
+    if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }
+    escreve(b.texto, 10.5, false, 0);
+    y -= 4;
+  });
+  if (atual.length) paginas.push(atual);
+  if (!paginas.length) paginas.push([]);
+
+  var objs = [], corpo = '%PDF-1.4\n';
+  function add(txt) { objs.push(corpo.length); corpo += txt; }
+  // 1 catálogo, 2 páginas, 3 e 4 fontes, depois 2 objetos por página.
+  var nPag = paginas.length;
+  var kids = [];
+  for (var i = 0; i < nPag; i++) kids.push((5 + i * 2) + ' 0 R');
+  add('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
+  add('2 0 obj\n<</Type/Pages/Kids[' + kids.join(' ') + ']/Count ' + nPag + '>>\nendobj\n');
+  add('3 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>\nendobj\n');
+  add('4 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>\nendobj\n');
+  paginas.forEach(function (linhas, idx) {
+    var num = 5 + idx * 2;
+    var fluxo = 'BT\n';
+    var fonteAtual = null, tamAtual = null;
+    linhas.forEach(function (l) {
+      var f = l.negrito ? '/F2' : '/F1';
+      if (f !== fonteAtual || l.tam !== tamAtual) {
+        fluxo += f + ' ' + l.tam + ' Tf\n';
+        fonteAtual = f; tamAtual = l.tam;
+      }
+      fluxo += '1 0 0 1 ' + l.x.toFixed(2) + ' ' + l.y.toFixed(2) + ' Tm\n';
+      fluxo += '(' + pdfEsc(winansi(l.txt)) + ') Tj\n';
+    });
+    fluxo += 'ET';
+    add(num + ' 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 ' + PDF_L.toFixed(2) + ' ' + PDF_A.toFixed(2) +
+        ']/Resources<</Font<</F1 3 0 R/F2 4 0 R>>>>/Contents ' + (num + 1) + ' 0 R>>\nendobj\n');
+    add((num + 1) + ' 0 obj\n<</Length ' + fluxo.length + '>>\nstream\n' + fluxo + '\nendstream\nendobj\n');
+  });
+  // O padding do xref é montado em laço de propósito: um literal de 10 zeros
+  // aqui é lido como TELEFONE pelo _checa_publica e aborta a geração do portal
+  // inteiro (mesma armadilha que o build id já causou no Bento).
+  function pad10(n) { var s = String(n); while (s.length < 10) s = '0' + s; return s; }
+  var inicioXref = corpo.length;
+  var total = objs.length + 1;
+  var xref = 'xref\n0 ' + total + '\n' + pad10(0) + ' 65535 f \n';
+  objs.forEach(function (off) { xref += pad10(off) + ' 00000 n \n'; });
+  corpo += xref + 'trailer\n<</Size ' + total + '/Root 1 0 R>>\nstartxref\n' + inicioXref + '\n%%EOF';
+
+  var bytes = new Uint8Array(corpo.length);
+  for (var k = 0; k < corpo.length; k++) bytes[k] = corpo.charCodeAt(k) & 0xff;
+  return new Blob([bytes], { type: 'application/pdf' });
+}
+
+function pdfBaixa(nomeArquivo, titulo, subtitulo, blocos) {
+  var blob = pdfMonta(titulo, subtitulo, blocos);
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = nomeArquivo.replace(/[^\w.\- ]+/g, '').slice(0, 90) || 'treinamento.pdf';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+
+function nomeArquivoSeguro(base) {
+  var s = base.normalize ? base.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : base;
+  return s.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 70);
+}
+
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
   var CASAS_LABEL = {"iz": "Iz", "gra-bistro": "Grá", "1929": "1929", "famu": "FAMU", "fulles": "Fulles", "nip": "Nip"};
@@ -672,6 +806,26 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
       d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
+  // O sino cobre DUAS fontes (E5): compromisso nos próximos 7 dias e resposta
+  // nova a algo que a marca mandou. Cada uma acende por conta própria, então o
+  // estado mora aqui em vez de dentro de um dos dois fetches.
+  var SINO = { compromisso: false, resposta: false, alvo: 'ag-holder' };
+  // Chave de lido = a data da resposta MAIS RECENTE já vista (content-based,
+  // mesmo princípio do sino da equipe): responder de novo volta a acender,
+  // reabrir a página com a mesma resposta não.
+  var LIDO_KEY = 'parceiro_resposta_lida';
+  function atualizaSino() {
+    var dot = document.getElementById('sino-dot');
+    if (!dot) return;
+    var acende = SINO.compromisso || SINO.resposta;
+    dot.style.display = acende ? '' : 'none';
+    // Resposta ganha do compromisso: é a novidade que a pessoa não viu.
+    SINO.alvo = SINO.resposta ? 'env-holder' : 'ag-holder';
+    document.getElementById('sino-btn').setAttribute('aria-label',
+      SINO.resposta ? 'Resposta nova da coordenação'
+        : (SINO.compromisso ? 'Compromissos em breve' : 'Sem novidades'));
+  }
+
   // Agenda (E7): só leitura — quem cria/edita é a coordenação, na Minha Mesa.
   function buscarAgenda() {
     fetch(WORKER + '/api/agenda-parceiro', { headers: { 'X-Token': sessaoAtualGlobal.token } })
@@ -688,7 +842,8 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
           var t = new Date(it.inicio).getTime();
           return t >= agora && t <= agora + 7 * 86400000;
         });
-        dot.style.display = emBreve ? '' : 'none';
+        SINO.compromisso = emBreve;
+        atualizaSino();
         if (!itens.length) return;
         holder.appendChild(el('div', 'secao', 'Próximos compromissos'));
         itens.slice(0, 8).forEach(function (it) {
@@ -700,6 +855,75 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
         });
       })
       .catch(function () { /* agenda é complemento — falha aqui não derruba o painel */ });
+  }
+
+  // --- Resumo em PDF pra marca (E8) ----------------------------------------
+  // Monta os blocos a partir do MESMO payload que a tela mostra — nunca de um
+  // segundo cálculo, senão o papel e a tela discordariam na frente do cliente.
+  function baixaResumoPdf() {
+    var d = ULTIMO_D;
+    if (!d) return;
+    var casasLabels = (d.casas || []).map(function (s) { return CASAS_LABEL[s] || s; });
+    var c = contaEntregas(d, casasLabels);
+    var b = [];
+    var pct = c.previstas ? Math.round((c.concluidas / c.previstas) * 100) : 0;
+
+    b.push({ tipo: 'h1', texto: 'Como está o acordo' });
+    if (c.previstas) {
+      b.push({ texto: pct + '% concluído — ' + c.concluidas + ' de ' + c.previstas
+        + (c.soCocktail ? ' receitas' : ' entregas') + '.' });
+      if (c.andamento) b.push({ texto: c.andamento + ' em andamento.' });
+    } else {
+      b.push({ texto: 'Contrapartidas ainda não definidas.' });
+    }
+    var cm = d.compra_minima || {};
+    if (cm.ciclo_inicio && cm.ciclo_fim) {
+      b.push({ texto: 'Ciclo de compra: ' + periodoCurto(cm.ciclo_inicio, cm.ciclo_fim) + '.' });
+    }
+
+    if ((d.contrapartidas || []).length) {
+      b.push({ tipo: 'h2', texto: 'Contrapartidas' });
+      d.contrapartidas.forEach(function (i) {
+        var st = ROTULO_STATUS[i.status] || i.status || '';
+        b.push({ tipo: 'li', texto: (i.descricao || i.tipo)
+          + (i.casa ? ' (' + i.casa + ')' : '') + (st ? ' — ' + st : '') });
+      });
+    }
+
+    if (d.backbar_meta_pct != null) {
+      b.push({ tipo: 'h2', texto: 'Backbar — meta de ' + d.backbar_meta_pct + '%' });
+      casasLabels.forEach(function (label) {
+        var serie = (d.backbar || {})[label] || [];
+        var u = serie.length ? serie[serie.length - 1] : null;
+        b.push({ tipo: 'li', texto: label + ': ' + (u && u.percentual != null
+          ? u.percentual + '% na contagem de ' + fmtData(u.semana)
+          : 'sem contagem registrada') });
+      });
+    }
+
+    if (d.cocktails_meta_por_casa != null) {
+      b.push({ tipo: 'h2', texto: 'Cocktails no cardápio — ' + d.cocktails_meta_por_casa + ' por casa' });
+      casasLabels.forEach(function (label) {
+        b.push({ tipo: 'li', texto: label + ': ' + ((d.fichas_por_casa || {})[label] || 0)
+          + ' de ' + d.cocktails_meta_por_casa });
+      });
+    }
+
+    if ((cm.itens || []).length) {
+      b.push({ tipo: 'h2', texto: 'Compra mínima' });
+      cm.itens.forEach(function (i) {
+        b.push({ tipo: 'li', texto: i.nome + ' — ' + (i.entregue ? 'registrada' : 'pendente') });
+      });
+    }
+
+    b.push({ tipo: 'sep' });
+    b.push({ texto: 'Documento gerado pelo painel de parceiros do Grupo IZ em '
+      + fmtData(new Date().toISOString().slice(0, 10))
+      + '. Valores comerciais não constam deste resumo.' });
+
+    pdfBaixa(nomeArquivoSeguro('andamento-' + (d.marca || 'parceria')) + '.pdf',
+      d.marca || 'Parceria', 'Parceria com Grupo IZ'
+      + (casasLabels.length ? ' · ' + casasLabels.join(', ') : ''), b);
   }
 
   // --- O que você enviou (E3) ----------------------------------------------
@@ -718,6 +942,16 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
       .then(function (j) {
         holder.innerHTML = '';
         var itens = j.ideias || [];
+        // Acende o sino se existe resposta mais nova do que a última já vista.
+        var maisNova = '';
+        itens.forEach(function (i) {
+          if (i.resposta && i.respondido_em && i.respondido_em > maisNova) maisNova = i.respondido_em;
+        });
+        var vista = '';
+        try { vista = localStorage.getItem(LIDO_KEY) || ''; } catch (e) { /* modo privado */ }
+        SINO.resposta = !!maisNova && maisNova > vista;
+        SINO.maisNova = maisNova;
+        atualizaSino();
         if (!itens.length) return;   // nunca enviou nada: não ocupa a tela
         holder.appendChild(el('div', 'secao', 'O que você enviou'));
         itens.slice(0, 12).forEach(function (it) {
@@ -907,6 +1141,15 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
     btnTrocar.onclick = sair;
     telaPerfil.appendChild(btnTrocar);
 
+    // Resumo em PDF (E8): o On Trade precisa justificar o patrocínio dentro da
+    // casa dele. Gerado no navegador, sem biblioteca (o portal é PWA com CSP e
+    // não carrega CDN) — mesmo gerador do Treinador. Sem R$ nenhum: o payload
+    // já nasce sem valor comercial e este resumo não reintroduz.
+    var btnPdf = el('button', 'perfil-btn', 'Baixar andamento (PDF)');
+    btnPdf.type = 'button';
+    btnPdf.onclick = baixaResumoPdf;
+    telaPerfil.appendChild(btnPdf);
+
     var btnSair = el('button', 'perfil-btn perigo', 'Sair');
     btnSair.type = 'button';
     btnSair.onclick = sair;
@@ -922,7 +1165,14 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
     renderPerfil();
   };
   document.getElementById('sino-btn').onclick = function () {
-    var holder = document.getElementById('ag-holder');
+    // Abrir o sino é o que marca a resposta como lida — não o simples carregar
+    // da página, senão ela apagaria antes de alguém ter olhado.
+    if (SINO.resposta && SINO.maisNova) {
+      try { localStorage.setItem(LIDO_KEY, SINO.maisNova); } catch (e) { /* modo privado */ }
+      SINO.resposta = false;
+      atualizaSino();
+    }
+    var holder = document.getElementById(SINO.alvo) || document.getElementById('ag-holder');
     if (holder) holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 

@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Banco de Horas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=3f956421da60">
+<link rel="stylesheet" href="portal.css?v=157bb17e4aec">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -486,6 +486,22 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-badge.atencao { background:#3a2d12; color:var(--amarelo); }
   .bh-badge.critico { background:#3a1414; color:var(--verm); }
   .bh-badge.divergencia { background:#3a1414; color:var(--verm); cursor:help; }
+  .bh-badge.atipico { background:#33234a; color:#c9a6f2; cursor:help; }
+  /* Aviso de variação atípica: some sozinho quando não há nenhuma (o
+     display:none nasce no atributo style inline de propósito — regra de
+     CLASSE com display:none não volta com style.display='' — ver a "Lição de
+     CSS" do Mural v3 no CLAUDE.md). */
+  .bh-atipico { border:1px solid #4a3568; background:#241a33; border-radius:10px;
+    padding:10px 12px; margin:14px 0 0; font-size:12.5px; color:var(--text-2); }
+  .bh-atipico b { color:#c9a6f2; }
+  .bh-atipico .bh-atipico-quem { display:block; margin-top:4px; color:var(--text-3); }
+  table.bh-portime tr.bh-time-linha { cursor:pointer; }
+  table.bh-portime tr.bh-time-linha:hover td { background:rgba(255,255,255,.03); }
+  table.bh-portime tr.bh-time-sel td { background:rgba(224,178,74,.10); box-shadow:inset 3px 0 0 var(--amarelo); }
+  table.bh-portime .bh-casa { font-weight:600; }
+  table.bh-portime .bh-cont-neg { color:var(--verm); }
+  table.bh-portime .bh-cont-pos { color:var(--verde); }
+  table.bh-portime td.tot { border-top:2px solid var(--border); font-weight:700; }
   .bh-nome-wrap { display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
   .bh-tend { font-size:12px; }
   .bh-tend.melhorando { color:var(--verde); }
@@ -530,7 +546,7 @@ window.msgAcessoNegado = function (nomePagina) {
        (pedido do Rodrigo). Some as colunas secundárias e deixa só o
        essencial, com linhas finas. Nada de overflow horizontal. */
     .bh-panel-lista, .bh-panel-devendo, .bh-panel-plano,
-    #bh-porcasa-wrap .panel { overflow-x:hidden !important; padding:6px 8px; }
+    #bh-porcasa-wrap .panel, #bh-portime-wrap .panel { overflow-x:hidden !important; padding:6px 8px; }
     table.bh, table.bh-plano-tb { width:100%; table-layout:fixed; }
     table.bh td, table.bh th,
     table.bh-plano-tb td, table.bh-plano-tb th {
@@ -561,6 +577,14 @@ window.msgAcessoNegado = function (nomePagina) {
     table.bh-porcasa th:nth-child(1), table.bh-porcasa td:nth-child(1) { width:38%; }
     table.bh-porcasa th:nth-child(3), table.bh-porcasa td:nth-child(3) { width:28%; }
     table.bh-porcasa th:nth-child(6), table.bh-porcasa td:nth-child(6) { width:34%; }
+
+    /* Por time: mesmo recorte da Por casa — Time | Saldo | Custo */
+    table.bh-portime th:nth-child(2), table.bh-portime td:nth-child(2),
+    table.bh-portime th:nth-child(4), table.bh-portime td:nth-child(4),
+    table.bh-portime th:nth-child(5), table.bh-portime td:nth-child(5) { display:none; }
+    table.bh-portime th:nth-child(1), table.bh-portime td:nth-child(1) { width:38%; }
+    table.bh-portime th:nth-child(3), table.bh-portime td:nth-child(3) { width:28%; }
+    table.bh-portime th:nth-child(6), table.bh-portime td:nth-child(6) { width:34%; }
 
     /* Devendo horas: Nome | Deve (esconde Casa/Situação) */
     table.bh-tb-dev th:nth-child(1), table.bh-tb-dev td:nth-child(1),
@@ -608,6 +632,24 @@ window.msgAcessoNegado = function (nomePagina) {
   <div class="chips" id="bh-casas"></div>
   <input type="text" id="bh-busca" placeholder="Buscar por nome…">
 </div>
+
+<div class="bh-plano" id="bh-portime-wrap" style="display:none">
+  <h2>Por time</h2>
+  <p class="sub">Bar, salão e cozinha lado a lado — para ver de onde vem o problema sem trocar de aba e perder a comparação. Respeita o filtro de casa acima; clicar numa linha troca o time selecionado.</p>
+  <div class="panel" style="padding:8px 10px;overflow-x:auto">
+  <table class="bh-plano-tb bh-portime"><thead><tr>
+    <th>Time</th>
+    <th class="n">Pessoas</th>
+    <th class="n">Saldo líquido</th>
+    <th class="n">Atenção / crítico</th>
+    <th class="n">Devendo / a favor</th>
+    <th class="n">Horas extras a pagar</th>
+  </tr></thead>
+  <tbody id="bh-portime-lista"></tbody></table>
+  </div>
+</div>
+
+<div class="bh-atipico" id="bh-atipico" style="display:none"></div>
 
 <div class="bh-plano" id="bh-porcasa-wrap" style="display:none">
   <h2>Por casa</h2>
@@ -827,6 +869,96 @@ window.msgAcessoNegado = function (nomePagina) {
     return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
   }
 
+  // ---- Variação atípica entre as duas últimas leituras -------------------
+  // Nasceu de um caso real: em 30/07/2026 uma pessoa saiu de +81:57 para
+  // -39:40 em 5 dias (-121h), o que não é trabalho — e isso só apareceu
+  // porque alguém comparou duas rodadas à mão. A página não dizia nada.
+  //
+  // Não é uma acusação de erro: pode ser quitação/compensação de RH legítima.
+  // É um "olhe aqui" — por isso o badge diz "atípica", nunca "errada".
+  var ATIPICO_PISO_MIN = 44 * 60; // 44h = jornada semanal CLT, constante do projeto
+  var ATIPICO_Z = 3.5;            // escore modificado (Iglewicz-Hoaglin)
+
+  // Datas do payload são AAAA-MM-DD puras: fatiar como texto, NUNCA
+  // new Date('2026-07-05') (meia-noite UTC vira o dia anterior em UTC-3 —
+  // armadilha já documentada no CLAUDE.md).
+  function diasEntreISO(a, b) {
+    var pa = (a || '').split('-'), pb = (b || '').split('-');
+    if (pa.length !== 3 || pb.length !== 3) return null;
+    var ma = Date.UTC(+pa[0], +pa[1] - 1, +pa[2]);
+    var mb = Date.UTC(+pb[0], +pb[1] - 1, +pb[2]);
+    return Math.round((mb - ma) / 86400000);
+  }
+
+  function variacaoDe(historico) {
+    var h = (historico || []).filter(function (x) { return x && x.saldo_minutos != null; });
+    if (h.length < 2) return null;
+    var ant = h[h.length - 2], atu = h[h.length - 1];
+    var dias = diasEntreISO(ant.data, atu.data);
+    if (dias == null) return null;
+    // Duas leituras no mesmo dia dividiriam por zero; e o intervalo é o
+    // denominador que torna comparáveis as cadências diferentes de bar (48h)
+    // e salão/cozinha (~7 dias).
+    dias = Math.max(dias, 1);
+    var delta = atu.saldo_minutos - ant.saldo_minutos;
+    return { delta: delta, dias: dias, porDia: delta / dias,
+              de: ant.saldo_minutos, para: atu.saldo_minutos,
+              dataDe: ant.data, dataPara: atu.data };
+  }
+
+  function mediana(arr) {
+    if (!arr.length) return null;
+    var s = arr.slice().sort(function (a, b) { return a - b; });
+    var m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+
+  // Marca in-place quem destoa do PRÓPRIO time. Mediana + MAD (não média +
+  // desvio-padrão) porque o outlier infla o desvio-padrão e se esconde
+  // dentro dele — foi medido: a pessoa de -121h puxava o sigma clássico o
+  // bastante para quase não se destacar.
+  //
+  // Duas condições, as duas necessárias:
+  //  (a) escore modificado > 3.5 sobre a variação POR DIA — destoar do time;
+  //  (b) |variação| >= 44h no total — piso absoluto.
+  // Sem (b), um intervalo de 1 dia marcava -6:41 como atípico, que é uma
+  // oscilação normal de um dia de trabalho: o denominador pequeno inflava o
+  // escore. Medido em dado real, a regra marca 9 de 187 pessoas (4,8%).
+  function marcaAtipicos(pessoasArr) {
+    var comVar = pessoasArr.filter(function (p) { return p.variacao; });
+    if (comVar.length < 4) return 0; // amostra curta: mediana/MAD não dizem nada
+    var med = mediana(comVar.map(function (p) { return p.variacao.porDia; }));
+    var mad = mediana(comVar.map(function (p) { return Math.abs(p.variacao.porDia - med); }));
+    var sigma = mad * 1.4826;
+    var n = 0;
+    comVar.forEach(function (p) {
+      if (Math.abs(p.variacao.delta) < ATIPICO_PISO_MIN) return;
+      // MAD zero (time inteiro variando igual) deixaria todo mundo com escore
+      // infinito — aí o piso decide sozinho, em vez de marcar a lista inteira.
+      var z = sigma > 0 ? Math.abs(p.variacao.porDia - med) / sigma : null;
+      if (z !== null && z <= ATIPICO_Z) return;
+      p.atipico = { z: z, v: p.variacao };
+      n++;
+    });
+    return n;
+  }
+
+  function textoAtipico(p) {
+    var v = p.atipico.v;
+    return 'Variação atípica para o time: saiu de ' + fmtSaldoAgg(v.de) + ' para ' +
+      fmtSaldoAgg(v.para) + ' entre ' + fmtDataBR(v.dataDe) + ' e ' + fmtDataBR(v.dataPara) +
+      ' (' + fmtSaldoAgg(v.delta) + ' em ' + v.dias + (v.dias === 1 ? ' dia' : ' dias') + '). ' +
+      'Pode ser quitação ou acerto de RH — vale conferir antes de tratar o número novo como certo.';
+  }
+
+  function badgeAtipico(p) {
+    var b = document.createElement('span');
+    b.className = 'bh-badge atipico';
+    b.textContent = 'Variação atípica';
+    b.title = textoAtipico(p);
+    return b;
+  }
+
   function fmtMinutos(min) {
     if (min == null) return '—';
     if (min < 60) return min + ' min';
@@ -925,6 +1057,90 @@ window.msgAcessoNegado = function (nomePagina) {
     }
   }
 
+  // Resumo "Por time" — a contraparte da "Por casa" no outro eixo. O seletor
+  // de time mostra um por vez, então comparar bar × salão × cozinha exigia
+  // trocar de aba e guardar o número anterior de cabeça. Aqui os três ficam
+  // lado a lado.
+  //
+  // Diferença deliberada em relação à "Por casa": esta RESPEITA o filtro de
+  // casa (é o eixo do outro controle) e NÃO respeita o de time (ela é o
+  // controle de time). Cada tabela ignora o próprio eixo e obedece ao outro.
+  function renderPorTime(setoresVisiveis, casaFiltro, setorSelecionado, onSelect) {
+    var wrapEl = document.getElementById('bh-portime-wrap');
+    var tbody = document.getElementById('bh-portime-lista');
+    tbody.innerHTML = '';
+    // Um time só = a tabela não compara nada; não vale o espaço.
+    if (setoresVisiveis.length < 2) { wrapEl.style.display = 'none'; return; }
+    var casasObj = (PAYLOAD || {}).casas || {};
+    var linhas = setoresVisiveis.map(function (k) {
+      var SET = SETORES[k];
+      var ag = { chave: k, rotulo: SET.rotulo, n: 0, saldo: 0, comSaldo: 0,
+                 atencao: 0, critico: 0, devendo: 0, favor: 0,
+                 custo: 0, custoTemAlgum: false };
+      Object.keys(casasObj).forEach(function (slug) {
+        var c = casasObj[slug];
+        if (casaFiltro && (c.bar || slug) !== casaFiltro) return;
+        (c[SET.chave] || []).forEach(function (b) {
+          ag.n++;
+          var sm = b.saldo_atual_minutos;
+          if (sm != null) {
+            ag.comSaldo++; ag.saldo += sm;
+            var al = alertaDe(sm);
+            if (al === 'atencao') ag.atencao++;
+            else if (al === 'critico') ag.critico++;
+            if (sm < 0) ag.devendo++; else if (sm > 0) ag.favor++;
+          }
+          var cu = (b.plano_zerar_horas && b.plano_zerar_horas.custo_se_nao_abater != null)
+            ? b.plano_zerar_horas.custo_se_nao_abater : null;
+          if (cu != null) { ag.custo += cu; ag.custoTemAlgum = true; }
+        });
+      });
+      return ag;
+    }).filter(function (ag) { return ag.n > 0; });
+    if (linhas.length < 2) { wrapEl.style.display = 'none'; return; }
+    wrapEl.style.display = '';
+    var T = { n: 0, saldo: 0, comSaldo: 0, atencao: 0, critico: 0, devendo: 0, favor: 0, custo: 0, custoAlgum: false };
+    function linha(ag, ehTotal) {
+      var tr = document.createElement('tr');
+      if (!ehTotal) {
+        tr.className = 'bh-time-linha' + (setorSelecionado === ag.chave ? ' bh-time-sel' : '');
+        tr.dataset.time = ag.chave;
+        if (onSelect) tr.onclick = function () { onSelect(ag.chave); };
+      }
+      var tdT = document.createElement('td');
+      if (ehTotal) tdT.className = 'tot';
+      var nomeEl = document.createElement('span'); nomeEl.className = 'bh-casa'; nomeEl.textContent = ag.rotulo;
+      tdT.appendChild(nomeEl);
+      tr.appendChild(tdT);
+      tr.appendChild(td(String(ag.n), 'n' + (ehTotal ? ' tot' : '')));
+      var tdS = document.createElement('td'); tdS.className = 'n' + (ehTotal ? ' tot' : '');
+      var sEl = document.createElement('span');
+      sEl.className = 'bh-saldo ' + (ag.comSaldo === 0 ? '' : (ag.saldo < 0 ? 'neg' : 'pos'));
+      sEl.textContent = ag.comSaldo === 0 ? '—' : fmtSaldoAgg(ag.saldo);
+      tdS.appendChild(sEl); tr.appendChild(tdS);
+      var cAl = celContagem(ag.atencao, ag.critico); if (ehTotal) cAl.className += ' tot'; tr.appendChild(cAl);
+      var cDF = celContagem(ag.devendo, ag.favor, 'bh-cont-pos'); if (ehTotal) cDF.className += ' tot'; tr.appendChild(cDF);
+      var tdCusto = document.createElement('td'); tdCusto.className = 'n' + (ehTotal ? ' tot' : '');
+      // Mesma regra do resto da página: gente a favor sem nenhum custo
+      // calculável é salário não configurado, não custo zero.
+      tdCusto.textContent = (ag.favor > 0 && !ag.custoTemAlgum) ? '—' : fmtRS(ag.custo);
+      tr.appendChild(tdCusto);
+      tbody.appendChild(tr);
+    }
+    linhas.forEach(function (ag) {
+      linha(ag, false);
+      T.n += ag.n; T.saldo += ag.saldo; T.comSaldo += ag.comSaldo;
+      T.atencao += ag.atencao; T.critico += ag.critico;
+      T.devendo += ag.devendo; T.favor += ag.favor;
+      T.custo += ag.custo; if (ag.custoTemAlgum) T.custoAlgum = true;
+    });
+    linha({
+      rotulo: casaFiltro ? ('Todos os times · ' + casaFiltro) : 'Todos os times',
+      n: T.n, saldo: T.saldo, comSaldo: T.comSaldo, atencao: T.atencao, critico: T.critico,
+      devendo: T.devendo, favor: T.favor, custo: T.custo, custoTemAlgum: T.custoAlgum,
+    }, true);
+  }
+
   // Bar e Salão são duas equipes na MESMA página (decisão do Rodrigo,
   // 2026-07-24): mesma estrutura, mesmos blocos, um seletor no topo. O
   // payload traz as duas listas por casa ("bartenders" e "salao"), então
@@ -935,6 +1151,7 @@ window.msgAcessoNegado = function (nomePagina) {
     cozinha: { chave: 'cozinha',    rotulo: 'Cozinha', pessoa: 'Pessoa',    plural: 'Pessoas',    pend: 'pendencia_cozinha' }
   };
   var setorAtual = 'bar';
+  var casaLembrada = '';   // filtro de casa que atravessa a troca de time
   var PAYLOAD = null;
 
   function inicia(payload) {
@@ -948,14 +1165,28 @@ window.msgAcessoNegado = function (nomePagina) {
     return Object.keys(casas).some(function (s) { return ((casas[s] || {})[chave] || []).length; });
   }
 
-  function montaSeletor() {
-    var alvo = document.getElementById('bh-setor');
-    // Só mostra os setores que TÊM gente publicada (bar sempre entra). Um
-    // setor ainda não mapeado numa casa não ganha uma aba vazia. Se sobrar só
-    // o bar, o seletor some (nada pra escolher).
-    var visiveis = Object.keys(SETORES).filter(function (k) {
+  // Só os setores que TÊM gente publicada (bar sempre entra). Um setor ainda
+  // não mapeado numa casa não ganha aba nem linha vazia. Fonte única do
+  // seletor de chips E da tabela "Por time" — duas listas independentes
+  // divergiriam na primeira casa que ganhasse um setor novo.
+  function setoresComGente() {
+    return Object.keys(SETORES).filter(function (k) {
       return k === 'bar' || temGente(SETORES[k].chave);
     });
+  }
+
+  // Troca de time programática (usada pela tabela "Por time"): mesma coisa
+  // que clicar no chip, inclusive re-render.
+  function selecionarSetor(k) {
+    if (!SETORES[k] || setorAtual === k) return;
+    setorAtual = k;
+    montaSeletor();
+    montaSetor();
+  }
+
+  function montaSeletor() {
+    var alvo = document.getElementById('bh-setor');
+    var visiveis = setoresComGente();
     if (visiveis.length < 2) { alvo.style.display = 'none'; return; }
     // se o setor atual sumiu (ex.: recarregou sem cozinha), volta pro bar
     if (visiveis.indexOf(setorAtual) < 0) setorAtual = 'bar';
@@ -1028,6 +1259,7 @@ window.msgAcessoNegado = function (nomePagina) {
           saldo_texto: b.saldo_atual_texto, saldo_minutos: b.saldo_atual_minutos,
           situacao: b.situacao, tendencia: tendenciaDe(b.historico), custo: custo,
           divergencia: b.divergencia_gestao || null, historico: b.historico || [],
+          variacao: variacaoDe(b.historico), atipico: null,
         });
         if (b.plano_zerar_horas && b.plano_zerar_horas.minutos_por_dia) {
           planoPessoas.push({
@@ -1062,6 +1294,11 @@ window.msgAcessoNegado = function (nomePagina) {
     });
     // renderPorCasa é chamado mais abaixo, depois de selecionarCasa/desenha
     // existirem — as linhas precisam do callback de seleção.
+
+    // Uma vez por time, sobre o time INTEIRO: a régua do que é atípico não
+    // pode mudar quando se filtra uma casa (senão o mesmo saldo ganha e perde
+    // o badge conforme o filtro, e o badge deixa de significar algo).
+    marcaAtipicos(pessoas);
 
     // Matrículas desativadas do time atual (o Worker já separou em
     // c.desativadas, fora das listas ativas — então nada disso entra nas
@@ -1112,6 +1349,7 @@ window.msgAcessoNegado = function (nomePagina) {
           divBadge.title = p.divergencia;
           nomeWrap.appendChild(divBadge);
         }
+        if (p.atipico) nomeWrap.appendChild(badgeAtipico(p));
         tdNome.appendChild(nomeWrap);
         tr.appendChild(tdNome);
         var tdSaldo = document.createElement('td'); tdSaldo.className = 'n';
@@ -1173,6 +1411,12 @@ window.msgAcessoNegado = function (nomePagina) {
     var estado = { casa: '', busca: '' };
     var casasPresentes = [];
     pessoas.forEach(function (p) { if (p.casa && casasPresentes.indexOf(p.casa) < 0) casasPresentes.push(p.casa); });
+    // A casa escolhida sobrevive à troca de time. Sem isto, clicar numa linha
+    // da tabela "Por time" (que diz respeitar o filtro de casa) reconstruía
+    // tudo com o filtro limpo — a casa sumia sem avisar. Só é restaurada se a
+    // casa existir no time novo: uma casa sem cozinha não pode ficar
+    // selecionada na cozinha.
+    if (casaLembrada && casasPresentes.indexOf(casaLembrada) >= 0) estado.casa = casaLembrada;
     var chipsWrap = document.getElementById('bh-casas');
 
     // Seleção de casa UNIFICADA: chips e linhas do "Por casa" chamam isto,
@@ -1181,6 +1425,7 @@ window.msgAcessoNegado = function (nomePagina) {
     // parada — dava a impressão de "filtro não funciona".
     function selecionarCasa(valor) {
       estado.casa = valor;
+      casaLembrada = valor;
       chipsWrap.querySelectorAll('.chip').forEach(function (x) {
         x.classList.toggle('on', (x.dataset.v || '') === valor);
       });
@@ -1188,6 +1433,8 @@ window.msgAcessoNegado = function (nomePagina) {
       if (tb) tb.querySelectorAll('tr').forEach(function (tr) {
         tr.classList.toggle('bh-casa-sel', (tr.dataset.casa || '') === valor);
       });
+      // A "Por time" é o outro eixo: mudou a casa, os totais por time mudam.
+      renderPorTime(setoresComGente(), valor, setorAtual, selecionarSetor);
       desenha();
     }
 
@@ -1199,8 +1446,8 @@ window.msgAcessoNegado = function (nomePagina) {
       chipsWrap.appendChild(b);
     }
     if (casasPresentes.length > 1) {
-      addChip('', 'Todas as casas', true);
-      casasPresentes.forEach(function (c) { addChip(c, c, false); });
+      addChip('', 'Todas as casas', !estado.casa);
+      casasPresentes.forEach(function (c) { addChip(c, c, c === estado.casa); });
     }
     document.getElementById('bh-busca').oninput = function (e) { estado.busca = e.target.value.trim().toLowerCase(); desenha(); };
 
@@ -1241,6 +1488,7 @@ window.msgAcessoNegado = function (nomePagina) {
           divBadge.title = p.divergencia;
           nomeWrap.appendChild(divBadge);
         }
+        if (p.atipico) nomeWrap.appendChild(badgeAtipico(p));
         tdNome.appendChild(nomeWrap);
         tr.appendChild(tdNome);
         tr.appendChild(td(p.matricula || '—'));
@@ -1297,8 +1545,47 @@ window.msgAcessoNegado = function (nomePagina) {
       // somando (time + casa), pra ninguém ler o total de uma casa como se
       // fosse do grupo.
       document.getElementById('bh-hero-escopo').textContent = ' · ' + SET.rotulo + ' · ' + (estado.casa || 'todas as casas');
+
+      // Aviso de variação atípica: o badge na lista só é visto por quem
+      // rola até a linha certa. Este bloco põe o achado na altura dos olhos,
+      // que é o ponto da funcionalidade — ninguém deveria precisar comparar
+      // duas rodadas à mão pra descobrir um pulo de 121h.
+      var atipicos = visiveis.filter(function (p) { return p.atipico; })
+        .sort(function (a, b) { return Math.abs(b.variacao.delta) - Math.abs(a.variacao.delta); });
+      var avisoEl = document.getElementById('bh-atipico');
+      avisoEl.innerHTML = '';
+      if (!atipicos.length) {
+        avisoEl.style.display = 'none';
+      } else {
+        avisoEl.style.display = 'block';
+        var cab = document.createElement('div');
+        var b = document.createElement('b');
+        b.textContent = atipicos.length === 1
+          ? '1 variação atípica neste time'
+          : atipicos.length + ' variações atípicas neste time';
+        cab.appendChild(b);
+        cab.appendChild(document.createTextNode(
+          ' — saldo que mudou muito além do normal do time entre as duas últimas ' +
+          'leituras. Pode ser acerto de RH; vale conferir antes de tratar o número novo como certo.'));
+        avisoEl.appendChild(cab);
+        atipicos.slice(0, 5).forEach(function (p) {
+          var l = document.createElement('span');
+          l.className = 'bh-atipico-quem';
+          l.textContent = p.nome + ' (' + p.casa + '): ' + fmtSaldoAgg(p.variacao.de) + ' → ' +
+            fmtSaldoAgg(p.variacao.para) + ' em ' + p.variacao.dias +
+            (p.variacao.dias === 1 ? ' dia' : ' dias');
+          avisoEl.appendChild(l);
+        });
+        if (atipicos.length > 5) {
+          var mais = document.createElement('span');
+          mais.className = 'bh-atipico-quem';
+          mais.textContent = '+ ' + (atipicos.length - 5) + ' na lista abaixo (badge roxo).';
+          avisoEl.appendChild(mais);
+        }
+      }
     }
     renderPorCasa(porCasa, selecionarCasa, estado.casa);
+    renderPorTime(setoresComGente(), estado.casa, setorAtual, selecionarSetor);
     desenha();
 
     // E4c: bar e salão/cozinha têm cadências diferentes (48h vs. ~1x por
@@ -2422,7 +2709,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '3f956421da60';
+  var BUILD = '157bb17e4aec';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
