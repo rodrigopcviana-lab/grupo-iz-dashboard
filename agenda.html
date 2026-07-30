@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Minha Mesa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=6e117ed3710a">
+<link rel="stylesheet" href="portal.css?v=c1579be67999">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -863,6 +863,7 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
   var ano = hojeD.getFullYear(), mes = hojeD.getMonth(), sel = HOJE, view = 'hoje', edId = null;
   var CHK = [], edRef = '';   // checklist e vínculo da tarefa aberta no modal
   var ANX_ATUAIS = [], ANX_NOVOS = [], ANX_FORA = [];   // anexos (E8)
+  var TRUNCADO = false;   // o Worker avisou que nao coube tudo na resposta
   var AGENDA_ANEXOS_MAX = 6;   // espelha o teto do worker
 
   function $(id){ return document.getElementById(id); }
@@ -1126,14 +1127,33 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
 
   // Fila de tarefas por urgência do prazo. Sem data fica por último — é o que
   // está "em planejamento", não esquecido.
+  // Cada tarefa cai em UM grupo só, o mais urgente que couber. A primeira
+  // versão usava um filter independente por grupo e tinha dois defeitos reais:
+  //   - tarefa vencida ONTEM e agendada pra HOJE aparecia duas vezes (e era
+  //     contada duas vezes nos totais);
+  //   - tarefa com prazo além de 7 dias não caía em grupo NENHUM e sumia da
+  //     lista "Minhas tarefas" — justamente a lista onde se procura o que
+  //     está aberto.
+  function grupoDaTarefa(e){
+    var d = diasAte(e.prazo);
+    if (d !== null && d < 0) return 'atraso';
+    if (d === 0 || dataDe(e.inicio) === HOJE) return 'hoje';
+    if (d !== null && d <= 7) return 'semana';
+    if (d !== null) return 'adiante';
+    return e.inicio ? 'adiante' : 'semdata';
+  }
+
   function filaView(){
     var box = $('ag-fila'); box.innerHTML = '';
     var t = tarefas();
+    var porGrupo = { atraso: [], hoje: [], semana: [], adiante: [], semdata: [] };
+    t.forEach(function(e){ porGrupo[grupoDaTarefa(e)].push(e); });
     var grupos = [
-      ['atraso', 'Atrasadas', t.filter(function(e){ var d = diasAte(e.prazo); return d !== null && d < 0; })],
-      ['hoje', 'Hoje', t.filter(function(e){ return diasAte(e.prazo) === 0 || dataDe(e.inicio) === HOJE; })],
-      ['', 'Esta semana', t.filter(function(e){ var d = diasAte(e.prazo); return d !== null && d > 0 && d <= 7; })],
-      ['', 'Sem data', t.filter(function(e){ return !e.prazo && !e.inicio; })]
+      ['atraso', 'Atrasadas', porGrupo.atraso],
+      ['hoje', 'Hoje', porGrupo.hoje],
+      ['', 'Esta semana', porGrupo.semana],
+      ['', 'Mais adiante', porGrupo.adiante],
+      ['', 'Sem data', porGrupo.semdata]
     ];
     var vazio = true;
     grupos.forEach(function(g){
@@ -1144,6 +1164,9 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
       g[2].forEach(function(e){ box.appendChild(linhaTarefa(e)); });
     });
     if (vazio) box.appendChild(el('div', 'ag-vazio', 'Nenhuma tarefa aberta.'));
+    // Nunca deixar a lista parecer completa quando não é.
+    if (TRUNCADO) box.appendChild(el('div', 'ag-colsub',
+      'Mostrando as mais recentes — você tem tarefas demais para caber nesta tela.'));
   }
 
   function linhaTarefa(e){
@@ -1173,7 +1196,13 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
         : (PUX.demandas.length + (PUX.demandas.length === 1 ? ' aberta' : ' abertas')), 'demandas.html?modo=enviadas'],
       ['--amarelo', 'Obrigações vencendo', PUX.obrigacoes === null ? '—'
         : (PUX.obrigacoes.length ? PUX.obrigacoes.length + ' em ' + MESA.obrigacao_vencendo_dias + ' dias' : 'nenhuma'), 'demandas.html'],
-      ['--verde', 'Rotinas de hoje', (PUX.rotinas || []).filter(function(r){ return r.data === HOJE; }).length + ' com data', 'rotinas.html'],
+      // "0 de hoje" e "a fonte não tem rotina com data" são coisas diferentes,
+      // e hoje o segundo é o caso real: as rotinas vindas do TickTick/Notion
+      // não trazem data futura nenhuma. Dizer "0" faria parecer que hoje está
+      // limpo, quando na verdade não há o que contar.
+      ['--verde', 'Rotinas de hoje', (PUX.rotinas || []).length
+        ? ((PUX.rotinas || []).filter(function(r){ return r.data === HOJE; }).length + ' com data')
+        : 'sem rotina com data', 'rotinas.html'],
       ['#6fa8dc', 'Eventos · 7 dias', (PUX.eventos || []).filter(function(ev){
         var d = diasAte(ev.data); return d !== null && d >= 0 && d <= 7; }).length + ' eventos', 'eventos.html']
     ];
@@ -1499,7 +1528,7 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
         if (!r.ok) return null;
         return r.json();
       })
-      .then(function(j){ if (j && j.itens) { ITENS = j.itens; render(); } })
+      .then(function(j){ if (j && j.itens) { ITENS = j.itens; TRUNCADO = !!j.truncado; render(); } })
       .catch(function(){});
   }
 
@@ -1514,7 +1543,8 @@ páginas. Cada mesa é independente — só você vê a sua. Use sua senha indiv
       .then(function(j){
         if (!j) return;
         if (j.aviso){ msg.textContent = j.aviso; return; }
-        ITENS = j.itens || []; gate.style.display = 'none'; corpo.style.display = '';
+        ITENS = j.itens || []; TRUNCADO = !!j.truncado;
+        gate.style.display = 'none'; corpo.style.display = '';
         ligaControles(); render(); carregaPuxado();
       })
       .catch(function(){ msg.textContent = 'Sem conexão. Tente de novo.'; });
@@ -2939,7 +2969,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '6e117ed3710a';
+  var BUILD = 'c1579be67999';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

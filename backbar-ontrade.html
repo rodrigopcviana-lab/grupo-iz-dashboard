@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Backbar — parceiros · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=6e117ed3710a">
+<link rel="stylesheet" href="portal.css?v=c1579be67999">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -531,11 +531,17 @@ window.msgAcessoNegado = function (nomePagina) {
     return e;
   }
   function segundaAtual() {
+    // NUNCA .toISOString() aqui: ela converte pra UTC, e depois das 21h
+    // (Brasil é UTC-3) a data já virou amanhã em UTC — a segunda-feira saía
+    // errada bem na hora que o bar fecha e conta o backbar. Monta a string
+    // a partir dos componentes LOCAIS (dia certo em qualquer hora do dia).
     var d = new Date();
     var dow = d.getDay();
     var ajuste = dow === 0 ? -6 : 1 - dow;
     d.setDate(d.getDate() + ajuste);
-    return d.toISOString().slice(0, 10);
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var dd = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + mm + '-' + dd;
   }
 
   function marcasDaCasa() {
@@ -560,6 +566,16 @@ window.msgAcessoNegado = function (nomePagina) {
     el.innerHTML = '<b>' + Math.round((marca / total) * 1000) / 10 + '%</b> do backbar é da marca';
   }
 
+  // Fatia como texto, nunca new Date() — "AAAA-MM-DD" é dia sem hora, e
+  // criar um Date a partir disso interpretaria meia-noite UTC, virando o dia
+  // anterior em qualquer fuso atrás de UTC (mesma armadilha já documentada
+  // no projeto para datas puras).
+  function fmtDataCurta(iso) {
+    if (!iso || iso.length < 10) return '—';
+    var p = iso.slice(0, 10).split('-');
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+
   function carregaLista() {
     var casa = casaSel();
     if (!casa) return;
@@ -582,7 +598,7 @@ window.msgAcessoNegado = function (nomePagina) {
         itens.forEach(function (it) {
           var tr = document.createElement('tr');
           tr.appendChild(td(it.marca));
-          tr.appendChild(td(it.semana));
+          tr.appendChild(td(fmtDataCurta(it.semana)));
           tr.appendChild(td(it.garrafas_total, 'n'));
           tr.appendChild(td(it.garrafas_marca, 'n'));
           tr.appendChild(td(it.percentual == null ? null : (it.percentual + '%'), 'n'));
@@ -1698,7 +1714,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '6e117ed3710a';
+  var BUILD = 'c1579be67999';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

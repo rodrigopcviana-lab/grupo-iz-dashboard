@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Banco de Horas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=6e117ed3710a">
+<link rel="stylesheet" href="portal.css?v=c1579be67999">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -426,7 +426,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
 
 <h1>Banco de Horas</h1>
-<p class="sub">Saldo de banco de horas do bar e do salão, atualizado a cada ~5 dias a partir do AHgora. Fonte oficial continua sendo o AHgora — esta página é acompanhamento, não homologação.</p>
+<p class="sub">Saldo de banco de horas do bar, salão e cozinha, a partir do AHgora — o bar é lido a cada 48h; salão e cozinha, cerca de 1x por semana. Fonte oficial continua sendo o AHgora — esta página é acompanhamento, não homologação.</p>
 
 <div class="panel" id="bh-gate">
   <h2>Acesso restrito</h2>
@@ -490,6 +490,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-tend { font-size:12px; }
   .bh-tend.melhorando { color:var(--verde); }
   .bh-tend.piorando { color:var(--verm); }
+  .bh-spark { display:block; color:var(--text-3); margin-bottom:2px; }
+  .bh-spark.melhorando { color:var(--verde); }
+  .bh-spark.piorando { color:var(--verm); }
   .bh-vazio { text-align:center; color:var(--text-3); padding:30px 10px; }
   .bh-foot { font-size:11.5px; color:var(--text-3); margin-top:16px; }
   .bh-fechamento { background:var(--card); border:1px solid var(--border); border-radius:12px;
@@ -770,6 +773,54 @@ window.msgAcessoNegado = function (nomePagina) {
     return null;
   }
 
+  // Mini-gráfico das últimas leituras (até 8, já vêm do payload) — o dado já
+  // existia pra calcular tendenciaDe(), só nunca virava desenho. Construído
+  // via createElementNS (nunca innerHTML), mesmo padrão de segurança do
+  // resto da página. null se não houver pontos suficientes pra uma linha.
+  function sparklineSVG(historico, tendencia) {
+    var pontos = (historico || []).filter(function (h) { return h.saldo_minutos != null; });
+    if (pontos.length < 2) return null;
+    var vals = pontos.map(function (h) { return h.saldo_minutos; });
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+    var w = 56, h = 18, pad = 2;
+    var range = (max - min) || 1;
+    var passo = (w - pad * 2) / (vals.length - 1);
+    var coords = vals.map(function (v, i) {
+      var x = pad + i * passo;
+      var y = pad + (h - pad * 2) * (1 - (v - min) / range);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.setAttribute('width', w); svg.setAttribute('height', h);
+    svg.setAttribute('class', 'bh-spark' + (tendencia ? ' ' + tendencia : ''));
+    var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    poly.setAttribute('points', coords);
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', 'currentColor');
+    poly.setAttribute('stroke-width', '1.6');
+    poly.setAttribute('stroke-linecap', 'round');
+    poly.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(poly);
+    return svg;
+  }
+
+  // E4c mudou a cadência de coleta (bar 48h, salão/cozinha semanal) — um
+  // único "gerado_em" de página não diz mais a verdade sobre quão fresco é
+  // CADA setor. A data mais recente do próprio histórico de cada pessoa
+  // (já vem no payload, último item = leitura mais recente daquela pessoa)
+  // é o retrato real da cobertura do setor selecionado, sem pedir nada novo
+  // ao servidor.
+  function ultimaDataColetada(pessoasArr) {
+    var max = null;
+    (pessoasArr || []).forEach(function (p) {
+      var h = p.historico || [];
+      var d = h.length ? h[h.length - 1].data : null;
+      if (d && (!max || d > max)) max = d;
+    });
+    return max;
+  }
+
   function fmtDataBR(iso) {
     if (!iso) return '';
     var p = iso.split('-');
@@ -976,7 +1027,7 @@ window.msgAcessoNegado = function (nomePagina) {
           casa: nomeCasa, casa_slug: slug, matricula: b.matricula, nome: b.nome,
           saldo_texto: b.saldo_atual_texto, saldo_minutos: b.saldo_atual_minutos,
           situacao: b.situacao, tendencia: tendenciaDe(b.historico), custo: custo,
-          divergencia: b.divergencia_gestao || null,
+          divergencia: b.divergencia_gestao || null, historico: b.historico || [],
         });
         if (b.plano_zerar_horas && b.plano_zerar_horas.minutos_por_dia) {
           planoPessoas.push({
@@ -1211,12 +1262,14 @@ window.msgAcessoNegado = function (nomePagina) {
         tr.appendChild(td(p.situacao || (p.saldo_minutos == null ? 'sem dados' : '—')));
 
         var tdTend = document.createElement('td');
+        var spark = sparklineSVG(p.historico, p.tendencia);
+        if (spark) tdTend.appendChild(spark);
         if (p.tendencia) {
           var tendEl = document.createElement('span');
           tendEl.className = 'bh-tend ' + p.tendencia;
           tendEl.textContent = p.tendencia === 'melhorando' ? 'melhorando' : 'piorando';
           tdTend.appendChild(tendEl);
-        } else {
+        } else if (!spark) {
           tdTend.textContent = '—';
         }
         tr.appendChild(tdTend);
@@ -1248,9 +1301,20 @@ window.msgAcessoNegado = function (nomePagina) {
     renderPorCasa(porCasa, selecionarCasa, estado.casa);
     desenha();
 
-    document.getElementById('bh-foot').textContent = payload.gerado_em
-      ? 'Última atualização: ' + new Date(payload.gerado_em).toLocaleString('pt-BR') + '. Ciclo de coleta: a cada ~5 dias.'
-      : '';
+    // E4c: bar e salão/cozinha têm cadências diferentes (48h vs. ~1x por
+    // semana) — um "Última atualização" só, vindo de payload.gerado_em,
+    // ficava enganoso (uma rodada só-bar atualiza o carimbo da PÁGINA
+    // inteira, fazendo salão/cozinha parecerem tão frescos quanto o bar
+    // quando podem estar até 7 dias atrás). Calcula a data mais recente
+    // REAL do setor selecionado a partir do próprio histórico de cada
+    // pessoa — não pede nada novo ao servidor.
+    var ultimaSetor = ultimaDataColetada(pessoas);
+    var cadenciaTxt = setorAtual === 'bar'
+      ? 'lido a cada 48h'
+      : 'lido cerca de 1x por semana — pode estar defasado até 7 dias';
+    document.getElementById('bh-foot').textContent = ultimaSetor
+      ? SET.rotulo + ': última leitura em ' + fmtDataBR(ultimaSetor) + ' (' + cadenciaTxt + ').'
+      : (payload.gerado_em ? 'Última atualização da página: ' + new Date(payload.gerado_em).toLocaleString('pt-BR') + '.' : '');
   }
 
   function buscaDados(token) {
@@ -2324,7 +2388,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '6e117ed3710a';
+  var BUILD = 'c1579be67999';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

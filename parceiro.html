@@ -99,7 +99,7 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
   padding:0;margin-bottom:14px;font-family:inherit}
 
 /* --- etiqueta Criar (puxável, PLANO_TRANSFERENCIAS.md §8) --- */
-.criar-tab{position:fixed;right:0;top:132px;background:var(--card);border:1px solid var(--border);
+.criar-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--border);
   border-right:none;border-radius:10px 0 0 10px;padding:10px 8px;writing-mode:vertical-rl;
   font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text);cursor:pointer;z-index:20}
 .criar-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:29;display:none}
@@ -111,10 +111,16 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .criar-cab{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .criar-cab h2{font-size:15px;margin:0;font-weight:400;font-family:var(--serif)}
 .criar-fechar{background:none;border:none;color:var(--text-3);font-size:20px;cursor:pointer;padding:0;line-height:1}
-.criar-seg{display:flex;gap:6px;margin-bottom:16px}
-.criar-seg button{flex:1;padding:9px 6px;border-radius:9px;border:1px solid var(--border);
-  background:var(--card);color:var(--text-2);font-size:12.5px;cursor:pointer;font-family:inherit}
-.criar-seg button.on{background:var(--acc);color:#241a06;border-color:var(--acc);font-weight:600}
+.criar-op{display:flex;align-items:flex-start;gap:10px;background:var(--card);border:1px solid var(--border);
+  border-radius:11px;padding:11px 12px;margin-bottom:8px;cursor:pointer}
+.criar-op:hover,.criar-op:focus-visible{border-color:var(--acc);outline:none}
+.criar-opi{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center}
+.criar-opi svg{width:16px;height:16px}
+.criar-opt{font-size:14px;margin:0}
+.criar-opd{font-size:12px;color:var(--text-2);margin:3px 0 0;line-height:1.4}
+.criar-fn{font-size:11.5px;color:var(--text-3);margin:12px 0 0;line-height:1.5}
+.criar-voltar{background:none;border:none;color:var(--text-3);font-size:12.5px;cursor:pointer;
+  padding:0;margin-bottom:14px;font-family:inherit}
 .criar-campo{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .criar-campo label{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3)}
 .criar-campo input,.criar-campo textarea{padding:11px 10px;font-size:14px;border-radius:10px;
@@ -161,29 +167,49 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
   <div id="tela-perfil" style="display:none"></div>
 </div>
 
-<div class="criar-tab" id="criar-tab" role="button" tabindex="0">Criar</div>
+<div class="criar-tab" id="criar-tab" role="button" tabindex="0" style="display:none">Criar</div>
 <div class="criar-backdrop" id="criar-backdrop"></div>
 <div class="criar-drawer" id="criar-drawer">
   <div class="criar-cab">
     <h2>Criar</h2>
     <button type="button" class="criar-fechar" id="criar-fechar" aria-label="Fechar">×</button>
   </div>
-  <div class="criar-seg" id="criar-seg">
-    <button type="button" class="on" data-tipo="Ideia">Ideia</button>
-    <button type="button" data-tipo="Receita">Receita</button>
-    <button type="button" data-tipo="Nota">Nota</button>
+
+  <div id="criar-menu">
+    <div class="criar-op" data-tipo="Ideia" role="button" tabindex="0">
+      <span class="criar-opi" style="background:rgba(127,184,224,.16)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#7fb8e0" stroke-width="1.6"><path d="M9 18h6M12 3a6 6 0 0 1 3 11v3H9v-3a6 6 0 0 1 3-11z"/></svg></span>
+      <div><p class="criar-opt">Ideia</p>
+        <p class="criar-opd">Desenho ou colagem livre — vai para a coordenação como sugestão</p></div>
+    </div>
+    <div class="criar-op" data-tipo="Receita" role="button" tabindex="0">
+      <span class="criar-opi" style="background:rgba(159,225,203,.16)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#9fe1cb" stroke-width="1.6"><path d="M5 4h14l-6 8v6"/><path d="M9 20h6"/></svg></span>
+      <div><p class="criar-opt">Receita</p>
+        <p class="criar-opd">Propor um cocktail com a marca — entra como proposta, não no cardápio</p></div>
+    </div>
+    <div class="criar-op" data-tipo="Nota" role="button" tabindex="0">
+      <span class="criar-opi" style="background:rgba(224,176,92,.16)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#e0b05c" stroke-width="1.6"><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>
+      <div><p class="criar-opt">Nota</p><p class="criar-opd">Anotação sua, privada — ninguém do grupo vê</p></div>
+    </div>
+    <p class="criar-fn">Nada é enviado sem você confirmar.</p>
   </div>
-  <p class="criar-nota" id="criar-nota-tipo"></p>
-  <div class="criar-campo">
-    <label for="cr-titulo">Título</label>
-    <input id="cr-titulo" type="text" maxlength="120" placeholder="Um nome curto">
+
+  <div id="criar-form" style="display:none">
+    <button type="button" class="criar-voltar" id="criar-voltar">‹ Ideia · Receita · Nota</button>
+    <p class="criar-nota" id="criar-nota-tipo"></p>
+    <div class="criar-campo">
+      <label for="cr-titulo">Título</label>
+      <input id="cr-titulo" type="text" maxlength="120" placeholder="Um nome curto">
+    </div>
+    <div class="criar-campo">
+      <label for="cr-desc" id="cr-desc-label">Descrição</label>
+      <textarea id="cr-desc" maxlength="1000" placeholder="Escreva aqui"></textarea>
+    </div>
+    <button type="button" class="criar-salvar" id="cr-salvar">Enviar</button>
+    <p class="criar-aviso" id="cr-aviso" role="status" aria-live="polite"></p>
   </div>
-  <div class="criar-campo">
-    <label for="cr-desc" id="cr-desc-label">Descrição</label>
-    <textarea id="cr-desc" maxlength="1000" placeholder="Escreva aqui"></textarea>
-  </div>
-  <button type="button" class="criar-salvar" id="cr-salvar">Enviar</button>
-  <p class="criar-aviso" id="cr-aviso" role="status" aria-live="polite"></p>
 </div>
 
 <script>
@@ -504,18 +530,33 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
   // Contadores do "O que você criou" no Meu perfil — sem cache: são só 2
   // fetches leves, e o perfil não é aberto o tempo todo.
   function carregaContadores(cb) {
-    var out = { ideias: 0, receitas: 0, notas: 0 };
+    var out = { ideias: 0, receitas: 0, notas: 0, ultimoEnvio: null };
+    // "Último envio" (Meu perfil) — o mais recente entre Ideia/Receita/Nota
+    // que a PRÓPRIA marca enviou; nunca a foto de backbar (quem manda essa é
+    // o chefe, não o parceiro — sem rota pra ele mandar isso).
+    function considera(quando, tipo) {
+      if (!quando) return;
+      var t = new Date(quando).getTime();
+      if (isNaN(t)) return;
+      if (!out.ultimoEnvio || t > out.ultimoEnvio.t) out.ultimoEnvio = { t: t, tipo: tipo };
+    }
     var pend = 2;
     function feito() { pend--; if (pend === 0) cb(out); }
     fetch(WORKER + '/api/ideias', { headers: { 'X-Token': sessaoAtualGlobal.token } })
       .then(function (r) { return r.ok ? r.json() : { ideias: [] }; })
       .then(function (j) {
-        (j.ideias || []).forEach(function (i) { if (i.tipo === 'Receita') out.receitas++; else out.ideias++; });
+        (j.ideias || []).forEach(function (i) {
+          if (i.tipo === 'Receita') out.receitas++; else out.ideias++;
+          considera(i.criado, i.tipo === 'Receita' ? 'receita' : 'ideia');
+        });
       }).catch(function () {}).finally(feito);
     fetch(WORKER + '/api/notas', { headers: { 'X-Token': sessaoAtualGlobal.token } })
       .then(function (r) { return r.ok ? r.json() : { notas: [] }; })
-      .then(function (j) { out.notas = (j.notas || []).length; })
-      .catch(function () {}).finally(feito);
+      .then(function (j) {
+        var notas = j.notas || [];
+        out.notas = notas.length;
+        notas.forEach(function (n) { considera(n.criado_em, 'nota'); });
+      }).catch(function () {}).finally(feito);
   }
 
   var VAPID_PUBLIC = "BDI6gDuv5E4ERk_WNG1QGINUdn1Zo11vR0cv8knc2u3dM9uOZaDC1zGbrnnYXLhN6TnjUf0tnssRQ4biTAGiJA0";
@@ -589,12 +630,18 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
       ? (validade.toLocaleDateString('pt-BR') + ', ' + validade.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
       : '—'));
     card.appendChild(linVal);
+
+    var linEnvio = el('div', 'perfil-linha');
+    linEnvio.appendChild(el('span', '', 'Último envio'));
+    var elEnvio = el('span', '', '—');
+    linEnvio.appendChild(elEnvio);
+    card.appendChild(linEnvio);
     telaPerfil.appendChild(card);
 
     var tiles = el('div', 'perfil-tiles');
-    function tile(rotulo) {
+    function tile(rotulo, valorInicial) {
       var t = el('div', 'perfil-tile');
-      t.appendChild(el('div', 'perfil-tn', '—'));
+      t.appendChild(el('div', 'perfil-tn', valorInicial == null ? '—' : String(valorInicial)));
       t.appendChild(el('div', 'perfil-tl', rotulo));
       tiles.appendChild(t);
       return t;
@@ -602,22 +649,52 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
     var tIdeias = tile('Ideias enviadas');
     var tReceitas = tile('Receitas propostas');
     var tNotas = tile('Notas privadas');
+    // Evidências anexadas: soma o que já está em ULTIMO_D.contrapartidas —
+    // síncrono, sem fetch extra (é a mesma contagem do rodapé do painel).
+    var totalEvidencia = ((ULTIMO_D && ULTIMO_D.contrapartidas) || [])
+      .reduce(function (soma, it) { return soma + (it.evidencia || []).length; }, 0);
+    tile('Evidências anexadas', totalEvidencia);
     telaPerfil.appendChild(tiles);
     carregaContadores(function (n) {
       tIdeias.querySelector('.perfil-tn').textContent = String(n.ideias);
       tReceitas.querySelector('.perfil-tn').textContent = String(n.receitas);
       tNotas.querySelector('.perfil-tn').textContent = String(n.notas);
+      if (n.ultimoEnvio) {
+        var rotuloTipo = { ideia: 'ideia', receita: 'receita', nota: 'nota' }[n.ultimoEnvio.tipo] || n.ultimoEnvio.tipo;
+        var d = new Date(n.ultimoEnvio.t);
+        elEnvio.textContent = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' · ' + rotuloTipo;
+      } else {
+        elEnvio.textContent = 'nada ainda';
+      }
     });
+
+    var marcaWpp = (ULTIMO_D && ULTIMO_D.marca) || '';
+    var btnFalar = el('a', 'perfil-btn', 'Falar com a coordenação');
+    btnFalar.href = __WHATSAPP_URL__ + '?text=' + encodeURIComponent(
+      'Olá! Sou parceiro(a)' + (marcaWpp ? ' da ' + marcaWpp : '') + ' e gostaria de falar sobre a parceria.');
+    btnFalar.target = '_blank';
+    btnFalar.rel = 'noopener';
+    btnFalar.style.textDecoration = 'none';
+    telaPerfil.appendChild(btnFalar);
 
     var btnPush = el('button', 'perfil-btn', 'Ativar notificações');
     btnPush.type = 'button';
     btnPush.onclick = ativarPush;
     telaPerfil.appendChild(btnPush);
 
+    function sair() { sessaoLimpar(); location.reload(); }
+    var btnTrocar = el('button', 'perfil-btn', 'Trocar acesso');
+    btnTrocar.type = 'button';
+    btnTrocar.onclick = sair;
+    telaPerfil.appendChild(btnTrocar);
+
     var btnSair = el('button', 'perfil-btn perigo', 'Sair');
     btnSair.type = 'button';
-    btnSair.onclick = function () { sessaoLimpar(); location.reload(); };
+    btnSair.onclick = sair;
     telaPerfil.appendChild(btnSair);
+
+    telaPerfil.appendChild(el('p', 'perfil-fn',
+      'Trocar acesso limpa só a sessão de parceiro deste aparelho e volta para a entrada de parceiros — não para o portal da equipe.'));
   }
 
   document.getElementById('perfil-pill').onclick = function () {
@@ -637,30 +714,49 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
   var criarTab = document.getElementById('criar-tab');
   var criarBackdrop = document.getElementById('criar-backdrop');
   var criarDrawer = document.getElementById('criar-drawer');
-  var tipoAtual = 'Ideia';
+  var criarMenu = document.getElementById('criar-menu');
+  var criarForm = document.getElementById('criar-form');
+  var tipoAtual = null;
   var TEXTOS_TIPO = {
     Ideia: { label: 'O que você imagina', nota: 'Vai para a coordenação como sugestão.' },
     Receita: { label: 'Descreva o cocktail', nota: 'Proposta — a coordenação decide se ela entra no cardápio.' },
     Nota: { label: 'Sua nota', nota: 'Privada — só você vê, ninguém do grupo tem acesso.' },
   };
-  function abreCriar() { criarBackdrop.classList.add('aberto'); criarDrawer.classList.add('aberto'); }
+
+  // Drawer abre sempre no MENU (as 3 opções) — a forma escolhida só aparece
+  // depois de tocar numa delas, igual ao mockup aprovado. Fechar e reabrir
+  // limpa tudo: campo com rascunho esquecido não deve sobreviver a um fechar
+  // acidental (nem um aviso de erro de uma tentativa anterior).
+  function mostraMenu() {
+    criarForm.style.display = 'none';
+    criarMenu.style.display = '';
+    tipoAtual = null;
+  }
+  function escolheTipo(tipo) {
+    tipoAtual = tipo;
+    document.getElementById('criar-voltar').textContent = '‹ ' + tipo;
+    document.getElementById('cr-desc-label').textContent = TEXTOS_TIPO[tipo].label;
+    document.getElementById('criar-nota-tipo').textContent = TEXTOS_TIPO[tipo].nota;
+    document.getElementById('cr-titulo').value = '';
+    document.getElementById('cr-desc').value = '';
+    document.getElementById('cr-aviso').textContent = '';
+    criarMenu.style.display = 'none';
+    criarForm.style.display = '';
+  }
+  function abreCriar() { criarBackdrop.classList.add('aberto'); criarDrawer.classList.add('aberto'); mostraMenu(); }
   function fechaCriar() { criarBackdrop.classList.remove('aberto'); criarDrawer.classList.remove('aberto'); }
   criarTab.onclick = abreCriar;
   criarTab.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abreCriar(); } };
   criarBackdrop.onclick = fechaCriar;
   document.getElementById('criar-fechar').onclick = fechaCriar;
-  document.querySelectorAll('#criar-seg button').forEach(function (b) {
-    b.onclick = function () {
-      document.querySelectorAll('#criar-seg button').forEach(function (x) { x.classList.remove('on'); });
-      b.classList.add('on');
-      tipoAtual = b.dataset.tipo;
-      document.getElementById('cr-desc-label').textContent = TEXTOS_TIPO[tipoAtual].label;
-      document.getElementById('criar-nota-tipo').textContent = TEXTOS_TIPO[tipoAtual].nota;
-      document.getElementById('cr-aviso').textContent = '';
-    };
+  document.getElementById('criar-voltar').onclick = mostraMenu;
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && criarDrawer.classList.contains('aberto')) fechaCriar();
   });
-  document.getElementById('cr-desc-label').textContent = TEXTOS_TIPO.Ideia.label;
-  document.getElementById('criar-nota-tipo').textContent = TEXTOS_TIPO.Ideia.nota;
+  document.querySelectorAll('.criar-op').forEach(function (op) {
+    op.onclick = function () { escolheTipo(op.dataset.tipo); };
+    op.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); escolheTipo(op.dataset.tipo); } };
+  });
 
   function chaveNova() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
@@ -670,6 +766,14 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
     var titulo = document.getElementById('cr-titulo').value.trim();
     var desc = document.getElementById('cr-desc').value.trim();
     if (!desc) { aviso.className = 'criar-aviso err'; aviso.textContent = 'Escreva alguma coisa antes de enviar.'; return; }
+    // A sessão pode ter expirado (ou nunca ter existido) enquanto o drawer
+    // estava aberto — sem isto, o botão travava desabilitado pra sempre com
+    // um TypeError silencioso ao tentar usar sessaoAtualGlobal.token.
+    if (!sessaoAtualGlobal) {
+      aviso.className = 'criar-aviso err';
+      aviso.textContent = 'Sua sessão expirou. Recarregue a página e entre de novo.';
+      return;
+    }
     bt.disabled = true; aviso.textContent = '';
 
     var pronto;
@@ -717,6 +821,7 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
           ULTIMO_D = d;
           gate.style.display = 'none';
           app.style.display = '';
+          criarTab.style.display = '';
           renderiza(d);
           renderPill();
           buscarAgenda();
