@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Inventário · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=965393f3c750">
+<link rel="stylesheet" href="portal.css?v=59e35acf0e80">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1888,11 +1888,76 @@ window.msgAcessoNegado = function (nomePagina) {
   .ve-badge.disponivel { background:#1d2a26; color:var(--verde); }
   .ve-badge.reservado { background:#2f2a1a; color:var(--amarelo); }
   .ve-badge.vendido, .ve-badge.descartado { background:var(--bg); color:var(--text-3); }
+  .ve-badge.rascunho { background:var(--bg); color:var(--text-3); }
+  .ve-badge.enviado { background:#2f2a1a; color:var(--amarelo); }
+  .ve-badge.aceito { background:#1d2a26; color:var(--verde); }
+  .ve-badge.perdido { background:#3a2020; color:#e08585; }
   .ve-editar { flex:none; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
       border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text-3); cursor:pointer; }
   .ve-editar:hover { border-color:var(--acc); color:var(--acc); }
   .ve-vazio { text-align:center; color:var(--text-3); padding:26px 10px; font-size:13.5px; }
   .ve-placeholder { text-align:center; color:var(--text-3); padding:34px 16px; font-size:13.5px; line-height:1.6; }
+  .ve-orc-cab { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:14px; }
+  @media (min-width:620px) { .ve-orc-cab { grid-template-columns:1fr 1fr 140px; } }
+  .ve-linhas { display:flex; flex-direction:column; }
+  .ve-linha-cab, .ve-linha { display:grid; grid-template-columns:minmax(0,1fr) 56px 78px 66px 82px 30px;
+      gap:8px; align-items:center; }
+  .ve-linha-cab { font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--text-3);
+      padding:0 2px 6px; border-bottom:1px solid var(--border); }
+  .ve-linha { font-size:13px; padding:9px 2px; border-bottom:1px solid var(--border); }
+  .ve-linha .nome { min-width:0; }
+  .ve-linha .nome b { font-weight:400; color:var(--text); display:block; }
+  .ve-linha .nome span { font-size:10.5px; color:var(--text-3); }
+  .ve-linha .nome span.pend { color:var(--amarelo); }
+  .ve-linha input { width:100%; padding:6px 6px; font-size:12.5px; border-radius:7px; box-sizing:border-box;
+      border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:inherit;
+      text-align:right; }
+  .ve-linha input.desc { border-color:var(--acc); color:var(--acc); }
+  .ve-linha .ref { text-align:right; color:var(--text-2); font-variant-numeric:tabular-nums; }
+  .ve-linha .tot { text-align:right; color:var(--text); font-variant-numeric:tabular-nums; }
+  .ve-linha .tot.pend { color:var(--amarelo); }
+  .ve-linha .tirar { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:15px;
+      line-height:1; padding:4px; }
+  .ve-linha .tirar:hover { color:#e08585; }
+  .ve-orc-rodape { display:flex; justify-content:space-between; align-items:flex-end; gap:12px;
+      flex-wrap:wrap; padding:14px 2px 0; }
+  .ve-orc-total .r { font-size:11px; color:var(--text-3); }
+  .ve-orc-total .v { font-size:20px; color:var(--text); font-variant-numeric:tabular-nums; }
+  .ve-orc-total .parcial { font-size:10.5px; color:var(--amarelo); margin-bottom:2px; }
+  .ve-picker { display:none; background:var(--bg); border:1px dashed var(--acc); border-radius:12px;
+      padding:12px 14px; margin:12px 0; }
+  .ve-picker.show { display:block; }
+  .ve-picker input.busca { width:100%; padding:10px; font-size:13.5px; border-radius:9px; box-sizing:border-box;
+      border:1px solid var(--border); background:var(--card); color:var(--text); font-family:inherit; margin-bottom:10px; }
+  .ve-picker-lista { max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .ve-picker-item { display:flex; gap:10px; align-items:center; text-align:left; width:100%; font:inherit;
+      background:var(--card); border:1px solid var(--border); border-radius:9px; padding:9px 11px; cursor:pointer; color:inherit; }
+  .ve-picker-item:hover { border-color:var(--acc); }
+  .ve-picker-item .n { flex:1; min-width:0; font-size:13px; }
+  .ve-picker-item .n small { display:block; font-size:10.5px; color:var(--text-3); }
+  .ve-picker-item .p { font-size:12.5px; color:var(--text-2); flex:none; font-variant-numeric:tabular-nums; }
+  .ve-picker-item .p.pend { color:var(--amarelo); font-size:11px; }
+  .ve-picker-item[disabled] { opacity:.5; cursor:default; }
+  .ve-reserva { display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--text-2);
+      margin:12px 0 0; line-height:1.5; }
+  .ve-reserva input { margin-top:2px; flex:none; }
+  .veL-card { display:flex; flex-direction:column; gap:10px; background:var(--card); border:1px solid var(--border);
+      border-radius:12px; padding:14px; }
+  .veL-topo { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .veL-nome { font-size:15px; color:var(--text); flex:1; min-width:0; }
+  .veL-meta { font-size:11px; color:var(--text-3); margin-top:2px; }
+  .veL-total { font-size:17px; color:var(--text); font-variant-numeric:tabular-nums; flex:none; }
+  .veL-acoes { display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:10px; }
+  .veL-acao { display:inline-flex; align-items:center; gap:6px; font:inherit; font-size:11.5px; padding:6px 11px;
+      border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text-2); cursor:pointer; }
+  .veL-acao.dest { border-color:var(--acc); color:var(--acc); }
+  .veL-acao.perigo:hover { border-color:#e08585; color:#e08585; }
+  .veL-sel-status { font:inherit; font-size:11.5px; padding:6px 9px; border-radius:8px; border:1px solid var(--border);
+      background:var(--bg); color:var(--text-2); }
+  .ve-confirma-del { display:none; background:var(--bg); border:1px solid #e08585; border-radius:10px;
+      padding:12px 14px; font-size:12.5px; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      margin-bottom:12px; }
+  .ve-confirma-del.on { display:flex; }
 </style>
 
 <div class="ve-subtabs">
@@ -1944,11 +2009,54 @@ window.msgAcessoNegado = function (nomePagina) {
 </div>
 
 <div id="ve-pane-orcar" class="ve-subpane" hidden>
-  <p class="ve-placeholder">Montar orçamento chega numa próxima entrega — por enquanto o catálogo já está vivo para cadastrar o que existe para vender.</p>
+  <div class="ve-orc-cab">
+    <div class="ve-campo"><label for="veo-comprador">Comprador *</label><input id="veo-comprador" type="text" maxlength="160" placeholder="Ex.: Soto"></div>
+    <div class="ve-campo"><label for="veo-contato">Contato</label><input id="veo-contato" type="text" maxlength="160" placeholder="Com quem se negocia"></div>
+    <div class="ve-campo"><label for="veo-validade">Validade</label><input id="veo-validade" type="date"></div>
+  </div>
+
+  <div class="ve-linha-cab">
+    <div>Item</div><div style="text-align:right">Qtd</div><div style="text-align:right">R$ novo</div>
+    <div style="text-align:right">Desc %</div><div style="text-align:right">Total</div><div></div>
+  </div>
+  <div class="ve-linhas" id="veo-linhas"></div>
+  <p class="ve-vazio" id="veo-vazio">Nenhum item no orçamento ainda. Use "Adicionar do catálogo".</p>
+
+  <div class="ve-picker" id="veo-picker">
+    <input type="text" class="busca" id="veo-busca" placeholder="Buscar item do catálogo…" autocomplete="off">
+    <div class="ve-picker-lista" id="veo-picker-lista"></div>
+  </div>
+
+  <div class="ve-orc-rodape">
+    <button type="button" class="ve-foto-btn" id="veo-add"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Adicionar do catálogo</button>
+    <div class="ve-orc-total" style="text-align:right">
+      <div class="parcial" id="veo-parcial" hidden></div>
+      <div class="r">Total</div>
+      <div class="v" id="veo-total">—</div>
+    </div>
+  </div>
+
+  <label class="ve-reserva">
+    <input type="checkbox" id="veo-reservar">
+    <span>Marcar estes itens como <b>Reservado</b> no catálogo depois de salvar. Reversível a qualquer momento pela aba Catálogo.</span>
+  </label>
+
+  <button class="ve-salvar" id="veo-salvar" type="button">Salvar orçamento</button>
+  <p class="ve-aviso" id="veo-aviso" role="status" aria-live="polite"></p>
 </div>
 
 <div id="ve-pane-orcamentos" class="ve-subpane" hidden>
-  <p class="ve-placeholder">A lista de orçamentos em andamento (Soto e Ares, do Bragatto, entre eles) chega numa próxima entrega.</p>
+  <div class="ve-chips" id="veL-chips-status"></div>
+  <div class="ve-lista" id="veL-lista"></div>
+  <p class="ve-vazio" id="veL-vazio" style="display:none">Nenhum orçamento neste filtro ainda.</p>
+
+  <div class="ve-confirma-del" id="veL-confirma-del">
+    <span>Excluir o orçamento de <b id="veL-confirma-del-nome"></b>? Isso arquiva no Notion — some da lista, mas não perde o histórico.</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button type="button" class="ve-cancelar" id="veL-cancelar-del">cancelar</button>
+      <button type="button" class="ve-salvar" id="veL-confirmar-del" style="width:auto;padding:8px 16px;margin-top:0;background:#e08585;color:#241505">Confirmar exclusão</button>
+    </div>
+  </div>
 </div>
 
 <script type="text/plain" id="perf-src-venda">
@@ -1998,6 +2106,10 @@ window.msgAcessoNegado = function (nomePagina) {
     b.onclick = function () {
       subtabs.forEach(function (t) { t.classList.toggle('on', t === b); });
       Object.keys(subpanes).forEach(function (k) { subpanes[k].hidden = (k !== b.dataset.sub); });
+      // Recarrega sempre que a aba abre (não guarda cache): editar um
+      // orçamento e voltar pra cá tem que mostrar o total que acabou de
+      // ser salvo, não o que estava na tela antes.
+      if (b.dataset.sub === 'orcamentos') carregaOrcamentos();
     };
   });
 
@@ -2281,6 +2393,450 @@ window.msgAcessoNegado = function (nomePagina) {
   btnNovo.onclick = function () { limpaForm(); abreForm(); };
   document.getElementById('ve-chips-local').parentNode.insertBefore(btnNovo, document.getElementById('ve-resumo'));
 
+  // ================= MONTAR ORÇAMENTO (E6) =================
+  //
+  // MATEMÁTICA: as duas funções abaixo são a cópia EXATA de _veLinha/
+  // veDetalhamento do worker.js — e é assim de propósito. O total que vale é
+  // sempre o do servidor (ele recalcula e ignora o que o cliente mandar);
+  // estas existem só pra mostrar ao vivo o MESMO número, senão a tela diria
+  // um preço e o Notion gravaria outro. venda_equipamentos/teste_orcamento.mjs
+  // roda as duas contra a do worker em centenas de casos — se divergirem um
+  // centavo, o teste quebra. Mexeu numa, mexer na outra.
+  function veCalcLinha(qtd, novo, pct) {
+    var temQtd = qtd !== null && qtd !== undefined && qtd !== '';
+    var temNovo = novo !== null && novo !== undefined && novo !== '';
+    var temPct = pct !== null && pct !== undefined && pct !== '';
+    var q = temQtd ? Number(qtd) : null;
+    var n = temNovo ? Number(novo) : null;
+    var p = temPct ? Number(pct) : null;
+    var precificado = q !== null && q > 0 && n !== null && p !== null;
+    var base = precificado ? Math.round(n * p * 100) / 100 : null;
+    return {
+      preco_base: base,
+      total: precificado ? Math.round(base * q * 100) / 100 : null,
+      a_precificar: !precificado,
+    };
+  }
+  function veCalcTotais(linhas) {
+    var soma = linhas.reduce(function (s, l) {
+      var c = veCalcLinha(l.qtd, l.novo, l.pct);
+      return s + (c.total || 0);
+    }, 0);
+    return {
+      subtotal: Math.round(soma * 100) / 100,
+      pendentes: linhas.filter(function (l) { return veCalcLinha(l.qtd, l.novo, l.pct).a_precificar; }).length,
+    };
+  }
+
+  var ORC = [];        // linhas do orçamento em montagem
+  var orcEditandoId = null;
+
+  function achaItem(id) {
+    return ITENS.filter(function (i) { return i.id === id; })[0] || null;
+  }
+
+  function renderOrc() {
+    var box = document.getElementById('veo-linhas');
+    var vazio = document.getElementById('veo-vazio');
+    box.innerHTML = '';
+    vazio.style.display = ORC.length ? 'none' : '';
+
+    ORC.forEach(function (l, idx) {
+      var calc = veCalcLinha(l.qtd, l.novo, l.pct);
+      var div = document.createElement('div'); div.className = 've-linha';
+
+      var nome = document.createElement('div'); nome.className = 'nome';
+      var b = document.createElement('b'); b.textContent = l.nome; nome.appendChild(b);
+      var sub = document.createElement('span');
+      if (calc.a_precificar) {
+        sub.className = 'pend';
+        sub.textContent = l.novo == null ? 'sem preço de novo — a precificar' : 'sem % definido — a precificar';
+      } else {
+        sub.textContent = 'unitário ' + fmtR(calc.preco_base);
+      }
+      nome.appendChild(sub);
+      div.appendChild(nome);
+
+      var iq = document.createElement('input');
+      iq.type = 'number'; iq.min = '0'; iq.step = '1'; iq.inputMode = 'numeric';
+      iq.value = l.qtd == null ? '' : String(l.qtd);
+      iq.setAttribute('aria-label', 'Quantidade de ' + l.nome);
+      iq.oninput = function () { ORC[idx].qtd = iq.value === '' ? null : Number(iq.value); atualizaTotais(); };
+      div.appendChild(iq);
+
+      var inv = document.createElement('input');
+      inv.type = 'number'; inv.min = '0'; inv.step = '0.01'; inv.inputMode = 'decimal';
+      inv.value = l.novo == null ? '' : String(l.novo);
+      inv.setAttribute('aria-label', 'Preço de novo de ' + l.nome);
+      inv.oninput = function () { ORC[idx].novo = inv.value === '' ? null : Number(inv.value); renderOrc(); };
+      div.appendChild(inv);
+
+      // O desconto é o MESMO `%` da planilha (§2 do plano): um campo só, aqui
+      // em 0-100 pra digitar, convertido pra fator 0-1 no envio.
+      var ip = document.createElement('input');
+      ip.type = 'number'; ip.min = '0'; ip.max = '100'; ip.step = '1'; ip.inputMode = 'numeric';
+      ip.className = 'desc';
+      ip.value = l.pct == null ? '' : String(Math.round(l.pct * 1000) / 10);
+      ip.setAttribute('aria-label', 'Percentual de ' + l.nome);
+      ip.oninput = function () {
+        if (ip.value === '') { ORC[idx].pct = null; }
+        else {
+          var v = Number(ip.value);
+          if (!isFinite(v) || v < 0) return;
+          ORC[idx].pct = Math.min(v, 100) / 100;
+        }
+        renderOrc();
+      };
+      div.appendChild(ip);
+
+      var tot = document.createElement('div');
+      tot.className = 'tot' + (calc.a_precificar ? ' pend' : '');
+      tot.textContent = calc.a_precificar ? 'a precificar' : fmtR(calc.total);
+      div.appendChild(tot);
+
+      var x = document.createElement('button');
+      x.type = 'button'; x.className = 'tirar'; x.textContent = '×';
+      x.setAttribute('aria-label', 'Tirar ' + l.nome + ' do orçamento');
+      x.onclick = function () { ORC.splice(idx, 1); renderOrc(); };
+      div.appendChild(x);
+
+      box.appendChild(div);
+    });
+    atualizaTotais();
+  }
+
+  function atualizaTotais() {
+    var t = veCalcTotais(ORC);
+    var elTot = document.getElementById('veo-total');
+    var elPar = document.getElementById('veo-parcial');
+    elTot.textContent = ORC.length ? fmtR(t.subtotal) : '—';
+    // Nunca some um item sem preço como zero e nunca esconda que ele existe:
+    // o total é declarado PARCIAL enquanto houver linha a precificar.
+    if (t.pendentes > 0) {
+      elPar.hidden = false;
+      elPar.textContent = 'parcial — ' + t.pendentes + (t.pendentes === 1 ? ' item ainda sem preço' : ' itens ainda sem preço');
+    } else {
+      elPar.hidden = true;
+    }
+  }
+
+  // ---- picker de itens do catálogo ----
+  function renderPicker(termo) {
+    var lista = document.getElementById('veo-picker-lista');
+    lista.innerHTML = '';
+    var t = (termo || '').trim().toLowerCase();
+    var jaTem = {};
+    ORC.forEach(function (l) { if (l.item_id) jaTem[l.item_id] = true; });
+    var cands = ITENS.filter(function (i) {
+      if (i.status === 'Vendido' || i.status === 'Descartado') return false;
+      return !t || (i.nome || '').toLowerCase().indexOf(t) !== -1;
+    });
+    if (!cands.length) {
+      var p = document.createElement('p'); p.className = 've-vazio'; p.textContent = 'Nenhum item disponível com esse termo.';
+      lista.appendChild(p); return;
+    }
+    cands.slice(0, 80).forEach(function (i) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 've-picker-item';
+      if (jaTem[i.id]) b.disabled = true;
+      var n = document.createElement('div'); n.className = 'n';
+      n.appendChild(document.createTextNode(i.nome || '(sem nome)'));
+      var s = document.createElement('small');
+      s.textContent = [i.local, i.tipo, i.status].filter(Boolean).join(' · ') + (jaTem[i.id] ? ' · já no orçamento' : '');
+      n.appendChild(s);
+      b.appendChild(n);
+      var p = document.createElement('div');
+      p.className = 'p' + (i.usado == null ? ' pend' : '');
+      p.textContent = i.usado == null ? 'a precificar' : fmtR(i.usado);
+      b.appendChild(p);
+      b.onclick = function () { if (!b.disabled) adicionaLinha(i); };
+      lista.appendChild(b);
+    });
+  }
+
+  function adicionaLinha(item) {
+    ORC.push({
+      item_id: item.id,
+      nome: item.nome,
+      qtd: item.qtd == null ? 1 : item.qtd,
+      novo: item.novo,
+      pct: item.pct,   // sugestão do catálogo — editável por orçamento (§2)
+    });
+    document.getElementById('veo-picker').classList.remove('show');
+    document.getElementById('veo-busca').value = '';
+    renderOrc();
+  }
+
+  document.getElementById('veo-add').onclick = function () {
+    var pk = document.getElementById('veo-picker');
+    var abrindo = !pk.classList.contains('show');
+    pk.classList.toggle('show', abrindo);
+    if (abrindo) { renderPicker(''); document.getElementById('veo-busca').focus(); }
+  };
+  document.getElementById('veo-busca').oninput = function (e) { renderPicker(e.target.value); };
+
+  // ---- reserva no catálogo (opt-in, SEMPRE depois do orçamento salvo) ----
+  // Falha de reserva nunca derruba um orçamento já gravado, e o que falhou é
+  // dito na tela — nunca "reservado" sem ter sido.
+  function reservaItens(ids) {
+    var feitos = 0, falhos = 0;
+    return ids.reduce(function (p, id) {
+      return p.then(function () {
+        return fetch(WORKER + '/api/venda-catalogo/' + id, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+          body: JSON.stringify({ status: 'Reservado' }),
+        }).then(function (r) { if (r.ok) feitos++; else falhos++; })
+          .catch(function () { falhos++; });
+      });
+    }, Promise.resolve()).then(function () { return { feitos: feitos, falhos: falhos }; });
+  }
+
+  function salvaOrcamento() {
+    var aviso = document.getElementById('veo-aviso');
+    var comprador = document.getElementById('veo-comprador').value.trim();
+    aviso.className = 've-aviso';
+    if (!comprador) { aviso.className = 've-aviso err'; aviso.textContent = 'Informe o comprador.'; return; }
+    if (!ORC.length) { aviso.className = 've-aviso err'; aviso.textContent = 'Adicione ao menos um item.'; return; }
+
+    var validade = document.getElementById('veo-validade').value;
+    var body = {
+      nome: comprador,
+      comprador: comprador,
+      contato: document.getElementById('veo-contato').value.trim(),
+      validade: validade || null,
+      itens: ORC.map(function (l) {
+        return { item_id: l.item_id, nome: l.nome, qtd: l.qtd, novo: l.novo, pct: l.pct };
+      }),
+    };
+
+    var bt = document.getElementById('veo-salvar');
+    bt.disabled = true; aviso.textContent = 'Salvando…';
+    var url = WORKER + '/api/venda-orcamento' + (orcEditandoId ? '/' + orcEditandoId : '');
+    fetch(url, {
+      method: orcEditandoId ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify(body),
+    }).then(function (r) {
+      if (r.status === 401) { trata401(); return null; }
+      return r.json().then(function (d) { return { status: r.status, dados: d }; });
+    }).then(function (r2) {
+      if (!r2) return;
+      if (r2.status !== 200 && r2.status !== 201) {
+        aviso.className = 've-aviso err';
+        aviso.textContent = (r2.dados && r2.dados.erro) || 'Não foi possível salvar.';
+        return;
+      }
+      // O total que vale é o que o SERVIDOR devolveu, não o que a tela somou.
+      var totalServidor = r2.dados && r2.dados.total;
+      var reservar = document.getElementById('veo-reservar').checked;
+      var ids = ORC.map(function (l) { return l.item_id; }).filter(Boolean);
+      var okMsg = 'Orçamento salvo' + (totalServidor != null ? ' — ' + fmtR(totalServidor) : '') + '.';
+      if (reservar && ids.length) {
+        aviso.textContent = okMsg + ' Reservando itens…';
+        reservaItens(ids).then(function (res) {
+          aviso.className = 've-aviso ' + (res.falhos ? 'err' : 'ok');
+          aviso.textContent = okMsg + ' ' + res.feitos + ' item(ns) reservado(s)'
+            + (res.falhos ? ' — ' + res.falhos + ' não pôde(ram) ser reservado(s), confira no Catálogo.' : '.');
+          limpaOrc(); carrega();
+        });
+      } else {
+        aviso.className = 've-aviso ok'; aviso.textContent = okMsg;
+        limpaOrc(); carrega();
+      }
+    }).catch(function () {
+      aviso.className = 've-aviso err'; aviso.textContent = 'Sem conexão. Tente de novo.';
+    }).finally(function () { bt.disabled = false; });
+  }
+
+  function limpaOrc() {
+    ORC = []; orcEditandoId = null;
+    ['veo-comprador', 'veo-contato', 'veo-validade'].forEach(function (id) { document.getElementById(id).value = ''; });
+    document.getElementById('veo-reservar').checked = false;
+    document.getElementById('veo-salvar').textContent = 'Salvar orçamento';
+    renderOrc();
+  }
+  document.getElementById('veo-salvar').onclick = salvaOrcamento;
+  renderOrc();
+
+  // ================= ABA ORÇAMENTOS (E7) — listar + EDITAR + status =================
+  var ORCAMENTOS = [];
+  var STATUS_ORC = ['Rascunho', 'Enviado', 'Aceito', 'Perdido'];
+  var filtroStatusOrc = null;
+  var excluindoOrcId = null;
+
+  function renderChipsStatus() {
+    var box = document.getElementById('veL-chips-status');
+    box.innerHTML = '';
+    var todos = document.createElement('button'); todos.type = 'button';
+    todos.className = 've-chip' + (filtroStatusOrc ? '' : ' on');
+    todos.textContent = 'Todos';
+    todos.onclick = function () { filtroStatusOrc = null; renderListaOrc(); };
+    box.appendChild(todos);
+    STATUS_ORC.forEach(function (s) {
+      var b = document.createElement('button'); b.type = 'button';
+      b.className = 've-chip' + (filtroStatusOrc === s ? ' on' : '');
+      b.textContent = s;
+      b.onclick = function () { filtroStatusOrc = s; renderListaOrc(); };
+      box.appendChild(b);
+    });
+  }
+
+  function dataCurtaOrc(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d)) return '—';
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  }
+
+  function renderListaOrc() {
+    var box = document.getElementById('veL-lista');
+    var vazio = document.getElementById('veL-vazio');
+    box.innerHTML = '';
+    var lista = filtroStatusOrc ? ORCAMENTOS.filter(function (o) { return o.status === filtroStatusOrc; }) : ORCAMENTOS;
+    vazio.style.display = lista.length ? 'none' : '';
+    lista.forEach(function (o) {
+      var card = document.createElement('div'); card.className = 'veL-card';
+
+      var topo = document.createElement('div'); topo.className = 'veL-topo';
+      var meio = document.createElement('div'); meio.style.cssText = 'flex:1;min-width:0';
+      var nome = document.createElement('div'); nome.className = 'veL-nome'; nome.textContent = o.comprador || o.nome || '(sem comprador)';
+      meio.appendChild(nome);
+      var meta = document.createElement('div'); meta.className = 'veL-meta';
+      var pendCount = (o.linhas || []).filter(function (l) { return l.a_precificar; }).length;
+      var partes = [(o.contato || null), o.linhas.length + (o.linhas.length === 1 ? ' item' : ' itens'), 'criado ' + dataCurtaOrc(o.criado_em)];
+      if (pendCount) partes.push(pendCount + ' a precificar');
+      meta.textContent = partes.filter(Boolean).join(' · ');
+      meio.appendChild(meta);
+      topo.appendChild(meio);
+
+      var badge = document.createElement('span'); badge.className = 've-badge ' + o.status.toLowerCase();
+      badge.textContent = o.status;
+      topo.appendChild(badge);
+
+      var total = document.createElement('div'); total.className = 'veL-total';
+      total.textContent = fmtR(o.total);
+      topo.appendChild(total);
+      card.appendChild(topo);
+
+      var acoes = document.createElement('div'); acoes.className = 'veL-acoes';
+
+      var bEditar = document.createElement('button'); bEditar.type = 'button'; bEditar.className = 've-chip veL-acao dest';
+      bEditar.innerHTML = "<svg class=\"ic\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z\"/><path d=\"M13 7l4 4\"/></svg>" + ' Editar';
+      bEditar.onclick = function () { abreEdicaoOrcamento(o); };
+      acoes.appendChild(bEditar);
+
+      var bDup = document.createElement('button'); bDup.type = 'button'; bDup.className = 've-chip veL-acao';
+      bDup.textContent = 'Duplicar';
+      bDup.onclick = function () { duplicaOrcamento(o); };
+      acoes.appendChild(bDup);
+
+      var selStatus = document.createElement('select'); selStatus.className = 'veL-sel-status';
+      STATUS_ORC.forEach(function (s) { var op = document.createElement('option'); op.value = s; op.textContent = s; if (s === o.status) op.selected = true; selStatus.appendChild(op); });
+      selStatus.onchange = function () { mudaStatusOrc(o.id, selStatus.value); };
+      acoes.appendChild(selStatus);
+
+      var bExcluir = document.createElement('button'); bExcluir.type = 'button'; bExcluir.className = 've-chip veL-acao perigo';
+      bExcluir.innerHTML = "<svg class=\"ic\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13\"/></svg>" + ' Excluir';
+      bExcluir.onclick = function () { pedeExclusaoOrcamento(o); };
+      acoes.appendChild(bExcluir);
+
+      card.appendChild(acoes);
+      box.appendChild(card);
+    });
+  }
+
+  function carregaOrcamentos() {
+    document.getElementById('veL-lista').innerHTML = '<p class="ve-vazio">Carregando…</p>';
+    fetch(WORKER + '/api/venda-orcamento', { headers: { 'X-Token': TOKEN } })
+      .then(function (r) {
+        if (r.status === 401) { trata401(); return null; }
+        return r.ok ? r.json() : null;
+      })
+      .then(function (d) {
+        if (!d) return;
+        if (d.sem_config) {
+          document.getElementById('veL-lista').innerHTML = '';
+          document.getElementById('veL-vazio').style.display = '';
+          document.getElementById('veL-vazio').textContent = 'Orçamentos ainda não configurados neste Worker.';
+          return;
+        }
+        ORCAMENTOS = d.itens || [];
+        renderChipsStatus();
+        renderListaOrc();
+      })
+      .catch(function () {
+        document.getElementById('veL-lista').innerHTML = '';
+        document.getElementById('veL-vazio').style.display = '';
+        document.getElementById('veL-vazio').textContent = 'Sem conexão — tente recarregar.';
+      });
+  }
+
+  // Reabre o orçamento salvo no formulário de "Montar orçamento" — é o
+  // pedido explícito do Rodrigo ("preciso que seja possível a edição desse
+  // orçamento já feito"). As linhas voltam do `Detalhamento` gravado, com
+  // item_id ligado ao catálogo quando existe; o que salvar de novo passa
+  // pelo MESMO recálculo do servidor, então editar não pode nunca produzir
+  // um total diferente do que a tela mostra na hora de salvar.
+  function abreEdicaoOrcamento(o) {
+    orcEditandoId = o.id;
+    ORC = (o.linhas || []).map(function (l) {
+      return { item_id: l.item_id || null, nome: l.nome, qtd: l.qtd, novo: l.novo, pct: l.pct };
+    });
+    document.getElementById('veo-comprador').value = o.comprador || '';
+    document.getElementById('veo-contato').value = o.contato || '';
+    document.getElementById('veo-validade').value = o.validade || '';
+    document.getElementById('veo-reservar').checked = false;
+    document.getElementById('veo-salvar').textContent = 'Salvar edição';
+    renderOrc();
+    subtabs.forEach(function (t) { t.classList.toggle('on', t.dataset.sub === 'orcar'); });
+    Object.keys(subpanes).forEach(function (k) { subpanes[k].hidden = (k !== 'orcar'); });
+    document.getElementById('veo-comprador').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Duplicar é "abrir em edição SEM o id" — mesma tela, mesmas linhas, mas
+  // salvar cria um orçamento NOVO (POST) em vez de sobrescrever o original.
+  // É o caminho pra oferecer o mesmo lote a um segundo comprador.
+  function duplicaOrcamento(o) {
+    abreEdicaoOrcamento(o);
+    orcEditandoId = null;
+    document.getElementById('veo-comprador').value = '';
+    document.getElementById('veo-comprador').focus();
+    document.getElementById('veo-salvar').textContent = 'Salvar orçamento';
+  }
+
+  function mudaStatusOrc(id, status) {
+    fetch(WORKER + '/api/venda-orcamento/' + id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify({ status: status }),
+    }).then(function (r) {
+      if (r.status === 401) { trata401(); return; }
+      if (r.ok) carregaOrcamentos();
+      else alert('Não foi possível mudar o status.');
+    }).catch(function () { alert('Sem conexão — tente de novo.'); });
+  }
+
+  function pedeExclusaoOrcamento(o) {
+    excluindoOrcId = o.id;
+    document.getElementById('veL-confirma-del-nome').textContent = o.comprador || o.nome || '';
+    document.getElementById('veL-confirma-del').classList.add('on');
+    document.getElementById('veL-confirma-del').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  document.getElementById('veL-cancelar-del').onclick = function () {
+    excluindoOrcId = null;
+    document.getElementById('veL-confirma-del').classList.remove('on');
+  };
+  document.getElementById('veL-confirmar-del').onclick = function () {
+    if (!excluindoOrcId) return;
+    var id = excluindoOrcId;
+    fetch(WORKER + '/api/venda-orcamento/' + id, { method: 'DELETE', headers: { 'X-Token': TOKEN } })
+      .then(function (r) {
+        if (r.status === 401) { trata401(); return; }
+        document.getElementById('veL-confirma-del').classList.remove('on');
+        excluindoOrcId = null;
+        if (r.ok) carregaOrcamentos();
+        else alert('Não foi possível excluir.');
+      }).catch(function () { alert('Sem conexão — tente de novo.'); });
+  };
+
   var r = window.exigirNivel(NIVEIS_OK, SLUG);
   if (r.ok) {
     TOKEN = r.sessao.token;
@@ -2411,7 +2967,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 31/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 30/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -3401,7 +3957,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '965393f3c750';
+  var BUILD = '59e35acf0e80';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

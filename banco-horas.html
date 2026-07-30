@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Banco de Horas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=965393f3c750">
+<link rel="stylesheet" href="portal.css?v=59e35acf0e80">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1124,15 +1124,39 @@ window.msgAcessoNegado = function (nomePagina) {
     return Math.round((mb - ma) / 86400000);
   }
 
+  // Janela de comparação, em dias. NÃO é "a leitura anterior": é a leitura
+  // mais antiga dentro dos últimos N dias.
+  //
+  // Por que janela e não leitura-a-leitura (mudado no E3, 2026-07-30, com a
+  // cadência indo pra diária): comparar leituras consecutivas só funciona
+  // enquanto o intervalo é grande. Medido com série sintética diária —
+  // alguém acumulando +10h POR DIA durante 7 dias (+70h no total) nunca é
+  // marcado no modo consecutivo, porque nenhum dia isolado passa do piso de
+  // 44h; a janela de 7 dias pega. Os dois modos pegam igual o salto seco de
+  // acerto de RH. Ou seja: quanto mais frequente a leitura, mais o modo
+  // consecutivo fica cego pra deriva gradual — que é justamente o que a
+  // cadência diária deveria deixar mais visível, não menos.
+  //
+  // No dado real de 30/07 (leituras a cada 5 dias) os dois modos dão quase o
+  // mesmo: 9 marcados no consecutivo, 8 na janela — trocar não sacode nada
+  // hoje, e prepara pra diária.
+  var VARIACAO_JANELA_DIAS = 7;
+
   function variacaoDe(historico) {
     var h = (historico || []).filter(function (x) { return x && x.saldo_minutos != null; });
     if (h.length < 2) return null;
-    var ant = h[h.length - 2], atu = h[h.length - 1];
+    var atu = h[h.length - 1];
+    // Mais antiga DENTRO da janela; se nenhuma cair nela (histórico raso ou
+    // rodadas espaçadas), cai na anterior — nunca fica sem comparação.
+    var ant = h[h.length - 2];
+    for (var i = 0; i < h.length - 1; i++) {
+      var dd = diasEntreISO(h[i].data, atu.data);
+      if (dd != null && dd <= VARIACAO_JANELA_DIAS) { ant = h[i]; break; }
+    }
     var dias = diasEntreISO(ant.data, atu.data);
     if (dias == null) return null;
     // Duas leituras no mesmo dia dividiriam por zero; e o intervalo é o
-    // denominador que torna comparáveis as cadências diferentes de bar (48h)
-    // e salão/cozinha (~7 dias).
+    // denominador que torna comparáveis cadências diferentes entre os times.
     dias = Math.max(dias, 1);
     var delta = atu.saldo_minutos - ant.saldo_minutos;
     return { delta: delta, dias: dias, porDia: delta / dias,
@@ -2038,7 +2062,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 31/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 30/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -3028,7 +3052,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '965393f3c750';
+  var BUILD = '59e35acf0e80';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
