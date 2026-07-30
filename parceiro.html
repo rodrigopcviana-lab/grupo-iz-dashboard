@@ -42,6 +42,23 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .nota{font-size:13px;color:var(--text-2);background:var(--card);border:1px solid var(--border);
   border-radius:10px;padding:11px 13px;margin:0 0 18px;line-height:1.6}
 
+/* Hero de progresso + contadores (mockup v2, telas 1-2). O cabeçalho sozinho
+   era a v1 que o Rodrigo achou "ridícula de básica": entra aqui o quanto do
+   acordo já andou, antes de qualquer seção. */
+.hero{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:16px 18px;margin:0 0 10px}
+.hero-big{font-family:var(--serif);font-size:34px;line-height:1;margin:0}
+.hero-lin{font-size:13.5px;color:var(--text-2);margin:7px 0 0}
+.hero-sub{font-size:12px;color:var(--text-3);margin:3px 0 0}
+.hero-bar{height:6px;border-radius:3px;background:var(--bg);margin-top:12px;overflow:hidden}
+.hero-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));
+  gap:8px;margin:0 0 18px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:11px 13px}
+.stat-n{font-family:var(--serif);font-size:21px;line-height:1.1}
+.stat-l{font-size:11.5px;color:var(--text-3);margin-top:3px;line-height:1.35}
+
 .secao{font-size:11.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;
   margin:22px 0 8px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:12px;
@@ -355,6 +372,138 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
     return card;
   }
 
+  // --- Hero de progresso + contadores (mockup v2, telas 1-2) ---------------
+  // Conta as MESMAS coisas que as seções abaixo mostram: item individual,
+  // cocktail por casa (meta x casas), backbar por casa e cada item da compra
+  // mínima. Se o hero contasse de outro jeito, viraria uma segunda verdade
+  // brigando com a tela logo abaixo dele.
+  function contaEntregas(d, casasLabels) {
+    var c = { previstas: 0, concluidas: 0, andamento: 0 };
+    var tipos = {};
+    (d.contrapartidas || []).forEach(function (i) {
+      c.previstas++;
+      if (i.status === 'entregue') c.concluidas++;
+      else if (i.status === 'em_andamento') c.andamento++;
+      tipos[i.tipo || 'outro'] = true;
+    });
+    var fichasPorCasa = d.fichas_por_casa || {};
+    if (d.cocktails_meta_por_casa != null && casasLabels.length) {
+      casasLabels.forEach(function (label) {
+        var n = fichasPorCasa[label] || 0;
+        c.previstas += d.cocktails_meta_por_casa;
+        c.concluidas += Math.min(n, d.cocktails_meta_por_casa);
+        tipos.cocktail = true;
+      });
+    }
+    var backbar = d.backbar || {};
+    if (d.backbar_meta_pct != null && casasLabels.length) {
+      casasLabels.forEach(function (label) {
+        c.previstas++;
+        var serie = backbar[label] || [];
+        var ult = serie.length ? serie[serie.length - 1] : null;
+        var pct = ult && ult.percentual != null ? ult.percentual : null;
+        if (pct != null && pct >= d.backbar_meta_pct) c.concluidas++;
+        else if (pct) c.andamento++;
+        tipos.backbar = true;
+      });
+    }
+    if (d.compra_minima) {
+      (d.compra_minima.itens || []).forEach(function (i) {
+        c.previstas++;
+        if (i.entregue) c.concluidas++;
+        tipos.compra = true;
+      });
+    }
+    // Só chama de "receita" quando TUDO que se conta é cocktail; misturou
+    // backbar/compra, a palavra honesta é "entrega".
+    c.soCocktail = Object.keys(tipos).length === 1 && !!tipos.cocktail;
+    return c;
+  }
+
+  function backbarMedio(d) {
+    var backbar = d.backbar || {};
+    var vals = [];
+    Object.keys(backbar).forEach(function (k) {
+      var s = backbar[k] || [];
+      var u = s.length ? s[s.length - 1] : null;
+      if (u && u.percentual != null) vals.push(u.percentual);
+    });
+    if (!vals.length) return null;
+    return Math.round(vals.reduce(function (a, b) { return a + b; }, 0) / vals.length);
+  }
+
+  var MESES_CURTO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+                     'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  // Data pura (AAAA-MM-DD) se fatia como TEXTO: new Date() a puxa pro dia
+  // anterior em UTC-3 — armadilha já documentada no sino (diaMesIso).
+  function mesDe(iso) {
+    if (!iso || iso.length < 7) return '';
+    return MESES_CURTO[parseInt(iso.slice(5, 7), 10) - 1] || '';
+  }
+  function periodoCurto(ini, fim) {
+    if (!ini || !fim) return '';
+    var mesmoAno = ini.slice(0, 4) === fim.slice(0, 4);
+    return mesDe(ini) + (mesmoAno ? '' : '/' + ini.slice(0, 4)) +
+      ' a ' + mesDe(fim) + '/' + fim.slice(0, 4);
+  }
+
+  function montaHero(d, cor, c) {
+    if (!c.previstas) return null;   // nada acordado: o aviso de contrato já diz isso
+    var pct = Math.round((c.concluidas / c.previstas) * 100);
+    var hero = el('div', 'hero');
+    var big = el('p', 'hero-big', pct + '%');
+    big.style.color = cor;
+    hero.appendChild(big);
+    var plural = c.previstas === 1 ? '' : 's';
+    var subst = (c.soCocktail ? 'receita' : 'entrega') + plural;
+    hero.appendChild(el('p', 'hero-lin', c.concluidas
+      ? c.concluidas + ' de ' + c.previstas + ' ' + subst + ' concluída' + plural
+      : c.previstas + ' ' + subst + ' combinada' + plural));
+    var det = [];
+    if (!c.concluidas) det.push('Nenhuma concluída ainda');
+    var cm = d.compra_minima || {};
+    if (cm.ciclo_inicio && cm.ciclo_fim) {
+      det.push('Ciclo de compra: ' + periodoCurto(cm.ciclo_inicio, cm.ciclo_fim));
+    } else if (!c.concluidas) {
+      det.push('sem prazo definido');
+    }
+    if (det.length) hero.appendChild(el('p', 'hero-sub', det.join(' · ')));
+    var barra = el('div', 'hero-bar');
+    var fill = el('div', 'hero-fill');
+    fill.style.width = Math.max(pct, 1) + '%';
+    fill.style.background = cor;
+    barra.appendChild(fill);
+    hero.appendChild(barra);
+    return hero;
+  }
+
+  function montaStats(d, cor, c) {
+    var comEvid = (d.contrapartidas || []).filter(function (i) {
+      return (i.evidencia || []).length;
+    }).length;
+    var bbm = backbarMedio(d);
+    var itens = [];
+    if (c.concluidas) itens.push([String(c.concluidas), 'Concluídas']);
+    if (c.andamento) itens.push([String(c.andamento), 'Em andamento']);
+    if (bbm != null) {
+      itens.push([bbm + '%', 'Backbar médio' +
+        (d.backbar_meta_pct != null ? ' · meta ' + d.backbar_meta_pct + '%' : '')]);
+    }
+    if (comEvid) itens.push([String(comEvid), 'Evidências anexadas']);
+    // Quatro zeros não é painel, é ruído: sem nada pra contar, nem aparece.
+    if (!itens.length) return null;
+    var wrap = el('div', 'stats');
+    itens.forEach(function (t) {
+      var s = el('div', 'stat');
+      var n = el('div', 'stat-n', t[0]);
+      n.style.color = cor;
+      s.appendChild(n);
+      s.appendChild(el('div', 'stat-l', t[1]));
+      wrap.appendChild(s);
+    });
+    return wrap;
+  }
+
   function renderiza(d) {
     painel.innerHTML = '';
     var cor = d.cor || '#d0a352';
@@ -375,6 +524,14 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
       (casasLabels.length ? ' · ' + casasLabels.join(', ') : '')));
     cab.appendChild(corpo);
     painel.appendChild(cab);
+
+    // Hero + contadores vêm ANTES de qualquer seção (mockup v2): a primeira
+    // coisa que o parceiro vê é o quanto do acordo já andou.
+    var cont = contaEntregas(d, casasLabels);
+    var hero = montaHero(d, cor, cont);
+    if (hero) painel.appendChild(hero);
+    var stats = montaStats(d, cor, cont);
+    if (stats) painel.appendChild(stats);
 
     if (d.contrato_status !== 'ativo') {
       painel.appendChild(el('p', 'nota',
