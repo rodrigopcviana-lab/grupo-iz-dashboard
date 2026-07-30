@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Nutricook · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=157bb17e4aec">
+<link rel="stylesheet" href="portal.css?v=965393f3c750">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -426,7 +426,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
 
 <h1>Nutricook</h1>
-<p class="sub">A consultoria sanitária que visita as casas: a nota de cada auditoria, o que foi reprovado item a item, os produtos com validade apontada e o histórico de visitas.</p>
+<p class="sub">A consultoria sanitária que visita as casas. A nota que importa pro chefe de bar é a do <b>setor Bar</b> — a nota da casa inteira mistura Cozinha, Salão e Gerência, e as duas costumam divergir bastante.</p>
 
 <style>
   .ntc-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:0 0 18px; }
@@ -437,6 +437,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .ntc-kpi.crit .v { color:#ff9aa8; }
   .ntc-kpi.aten .v { color:#f0cf8a; }
   .ntc-kpi.bom .v { color:#8fd6a8; }
+  .ntc-kpi .casa { font-size:11.5px; color:var(--text-3); margin-top:7px; padding-top:7px;
+    border-top:1px solid var(--border); }
+  .ntc-kpi .casa b { color:var(--text-2); font-variant-numeric:tabular-nums; }
   .ntc-chips { display:flex; gap:7px; flex-wrap:wrap; margin:0 0 16px; }
   .ntc-chip { font:inherit; font-size:13px; font-weight:600; padding:6px 13px; border:1.5px solid var(--border);
     border-radius:999px; background:var(--card); color:var(--text-2); cursor:pointer; }
@@ -453,6 +456,11 @@ window.msgAcessoNegado = function (nomePagina) {
   .ntc-set.crit .p { color:#ff9aa8; } .ntc-set.crit .b i { background:#c4586a; }
   .ntc-set.aten .p { color:#f0cf8a; } .ntc-set.aten .b i { background:#b99a4e; }
   .ntc-set.bom  .p { color:#8fd6a8; } .ntc-set.bom  .b i { background:#4f9b6d; }
+  .ntc-set.meu { border-color:var(--acc); border-width:1.5px; }
+  .ntc-set .tg { display:inline-block; font-size:9.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.03em; color:var(--acc); margin-left:6px; vertical-align:middle; }
+  .ntc-explica { background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:11px 14px; font-size:12.5px; color:var(--text-3); line-height:1.6; margin:0 0 18px; }
   .ntc-nc { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:4px 0; }
   .ntc-nc-grp { padding:9px 14px 10px; border-bottom:1px solid var(--border); }
   .ntc-nc-grp:last-child { border-bottom:none; }
@@ -461,6 +469,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .ntc-nc-li { font-size:13px; line-height:1.5; padding:3px 0 3px 15px; position:relative; }
   .ntc-nc-li:before { content:""; position:absolute; left:2px; top:9px; width:5px; height:5px;
     border-radius:50%; background:#c4586a; }
+  .ntc-nc-ctx { opacity:.78; }
+  .ntc-nc-ctx .ntc-nc-tit { color:var(--text-3); }
+  .ntc-nc-ctx .ntc-nc-li:before { background:var(--text-3); }
   .ntc-tl { list-style:none; padding:0; margin:0; }
   .ntc-tl li { display:flex; gap:10px; align-items:baseline; font-size:13px; padding:6px 2px;
     border-bottom:1px solid var(--border); }
@@ -484,6 +495,25 @@ window.msgAcessoNegado = function (nomePagina) {
     font-size:12.5px; color:var(--text-3); line-height:1.65; margin-top:12px; }
   .ntc-cov b { color:var(--text-2); }
   .ntc-foot { font-size:11.5px; color:var(--text-3); margin-top:20px; line-height:1.6; }
+  .ntc-plano-sub { background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:10px 14px; font-size:12.5px; color:var(--text-3); line-height:1.55; margin:0 0 12px; }
+  .ntc-plano-sub b { color:var(--text-2); }
+  .ntc-plano { display:flex; flex-direction:column; gap:10px; }
+  .ntc-plano-item { background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:12px 14px; }
+  .ntc-plano-cab { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .ntc-plano-resumo { font-size:14px; font-weight:700; }
+  .ntc-badge { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px;
+    text-transform:uppercase; letter-spacing:.03em; }
+  .ntc-badge.alta { background:#5b2230; color:#ffb9c4; }
+  .ntc-badge.media { background:#5a3a1c; color:#ffd7a1; }
+  .ntc-badge.baixa { background:var(--bg); color:var(--text-3); border:1px solid var(--border); }
+  .ntc-plano-orient { font-size:13px; color:var(--text-2); line-height:1.55; margin:0 0 8px; }
+  .ntc-plano-meta { font-size:11.5px; color:var(--text-3); display:flex; gap:12px; flex-wrap:wrap;
+    align-items:center; }
+  .ntc-plano-copiar { font:inherit; font-size:12px; font-weight:600; padding:5px 11px; border-radius:8px;
+    border:1px solid var(--border); background:var(--bg); color:var(--text-2); cursor:pointer; }
+  .ntc-plano-copiar.ok { border-color:#4f9b6d; color:#8fd6a8; }
   @media (max-width:640px) {
     .ntc-tl .dt { flex-basis:66px; }
     .ntc-kpi .v { font-size:22px; }
@@ -496,6 +526,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </div>
 
 <div id="ntc-wrap" hidden>
+  <div class="ntc-explica">Duas notas convivem aqui: <b>a do seu bar</b> (o setor Bar do roteiro da Nutricook) e <b>a da casa</b> (a média de Cozinha, Bar, Salão e Gerência). Uma casa pode tirar nota alta com o bar mal avaliado, ou o contrário — por isso a nota do Bar é a que aparece em destaque.</div>
   <div id="ntc-casas" class="ntc-chips"></div>
   <div id="ntc-corpo"></div>
 </div>
@@ -555,37 +586,58 @@ window.msgAcessoNegado = function (nomePagina) {
     return 'há ' + Math.round(n / 30) + ' meses';
   }
 
+  // A1 (2026-07-30): a nota que representa o chefe de bar é a do SETOR BAR,
+  // não a nota geral da casa — medido que as duas chegam a divergir 28
+  // pontos (Grá 03/07: casa 69% × bar 96,7%), então cobrar pela geral seria
+  // injusto nos dois sentidos. Todas as 30 auditorias medidas têm nota de
+  // Bar (a mensagem sempre lista o setor); null aqui é caminho defensivo.
+  function notaBar(aud) {
+    if (!aud) return null;
+    var s = (aud.setores || {}).Bar;
+    return s && typeof s.nota === 'number' ? s.nota : null;
+  }
+  function ncBar(aud) {
+    return (aud && aud.nao_conformes || []).filter(function (x) { return x.setor === 'Bar'; }).length;
+  }
+
   function kpis(casa) {
     var g = el('div', 'ntc-kpis');
     var auds = casa.auditorias || [];
     var ult = auds[0] || null;
+    var barUlt = ult ? notaBar(ult) : null;
 
-    var k1 = el('div', 'ntc-kpi ' + (ult ? faixa(ult.geral) : ''));
-    k1.appendChild(el('div', 'v', ult ? pct(ult.geral) : '—'));
-    k1.appendChild(el('div', 'l', 'Última auditoria'));
+    var k1 = el('div', 'ntc-kpi ' + (barUlt !== null ? faixa(barUlt) : ''));
+    k1.appendChild(el('div', 'v', barUlt !== null ? pct(barUlt) : '—'));
+    k1.appendChild(el('div', 'l', 'Seu bar — última auditoria'));
     k1.appendChild(el('div', 'd', ult ? diaMes(ult.data) + ' · ' + tempo(diasDesde(ult.data)) : 'sem auditoria registrada'));
+    if (ult && typeof ult.geral === 'number') {
+      var casaLinha = el('div', 'casa');
+      casaLinha.innerHTML = 'A casa: <b>' + pct(ult.geral) + '</b>';
+      k1.appendChild(casaLinha);
+    }
     g.appendChild(k1);
 
     var k2 = el('div', 'ntc-kpi');
-    if (ult && auds[1] && typeof ult.geral === 'number' && typeof auds[1].geral === 'number') {
-      var dif = ult.geral - auds[1].geral;
+    var barAnt = auds[1] ? notaBar(auds[1]) : null;
+    if (barUlt !== null && barAnt !== null) {
+      var dif = barUlt - barAnt;
       k2.className = 'ntc-kpi ' + (dif < -0.05 ? 'crit' : dif > 0.05 ? 'bom' : '');
       k2.appendChild(el('div', 'v', (dif >= 0 ? '+' : '') + dif.toFixed(1).replace('.', ',')));
-      k2.appendChild(el('div', 'l', 'Pontos vs. anterior'));
-      k2.appendChild(el('div', 'd', pct(auds[1].geral) + ' em ' + diaMes(auds[1].data)));
+      k2.appendChild(el('div', 'l', 'Seu bar vs. auditoria anterior'));
+      k2.appendChild(el('div', 'd', pct(barAnt) + ' em ' + diaMes(auds[1].data)));
     } else {
       k2.appendChild(el('div', 'v', '—'));
-      k2.appendChild(el('div', 'l', 'Pontos vs. anterior'));
+      k2.appendChild(el('div', 'l', 'Seu bar vs. auditoria anterior'));
       k2.appendChild(el('div', 'd', 'sem auditoria anterior para comparar'));
     }
     g.appendChild(k2);
 
     var k3 = el('div', 'ntc-kpi');
-    var nc = ult ? (ult.nao_conformes || []).length : 0;
+    var ncB = ult ? ncBar(ult) : 0;
     var temPdf = ult && ult.fonte === 'pdf';
-    k3.className = 'ntc-kpi ' + (nc > 0 ? 'aten' : '');
-    k3.appendChild(el('div', 'v', temPdf ? String(nc) : '—'));
-    k3.appendChild(el('div', 'l', 'Itens reprovados'));
+    k3.className = 'ntc-kpi ' + (ncB > 0 ? 'aten' : '');
+    k3.appendChild(el('div', 'v', temPdf ? String(ncB) : '—'));
+    k3.appendChild(el('div', 'l', 'Reprovado no seu bar'));
     k3.appendChild(el('div', 'd', temPdf ? 'na última auditoria' : 'relatório detalhado não recebido'));
     g.appendChild(k3);
 
@@ -601,13 +653,20 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   function blocoSetores(aud) {
+    // Bar primeiro e marcado — é o setor do chefe de bar; os outros ficam
+    // visíveis (transparência é decisão do Rodrigo), mas em segundo plano.
     var nomes = Object.keys(aud.setores || {});
     if (!nomes.length) return null;
+    nomes.sort(function (a, b) { return a === 'Bar' ? -1 : b === 'Bar' ? 1 : 0; });
     var g = el('div', 'ntc-setores');
     nomes.forEach(function (nome) {
       var s = aud.setores[nome];
-      var c = el('div', 'ntc-set ' + faixa(s.nota));
-      c.appendChild(el('div', 'n', nome));
+      var ehBar = nome === 'Bar';
+      var c = el('div', 'ntc-set ' + faixa(s.nota) + (ehBar ? ' meu' : ''));
+      var n = el('div', 'n');
+      n.appendChild(document.createTextNode(nome));
+      if (ehBar) n.appendChild(el('span', 'tg', 'seu setor'));
+      c.appendChild(n);
       c.appendChild(el('div', 'p', pct(s.nota)));
       var b = el('div', 'b');
       var i = document.createElement('i');
@@ -619,15 +678,96 @@ window.msgAcessoNegado = function (nomePagina) {
     return g;
   }
 
-  function blocoNaoConformes(aud) {
-    var itens = aud.nao_conformes || [];
+  // Um bloco só com os itens de UM setor (sem sub-agrupar por título, já que
+  // é um setor só) — usado pro "seu bar". `titulo` some quando null (o card
+  // de contexto dos outros setores prefere o próprio agrupamento por setor).
+  function blocoItensSetor(itens) {
+    if (!itens.length) return null;
+    var cx = el('div', 'ntc-nc');
+    var g = el('div', 'ntc-nc-grp');
+    itens.forEach(function (t) { g.appendChild(el('div', 'ntc-nc-li', t)); });
+    cx.appendChild(g);
+    return cx;
+  }
+
+  // Plano de melhorias do Bar (B1/B2/B3, PLANO_NUTRICOOK.md): a lista já vem
+  // priorizada e com orientação do servidor (nutricook_sync.py) — a página só
+  // desenha. Cada item tem um botão "Copiar" no schema da Central de
+  // Demandas (Casa/Tipo/Categoria/Setor/Descrição/Necessário desde); hoje é
+  // um copy manual, o dia em que isso virar demanda de verdade é só trocar
+  // o destino, o formato já está pronto.
+  function textoCentral(item, casa) {
+    var cd = item.central_demanda || {};
+    return 'Casa: ' + (casa.nome || cd.casa) + '\n'
+      + 'Tipo: ' + (cd.tipo || 'Ocorrência') + ' · Categoria: ' + (cd.categoria || 'Nutricook')
+      + ' · Setor: ' + (cd.setor || 'Bar') + '\n'
+      + 'Necessário desde: ' + diaMes(cd.necessario_desde) + '\n\n'
+      + (cd.descricao || item.item);
+  }
+
+  function blocoPlanoBar(plano, casa) {
+    var cx = document.createElement('div');
+    if (!plano || !plano.data_referencia) {
+      cx.appendChild(el('p', 'ntc-sec-sub', ''));
+      cx.appendChild(el('p', 'ntc-vazio',
+        'Ainda não recebemos nenhuma auditoria em PDF desta casa pra montar um plano — só dá pra priorizar a partir do item a item do relatório.'));
+      return cx;
+    }
+    if (!plano.itens.length) {
+      cx.appendChild(el('p', 'ntc-sec-sub', ''));
+      cx.appendChild(el('p', 'ntc-vazio',
+        'Nenhuma pendência aberta no seu bar na auditoria de ' + diaMes(plano.data_referencia) + '.'));
+      return cx;
+    }
+    var sub = el('p', 'ntc-sec-sub',
+      (plano.chefe ? 'Para ' + plano.chefe + '. ' : '') +
+      'Ordenado por gravidade e reincidência — o que está mais em cima é o que mais precisa de atenção agora. Fica só nesta página por enquanto; no futuro vai para a Central de Demandas.');
+    cx.appendChild(sub);
+
+    var lista = el('div', 'ntc-plano');
+    plano.itens.forEach(function (item) {
+      var card = el('div', 'ntc-plano-item');
+      var cab = el('div', 'ntc-plano-cab');
+      cab.appendChild(el('span', 'ntc-badge ' + item.gravidade, item.gravidade));
+      cab.appendChild(el('span', 'ntc-plano-resumo', item.resumo));
+      card.appendChild(cab);
+      card.appendChild(el('p', 'ntc-plano-orient',
+        item.orientacao || (item.item + ' (sem orientação cadastrada ainda — texto do relatório).')));
+      var meta = el('div', 'ntc-plano-meta');
+      meta.appendChild(el('span', null,
+        item.reincidencias > 1 ? 'reincidiu em ' + item.reincidencias + ' auditorias' : 'primeira vez'));
+      meta.appendChild(el('span', null, 'prazo sugerido: até ' + diaMes(item.prazo_ate)));
+      var bt = el('button', 'ntc-plano-copiar', 'Copiar para a Central');
+      bt.type = 'button';
+      bt.addEventListener('click', function () {
+        var texto = textoCentral(item, casa);
+        var pronto = function () {
+          bt.textContent = 'Copiado!';
+          bt.classList.add('ok');
+          setTimeout(function () { bt.textContent = 'Copiar para a Central'; bt.classList.remove('ok'); }, 2200);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(texto).then(pronto).catch(function () { bt.textContent = 'Não consegui copiar'; });
+        } else {
+          bt.textContent = 'Copiar não é suportado aqui';
+        }
+      });
+      meta.appendChild(bt);
+      card.appendChild(meta);
+      lista.appendChild(card);
+    });
+    cx.appendChild(lista);
+    return cx;
+  }
+
+  function blocoNaoConformes(itens) {
     if (!itens.length) return null;
     var porSetor = {};
     itens.forEach(function (x) {
       var k = x.setor || 'Sem setor';
       (porSetor[k] = porSetor[k] || []).push(x.item);
     });
-    var cx = el('div', 'ntc-nc');
+    var cx = el('div', 'ntc-nc ntc-nc-ctx');
     Object.keys(porSetor).forEach(function (setor) {
       var g = el('div', 'ntc-nc-grp');
       g.appendChild(el('div', 'ntc-nc-tit', setor + ' · ' + porSetor[setor].length));
@@ -647,41 +787,61 @@ window.msgAcessoNegado = function (nomePagina) {
 
     if (ult) {
       c.appendChild(el('div', 'ntc-sec', 'Notas por setor'));
-      c.appendChild(el('p', 'ntc-sec-sub', 'Auditoria de ' + diaMes(ult.data) + '. Aproveitamento de cada setor no roteiro da Nutricook.'));
+      c.appendChild(el('p', 'ntc-sec-sub', 'Auditoria de ' + diaMes(ult.data) + '. Aproveitamento de cada setor no roteiro da Nutricook — o seu é o Bar.'));
       var s = blocoSetores(ult);
       if (s) c.appendChild(s);
       else c.appendChild(el('p', 'ntc-vazio', 'Esta auditoria veio sem a divisão por setor.'));
 
-      c.appendChild(el('div', 'ntc-sec', 'O que foi reprovado'));
-      var nc = blocoNaoConformes(ult);
-      if (nc) {
+      var itensBar = (ult.nao_conformes || []).filter(function (x) { return x.setor === 'Bar'; });
+      var itensResto = (ult.nao_conformes || []).filter(function (x) { return x.setor !== 'Bar'; });
+
+      c.appendChild(el('div', 'ntc-sec', 'O que foi reprovado no seu bar'));
+      var ncBarBloco = blocoItensSetor(itensBar);
+      if (ncBarBloco) {
         c.appendChild(el('p', 'ntc-sec-sub', 'Item a item, como está no relatório da auditoria de ' + diaMes(ult.data) + '.'));
-        c.appendChild(nc);
+        c.appendChild(ncBarBloco);
       } else {
         c.appendChild(el('p', 'ntc-sec-sub', ''));
         c.appendChild(el('p', 'ntc-vazio',
           ult.fonte === 'pdf'
-            ? 'Nenhum item reprovado nesta auditoria.'
+            ? 'Nenhum item reprovado no bar nesta auditoria.'
             : 'O relatório detalhado desta auditoria não chegou até aqui — só as notas foram informadas no grupo. Os itens reprovados estão no PDF enviado pela Nutricook.'));
+      }
+
+      c.appendChild(el('div', 'ntc-sec', 'Plano de melhorias'));
+      c.appendChild(blocoPlanoBar(casa.plano_bar, casa));
+
+      if (itensResto.length) {
+        c.appendChild(el('div', 'ntc-sec', 'Reprovações nos outros setores'));
+        c.appendChild(el('p', 'ntc-sec-sub', 'Não são responsabilidade do bar, mas explicam a nota da casa — contexto, não cobrança.'));
+        c.appendChild(blocoNaoConformes(itensResto));
       }
     }
 
-    // Histórico de notas
+    // Histórico de notas — a do Bar em destaque, a da casa como contexto.
     if (auds.length > 1) {
       c.appendChild(el('div', 'ntc-sec', 'Histórico de auditorias'));
-      c.appendChild(el('p', 'ntc-sec-sub', 'Cada auditoria aplicada nesta casa, da mais recente para a mais antiga.'));
+      c.appendChild(el('p', 'ntc-sec-sub', 'Nota do seu bar em cada auditoria, da mais recente para a mais antiga.'));
       var ul = el('ul', 'ntc-tl');
       auds.forEach(function (a) {
         var li = document.createElement('li');
         li.appendChild(el('span', 'dt', diaMes(a.data)));
         var tx = el('span', 'tx');
-        var n = el('span', 'nt ' + faixa(a.geral), pct(a.geral));
+        var barA = notaBar(a);
+        var n = el('span', 'nt', barA !== null ? pct(barA) : (typeof a.geral === 'number' ? pct(a.geral) + ' (casa)' : '—'));
         n.className = 'nt';
-        n.style.color = a.geral < LIM.nota_critica ? '#ff9aa8' : a.geral < LIM.nota_atencao ? '#f0cf8a' : '#8fd6a8';
+        var refN = barA !== null ? barA : a.geral;
+        n.style.color = typeof refN === 'number'
+          ? (refN < LIM.nota_critica ? '#ff9aa8' : refN < LIM.nota_atencao ? '#f0cf8a' : '#8fd6a8')
+          : '';
         tx.appendChild(n);
-        var det = (a.nao_conformes || []).length;
+        if (barA !== null && typeof a.geral === 'number') {
+          tx.appendChild(el('span', null, '  (casa: ' + pct(a.geral) + ')'));
+        }
+        var detBar = (a.nao_conformes || []).filter(function (x) { return x.setor === 'Bar'; }).length;
         tx.appendChild(document.createTextNode(
-          det ? '  ·  ' + det + ' item(ns) reprovado(s)' : (a.fonte === 'pdf' ? '  ·  sem reprovação' : '  ·  só as notas')));
+          detBar ? '  ·  ' + detBar + ' reprovação(ões) no bar'
+            : (a.fonte === 'pdf' ? '  ·  sem reprovação no bar' : '  ·  só as notas')));
         li.appendChild(tx);
         ul.appendChild(li);
       });
@@ -772,10 +932,15 @@ window.msgAcessoNegado = function (nomePagina) {
       return;
     }
 
-    // Casa mais crítica primeiro: quem tem a pior nota é quem precisa de olho.
+    // Bar mais crítico primeiro: quem tem a pior nota de BAR é quem precisa
+    // de olho — não a nota da casa (A1, 2026-07-30).
+    function notaChip(slug) {
+      var n = notaBar(casas[slug].auditorias[0]);
+      return n !== null ? n : (casas[slug].auditorias[0] || {}).geral;
+    }
     slugs.sort(function (a, b) {
-      var na = (casas[a].auditorias[0] || {}).geral;
-      var nb = (casas[b].auditorias[0] || {}).geral;
+      var na = notaChip(a);
+      var nb = notaChip(b);
       if (typeof na !== 'number') return 1;
       if (typeof nb !== 'number') return -1;
       return na - nb;
@@ -786,7 +951,7 @@ window.msgAcessoNegado = function (nomePagina) {
       var b = el('button', 'ntc-chip' + (slug === atual ? ' on' : ''));
       b.type = 'button';
       b.appendChild(document.createTextNode(casas[slug].nome));
-      var nota = (casas[slug].auditorias[0] || {}).geral;
+      var nota = notaChip(slug);
       if (typeof nota === 'number') b.appendChild(el('span', 'p', pct(nota)));
       b.addEventListener('click', function () {
         atual = slug;
@@ -932,7 +1097,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 30/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 31/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -1922,7 +2087,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '157bb17e4aec';
+  var BUILD = '965393f3c750';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

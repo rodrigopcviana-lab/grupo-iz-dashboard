@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Inventário · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=157bb17e4aec">
+<link rel="stylesheet" href="portal.css?v=965393f3c750">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -426,7 +426,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
 
 <h1>Inventário</h1>
-<p class="sub">Contagem de copos e taças, controle de patrimônio e equipamentos &amp; vidraria por casa.</p>
+<p class="sub">Contagem de copos e taças, controle de patrimônio, equipamentos &amp; vidraria e venda de equipamentos por casa.</p>
 
 <style>
   .perf-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 18px; border-bottom:1px solid var(--border); padding-bottom:10px; }
@@ -441,6 +441,7 @@ window.msgAcessoNegado = function (nomePagina) {
   <button class="perf-tab on" type="button" data-tab="copos" data-niveis="equipe chefe coord">Contagem de copos</button>
   <button class="perf-tab" type="button" data-tab="patrimonio" data-niveis="chefe coord">Controle de Patrimônio</button>
   <button class="perf-tab" type="button" data-tab="equipamentos" data-niveis="chefe coord">Equipamentos &amp; Vidraria</button>
+  <button class="perf-tab" type="button" data-tab="venda" data-niveis="chefe coord">Venda de equipamentos</button>
 </div>
 
 <div id="perf-panel-copos" class="perf-panel">
@@ -1821,12 +1822,482 @@ window.msgAcessoNegado = function (nomePagina) {
   else if (!r.redirecionou) msg.innerHTML = window.msgAcessoNegado('Equipamentos &amp; Vidraria');
 })();
 </script></div>
+<div id="perf-panel-venda" class="perf-panel" hidden>
+<h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg> Venda de Equipamentos</h1>
+<p class="sub">Catálogo do que está disponível para vender e orçamentos em andamento com compradores.</p>
+
+<div class="panel" id="ve-gate">
+  <h2>Acesso restrito</h2>
+  <p class="sub" id="ve-msg" style="margin:4px 0 0" role="status" aria-live="polite">Verificando seu acesso…</p>
+</div>
+
+<div id="ve-corpo" style="display:none">
+<style>
+  .ve-subtabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px; }
+  .ve-subtab { font:inherit; font-size:13px; font-weight:600; padding:8px 15px; border:1.5px solid var(--border);
+      border-radius:999px; background:var(--card); color:var(--text-2); cursor:pointer; }
+  .ve-subtab.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); }
+  .ve-subpane[hidden] { display:none; }
+  .ve-chips { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .ve-chip { font:inherit; font-size:12px; padding:6px 12px; border-radius:999px; border:1px solid var(--border);
+      background:var(--card); color:var(--text-2); cursor:pointer; }
+  .ve-chip.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); font-weight:600; }
+  .ve-novo-btn { margin-left:auto; font:inherit; font-size:12.5px; font-weight:600; padding:8px 14px;
+      border-radius:9px; background:var(--card); border:1px solid var(--acc); color:var(--acc); cursor:pointer; }
+  .ve-resumo { font-size:12px; color:var(--text-3); margin:0 0 12px; }
+  .ve-form { display:none; background:var(--card); border:1px dashed var(--acc); border-radius:14px;
+      padding:14px 16px; margin-bottom:16px; }
+  .ve-form.show { display:block; }
+  .ve-form h3 { font-size:14px; margin:0 0 12px; }
+  .ve-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+  @media (min-width:560px) { .ve-grid.dois { grid-template-columns:1fr 1fr; } .ve-grid.tres { grid-template-columns:1fr 1fr 1fr; } }
+  .ve-campo { display:flex; flex-direction:column; gap:4px; }
+  .ve-campo label { font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--text-3); }
+  .ve-campo input, .ve-campo select, .ve-campo textarea { padding:11px 10px; font-size:14px; border-radius:10px;
+      border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:inherit; box-sizing:border-box; }
+  .ve-campo textarea { resize:vertical; min-height:52px; }
+  .ve-fotos { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .ve-foto-btn { display:inline-flex; align-items:center; gap:6px; font:inherit; font-size:12.5px; padding:9px 13px;
+      border-radius:9px; border:1px solid var(--border); background:var(--bg); color:var(--text-2); cursor:pointer; }
+  .ve-foto-thumb { position:relative; width:52px; height:52px; border-radius:9px; overflow:hidden; flex:none; }
+  .ve-foto-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .ve-foto-thumb button { position:absolute; top:1px; right:1px; width:18px; height:18px; border-radius:50%;
+      border:none; background:rgba(0,0,0,.65); color:#fff; font-size:11px; line-height:1; cursor:pointer; padding:0; }
+  .ve-salvar { margin-top:12px; width:100%; padding:12px; font-size:14px; font-weight:600; border:none;
+      border-radius:10px; background:var(--acc); color:var(--acc-txt); cursor:pointer; }
+  .ve-salvar:disabled { opacity:.55; cursor:default; }
+  .ve-cancelar { background:none; border:none; color:var(--text-3); text-decoration:underline; cursor:pointer;
+      font:inherit; font-size:12.5px; padding:0; margin-left:10px; }
+  .ve-aviso { font-size:12.5px; margin:10px 0 0; min-height:1em; }
+  .ve-aviso.ok { color:var(--verde); }
+  .ve-aviso.err { color:#e08585; }
+  .ve-lista { display:flex; flex-direction:column; gap:8px; }
+  .ve-card { display:flex; gap:12px; align-items:center; background:var(--card); border:1px solid var(--border);
+      border-radius:12px; padding:12px; }
+  .ve-card-foto { width:46px; height:46px; border-radius:9px; background:var(--bg); flex:none; overflow:hidden;
+      display:flex; align-items:center; justify-content:center; color:var(--text-3); }
+  .ve-card-foto img { width:100%; height:100%; object-fit:cover; display:block; }
+  .ve-card-meio { min-width:0; flex:1; }
+  .ve-card-nome { font-size:14px; color:var(--text); }
+  .ve-card-sub { font-size:11px; color:var(--text-3); margin-top:2px; }
+  .ve-card-preco { text-align:right; flex:none; }
+  .ve-card-preco .v { font-size:14px; color:var(--text); }
+  .ve-card-preco .v.pend { color:var(--amarelo); font-size:12px; }
+  .ve-card-preco .d { font-size:11px; color:var(--text-3); }
+  .ve-badge { font-size:10px; padding:4px 9px; border-radius:999px; flex:none; }
+  .ve-badge.disponivel { background:#1d2a26; color:var(--verde); }
+  .ve-badge.reservado { background:#2f2a1a; color:var(--amarelo); }
+  .ve-badge.vendido, .ve-badge.descartado { background:var(--bg); color:var(--text-3); }
+  .ve-editar { flex:none; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
+      border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text-3); cursor:pointer; }
+  .ve-editar:hover { border-color:var(--acc); color:var(--acc); }
+  .ve-vazio { text-align:center; color:var(--text-3); padding:26px 10px; font-size:13.5px; }
+  .ve-placeholder { text-align:center; color:var(--text-3); padding:34px 16px; font-size:13.5px; line-height:1.6; }
+</style>
+
+<div class="ve-subtabs">
+  <button class="ve-subtab on" type="button" data-sub="catalogo">Catálogo</button>
+  <button class="ve-subtab" type="button" data-sub="orcar" id="ve-subtab-orcar" hidden>Montar orçamento</button>
+  <button class="ve-subtab" type="button" data-sub="orcamentos" id="ve-subtab-orcamentos" hidden>Orçamentos</button>
+</div>
+
+<div id="ve-pane-catalogo" class="ve-subpane">
+  <div class="ve-chips" id="ve-chips-local"></div>
+  <p class="ve-resumo" id="ve-resumo"></p>
+
+  <div class="ve-form" id="ve-form">
+    <h3 id="ve-form-titulo">Cadastrar item</h3>
+    <div class="ve-grid dois">
+      <div class="ve-campo"><label for="vef-nome">Nome *</label><input id="vef-nome" type="text" maxlength="200" placeholder="Ex.: Bancada refrigerada 1,8m"></div>
+      <div class="ve-campo"><label for="vef-local">Local *</label><select id="vef-local"></select></div>
+    </div>
+    <div class="ve-grid tres">
+      <div class="ve-campo"><label for="vef-tipo">Tipo</label><select id="vef-tipo"></select></div>
+      <div class="ve-campo"><label for="vef-estado">Estado</label><select id="vef-estado"></select></div>
+      <div class="ve-campo"><label for="vef-status">Status</label><select id="vef-status"></select></div>
+    </div>
+    <div class="ve-grid tres">
+      <div class="ve-campo"><label for="vef-qtd">Quantidade</label><input id="vef-qtd" type="number" min="0" step="1" inputmode="numeric" placeholder="1"></div>
+      <div class="ve-campo"><label for="vef-novo">R$ novo</label><input id="vef-novo" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 4200"></div>
+      <div class="ve-campo"><label for="vef-pct">% uso (desconto)</label><input id="vef-pct" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="Ex.: 65"></div>
+    </div>
+    <div class="ve-grid dois">
+      <div class="ve-campo"><label for="vef-dim">Dimensões (A x L x P)</label><input id="vef-dim" type="text" maxlength="120" placeholder="Ex.: 90 x 180 x 60"></div>
+      <div class="ve-campo"><label for="vef-obs">Observação</label><input id="vef-obs" type="text" maxlength="300" placeholder="Opcional"></div>
+    </div>
+    <div class="ve-campo">
+      <label>Foto (até 3)</label>
+      <div class="ve-fotos" id="ve-fotos-lista">
+        <button type="button" class="ve-foto-btn" id="ve-foto-cam"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg> Câmera</button>
+        <button type="button" class="ve-foto-btn" id="ve-foto-gal"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M5 17l4.5-4 3.5 3 2.5-2 3.5 3.5"/></svg> Galeria</button>
+      </div>
+      <input type="file" id="ve-input-cam" accept="image/*" capture="environment" hidden>
+      <input type="file" id="ve-input-gal" accept="image/*" hidden>
+    </div>
+    <button class="ve-salvar" id="ve-salvar" type="button">Cadastrar item</button>
+    <button type="button" class="ve-cancelar" id="ve-cancelar" style="display:none">cancelar edição</button>
+    <p class="ve-aviso" id="ve-form-aviso" role="status" aria-live="polite"></p>
+  </div>
+
+  <div class="ve-lista" id="ve-lista"></div>
+  <p class="ve-vazio" id="ve-vazio" style="display:none">Nenhum item cadastrado ainda para este filtro.</p>
+</div>
+
+<div id="ve-pane-orcar" class="ve-subpane" hidden>
+  <p class="ve-placeholder">Montar orçamento chega numa próxima entrega — por enquanto o catálogo já está vivo para cadastrar o que existe para vender.</p>
+</div>
+
+<div id="ve-pane-orcamentos" class="ve-subpane" hidden>
+  <p class="ve-placeholder">A lista de orçamentos em andamento (Soto e Ares, do Bragatto, entre eles) chega numa próxima entrega.</p>
+</div>
+
+<script type="text/plain" id="perf-src-venda">
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var SLUG = 'inventario.html';
+  var NIVEIS_OK = ['chefe', 'coord'];
+  var gate = document.getElementById('ve-gate');
+  var msg = document.getElementById('ve-msg');
+  var wrap = document.getElementById('ve-corpo');
+
+  if (!WORKER) {
+    gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">Venda de Equipamentos ainda não foi ativada.</p>';
+    return;
+  }
+
+  var TOKEN = null;
+  var LOCAL_FIXO = null;
+  var TODOS_LOCAIS = {};
+  var TIPOS = [];
+  var ESTADOS = [];
+  var STATUS = [];
+  var ITENS = [];
+  var filtroLocal = null;
+  var editandoId = null;
+  var fotos = []; // ids da File Upload API já subidos, na ordem escolhida
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function fmtR(v) {
+    return (v == null) ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function opt(sel, valor, rotulo) {
+    var o = document.createElement('option'); o.value = valor; o.textContent = rotulo; sel.appendChild(o);
+  }
+  function trata401() { window.sessaoLimpar(); window.irParaLogin(SLUG); }
+
+  // ---- sub-abas ----
+  var subtabs = Array.prototype.slice.call(document.querySelectorAll('.ve-subtab'));
+  var subpanes = {
+    catalogo: document.getElementById('ve-pane-catalogo'),
+    orcar: document.getElementById('ve-pane-orcar'),
+    orcamentos: document.getElementById('ve-pane-orcamentos'),
+  };
+  subtabs.forEach(function (b) {
+    b.onclick = function () {
+      subtabs.forEach(function (t) { t.classList.toggle('on', t === b); });
+      Object.keys(subpanes).forEach(function (k) { subpanes[k].hidden = (k !== b.dataset.sub); });
+    };
+  });
+
+  // ---- foto (reduz no navegador, sobe pra /api/venda-catalogo/foto, guarda o id) ----
+  function reduzImagem(file, cb) {
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    img.onload = function () {
+      URL.revokeObjectURL(url);
+      var max = 1600, w = img.width, h = img.height;
+      if (w > max || h > max) {
+        if (w >= h) { h = Math.round(h * max / w); w = max; } else { w = Math.round(w * max / h); h = max; }
+      }
+      var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      cv.toBlob(function (blob) { cb(blob || file); }, 'image/jpeg', 0.82);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); cb(file); };
+    img.src = url;
+  }
+
+  function renderFotos() {
+    var box = document.getElementById('ve-fotos-lista');
+    box.querySelectorAll('.ve-foto-thumb').forEach(function (t) { t.remove(); });
+    fotos.forEach(function (f, i) {
+      var t = document.createElement('div'); t.className = 've-foto-thumb';
+      var img = document.createElement('img'); img.src = f.preview; t.appendChild(img);
+      var x = document.createElement('button'); x.type = 'button'; x.textContent = '×';
+      x.onclick = function () { fotos.splice(i, 1); renderFotos(); };
+      t.appendChild(x);
+      box.insertBefore(t, document.getElementById('ve-foto-cam'));
+    });
+  }
+
+  function subeFoto(file) {
+    if (fotos.length >= 3) return;
+    var aviso = document.getElementById('ve-form-aviso');
+    aviso.className = 've-aviso'; aviso.textContent = 'Enviando foto…';
+    reduzImagem(file, function (blob) {
+      var preview = URL.createObjectURL(blob);
+      fetch(WORKER + '/api/venda-catalogo/foto', {
+        method: 'POST', headers: { 'Content-Type': blob.type || 'image/jpeg', 'X-Token': TOKEN }, body: blob,
+      }).then(function (r) {
+        if (r.status === 401) { trata401(); return null; }
+        return r.json();
+      }).then(function (d) {
+        aviso.textContent = '';
+        if (d && d.ok) { fotos.push({ id: d.id, preview: preview }); renderFotos(); }
+        else { aviso.className = 've-aviso err'; aviso.textContent = (d && d.erro) || 'Falha ao enviar a foto.'; }
+      }).catch(function () { aviso.className = 've-aviso err'; aviso.textContent = 'Sem conexão — tente de novo.'; });
+    });
+  }
+  document.getElementById('ve-foto-cam').onclick = function () { document.getElementById('ve-input-cam').click(); };
+  document.getElementById('ve-foto-gal').onclick = function () { document.getElementById('ve-input-gal').click(); };
+  ['ve-input-cam', 've-input-gal'].forEach(function (id) {
+    document.getElementById(id).onchange = function (e) {
+      var f = (e.target.files || [])[0]; e.target.value = '';
+      if (f) subeFoto(f);
+    };
+  });
+
+  // ---- filtro por local (chips) ----
+  function renderChips() {
+    var box = document.getElementById('ve-chips-local');
+    box.innerHTML = '';
+    if (LOCAL_FIXO) return; // chefe preso à própria casa: sem seletor, não há o que filtrar
+    var todos = document.createElement('button'); todos.type = 'button'; todos.className = 've-chip' + (filtroLocal ? '' : ' on');
+    todos.textContent = 'Todos os locais';
+    todos.onclick = function () { filtroLocal = null; carrega(); };
+    box.appendChild(todos);
+    Object.keys(TODOS_LOCAIS).forEach(function (slug) {
+      var b = document.createElement('button'); b.type = 'button';
+      b.className = 've-chip' + (filtroLocal === slug ? ' on' : '');
+      b.textContent = TODOS_LOCAIS[slug];
+      b.onclick = function () { filtroLocal = slug; carrega(); };
+      box.appendChild(b);
+    });
+  }
+
+  // ---- lista ----
+  function statusClasse(s) {
+    return { 'Disponível': 'disponivel', 'Reservado': 'reservado', 'Vendido': 'vendido', 'Descartado': 'descartado' }[s] || '';
+  }
+  function renderLista() {
+    var box = document.getElementById('ve-lista');
+    var vazio = document.getElementById('ve-vazio');
+    box.innerHTML = '';
+    document.getElementById('ve-resumo').textContent = ITENS.length
+      ? (ITENS.length + ' iten' + (ITENS.length === 1 ? '' : 's') + ' · ' + ITENS.filter(function (i) { return i.usado == null; }).length + ' a precificar')
+      : '';
+    if (!ITENS.length) { vazio.style.display = ''; return; }
+    vazio.style.display = 'none';
+    ITENS.forEach(function (it) {
+      var card = document.createElement('div'); card.className = 've-card';
+
+      var foto = document.createElement('div'); foto.className = 've-card-foto';
+      if (it.fotos && it.fotos.length) {
+        var img = document.createElement('img'); img.src = it.fotos[0]; foto.appendChild(img);
+      } else {
+        foto.innerHTML = "<svg class=\"ic\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 8l8-4.5L20 8v9l-8 4.5L4 17z\"/><path d=\"M4 8l8 4.5M12 12.5L20 8M12 12.5V21\"/></svg>";
+      }
+      card.appendChild(foto);
+
+      var meio = document.createElement('div'); meio.className = 've-card-meio';
+      var nome = document.createElement('div'); nome.className = 've-card-nome'; nome.textContent = it.nome || '(sem nome)';
+      meio.appendChild(nome);
+      var subPartes = [it.local, it.tipo].filter(Boolean);
+      if (it.dimensoes) subPartes.push(it.dimensoes);
+      if (it.qtd != null && it.qtd !== 1) subPartes.push(it.qtd + ' un');
+      var sub = document.createElement('div'); sub.className = 've-card-sub'; sub.textContent = subPartes.join(' · ') || '—';
+      meio.appendChild(sub);
+      card.appendChild(meio);
+
+      var preco = document.createElement('div'); preco.className = 've-card-preco';
+      if (it.usado != null) {
+        var v = document.createElement('div'); v.className = 'v'; v.textContent = fmtR(it.usado); preco.appendChild(v);
+        var d = document.createElement('div'); d.className = 'd';
+        d.textContent = 'novo ' + (it.novo != null ? Number(it.novo).toLocaleString('pt-BR') : '—') + (it.pct != null ? ' · ' + Math.round(it.pct * 100) + '%' : '');
+        preco.appendChild(d);
+      } else {
+        var vp = document.createElement('div'); vp.className = 'v pend'; vp.textContent = 'A precificar'; preco.appendChild(vp);
+      }
+      card.appendChild(preco);
+
+      var badge = document.createElement('span'); badge.className = 've-badge ' + statusClasse(it.status);
+      badge.textContent = it.status || '—';
+      card.appendChild(badge);
+
+      var edit = document.createElement('button'); edit.type = 'button'; edit.className = 've-editar';
+      edit.setAttribute('aria-label', 'Editar ' + (it.nome || 'item'));
+      edit.innerHTML = "<svg class=\"ic\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z\"/><path d=\"M13 7l4 4\"/></svg>";
+      edit.onclick = function () { abreEdicao(it); };
+      card.appendChild(edit);
+
+      box.appendChild(card);
+    });
+  }
+
+  function carrega() {
+    var qs = filtroLocal ? '?local=' + encodeURIComponent(filtroLocal) : '';
+    fetch(WORKER + '/api/venda-catalogo' + qs, { headers: { 'X-Token': TOKEN } })
+      .then(function (r) {
+        if (r.status === 401) { trata401(); return null; }
+        return r.ok ? r.json() : null;
+      })
+      .then(function (d) {
+        if (!d) return;
+        if (d.sem_config) {
+          document.getElementById('ve-lista').innerHTML = '';
+          document.getElementById('ve-vazio').style.display = '';
+          document.getElementById('ve-vazio').textContent = 'Catálogo ainda não configurado neste Worker.';
+          return;
+        }
+        ITENS = d.itens || [];
+        TODOS_LOCAIS = d.locais || {};
+        TIPOS = d.tipos || [];
+        ESTADOS = d.estados || [];
+        STATUS = d.status || [];
+        LOCAL_FIXO = d.local_fixo || null;
+        montaSelects();
+        renderChips();
+        renderLista();
+        var podeOrcar = !!d.pode_orcar;
+        document.getElementById('ve-subtab-orcar').hidden = !podeOrcar;
+        document.getElementById('ve-subtab-orcamentos').hidden = !podeOrcar;
+      })
+      .catch(function () {
+        document.getElementById('ve-vazio').style.display = '';
+        document.getElementById('ve-vazio').textContent = 'Sem conexão — tente recarregar.';
+      });
+  }
+
+  // ---- formulário (cadastrar / editar) ----
+  function montaSelects() {
+    var selLocal = document.getElementById('vef-local');
+    if (!selLocal.dataset.montado) {
+      if (LOCAL_FIXO) { selLocal.innerHTML = ''; opt(selLocal, LOCAL_FIXO, LOCAL_FIXO); selLocal.disabled = true; }
+      else { Object.keys(TODOS_LOCAIS).forEach(function (slug) { opt(selLocal, slug, TODOS_LOCAIS[slug]); }); }
+      selLocal.dataset.montado = '1';
+    }
+    [['vef-tipo', TIPOS, true], ['vef-estado', ESTADOS, true], ['vef-status', STATUS, false]].forEach(function (t) {
+      var sel = document.getElementById(t[0]);
+      if (sel.dataset.montado) return;
+      if (t[2]) opt(sel, '', '—');
+      t[1].forEach(function (v) { opt(sel, v, v); });
+      sel.dataset.montado = '1';
+    });
+  }
+
+  function limpaForm() {
+    editandoId = null;
+    fotos = [];
+    renderFotos();
+    ['vef-nome', 'vef-dim', 'vef-obs', 'vef-qtd', 'vef-novo', 'vef-pct'].forEach(function (id) { document.getElementById(id).value = ''; });
+    ['vef-tipo', 'vef-estado'].forEach(function (id) { document.getElementById(id).value = ''; });
+    document.getElementById('vef-status').value = 'Disponível';
+    document.getElementById('ve-form-titulo').textContent = 'Cadastrar item';
+    document.getElementById('ve-salvar').textContent = 'Cadastrar item';
+    document.getElementById('ve-cancelar').style.display = 'none';
+    document.getElementById('ve-form-aviso').className = 've-aviso'; document.getElementById('ve-form-aviso').textContent = '';
+  }
+
+  function abreForm() {
+    document.getElementById('ve-form').classList.add('show');
+    document.getElementById('ve-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function abreEdicao(it) {
+    editandoId = it.id;
+    fotos = (it.fotos || []).map(function (u) { return { id: null, preview: u }; }); // fotos já salvas: sem id novo, não reenvia
+    renderFotos();
+    document.getElementById('vef-nome').value = it.nome || '';
+    var selLocal = document.getElementById('vef-local');
+    if (!selLocal.disabled) selLocal.value = Object.keys(TODOS_LOCAIS).filter(function (s) { return TODOS_LOCAIS[s] === it.local; })[0] || '';
+    document.getElementById('vef-tipo').value = it.tipo || '';
+    document.getElementById('vef-estado').value = it.estado || '';
+    document.getElementById('vef-status').value = it.status || 'Disponível';
+    document.getElementById('vef-qtd').value = it.qtd == null ? '' : String(it.qtd);
+    document.getElementById('vef-novo').value = it.novo == null ? '' : String(it.novo);
+    document.getElementById('vef-pct').value = it.pct == null ? '' : String(Math.round(it.pct * 100));
+    document.getElementById('vef-dim').value = it.dimensoes || '';
+    document.getElementById('vef-obs').value = it.obs || '';
+    document.getElementById('ve-form-titulo').textContent = 'Editar item';
+    document.getElementById('ve-salvar').textContent = 'Salvar edição';
+    document.getElementById('ve-cancelar').style.display = '';
+    abreForm();
+  }
+
+  document.getElementById('ve-novo-item') && (document.getElementById('ve-novo-item').onclick = function () { limpaForm(); abreForm(); });
+  document.getElementById('ve-cancelar').onclick = function () { limpaForm(); document.getElementById('ve-form').classList.remove('show'); };
+
+  function salvar() {
+    var aviso = document.getElementById('ve-form-aviso');
+    var nome = document.getElementById('vef-nome').value.trim();
+    if (!editandoId && !nome) { aviso.className = 've-aviso err'; aviso.textContent = 'Informe o nome do item.'; return; }
+    var selLocal = document.getElementById('vef-local');
+    var body = {
+      nome: nome || undefined,
+      local: LOCAL_FIXO || selLocal.value,
+      tipo: document.getElementById('vef-tipo').value || null,
+      estado: document.getElementById('vef-estado').value || null,
+      status: document.getElementById('vef-status').value,
+      dimensoes: document.getElementById('vef-dim').value.trim(),
+      obs: document.getElementById('vef-obs').value.trim(),
+      qtd: document.getElementById('vef-qtd').value || null,
+      novo: document.getElementById('vef-novo').value || null,
+      pct: document.getElementById('vef-pct').value ? (Number(document.getElementById('vef-pct').value) / 100) : null,
+    };
+    var idsNovos = fotos.filter(function (f) { return f.id; }).map(function (f) { return f.id; });
+    if (idsNovos.length) body.fotos = idsNovos;
+
+    var bt = document.getElementById('ve-salvar');
+    bt.disabled = true; aviso.className = 've-aviso'; aviso.textContent = 'Salvando…';
+    var url = WORKER + '/api/venda-catalogo' + (editandoId ? '/' + editandoId : '');
+    var metodo = editandoId ? 'PATCH' : 'POST';
+    fetch(url, { method: metodo, headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN }, body: JSON.stringify(body) })
+      .then(function (r) {
+        if (r.status === 401) { trata401(); return null; }
+        return r.json().then(function (d) { return { status: r.status, dados: d }; });
+      })
+      .then(function (r2) {
+        if (!r2) return;
+        if (r2.status === 200 || r2.status === 201) {
+          limpaForm();
+          document.getElementById('ve-form').classList.remove('show');
+          carrega();
+        } else {
+          aviso.className = 've-aviso err'; aviso.textContent = (r2.dados && r2.dados.erro) || 'Não foi possível salvar.';
+        }
+      }).catch(function () {
+        aviso.className = 've-aviso err'; aviso.textContent = 'Sem conexão. Tente de novo.';
+      }).finally(function () { bt.disabled = false; });
+  }
+  document.getElementById('ve-salvar').onclick = salvar;
+
+  // botão "cadastrar" fica no topo do chip-row, criado aqui pra ficar depois
+  // dos chips (a ordem de fetch decide os chips; o botão não depende deles)
+  var btnNovo = document.createElement('button');
+  btnNovo.type = 'button'; btnNovo.id = 've-novo-item'; btnNovo.className = 've-chip ve-novo-btn';
+  btnNovo.textContent = '+ Cadastrar item';
+  btnNovo.onclick = function () { limpaForm(); abreForm(); };
+  document.getElementById('ve-chips-local').parentNode.insertBefore(btnNovo, document.getElementById('ve-resumo'));
+
+  var r = window.exigirNivel(NIVEIS_OK, SLUG);
+  if (r.ok) {
+    TOKEN = r.sessao.token;
+    gate.style.display = 'none';
+    wrap.style.display = '';
+    carrega();
+  } else if (!r.redirecionou) {
+    msg.innerHTML = window.msgAcessoNegado('a Venda de Equipamentos');
+  }
+})();
+</script></div>
 
 
 <script>
 (function () {
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.perf-tab'));
-  var panels = { copos: document.getElementById('perf-panel-copos'), patrimonio: document.getElementById('perf-panel-patrimonio'), equipamentos: document.getElementById('perf-panel-equipamentos') };
+  var panels = { copos: document.getElementById('perf-panel-copos'), patrimonio: document.getElementById('perf-panel-patrimonio'), equipamentos: document.getElementById('perf-panel-equipamentos'), venda: document.getElementById('perf-panel-venda') };
   var iniciados = {};
   function ativaScript(nome) {
     if (iniciados[nome]) return;
@@ -1940,7 +2411,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 30/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 31/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -2930,7 +3401,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '157bb17e4aec';
+  var BUILD = '965393f3c750';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

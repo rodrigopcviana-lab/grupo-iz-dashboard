@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Banco de Horas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=157bb17e4aec">
+<link rel="stylesheet" href="portal.css?v=965393f3c750">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -487,6 +487,40 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-badge.critico { background:#3a1414; color:var(--verm); }
   .bh-badge.divergencia { background:#3a1414; color:var(--verm); cursor:help; }
   .bh-badge.atipico { background:#33234a; color:#c9a6f2; cursor:help; }
+
+  /* Selo de confiabilidade (E2.3). Barra estreita no topo — o selo é
+     contexto pro número, não o assunto da página; roubar espaço do hero
+     inverteria a hierarquia. O detalhe fica recolhido, mas os LIMITES
+     ("o que este selo não garante") vêm junto do detalhe de propósito:
+     um selo verde sem a ressalva convida a ler "os saldos foram auditados",
+     que é justamente o que ele NÃO faz. */
+  .bh-selo { margin:0 0 12px; border:1px solid var(--border); border-radius:10px;
+    background:var(--card); overflow:hidden; }
+  .bh-selo-cab { display:flex; align-items:center; gap:9px; width:100%; padding:9px 12px;
+    background:transparent; border:0; color:var(--text-2); font-size:12.5px;
+    text-align:left; cursor:pointer; font-family:inherit; }
+  .bh-selo-cab:hover { background:rgba(255,255,255,.03); }
+  .bh-selo-dot { width:9px; height:9px; border-radius:50%; flex:none; background:var(--text-3); }
+  .bh-selo.verde   .bh-selo-dot { background:var(--verde); }
+  .bh-selo.ambar   .bh-selo-dot { background:var(--amarelo); }
+  .bh-selo.vermelho .bh-selo-dot { background:var(--verm); }
+  .bh-selo.vermelho { border-color:var(--verm); }
+  .bh-selo-txt { flex:1; }
+  .bh-selo-txt b { color:var(--text); }
+  .bh-selo-mais { color:var(--text-3); font-size:11.5px; white-space:nowrap; }
+  .bh-selo-det { border-top:1px solid var(--border); padding:10px 12px; font-size:12.5px; }
+  .bh-selo-item { display:flex; gap:8px; align-items:baseline; padding:5px 0; }
+  .bh-selo-item .p { width:8px; height:8px; border-radius:50%; flex:none; margin-top:5px; }
+  .bh-selo-item.verde .p { background:var(--verde); }
+  .bh-selo-item.ambar .p { background:var(--amarelo); }
+  .bh-selo-item.vermelho .p { background:var(--verm); }
+  .bh-selo-item .t { font-weight:600; color:var(--text-2); }
+  .bh-selo-item .r { color:var(--text-3); }
+  .bh-selo-limites { margin-top:10px; padding-top:9px; border-top:1px solid var(--border);
+    font-size:11.5px; color:var(--text-3); }
+  .bh-selo-limites b { display:block; color:var(--text-2); margin-bottom:4px; }
+  .bh-selo-limites ul { margin:0; padding-left:16px; }
+  .bh-selo-limites li { margin:2px 0; }
   /* Aviso de variação atípica: some sozinho quando não há nenhuma (o
      display:none nasce no atributo style inline de propósito — regra de
      CLASSE com display:none não volta com style.display='' — ver a "Lição de
@@ -530,8 +564,35 @@ window.msgAcessoNegado = function (nomePagina) {
       color:var(--text-3); cursor:pointer; transition:color .12s, border-color .12s, background .12s; }
   .bh-acao:hover { color:var(--verm); border-color:var(--verm); background:rgba(255,90,90,.08); }
   .bh-acao-reativar:hover { color:var(--verde); border-color:var(--verde); background:rgba(90,200,120,.08); }
+  .bh-acao-flag:hover { color:#c9a6f2; border-color:#c9a6f2; background:rgba(201,166,242,.10); }
+  .bh-acao-flag.on { color:#c9a6f2; border-color:#c9a6f2; background:rgba(201,166,242,.10); }
+  /* Lista de pessoas tem 2 botões (desativar + sinalizar RH); as demais
+     tabelas (desativadas) têm só 1 — override mais específico só onde tem
+     os dois, pra não alargar a coluna nas outras. */
+  table.bh td.bh-acao-col { width:76px; }
+  .bh-acao-grupo { display:inline-flex; gap:4px; flex-wrap:wrap; justify-content:center; }
   #bh-desativadas-wrap { opacity:.85; }
   #bh-desativadas-wrap h2 { color:var(--text-2); }
+
+  /* Pendências para o RH — cartão por item, não tabela: o motivo é texto
+     livre e pode ser longo, uma tabela ia truncar ou quebrar o layout. */
+  .bh-rh-panel { display:flex; flex-direction:column; gap:10px; }
+  .bh-rh-item { border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    background:var(--card); }
+  .bh-rh-item.status-enviada_rh { border-color:#5a4a7a; }
+  .bh-rh-cab { display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .bh-rh-quem { font-weight:600; }
+  .bh-rh-meta { font-size:11px; color:var(--text-3); }
+  .bh-rh-motivo { margin:6px 0 0; font-size:12.5px; color:var(--text-2); }
+  .bh-rh-rodape { display:flex; align-items:center; justify-content:space-between; gap:8px;
+    margin-top:8px; flex-wrap:wrap; }
+  .bh-rh-acoes { display:flex; gap:6px; flex-wrap:wrap; }
+  .bh-rh-acoes button { font-size:11.5px; padding:5px 10px; border-radius:7px;
+    border:1px solid var(--border); background:transparent; color:var(--text-2); cursor:pointer; }
+  .bh-rh-acoes button:hover { border-color:var(--acc); color:var(--acc); }
+  .bh-rh-resposta { margin-top:6px; font-size:12.5px; background:rgba(255,255,255,.03);
+    border-radius:8px; padding:8px 10px; }
+  .bh-rh-resposta b { color:var(--text-2); }
   #bh-desativadas-wrap .bh-nome { color:var(--text-2); font-weight:600; }
   #bh-desativadas-wrap .bh-saldo { color:var(--text-3); }
   @media (max-width: 640px) {
@@ -546,7 +607,7 @@ window.msgAcessoNegado = function (nomePagina) {
        (pedido do Rodrigo). Some as colunas secundárias e deixa só o
        essencial, com linhas finas. Nada de overflow horizontal. */
     .bh-panel-lista, .bh-panel-devendo, .bh-panel-plano,
-    #bh-porcasa-wrap .panel, #bh-portime-wrap .panel { overflow-x:hidden !important; padding:6px 8px; }
+    #bh-porcasa-wrap .panel, #bh-portime-wrap .panel, .bh-rh-panel { overflow-x:hidden !important; padding:6px 8px; }
     table.bh, table.bh-plano-tb { width:100%; table-layout:fixed; }
     table.bh td, table.bh th,
     table.bh-plano-tb td, table.bh-plano-tb th {
@@ -611,6 +672,21 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 </style>
 
+<div class="bh-selo" id="bh-selo" style="display:none">
+  <button type="button" class="bh-selo-cab" id="bh-selo-cab" aria-expanded="false" aria-controls="bh-selo-det">
+    <span class="bh-selo-dot" id="bh-selo-dot"></span>
+    <span class="bh-selo-txt" id="bh-selo-txt"></span>
+    <span class="bh-selo-mais" id="bh-selo-mais">ver o que foi conferido</span>
+  </button>
+  <div class="bh-selo-det" id="bh-selo-det" style="display:none">
+    <div id="bh-selo-itens"></div>
+    <div class="bh-selo-limites">
+      <b>O que este selo NÃO garante</b>
+      <ul id="bh-selo-limites"></ul>
+    </div>
+  </div>
+</div>
+
 <div class="bh-hero">
   <div class="bh-hero-cost">
     <div class="bh-hero-lbl">Horas extras a pagar<span class="bh-hero-escopo" id="bh-hero-escopo"></span></div>
@@ -650,6 +726,15 @@ window.msgAcessoNegado = function (nomePagina) {
 </div>
 
 <div class="bh-atipico" id="bh-atipico" style="display:none"></div>
+
+<div class="bh-plano" id="bh-rh-wrap" style="display:none">
+  <h2>Pendências para o RH</h2>
+  <p class="sub">Coisas que precisam de confirmação humana antes de tratar o número como certo — variação de saldo fora do normal, cargo que parece errado, ou qualquer outra dúvida sinalizada na lista abaixo. Sinalizar não conserta nada sozinho; é um pedido de checagem.</p>
+  <div class="panel bh-rh-panel" style="padding:8px 10px">
+  <div id="bh-rh-lista"></div>
+  <p class="bh-vazio" id="bh-rh-vazio" style="display:none">Nenhuma pendência aberta.</p>
+  </div>
+</div>
 
 <div class="bh-plano" id="bh-porcasa-wrap" style="display:none">
   <h2>Por casa</h2>
@@ -727,14 +812,16 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   // Botão pequeno de ação (SVG de linha, sem emoji — regra do projeto).
-  function botaoAcao(tipo, titulo, onClick) {
+  function botaoAcao(tipo, titulo, onClick, ligado) {
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'bh-acao bh-acao-' + tipo;
+    b.className = 'bh-acao bh-acao-' + tipo + (ligado ? ' on' : '');
     b.title = titulo;
     b.setAttribute('aria-label', titulo);
     var svg = (tipo === 'reativar')
       ? '<circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 9"/>'
+      : (tipo === 'flag')
+      ? '<line x1="5" y1="21" x2="5" y2="3"/><path d="M5 4h14l-3 4.5L19 13H5"/>'
       : '<circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/>';
     b.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + svg + '</svg>';
     b.addEventListener('click', onClick);
@@ -760,6 +847,153 @@ window.msgAcessoNegado = function (nomePagina) {
     }).then(function (d) {
       if (d && d.ok) buscaDados(TOKEN);  // recarrega e re-renderiza
     }).catch(function () { alert('Sem conexão. Tente de novo.'); });
+  }
+
+  // ---- Checagens pro RH (E1) ----------------------------------------------
+  function chamaChecagem(corpo, verbo) {
+    return fetch(WORKER + '/api/banco-horas/checagem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+      body: JSON.stringify(corpo),
+    }).then(function (r) {
+      if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
+      if (!r.ok) { alert(verbo + ' falhou (' + r.status + '). Tente de novo.'); return null; }
+      return r.json();
+    }).then(function (d) {
+      if (d && d.ok) buscaDados(TOKEN);
+      return d;
+    }).catch(function () { alert('Sem conexão. Tente de novo.'); return null; });
+  }
+
+  // Sinaliza uma pessoa pro RH — um clique no botão da lista. O tipo é
+  // decidido pelo que já se sabe sobre a pessoa: se ela tem variação
+  // atípica detectada, o motivo já vem pré-escrito (a mesma explicação do
+  // badge) e o tipo é 'variacao_atipica'; senão é 'manual' com um campo
+  // livre — cobre divergência de cadastro e qualquer outra dúvida que a
+  // regra automática não prevê. Reabre o mesmo prompt se já havia uma
+  // checagem ativa, com o motivo atual pra editar em vez de perder.
+  function abrirChecagem(p) {
+    var tipo = p.atipico ? 'variacao_atipica' : 'manual';
+    var sugestao = p.checagemAtiva ? p.checagemAtiva.motivo
+      : (p.atipico ? textoAtipico(p) : '');
+    var motivo = window.prompt(
+      'Sinalizar ' + p.nome + ' pro RH — o que precisa ser conferido?\n' +
+      '(fica visível pra coordenação até alguém marcar como respondido)',
+      sugestao);
+    if (motivo === null) return;  // cancelou
+    motivo = motivo.trim();
+    if (!motivo) { alert('Escreva o motivo — sem ele a checagem não é criada.'); return; }
+    chamaChecagem({
+      acao: 'abrir', casa: p.casa_slug, matricula: p.matricula, nome: p.nome,
+      tipo: tipo, motivo: motivo,
+    }, 'Sinalizar');
+  }
+
+  function enviarChecagem(id, nome) {
+    if (!window.confirm('Marcar a checagem de ' + nome + ' como enviada ao RH?')) return;
+    chamaChecagem({ acao: 'enviar', id: id }, 'Marcar como enviada');
+  }
+
+  function responderChecagem(id, nome) {
+    var resp = window.prompt('O que o RH respondeu sobre ' + nome + '?');
+    if (resp === null) return;
+    resp = resp.trim();
+    if (!resp) { alert('Escreva a resposta — sem ela não fecha a checagem.'); return; }
+    chamaChecagem({ acao: 'responder', id: id, resposta: resp }, 'Registrar resposta');
+  }
+
+  function reabrirChecagem(id, nome) {
+    if (!window.confirm('Reabrir a checagem de ' + nome + '? Ela volta pra fila como pendente.')) return;
+    chamaChecagem({ acao: 'reabrir', id: id }, 'Reabrir');
+  }
+
+  var CHK_TIPO_LABEL = { variacao_atipica: 'Variação atípica', manual: 'Sinalização manual' };
+  var CHK_STATUS_LABEL = { aberta: 'Aberta', enviada_rh: 'Enviada ao RH', respondida: 'Respondida' };
+
+  function cartaoChecagem(chk) {
+    var card = document.createElement('div');
+    card.className = 'bh-rh-item status-' + chk.status;
+
+    var cab = document.createElement('div'); cab.className = 'bh-rh-cab';
+    var quem = document.createElement('span'); quem.className = 'bh-rh-quem';
+    quem.textContent = chk.nome + ' (' + (chk.casaNome || chk.casa) + ')';
+    cab.appendChild(quem);
+    var pill = document.createElement('span');
+    pill.className = 'bh-badge ' + (chk.status === 'enviada_rh' ? 'atencao' : 'atipico');
+    pill.textContent = CHK_STATUS_LABEL[chk.status] || chk.status;
+    cab.appendChild(pill);
+    card.appendChild(cab);
+
+    var meta = document.createElement('div'); meta.className = 'bh-rh-meta';
+    meta.textContent = (CHK_TIPO_LABEL[chk.tipo] || chk.tipo) + ' · sinalizado por ' +
+      (chk.criada_por || '—') + ' em ' + fmtDataBR((chk.criada_em || '').slice(0, 10));
+    card.appendChild(meta);
+
+    var motivo = document.createElement('p'); motivo.className = 'bh-rh-motivo';
+    motivo.textContent = chk.motivo;
+    card.appendChild(motivo);
+
+    if (chk.resposta) {
+      var respBox = document.createElement('div'); respBox.className = 'bh-rh-resposta';
+      var b = document.createElement('b'); b.textContent = 'Resposta do RH: ';
+      respBox.appendChild(b);
+      respBox.appendChild(document.createTextNode(chk.resposta));
+      card.appendChild(respBox);
+    }
+
+    var rodape = document.createElement('div'); rodape.className = 'bh-rh-rodape';
+    var acoes = document.createElement('div'); acoes.className = 'bh-rh-acoes';
+    if (chk.status === 'aberta') {
+      var bEnv = document.createElement('button'); bEnv.type = 'button';
+      bEnv.textContent = 'Marcar como enviada ao RH';
+      bEnv.onclick = function () { enviarChecagem(chk.id, chk.nome); };
+      acoes.appendChild(bEnv);
+    }
+    if (chk.status === 'aberta' || chk.status === 'enviada_rh') {
+      var bResp = document.createElement('button'); bResp.type = 'button';
+      bResp.textContent = 'Registrar resposta';
+      bResp.onclick = function () { responderChecagem(chk.id, chk.nome); };
+      acoes.appendChild(bResp);
+    }
+    if (chk.status === 'enviada_rh') {
+      var bReab = document.createElement('button'); bReab.type = 'button';
+      bReab.textContent = 'Reabrir';
+      bReab.onclick = function () { reabrirChecagem(chk.id, chk.nome); };
+      acoes.appendChild(bReab);
+    }
+    rodape.appendChild(acoes);
+    card.appendChild(rodape);
+    return card;
+  }
+
+  // Não setoriza (a checagem pode ser sobre alguém que já mudou de setor,
+  // ou sobre um cargo) — respeita só o filtro de casa, igual à "Por time".
+  function renderPendenciasRH(casasObjAtual, casaFiltro) {
+    var todas = [];
+    Object.keys(casasObjAtual).forEach(function (slug) {
+      var c = casasObjAtual[slug];
+      var nomeCasa = c.bar || slug;
+      if (casaFiltro && nomeCasa !== casaFiltro) return;
+      (c.checagens_rh || []).forEach(function (chk) {
+        chk.casaNome = nomeCasa;  // pra exibir "Grá", não o slug "gra-bistro"
+        todas.push(chk);
+      });
+    });
+    var wrapEl = document.getElementById('bh-rh-wrap');
+    var listaEl = document.getElementById('bh-rh-lista');
+    var vazioEl = document.getElementById('bh-rh-vazio');
+    listaEl.innerHTML = '';
+    if (!todas.length) { wrapEl.style.display = 'none'; return; }
+    wrapEl.style.display = '';
+    vazioEl.style.display = 'none';
+    var ordemStatus = { aberta: 0, enviada_rh: 1, respondida: 2 };
+    todas.sort(function (a, b) {
+      var oa = ordemStatus[a.status] != null ? ordemStatus[a.status] : 3;
+      var ob = ordemStatus[b.status] != null ? ordemStatus[b.status] : 3;
+      if (oa !== ob) return oa - ob;
+      return (b.atualizada_em || b.criada_em || '').localeCompare(a.atualizada_em || a.criada_em || '');
+    });
+    todas.forEach(function (chk) { listaEl.appendChild(cartaoChecagem(chk)); });
   }
 
   function renderDesativados(lista) {
@@ -1156,9 +1390,76 @@ window.msgAcessoNegado = function (nomePagina) {
 
   function inicia(payload) {
     PAYLOAD = payload;
+    renderSelo(payload.selo);
     montaSeletor();
     montaSetor();
   }
+
+  // ---- Selo de confiabilidade (E2.3) --------------------------------------
+  // O selo vem PRONTO do verifica_bh.py (status, legenda, 5 itens e a lista
+  // de limites) — esta função só desenha, não recalcula nada. Se um dia o
+  // critério mudar, muda lá e a tela acompanha sozinha.
+  //
+  // Chega junto do payload em vez de vir de uma chave/rota própria: um selo
+  // de confiabilidade tem que ser inseparável do dado que ele certifica,
+  // senão pode descrever uma rodada diferente da que está na tela.
+  var SELO_ROTULO = { verde: 'Dados conferidos', ambar: 'Conferido com ressalvas',
+                      vermelho: 'A coleta falhou' };
+
+  function renderSelo(selo) {
+    var box = document.getElementById('bh-selo');
+    // Payload antigo (publicado antes do E2) simplesmente não tem selo — a
+    // barra some, em vez de mentir um verde que ninguém verificou.
+    if (!selo || !selo.status) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    box.className = 'bh-selo ' + selo.status;
+
+    var txt = document.getElementById('bh-selo-txt');
+    txt.innerHTML = '';
+    var forte = document.createElement('b');
+    forte.textContent = SELO_ROTULO[selo.status] || selo.status;
+    txt.appendChild(forte);
+    if (selo.legenda) txt.appendChild(document.createTextNode(' — ' + selo.legenda));
+
+    var itensEl = document.getElementById('bh-selo-itens');
+    itensEl.innerHTML = '';
+    (selo.itens || []).forEach(function (it) {
+      var linha = document.createElement('div');
+      linha.className = 'bh-selo-item ' + it.status;
+      var ponto = document.createElement('span'); ponto.className = 'p';
+      linha.appendChild(ponto);
+      var corpo = document.createElement('div');
+      var t = document.createElement('span'); t.className = 't'; t.textContent = it.titulo + ': ';
+      corpo.appendChild(t);
+      var r = document.createElement('span'); r.className = 'r'; r.textContent = it.resumo || '';
+      corpo.appendChild(r);
+      linha.appendChild(corpo);
+      itensEl.appendChild(linha);
+    });
+
+    var limEl = document.getElementById('bh-selo-limites');
+    limEl.innerHTML = '';
+    (selo.limites || []).forEach(function (l) {
+      var li = document.createElement('li');
+      li.textContent = l;
+      limEl.appendChild(li);
+    });
+  }
+
+  (function ligaSeloCab() {
+    var cab = document.getElementById('bh-selo-cab');
+    var det = document.getElementById('bh-selo-det');
+    var mais = document.getElementById('bh-selo-mais');
+    if (!cab) return;
+    cab.addEventListener('click', function () {
+      // 'block'/'none' explícitos nos dois sentidos: string vazia só limpa o
+      // inline e deixaria valer uma regra de classe (Lição de CSS do Mural v3).
+      var aberto = det.style.display === 'block';
+      det.style.display = aberto ? 'none' : 'block';
+      cab.setAttribute('aria-expanded', aberto ? 'false' : 'true');
+      mais.textContent = aberto ? 'ver o que foi conferido' : 'esconder';
+    });
+  })();
 
   function temGente(chave) {
     var casas = (PAYLOAD || {}).casas || {};
@@ -1247,10 +1548,17 @@ window.msgAcessoNegado = function (nomePagina) {
       };
       return porCasa[nome];
     }
+    // "<slug>|<matricula>|<tipo>" -> checagem ativa (aberta/enviada). O
+    // payload já traz só as não-respondidas em c.checagens_rh (o Worker
+    // filtra) — aqui é só indexar pra achar rápido por pessoa.
+    var checagensIdx = {};
     Object.keys(casasObj).forEach(function (slug) {
       var c = casasObj[slug];
       if (c[SET.pend]) pendenciasCasa.push((c.bar || slug) + ': ' + c[SET.pend]);
       var nomeCasa = c.bar || slug;
+      (c.checagens_rh || []).forEach(function (chk) {
+        checagensIdx[slug + '|' + chk.matricula + '|' + chk.tipo] = chk;
+      });
       (c[SET.chave] || []).forEach(function (b) {
         var custo = (b.plano_zerar_horas && b.plano_zerar_horas.custo_se_nao_abater != null)
           ? b.plano_zerar_horas.custo_se_nao_abater : null;
@@ -1260,6 +1568,8 @@ window.msgAcessoNegado = function (nomePagina) {
           situacao: b.situacao, tendencia: tendenciaDe(b.historico), custo: custo,
           divergencia: b.divergencia_gestao || null, historico: b.historico || [],
           variacao: variacaoDe(b.historico), atipico: null,
+          checagemAtiva: checagensIdx[slug + '|' + b.matricula + '|manual'] ||
+            checagensIdx[slug + '|' + b.matricula + '|variacao_atipica'] || null,
         });
         if (b.plano_zerar_horas && b.plano_zerar_horas.minutos_por_dia) {
           planoPessoas.push({
@@ -1435,6 +1745,7 @@ window.msgAcessoNegado = function (nomePagina) {
       });
       // A "Por time" é o outro eixo: mudou a casa, os totais por time mudam.
       renderPorTime(setoresComGente(), valor, setorAtual, selecionarSetor);
+      renderPendenciasRH(casasObj, valor);
       desenha();
     }
 
@@ -1523,11 +1834,18 @@ window.msgAcessoNegado = function (nomePagina) {
         tr.appendChild(tdTend);
 
         var tdAcao = document.createElement('td'); tdAcao.className = 'bh-acao-col';
+        var acaoGrupo = document.createElement('div'); acaoGrupo.className = 'bh-acao-grupo';
         (function (p) {
-          tdAcao.appendChild(botaoAcao('desativar', 'Desativar matrícula (marca como fora da equipe)', function () {
+          acaoGrupo.appendChild(botaoAcao('desativar', 'Desativar matrícula (marca como fora da equipe)', function () {
             mudaDesativacao(p.casa_slug, p.matricula, p.nome, false);
           }));
+          var jaSinalizado = !!p.checagemAtiva;
+          var tituloFlag = jaSinalizado
+            ? 'Já sinalizado pro RH (' + (p.checagemAtiva.status === 'enviada_rh' ? 'enviada' : 'aberta') + ') — clique pra editar o motivo'
+            : 'Sinalizar pra checagem do RH';
+          acaoGrupo.appendChild(botaoAcao('flag', tituloFlag, function () { abrirChecagem(p); }, jaSinalizado));
         })(p);
+        tdAcao.appendChild(acaoGrupo);
         tr.appendChild(tdAcao);
 
         corpoLista.appendChild(tr);
@@ -1586,6 +1904,7 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     renderPorCasa(porCasa, selecionarCasa, estado.casa);
     renderPorTime(setoresComGente(), estado.casa, setorAtual, selecionarSetor);
+    renderPendenciasRH(casasObj, estado.casa);
     desenha();
 
     // E4c: bar e salão/cozinha têm cadências diferentes (48h vs. ~1x por
@@ -1719,7 +2038,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 30/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 31/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -2709,7 +3028,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '157bb17e4aec';
+  var BUILD = '965393f3c750';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
