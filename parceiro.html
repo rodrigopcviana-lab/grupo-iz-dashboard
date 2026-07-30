@@ -115,10 +115,9 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
   }
 
   // Clareia a cor da marca quando ela é escura demais pra servir de TEXTO
-  // sobre o fundo escuro do painel (achado testando com o azul-marinho da
-  // Red Bull: chip/link ficavam quase ilegíveis). Só pra texto/borda — o
-  // preenchimento sólido (faixa do topo, barra de progresso) usa a cor crua,
-  // que é um bloco opaco e não sofre esse problema de contraste.
+  // sobre o fundo escuro do painel. Só pra texto/borda — o preenchimento
+  // sólido (faixa do topo, barra de progresso) usa a cor crua, que é um bloco
+  // opaco e não sofre esse problema de contraste.
   function corLegivel(hex) {
     hex = String(hex || '').replace('#', '');
     if (hex.length !== 6) return hex ? ('#' + hex) : '#d0a352';
@@ -246,11 +245,9 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
           : 'O contrato ainda não foi assinado. As contrapartidas abaixo são as previstas e ainda não contam como pendência de entrega.'));
     }
 
-    // Itens individuais (ex.: as 3 receitas do Red Bull) — metas agregadas
-    // (backbar %, cocktails por casa, compra mínima) NUNCA entram aqui: elas
-    // têm seção própria mais abaixo, computada de dado real. Um registro de
-    // contrapartida genérico pra meta agregada duplicava informação sem
-    // alimentar a seção certa (achado 2026-07-29).
+    // Itens individuais só. Metas agregadas (backbar %, cocktails por casa,
+    // compra mínima) NUNCA entram aqui: têm seção própria mais abaixo,
+    // computada de dado real.
     var contrapartidas = d.contrapartidas || [];
     var comEvidencia = contrapartidas.filter(function (i) { return (i.evidencia || []).length; }).length;
     if (contrapartidas.length) {

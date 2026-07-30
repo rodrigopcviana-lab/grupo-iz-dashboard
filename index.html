@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=fe9aefc0230f">
+<link rel="stylesheet" href="portal.css?v=4c6b9643f243">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -82,22 +82,8 @@
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
-// Níveis de gente de FORA da empresa (PLANO_ONTRADE_PARCEIROS.md §0.1: o nível
-// é LATERAL, só-leitura, e "o recorte é literalmente uma página"). Espelha o
-// NIVEIS_EXTERNOS do contagem-worker.
-//
-// Por que isto vive no sessaoLer e não em cada página: o mural NÃO usa
-// exigirNivel — ele abre o conteúdo interno só testando se existe sessão
-// (`if (s)`). Um parceiro logando pela tela de entrada do portal caía nesse
-// teste e recebia o mural inteiro: Nova demanda, Central de Demandas, Avarias,
-// Dose, sino, Top Cocktails por casa. As rotas todas devolviam 401 (o Worker
-// barra), mas a INTERFACE interna aparecia, oferecendo ações que só falhariam
-// e revelando a estrutura de dentro pra um fornecedor. Achado pelo Rodrigo em
-// 2026-07-29, com a Alice (Red Bull) logada no mural.
-//
-// Recusar aqui conserta os dois lados de uma vez: quem logar agora é desviado
-// pra parceiro.html, e quem JÁ tem a sessão externa guardada (como a Alice
-// naquele aparelho) para de abrir o mural na próxima carga, sozinho.
+// Níveis de fora da empresa: nunca contam como sessão do portal interno.
+// Espelha o NIVEIS_EXTERNOS do contagem-worker.
 window.NIVEIS_EXTERNOS = ['parceiro'];
 window.PAGINA_EXTERNA = { parceiro: 'parceiro.html' };
 window.sessaoLer = function () {
@@ -106,10 +92,7 @@ window.sessaoLer = function () {
     if (!raw) return null;
     var s = JSON.parse(raw);
     if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
-    // Sessão externa nunca vale como sessão do portal interno. Além de
-    // recusar, APAGA — senão a sessão de parceiro guardada antes deste fix
-    // ficaria no aparelho até expirar (12h), e cada carga do mural teria que
-    // recusá-la de novo. Auto-cura: a próxima carga já nasce limpa.
+    // Recusa E apaga: a próxima carga já nasce limpa.
     if (window.NIVEIS_EXTERNOS.indexOf(s.nivel) >= 0) { window.sessaoLimpar(); return null; }
     return s;
   } catch (e) { return null; }
@@ -135,10 +118,8 @@ window.loginSenha = function (worker, senha) {
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
     return r.json().then(function (d) {
-      // Senha de FORA da empresa: nunca vira sessão do portal interno. Grava na
-      // chave própria daquela superfície (a mesma que parceiro.html lê) e
-      // devolve `externo` + `destino` pra quem chamou desviar. Sem isto o
-      // parceiro entrava no mural interno — ver a nota em NIVEIS_EXTERNOS.
+      // Nível de fora: grava na chave da própria superfície e devolve
+      // `externo` + `destino` pra quem chamou desviar.
       if (d.token && window.NIVEIS_EXTERNOS.indexOf(d.nivel) >= 0) {
         var destino = window.PAGINA_EXTERNA[d.nivel] || null;
         try {
@@ -146,9 +127,8 @@ window.loginSenha = function (worker, senha) {
             token: d.token, exp: d.exp, marca: d.marca || null, pessoa: d.pessoa || null,
           }));
         } catch (e) {}
-        // Uma sessão interna anterior no mesmo aparelho não pode sobreviver a um
-        // login externo (foi assim que o mural apareceu pra Alice com o Top
-        // Cocktails já renderizado de uma sessão de coord anterior).
+        // Sessão interna anterior no mesmo aparelho não sobrevive a um login
+        // externo (senão sobra estado interno já renderizado na tela).
         window.sessaoLimpar();
         return { ok: true, externo: true, nivel: d.nivel, destino: destino,
                  marca: d.marca || null, pessoa: d.pessoa || null };
@@ -1033,7 +1013,7 @@ window.msgAcessoNegado = function (nomePagina) {
 <summary class="k">MUNDO DA COQUETELARIA<span class="seta" aria-hidden="true">▾</span></summary>
 <div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span><b>Sustentabilidade operacional ganha peso concreto</b> — Batching pra reduzir desperdício por drink, reaproveitamento de cascas/sobras, compostagem com hortas urbanas e fim de descartáveis viram diferencial competitivo citado por múltiplas casas em 2026. (diageobaracademy.com)</span><a class="go" href="https://diageobaracademy.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Dandelion (Nova York)</b> — Bar do West Village pela equipe do Zero Bond e do reformado White Horse Tavern, com serviço dedicado de Martini e cozinha assinada por chef estrelado Michelin. (wwd.com)</span><a class="go" href="https://wwd.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Diageo World Class 2026</b> — Campeões regionais definidos (EUA: Alexis Ortega, Static Bar, Filadélfia; Hong Kong, Tailândia, Líbano, Cingapura já têm campeões); final global em outubro/2026 na Escócia. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Cato (Londres)</b> — Bar de cinco andares do bartender Angelos Bafas em Covent Garden, dedicado ao clássico Julep; toda a produção e destilados são de origem britânica. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Spirited Awards 2026 (Tales of the Cocktail)</b> — 20ª edição; cerimônia marcada para 23/jul/2026 em Nova Orleans. Finalistas Top 4 e vencedores de prêmios especiais (Helen David Lifetime Achievement, Tales Visionary Award) já anunciados. (talesofthecocktail.org)</span><a class="go" href="https://talesofthecocktail.org/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Destilados sem álcool atraem investimento pesado</b> — Lyre&#x27;s é hoje a mais capitalizada do setor (US$53 milhões levantados); previsão de crescimento de 36,7% em valor no segmento entre 2024-2028. (tracxn.com)</span><a class="go" href="https://tracxn.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Asia&#x27;s 50 Best Bars 2026</b> — Cerimônia em Macau em 28/jul/2026. Smoke &amp; Bitters (Sri Lanka) já venceu o Michter&#x27;s Art of Hospitality Award; Shelley Tai (Mius, Hong Kong) o prêmio Altos Bartenders&#x27; Bartender. (ttrweekly.com)</span><a class="go" href="https://ttrweekly.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Agave em transição: mezcal e reposado sobem sobre o blanco</b> — Mercado de agave se estabiliza após colapso de preço (pico ~32 pesos/kg para ~5 pesos/kg); oferta mais previsível, mas replantio baixo pode gerar novo aperto futuro. (theiwsr.com)</span><a class="go" href="https://theiwsr.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Sabor &quot;savory&quot;/umami dominando os menus</b> — Bartenders reportam alta de miso, shoyu, MSG e maior salinidade em coquetéis, criando perfis mais food-forward e complexos. (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Elderflower é eleito &quot;sabor do ano&quot; de 2026</b> — Floral/botânico domina cardápios, puxando também ervas nativas e infusões naturais como categoria em crescimento. (mrsipps.nl)</span><a class="go" href="https://mrsipps.nl/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Volta à simplicidade técnica</b> — Reação contra coquetéis de 5+ componentes e guarnições excessivas; foco em clássicos revisitados com ingredientes melhores (clarificação, soluções salinas, yuzu). (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Low/no-álcool vira parte estrutural do menu</b> — &quot;Zebra striping&quot; (alternar drink alcoólico e não-alcoólico) já é hábito de 78% da Gen Z; spritzes e clássicos com ABV reduzido seguem como base fixa de carta. (tastingtable.com)</span><a class="go" href="https://tastingtable.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div>
 <div class="coq-historico"><p class="titulo">🏆 World&#39;s 50 Best Bars — últimos vencedores</p><ul><li>World&#x27;s 50 Best Bars 2024 — Handshake Speakeasy (Cidade do México)</li><li>World&#x27;s 50 Best Bars 2025 — Bar Leone (Hong Kong)</li><li>World&#x27;s 50 Best Bars 2023 — Sips (Barcelona)</li><li>World&#x27;s 50 Best Bars 2021 — Connaught Bar (Londres)</li><li>World&#x27;s 50 Best Bars 2022 — Paradiso (Barcelona)</li></ul></div>
-<p class="coq-foot">Atualizado em 29/07/2026 18:00.</p>
+<p class="coq-foot">Atualizado em 29/07/2026 22:03.</p>
 </details>
 <script>
 // Cocktail do mês (PLANO_RANKING_COCKTAILS.md §5) — mesmo Worker da presença
@@ -2569,7 +2549,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'fe9aefc0230f';
+  var BUILD = '4c6b9643f243';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
