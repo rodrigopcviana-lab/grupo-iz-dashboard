@@ -779,6 +779,16 @@ function nomeArquivoSeguro(base) {
         (contrapartidas.length === 1 ? ' item com' : ' itens com') + ' evidência anexada.';
     }
     painel.appendChild(envHolder);
+    // O PDF vivia só dentro do Meu perfil, atrás da pill — ninguém achava.
+    // Aqui embaixo ele fica no fim da leitura do acordo, que é exatamente
+    // quando faz sentido levar o resumo pra dentro da casa da marca.
+    if (cont.previstas) {
+      var btPdfPainel = el('button', 'perfil-btn', 'Baixar andamento (PDF)');
+      btPdfPainel.type = 'button';
+      btPdfPainel.style.marginTop = '18px';
+      btPdfPainel.onclick = baixaResumoPdf;
+      painel.appendChild(btPdfPainel);
+    }
     painel.appendChild(el('p', 'rodape', rodapeTexto));
   }
 
@@ -942,6 +952,23 @@ function nomeArquivoSeguro(base) {
       .then(function (j) {
         holder.innerHTML = '';
         var itens = j.ideias || [];
+        // Estado VAZIO convidativo (2026-07-30): a seção sumia quando a marca
+        // ainda não tinha mandado nada — e era justamente aí que ela precisava
+        // descobrir que pode mandar. Numa conta nova o painel inteiro é
+        // "0% · não iniciado", e esta era a única coisa acionável da tela.
+        if (!itens.length) {
+          holder.appendChild(el('div', 'secao', 'Falar com a coordenação'));
+          var vazio = el('div', 'card');
+          vazio.appendChild(el('div', 'titulo', 'Você ainda não mandou nada por aqui'));
+          vazio.appendChild(el('div', 'meta',
+            'Use a etiqueta "Criar", na lateral, para mandar uma ideia, propor um cocktail com a marca ou tirar uma dúvida sobre o acordo. A resposta da coordenação aparece nesta mesma página.'));
+          var btVazio = el('button', 'criar-salvar', 'Criar');
+          btVazio.type = 'button';
+          btVazio.style.marginTop = '10px';
+          btVazio.onclick = function () { abreCriar(); };
+          vazio.appendChild(btVazio);
+          holder.appendChild(vazio);
+        }
         // Acende o sino se existe resposta mais nova do que a última já vista.
         var maisNova = '';
         itens.forEach(function (i) {
@@ -952,7 +979,7 @@ function nomeArquivoSeguro(base) {
         SINO.resposta = !!maisNova && maisNova > vista;
         SINO.maisNova = maisNova;
         atualizaSino();
-        if (!itens.length) return;   // nunca enviou nada: não ocupa a tela
+        if (!itens.length) return;
         holder.appendChild(el('div', 'secao', 'O que você enviou'));
         itens.slice(0, 12).forEach(function (it) {
           var card = el('div', 'card');
