@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Definir obrigações · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=fa6321538ae7">
+<link rel="stylesheet" href="portal.css?v=c328af66b4f5">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -481,6 +481,12 @@ window.msgAcessoNegado = function (nomePagina) {
   .ob-vazio { text-align:center; color:var(--text-3); padding:26px 10px; font-size:13.5px; }
 </style>
 
+<div id="ob-modelos-wrap" style="margin-bottom:16px">
+  <div style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--acc);margin-bottom:4px">Modelos prontos</div>
+  <p class="sub" style="margin:0 0 10px">Toque num modelo pra pré-preencher — depois escolha as casas e salve.</p>
+  <div id="ob-paleta"></div>
+</div>
+
 <div class="ob-form">
   <div class="ob-campo">
     <label for="ob-titulo">Título *</label>
@@ -528,9 +534,15 @@ window.msgAcessoNegado = function (nomePagina) {
       <button type="button" class="ob-toggle" id="ob-anexo" role="switch" aria-checked="false" aria-label="Exige relatório"><span class="knob"></span></button>
     </div>
   </div>
-  <div class="ob-campo">
-    <label for="ob-setor">Setor de destino</label>
-    <select id="ob-setor"></select>
+  <div class="ob-linha">
+    <div class="ob-campo">
+      <label for="ob-setor">Setor de destino</label>
+      <select id="ob-setor"></select>
+    </div>
+    <div class="ob-campo">
+      <label for="ob-grupo">Grupo (área)</label>
+      <select id="ob-grupo"></select>
+    </div>
   </div>
   <button class="ob-salvar" id="ob-criar" type="button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Criar obrigação</button>
   <p class="ob-aviso" id="ob-aviso" role="status" aria-live="polite"></p>
@@ -548,6 +560,8 @@ window.msgAcessoNegado = function (nomePagina) {
   var TIPOS = ["Obrigação", "Informação", "Relatório"];
   var CADENCIAS = ["Mensal", "Semanal", "Pontual"];
   var SETORES = {"manutencao": "Manutenção", "compras_insumos": "Compras / Insumos", "rh_pessoas": "RH & Pessoas", "gerencia_casa": "Gerência da casa", "operacao_bar": "Operação de bar", "marketing": "Marketing", "coordenacao": "Coordenação"};
+  var GRUPOS = ["Escala & Pessoas", "Inventário & Contagens", "Limpeza & Organização", "Financeiro & Gestão", "Outros"];
+  var PRESETS = [{"titulo": "Preencher a escala da semana", "descricao": "Montar e publicar a escala da equipe da próxima semana.", "grupo": "Escala & Pessoas", "tipo": "Obrigação", "cadencia": "Semanal", "setor": "rh_pessoas", "exige_anexo": false, "prazo_dias": 2}, {"titulo": "Conferir o banco de horas da equipe", "descricao": "Revisar saldos de BH da equipe e sinalizar quem está no vermelho/positivo.", "grupo": "Escala & Pessoas", "tipo": "Obrigação", "cadencia": "Mensal", "setor": "rh_pessoas", "exige_anexo": false, "prazo_dias": 5}, {"titulo": "Contagem de inventário", "descricao": "Contagem completa dos insumos do bar; anexar o resultado.", "grupo": "Inventário & Contagens", "tipo": "Relatório", "cadencia": "Semanal", "setor": "compras_insumos", "exige_anexo": true, "prazo_dias": 2}, {"titulo": "Contagem de copos e taças", "descricao": "Contar copos e taças por tipo; anexar o resultado.", "grupo": "Inventário & Contagens", "tipo": "Relatório", "cadencia": "Mensal", "setor": "gerencia_casa", "exige_anexo": true, "prazo_dias": 5}, {"titulo": "Contagem de equipamentos", "descricao": "Conferir os equipamentos do bar e o estado de cada um.", "grupo": "Inventário & Contagens", "tipo": "Relatório", "cadencia": "Mensal", "setor": "manutencao", "exige_anexo": false, "prazo_dias": 7}, {"titulo": "Conferência de limpeza e organização", "descricao": "Checar limpeza e organização do bar e da área de serviço; anexar foto.", "grupo": "Limpeza & Organização", "tipo": "Obrigação", "cadencia": "Semanal", "setor": "gerencia_casa", "exige_anexo": true, "prazo_dias": 1}, {"titulo": "Checklist de abertura/fechamento", "descricao": "Conferir o checklist de abertura e fechamento do turno.", "grupo": "Limpeza & Organização", "tipo": "Obrigação", "cadencia": "Semanal", "setor": "operacao_bar", "exige_anexo": false, "prazo_dias": 1}, {"titulo": "Relatório de fechamento de caixa", "descricao": "Anexar a foto do Z do caixa e o total conferido do turno.", "grupo": "Financeiro & Gestão", "tipo": "Relatório", "cadencia": "Mensal", "setor": "coordenacao", "exige_anexo": true, "prazo_dias": 3}];
   var NIVEIS_OK = ['coord'];
   var SLUG = 'obrigacoes.html';
   var DIAS_SEMANA = ['', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
@@ -622,6 +636,53 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('ob-data-wrap').style.display = (cadSel === 'Pontual') ? '' : 'none';
   }
 
+  // Preenche o formulário a partir de um modelo (paleta). NÃO salva — a coord
+  // escolhe casas/dia e confere antes.
+  function aplicaPreset(p) {
+    document.getElementById('ob-titulo').value = p.titulo || '';
+    document.getElementById('ob-desc').value = p.descricao || '';
+    document.getElementById('ob-prazo').value = (p.prazo_dias != null) ? p.prazo_dias : '';
+    if (p.setor) document.getElementById('ob-setor').value = p.setor;
+    if (p.grupo) document.getElementById('ob-grupo').value = p.grupo;
+    var tog = document.getElementById('ob-anexo');
+    var quer = !!p.exige_anexo;
+    tog.classList.toggle('on', quer); tog.setAttribute('aria-checked', quer ? 'true' : 'false');
+    if (p.tipo && TIPOS.indexOf(p.tipo) >= 0) {
+      tipoSel = p.tipo;
+      montaSeg(document.getElementById('ob-tipo'), TIPOS, tipoSel, function (v) { tipoSel = v; });
+    }
+    if (p.cadencia && CADENCIAS.indexOf(p.cadencia) >= 0) {
+      cadSel = p.cadencia;
+      montaSeg(document.getElementById('ob-cad'), CADENCIAS, cadSel, function (v) { cadSel = v; mostraCampoCadencia(); });
+      mostraCampoCadencia();
+    }
+    document.getElementById('ob-titulo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function montaPaleta() {
+    var box = document.getElementById('ob-paleta');
+    if (!box) return;
+    box.innerHTML = '';
+    GRUPOS.forEach(function (g) {
+      var doGrupo = PRESETS.filter(function (p) { return p.grupo === g; });
+      if (!doGrupo.length) return;
+      var h = document.createElement('div');
+      h.style.cssText = 'font-size:12px;color:var(--text-2);margin:8px 0 5px';
+      h.textContent = g;
+      box.appendChild(h);
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap';
+      doGrupo.forEach(function (p) {
+        var b = document.createElement('button'); b.type = 'button';
+        b.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:9px;padding:7px 11px;font:inherit;font-size:12.5px;color:var(--text);cursor:pointer';
+        b.textContent = '+ ' + p.titulo + (p.cadencia ? ' · ' + p.cadencia.toLowerCase() : '');
+        b.onclick = function () { aplicaPreset(p); };
+        row.appendChild(b);
+      });
+      box.appendChild(row);
+    });
+  }
+
   function montaForm() {
     montaSeg(document.getElementById('ob-tipo'), TIPOS, tipoSel, function (v) { tipoSel = v; });
     montaSeg(document.getElementById('ob-cad'), CADENCIAS, cadSel, function (v) { cadSel = v; mostraCampoCadencia(); });
@@ -630,6 +691,9 @@ window.msgAcessoNegado = function (nomePagina) {
     for (var i = 1; i <= 7; i++) opt(sem, String(i), DIAS_SEMANA[i]);
     var setor = document.getElementById('ob-setor');
     Object.keys(SETORES).forEach(function (slug) { opt(setor, slug, SETORES[slug]); });
+    var gsel = document.getElementById('ob-grupo');
+    GRUPOS.forEach(function (g) { opt(gsel, g, g); });
+    montaPaleta();
     var tog = document.getElementById('ob-anexo');
     tog.onclick = function () {
       var on = tog.classList.toggle('on');
@@ -656,6 +720,7 @@ window.msgAcessoNegado = function (nomePagina) {
       cadencia: cadSel,
       exige_anexo: document.getElementById('ob-anexo').classList.contains('on'),
       setor: document.getElementById('ob-setor').value,
+      grupo: document.getElementById('ob-grupo').value,
     };
     var prazo = document.getElementById('ob-prazo').value;
     if (prazo !== '') payload.prazo_dias = Number(prazo);
@@ -775,7 +840,17 @@ window.msgAcessoNegado = function (nomePagina) {
         document.getElementById('ob-conta').textContent = itens.length ? String(itens.length) : '';
         if (!itens.length) { vazio.style.display = ''; return; }
         vazio.style.display = 'none';
-        itens.forEach(function (o) { lista.appendChild(renderItem(o)); });
+        // Agrupa por Grupo, na ordem de GRUPOS (+ "Sem grupo" no fim).
+        var porGrupo = {};
+        itens.forEach(function (o) { var g = o.grupo || 'Sem grupo'; (porGrupo[g] = porGrupo[g] || []).push(o); });
+        GRUPOS.concat(['Sem grupo']).forEach(function (g) {
+          var arr = porGrupo[g]; if (!arr || !arr.length) return;
+          var h = document.createElement('div');
+          h.style.cssText = 'font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--text-3);margin:12px 2px 7px';
+          h.textContent = g;
+          lista.appendChild(h);
+          arr.forEach(function (o) { lista.appendChild(renderItem(o)); });
+        });
       })
       .catch(function () {});
   }
@@ -1874,7 +1949,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'fa6321538ae7';
+  var BUILD = 'c328af66b4f5';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

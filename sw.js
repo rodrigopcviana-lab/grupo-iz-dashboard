@@ -15,12 +15,12 @@
  * uma publicação quem responde ainda é o worker anterior, que serviria o CSS
  * velho do cache dele. Com o ?v= no endereço, a busca no cache antigo erra
  * (endereço novo) e o CSS novo vem da rede já nessa primeira carga. */
-const CACHE = "iz-portal-fa6321538ae7";
+const CACHE = "iz-portal-c328af66b4f5";
 const CORE = [
   "index.html",
   /* com o ?v= do build, igual ao <link> das páginas — precisa bater byte a
      byte, senão a busca no cache erra e o offline fica sem CSS. */
-  "portal.css?v=fa6321538ae7",
+  "portal.css?v=c328af66b4f5",
   "manifest.webmanifest",
   "icon-192.png",
   "icon-512.png",
