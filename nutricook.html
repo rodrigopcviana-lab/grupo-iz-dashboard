@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Nutricook · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=500df6c08d21">
+<link rel="stylesheet" href="portal.css?v=8de69f6ea199">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -516,6 +516,15 @@ window.msgAcessoNegado = function (nomePagina) {
   .ntc-plano-copiar { font:inherit; font-size:12px; font-weight:600; padding:5px 11px; border-radius:8px;
     border:1px solid var(--border); background:var(--bg); color:var(--text-2); cursor:pointer; }
   .ntc-plano-copiar.ok { border-color:#4f9b6d; color:#8fd6a8; }
+  .ntc-plano-rotina { font-size:11.5px; margin-top:9px; padding-top:9px; border-top:1px solid var(--border);
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .ntc-plano-rotina .ok { color:#8fd6a8; }
+  .ntc-plano-rotina .falta { color:var(--text-3); }
+  .ntc-rotina-bt { font:inherit; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:7px;
+    border:1px solid var(--border); background:var(--bg); color:var(--text-3); cursor:pointer; }
+  .ntc-rotina-bt.ok { border-color:#4f9b6d; color:#8fd6a8; }
+  .ntc-plano-banco-vazio { background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:10px 14px; font-size:12.5px; color:var(--text-3); margin:0 0 12px; }
   @media (max-width:640px) {
     .ntc-tl .dt { flex-basis:66px; }
     .ntc-kpi .v { font-size:22px; }
@@ -717,6 +726,33 @@ window.msgAcessoNegado = function (nomePagina) {
       + (cd.descricao || item.item);
   }
 
+  // C1 (2026-07-31): texto da rotina sugerida, no formato que o Notion de
+  // rotinas usa (título/tags/prioridade/descrição) — copiar e colar direto.
+  function textoRotina(sugestao) {
+    return 'Título: ' + sugestao.titulo + '\n'
+      + 'Tags: ' + sugestao.tags.join(', ') + '\n'
+      + 'Prioridade: ' + sugestao.prioridade + '\n\n'
+      + sugestao.descricao;
+  }
+
+  function botaoCopiar(texto, classe, rotuloOk, rotuloPadrao) {
+    var bt = el('button', classe, rotuloPadrao);
+    bt.type = 'button';
+    bt.addEventListener('click', function () {
+      var pronto = function () {
+        bt.textContent = rotuloOk;
+        bt.classList.add('ok');
+        setTimeout(function () { bt.textContent = rotuloPadrao; bt.classList.remove('ok'); }, 2200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(pronto).catch(function () { bt.textContent = 'Não consegui copiar'; });
+      } else {
+        bt.textContent = 'Copiar não é suportado aqui';
+      }
+    });
+    return bt;
+  }
+
   function blocoPlanoBar(plano, casa) {
     var cx = document.createElement('div');
     if (!plano || !plano.data_referencia) {
@@ -736,6 +772,18 @@ window.msgAcessoNegado = function (nomePagina) {
       'Ordenado por gravidade e reincidência — o que está mais em cima é o que mais precisa de atenção agora. Fica só nesta página por enquanto; no futuro vai para a Central de Demandas.');
     cx.appendChild(sub);
 
+    // C1 (2026-07-31): quando a casa não tem banco de rotina (ou tem banco
+    // vazio), nenhum item pôde ser conferido — dizer isso UMA vez aqui, em
+    // vez de repetir em cada um dos itens.
+    var statusBanco = (plano.itens[0] && plano.itens[0].rotina) ? plano.itens[0].rotina.status_banco : null;
+    if (statusBanco === 'sem_banco') {
+      cx.appendChild(el('div', 'ntc-plano-banco-vazio',
+        'Esta casa ainda não tem banco de rotinas no Notion — nenhum item abaixo pôde ser conferido contra uma rotina existente.'));
+    } else if (statusBanco === 'banco_vazio') {
+      cx.appendChild(el('div', 'ntc-plano-banco-vazio',
+        'Esta casa tem banco de rotinas no Notion, mas nenhuma rotina cadastrada ainda — nenhum item abaixo pôde ser conferido.'));
+    }
+
     var lista = el('div', 'ntc-plano');
     plano.itens.forEach(function (item) {
       var card = el('div', 'ntc-plano-item');
@@ -749,23 +797,24 @@ window.msgAcessoNegado = function (nomePagina) {
       meta.appendChild(el('span', null,
         item.reincidencias > 1 ? 'reincidiu em ' + item.reincidencias + ' auditorias' : 'primeira vez'));
       meta.appendChild(el('span', null, 'prazo sugerido: até ' + diaMes(item.prazo_ate)));
-      var bt = el('button', 'ntc-plano-copiar', 'Copiar para a Central');
-      bt.type = 'button';
-      bt.addEventListener('click', function () {
-        var texto = textoCentral(item, casa);
-        var pronto = function () {
-          bt.textContent = 'Copiado!';
-          bt.classList.add('ok');
-          setTimeout(function () { bt.textContent = 'Copiar para a Central'; bt.classList.remove('ok'); }, 2200);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(texto).then(pronto).catch(function () { bt.textContent = 'Não consegui copiar'; });
-        } else {
-          bt.textContent = 'Copiar não é suportado aqui';
-        }
-      });
-      meta.appendChild(bt);
+      meta.appendChild(botaoCopiar(textoCentral(item, casa), 'ntc-plano-copiar', 'Copiado!', 'Copiar para a Central'));
       card.appendChild(meta);
+
+      // C1: descumprimento (tem rotina, não seguiram) × lacuna de processo
+      // (não tem rotina pra cobrar) são dois problemas diferentes — a tela
+      // distingue os dois em vez de tratar igual.
+      var rot = item.rotina;
+      if (rot && rot.existe) {
+        var linhaOk = el('div', 'ntc-plano-rotina');
+        linhaOk.appendChild(el('span', 'ok', '✓ já existe rotina: "' + rot.titulo_existente + '" — isto é descumprimento, não falta de processo.'));
+        card.appendChild(linhaOk);
+      } else if (rot && rot.status_banco === 'com_dado' && rot.sugestao) {
+        var linhaFalta = el('div', 'ntc-plano-rotina');
+        linhaFalta.appendChild(el('span', 'falta', 'Nenhuma rotina cadastrada previne isto — lacuna de processo.'));
+        linhaFalta.appendChild(botaoCopiar(textoRotina(rot.sugestao), 'ntc-rotina-bt', 'Copiado!', 'Copiar rotina sugerida'));
+        card.appendChild(linhaFalta);
+      }
+
       lista.appendChild(card);
     });
     cx.appendChild(lista);
@@ -2117,7 +2166,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '500df6c08d21';
+  var BUILD = '8de69f6ea199';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
