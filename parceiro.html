@@ -162,6 +162,23 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 /* --- agenda --- */
 .ag-card .titulo{font-size:14px}
 .ag-card .quando{font-size:12px;color:var(--text-2);margin-top:4px}
+
+/* --- abas (P1, PLANO_PARCEIRO_CICLO.md §7-8): a página deixa de ser uma
+   tela só. Mural é a home (resumo + próximos passos); Desempenho concentra
+   o que já existe hoje (o acordo, backbar, cardápio, compra mínima) — as
+   métricas de resultado (giro, share, positivação, ruptura) entram aqui só
+   quando o motor da P2 existir; Execução é reservada e mostra um aviso
+   honesto enquanto P6/P8/P9 não estão no ar; Conversa promove "o que você
+   enviou" a aba própria. Nenhum dado novo nasce nesta etapa — só o lugar. */
+.tabs{display:flex;gap:16px;border-bottom:1px solid var(--border);margin-bottom:18px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab-btn{background:none;border:none;color:var(--text-3);font-size:13px;font-family:inherit;
+  cursor:pointer;padding:0 0 10px;white-space:nowrap;border-bottom:2px solid transparent;flex:none}
+.tab-btn.ativo{color:var(--text);border-bottom-color:var(--acc)}
+.tab-painel{display:none}
+.tab-painel.ativo{display:block}
+.ver-mais{display:inline-block;font-size:12.5px;color:var(--acc);background:none;border:none;
+  cursor:pointer;padding:0;font-family:inherit}
 </style>
 </head>
 <body>
@@ -187,7 +204,18 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
       </button>
     </div>
   </div>
-  <div id="painel"></div>
+  <div id="abas-wrap">
+    <div class="tabs" id="tabs" role="tablist">
+      <button type="button" class="tab-btn ativo" data-tab="mural" role="tab" aria-selected="true">Mural</button>
+      <button type="button" class="tab-btn" data-tab="desempenho" role="tab" aria-selected="false">Desempenho</button>
+      <button type="button" class="tab-btn" data-tab="execucao" role="tab" aria-selected="false">Execução</button>
+      <button type="button" class="tab-btn" data-tab="conversa" role="tab" aria-selected="false">Conversa</button>
+    </div>
+    <div id="tab-mural" class="tab-painel ativo" role="tabpanel"></div>
+    <div id="tab-desempenho" class="tab-painel" role="tabpanel"></div>
+    <div id="tab-execucao" class="tab-painel" role="tabpanel"></div>
+    <div id="tab-conversa" class="tab-painel" role="tabpanel"></div>
+  </div>
   <div id="tela-perfil" style="display:none"></div>
 </div>
 
@@ -383,10 +411,32 @@ function nomeArquivoSeguro(base) {
   var CHAVE_SESSAO = 'parceiro_sessao';
   var gate = document.getElementById('gate');
   var app = document.getElementById('app');
-  var painel = document.getElementById('painel');
+  var abasWrap = document.getElementById('abas-wrap');
+  var painelMural = document.getElementById('tab-mural');
+  var painelDesempenho = document.getElementById('tab-desempenho');
+  var painelExecucao = document.getElementById('tab-execucao');
+  var painelConversa = document.getElementById('tab-conversa');
   var telaPerfil = document.getElementById('tela-perfil');
   var erro = document.getElementById('g-erro');
   var ULTIMO_D = null; // último payload de GET /api/parceiro — reusado pelo pill/perfil
+
+  // Abas (P1): troca só o que está visível, nunca refaz fetch — o payload já
+  // está todo em memória (ULTIMO_D) desde a primeira carga.
+  var ABAS = ['mural', 'desempenho', 'execucao', 'conversa'];
+  function mostraAba(nome) {
+    ABAS.forEach(function (t) {
+      var ativo = t === nome;
+      document.getElementById('tab-' + t).classList.toggle('ativo', ativo);
+    });
+    document.querySelectorAll('.tab-btn').forEach(function (b) {
+      var ativo = b.dataset.tab === nome;
+      b.classList.toggle('ativo', ativo);
+      b.setAttribute('aria-selected', ativo ? 'true' : 'false');
+    });
+  }
+  document.querySelectorAll('.tab-btn').forEach(function (b) {
+    b.onclick = function () { mostraAba(b.dataset.tab); };
+  });
 
   var ROTULO_STATUS = {
     nao_iniciado: 'Não iniciado', em_andamento: 'Em andamento', entregue: 'Entregue',
@@ -651,8 +701,18 @@ function nomeArquivoSeguro(base) {
     return wrap;
   }
 
+  // P1 (PLANO_PARCEIRO_CICLO.md §8): a antiga renderiza() escrevia tudo num
+  // painel só. Agora escreve nos 4 contêineres das abas. NENHUM dado novo foi
+  // inventado aqui — cada bloco só mudou de endereço. "O acordo" (contrapartidas,
+  // backbar, cardápio, compra mínima) segue em Desempenho porque é a única
+  // leitura de resultado que o payload de hoje sustenta; giro/share/positivação/
+  // ruptura (P2-P5) entram nesta mesma aba quando o motor existir. Execução
+  // fica com um aviso honesto — P6/P8/P9 (carta, visitas, treinamentos, revisão
+  // de conta) ainda não têm dado nem rota.
   function renderiza(d) {
-    painel.innerHTML = '';
+    painelMural.innerHTML = '';
+    painelDesempenho.innerHTML = '';
+    painelExecucao.innerHTML = '';
     var cor = d.cor || '#d0a352';
     var corTxt = corLegivel(cor);
 
@@ -670,30 +730,34 @@ function nomeArquivoSeguro(base) {
       'Parceria com Grupo IZ' + (d.on_trade ? ' · ' + d.on_trade : '') +
       (casasLabels.length ? ' · ' + casasLabels.join(', ') : '')));
     cab.appendChild(corpo);
-    painel.appendChild(cab);
-
-    // Hero + contadores vêm ANTES de qualquer seção (mockup v2): a primeira
-    // coisa que o parceiro vê é o quanto do acordo já andou.
-    var cont = contaEntregas(d, casasLabels);
-    var hero = montaHero(d, cor, cont);
-    if (hero) painel.appendChild(hero);
-    var stats = montaStats(d, cor, cont);
-    if (stats) painel.appendChild(stats);
+    painelMural.appendChild(cab);
 
     if (d.contrato_status !== 'ativo') {
-      painel.appendChild(el('p', 'nota',
+      painelMural.appendChild(el('p', 'nota',
         d.contrato_status === 'em_negociacao'
-          ? 'Ainda não temos contrapartidas fechadas. Assim que o acordo for definido, elas aparecem aqui, no mesmo formato desta página. Enquanto isso, esta página já é sua: use "Criar" para mandar uma ideia, propor um cocktail ou tirar uma dúvida — tudo fica registrado e a coordenação responde por aqui.'
-          : 'O contrato ainda não foi assinado. As contrapartidas abaixo são as previstas e ainda não contam como pendência de entrega.'));
+          ? 'Ainda não temos contrapartidas fechadas. Assim que o acordo for definido, elas aparecem na aba Desempenho, no mesmo formato desta página. Enquanto isso, esta página já é sua: use "Criar" para mandar uma ideia, propor um cocktail ou tirar uma dúvida — tudo fica registrado e a coordenação responde na aba Conversa.'
+          : 'O contrato ainda não foi assinado. As contrapartidas na aba Desempenho são as previstas e ainda não contam como pendência de entrega.'));
     }
+
+    // Hero + contadores: prévia do acordo na home, com link pra ver o
+    // detalhe completo na aba Desempenho — nunca duplica a leitura, só
+    // resume o que está lá.
+    var cont = contaEntregas(d, casasLabels);
+    var hero = montaHero(d, cor, cont);
+    if (hero) {
+      painelMural.appendChild(hero);
+      var verMais = el('button', 'ver-mais', 'Ver desempenho ›');
+      verMais.type = 'button';
+      verMais.style.marginTop = '-4px';
+      verMais.onclick = function () { mostraAba('desempenho'); };
+      painelMural.appendChild(verMais);
+    }
+    var stats = montaStats(d, cor, cont);
+    if (stats) painelMural.appendChild(stats);
 
     // Agenda (E7): populado por buscarAgenda(), chamada logo depois desta
     // função — o container nasce aqui, vazio, pra existir no DOM a tempo.
-    painel.appendChild(el('div', '', null)).id = 'ag-holder';
-    // "O que você enviou" (E3): mesmo desenho — nasce vazio, carregaEnviados()
-    // preenche. Fica no fim do painel (é histórico, não é o acordo).
-    var envHolder = el('div', '', null);
-    envHolder.id = 'env-holder';
+    painelMural.appendChild(el('div', '', null)).id = 'ag-holder';
 
     // Itens individuais só. Metas agregadas (backbar %, cocktails por casa,
     // compra mínima) NUNCA entram aqui: têm seção própria mais abaixo,
@@ -704,34 +768,34 @@ function nomeArquivoSeguro(base) {
       var casasUnicas = {};
       contrapartidas.forEach(function (i) { if (i.casa) casasUnicas[i.casa] = true; });
       var soUmaCasa = Object.keys(casasUnicas).length === 1 ? Object.keys(casasUnicas)[0] : null;
-      painel.appendChild(el('div', 'secao', 'Contrapartidas' + (soUmaCasa ? ' · ' + soUmaCasa : '')));
-      contrapartidas.forEach(function (item) { painel.appendChild(montaContrapartida(item, cor)); });
+      painelDesempenho.appendChild(el('div', 'secao', 'Contrapartidas' + (soUmaCasa ? ' · ' + soUmaCasa : '')));
+      contrapartidas.forEach(function (item) { painelDesempenho.appendChild(montaContrapartida(item, cor)); });
     }
 
     var backbar = d.backbar || {};
     if (d.backbar_meta_pct != null && casasLabels.length) {
-      painel.appendChild(el('div', 'secao', 'Backbar · visibilidade acordada de ' + d.backbar_meta_pct + '%'));
+      painelDesempenho.appendChild(el('div', 'secao', 'Backbar · visibilidade acordada de ' + d.backbar_meta_pct + '%'));
       casasLabels.forEach(function (label) {
-        painel.appendChild(montaSerieBackbar(label, backbar[label] || [], cor, d.backbar_meta_pct));
+        painelDesempenho.appendChild(montaSerieBackbar(label, backbar[label] || [], cor, d.backbar_meta_pct));
       });
     } else {
       var casasBackbar = Object.keys(backbar);
       if (casasBackbar.length) {
-        painel.appendChild(el('div', 'secao', 'Visibilidade de backbar'));
-        casasBackbar.forEach(function (casa) { painel.appendChild(montaSerieBackbar(casa, backbar[casa], cor, null)); });
+        painelDesempenho.appendChild(el('div', 'secao', 'Visibilidade de backbar'));
+        casasBackbar.forEach(function (casa) { painelDesempenho.appendChild(montaSerieBackbar(casa, backbar[casa], cor, null)); });
       }
     }
 
     var fichas = d.fichas_tecnicas || [];
     var fichasPorCasa = d.fichas_por_casa || {};
     if (d.cocktails_meta_por_casa != null && casasLabels.length) {
-      painel.appendChild(el('div', 'secao', 'Cocktails no cardápio · ' + d.cocktails_meta_por_casa + ' por casa'));
+      painelDesempenho.appendChild(el('div', 'secao', 'Cocktails no cardápio · ' + d.cocktails_meta_por_casa + ' por casa'));
       casasLabels.forEach(function (label) {
-        painel.appendChild(montaCocktailsCasa(label, fichasPorCasa[label] || 0, d.cocktails_meta_por_casa, cor));
+        painelDesempenho.appendChild(montaCocktailsCasa(label, fichasPorCasa[label] || 0, d.cocktails_meta_por_casa, cor));
       });
     }
     if (fichas.length) {
-      painel.appendChild(el('div', 'secao', d.cocktails_meta_por_casa != null ? 'Receitas já no cardápio' : 'Cocktails no cardápio'));
+      painelDesempenho.appendChild(el('div', 'secao', d.cocktails_meta_por_casa != null ? 'Receitas já no cardápio' : 'Cocktails no cardápio'));
       fichas.forEach(function (f) {
         var card = el('div', 'card');
         var lin = el('div', 'ficha');
@@ -744,14 +808,14 @@ function nomeArquivoSeguro(base) {
         // sem `venda` (parceiros_gen.py); este render não a reintroduz nem
         // se um dia o campo voltar. Achado na revisão adversarial E8.
         card.appendChild(lin);
-        painel.appendChild(card);
+        painelDesempenho.appendChild(card);
       });
     }
 
     if (d.compra_minima) {
       var itensCM = d.compra_minima.itens || [];
       var okCM = itensCM.filter(function (i) { return i.entregue; }).length;
-      painel.appendChild(el('div', 'secao',
+      painelDesempenho.appendChild(el('div', 'secao',
         'Compra mínima · ' + fmtData(d.compra_minima.ciclo_inicio) + ' a ' + fmtData(d.compra_minima.ciclo_fim) +
         ' · ' + okCM + ' de ' + itensCM.length + ' registradas'));
       var card = el('div', 'card');
@@ -765,12 +829,12 @@ function nomeArquivoSeguro(base) {
         lin.appendChild(tag);
         card.appendChild(lin);
       });
-      painel.appendChild(card);
+      painelDesempenho.appendChild(card);
     }
 
     var nadaAgregado = d.backbar_meta_pct == null && d.cocktails_meta_por_casa == null;
     if (!contrapartidas.length && nadaAgregado && !fichas.length && !d.compra_minima) {
-      painel.appendChild(el('p', 'vazio', 'Ainda não há nada registrado por aqui.'));
+      painelDesempenho.appendChild(el('p', 'vazio', 'Ainda não há nada registrado por aqui.'));
     }
 
     var rodapeTexto = 'Atualizado em ' + fmtData((d.atualizado_em || '').slice(0, 10)) + '.';
@@ -778,7 +842,6 @@ function nomeArquivoSeguro(base) {
       rodapeTexto += ' ' + comEvidencia + ' de ' + contrapartidas.length +
         (contrapartidas.length === 1 ? ' item com' : ' itens com') + ' evidência anexada.';
     }
-    painel.appendChild(envHolder);
     // O PDF vivia só dentro do Meu perfil, atrás da pill — ninguém achava.
     // Aqui embaixo ele fica no fim da leitura do acordo, que é exatamente
     // quando faz sentido levar o resumo pra dentro da casa da marca.
@@ -787,9 +850,20 @@ function nomeArquivoSeguro(base) {
       btPdfPainel.type = 'button';
       btPdfPainel.style.marginTop = '18px';
       btPdfPainel.onclick = baixaResumoPdf;
-      painel.appendChild(btPdfPainel);
+      painelDesempenho.appendChild(btPdfPainel);
     }
-    painel.appendChild(el('p', 'rodape', rodapeTexto));
+    painelDesempenho.appendChild(el('p', 'rodape', rodapeTexto));
+
+    // Execução (P1): reservada. P6 (carta/backbar como prova), P8 (visitas e
+    // treinamentos) e P9 (revisão de conta) ainda não têm dado nem rota —
+    // um "em breve" declarado é mais honesto que uma aba vazia sem explicação.
+    painelExecucao.appendChild(el('p', 'vazio',
+      'Em breve: presença da sua marca na carta e no backbar, registro de visitas e treinamentos, e uma revisão de conta pronta para apresentar à sua indústria.'));
+
+    // "O que você enviou" (E3) fica na aba Conversa — nasce vazio,
+    // carregaEnviados() preenche depois.
+    painelConversa.innerHTML = '';
+    painelConversa.appendChild(el('div', '', null)).id = 'env-holder';
   }
 
   var sessaoAtualGlobal = null;
@@ -1077,7 +1151,7 @@ function nomeArquivoSeguro(base) {
     });
   }
 
-  function mostraPainel() { telaPerfil.style.display = 'none'; painel.style.display = ''; }
+  function mostraPainel() { telaPerfil.style.display = 'none'; abasWrap.style.display = ''; }
 
   function renderPerfil() {
     telaPerfil.innerHTML = '';
@@ -1187,10 +1261,15 @@ function nomeArquivoSeguro(base) {
   }
 
   document.getElementById('perfil-pill').onclick = function () {
-    painel.style.display = 'none';
+    abasWrap.style.display = 'none';
     telaPerfil.style.display = '';
     renderPerfil();
   };
+  // ag-holder mora na aba Mural, env-holder mora na aba Conversa (P1) — o
+  // sino agora precisa trocar de aba antes de rolar até o alvo, senão o
+  // holder está escondido num painel com display:none e scrollIntoView não
+  // faz nada.
+  var ABA_DO_HOLDER = { 'ag-holder': 'mural', 'env-holder': 'conversa' };
   document.getElementById('sino-btn').onclick = function () {
     // Abrir o sino é o que marca a resposta como lida — não o simples carregar
     // da página, senão ela apagaria antes de alguém ter olhado.
@@ -1199,6 +1278,7 @@ function nomeArquivoSeguro(base) {
       SINO.resposta = false;
       atualizaSino();
     }
+    mostraAba(ABA_DO_HOLDER[SINO.alvo] || 'mural');
     var holder = document.getElementById(SINO.alvo) || document.getElementById('ag-holder');
     if (holder) holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
