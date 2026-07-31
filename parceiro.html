@@ -163,6 +163,28 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .ag-card .titulo{font-size:14px}
 .ag-card .quando{font-size:12px;color:var(--text-2);margin-top:4px}
 
+/* --- giro / sell-out + share (P2/P3) --- */
+.giro-hero{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:15px 16px;margin:0 0 10px}
+.giro-topo{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.giro-n{font-family:var(--serif);font-size:31px;line-height:1;margin:0}
+.giro-un{font-size:14px;color:var(--text-3)}
+.giro-var{font-size:13px;margin:0}
+.giro-barras{display:flex;align-items:flex-end;gap:3px;height:42px;margin-top:12px}
+.giro-barras .b{flex:1;border-radius:2px;min-height:2px}
+.giro-rot{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-3);margin-top:5px}
+.giro-nota{font-size:11px;color:var(--text-3);margin:8px 0 0;line-height:1.45}
+.giro-linha{padding:9px 0;border-top:1px solid var(--border)}
+.giro-linha:last-of-type{border-bottom:1px solid var(--border)}
+.giro-lt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.giro-lnome{font-size:13.5px}
+.giro-lval{font-size:12.5px;color:var(--text-3);white-space:nowrap}
+.giro-mini{display:flex;align-items:flex-end;gap:2px;height:20px;margin-top:6px}
+.giro-mini .b{flex:1;border-radius:1px;min-height:2px}
+.giro-sub{font-size:11px;color:var(--text-3);margin:5px 0 0;line-height:1.45}
+.giro-share{height:5px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden}
+.giro-share i{display:block;height:5px;border-radius:3px}
+.giro-tag{font-size:10.5px;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:1px}
+
 /* --- abas (P1, PLANO_PARCEIRO_CICLO.md §7-8): a página deixa de ser uma
    tela só. Mural é a home (resumo + próximos passos); Desempenho concentra
    o que já existe hoje (o acordo, backbar, cardápio, compra mínima) — as
@@ -544,8 +566,10 @@ function nomeArquivoSeguro(base) {
     });
     wrap.appendChild(faixa);
     var rot = el('div', 'serie-rotulo');
-    rot.appendChild(document.createTextNode(fmtData(serie[0].semana)));
-    rot.appendChild(document.createTextNode(fmtData(serie[serie.length - 1].semana)));
+    // <span>, não nó de texto: `justify-content` só posiciona elementos —
+    // com nós soltos as duas datas saem coladas (mesmo defeito achado no giro).
+    rot.appendChild(el('span', '', fmtData(serie[0].semana)));
+    rot.appendChild(el('span', '', fmtData(serie[serie.length - 1].semana)));
     wrap.appendChild(rot);
     return wrap;
   }
@@ -701,6 +725,163 @@ function nomeArquivoSeguro(base) {
     return wrap;
   }
 
+  // --- Giro / sell-out (P2) + share de categoria (P3) ----------------------
+  // Tudo em UNIDADES, nunca R$ (trava T1). O payload já vem pronto do
+  // parceiros_gen.py — este render não recalcula nada, só desenha.
+  //
+  // `null` numa série é "a casa não tem esse mês importado", que é DIFERENTE
+  // de zero (trava T7). Uma barra mínima cinza marca o mês sem dado; pintá-lo
+  // como zero faria a tela afirmar "parou de vender" para um mês que ninguém
+  // ingeriu — o NIP só tem 2 dos 12 meses e o IZ tem buraco no meio.
+  function barras(serie, cor, altura, classe) {
+    var faixa = el('div', classe);
+    var validos = serie.filter(function (v) { return v != null; });
+    var max = validos.length ? Math.max.apply(null, validos) : 0;
+    serie.forEach(function (v) {
+      var b = el('div', 'b');
+      if (v == null) {
+        b.style.height = '2px';
+        b.style.background = 'var(--border)';
+      } else {
+        b.style.height = Math.max(2, max ? Math.round((v / max) * altura) : 2) + 'px';
+        b.style.background = cor;
+      }
+      faixa.appendChild(b);
+    });
+    return faixa;
+  }
+
+  function textoVariacao(pct) {
+    if (pct == null) return null;
+    return (pct > 0 ? '+' : '') + pct + '% no trimestre';
+  }
+
+  // Share (P3): o payload traz percentual e nada mais — nome, volume ou
+  // posição de concorrente nunca chegam aqui (trava T2). Sem base comparável,
+  // o motivo é DITO: "não temos como comparar" é informação; uma seção que
+  // encolhe em silêncio não é.
+  function montaShare(linhas, cor) {
+    if (!linhas || !linhas.length) return null;
+    var wrap = el('div');
+    wrap.appendChild(el('div', 'secao', 'Seu share por categoria'));
+    linhas.forEach(function (s) {
+      var linha = el('div', 'giro-linha');
+      var lt = el('div', 'giro-lt');
+      lt.appendChild(el('div', 'giro-lnome', 'Dos ' + s.categoria + ' vendidos'));
+      lt.appendChild(el('div', 'giro-lval', s.share_pct != null ? s.share_pct + '%' : '—'));
+      linha.appendChild(lt);
+      if (s.share_pct != null) {
+        var barra = el('div', 'giro-share');
+        var i = document.createElement('i');
+        i.style.width = Math.max(1, s.share_pct) + '%';
+        i.style.background = cor;
+        barra.appendChild(i);
+        linha.appendChild(barra);
+      } else if (s.motivo) {
+        linha.appendChild(el('p', 'giro-sub', s.motivo));
+      }
+      wrap.appendChild(linha);
+    });
+    wrap.appendChild(el('p', 'giro-nota',
+      'Percentual do volume da categoria nas casas onde você está, no mesmo período do giro. '
+      + 'Só o seu percentual — nunca mostramos marca, volume ou posição de terceiros.'));
+    return wrap;
+  }
+
+  function montaGiro(g, cor) {
+    if (!g || !g.total) return null;
+    var wrap = el('div');
+    wrap.appendChild(el('div', 'secao', 'Seu giro no Grupo IZ · unidades vendidas ao consumidor'));
+
+    var hero = el('div', 'giro-hero');
+    var topo = el('div', 'giro-topo');
+    var n = el('p', 'giro-n', g.total.toLocaleString('pt-BR'));
+    n.style.color = cor;
+    n.appendChild(el('span', 'giro-un', ' un'));
+    topo.appendChild(n);
+    var txtVar = textoVariacao(g.variacao_trimestre_pct);
+    if (txtVar) {
+      var v = el('p', 'giro-var', txtVar);
+      v.style.color = g.variacao_trimestre_pct >= 0 ? 'var(--verde)' : 'var(--vermelho)';
+      topo.appendChild(v);
+    }
+    hero.appendChild(topo);
+    hero.appendChild(barras(g.serie, cor, 42, 'giro-barras'));
+    // Rótulos em <span>, não em nó de texto solto: `justify-content` só
+    // posiciona ELEMENTOS, então dois nós de texto saem colados
+    // ("Jun/25Mai/26") — visto em teste, não deduzido.
+    var rot = el('div', 'giro-rot');
+    rot.appendChild(el('span', '', g.meses[0]));
+    rot.appendChild(el('span', '', g.ate));
+    hero.appendChild(rot);
+    // Data de corte SEMPRE visível (trava T5): o fechamento de venda chega com
+    // atraso, e uma apresentação montada hoje não pode dar a entender que
+    // representa o mês corrente.
+    var nota = 'Venda apurada até ' + g.ate + '.';
+    if (txtVar && (g.variacao_base_casas || []).length) {
+      nota += ' Variação comparando ' + g.variacao_base_casas.join(', ') + '.';
+    }
+    hero.appendChild(el('p', 'giro-nota', nota));
+    wrap.appendChild(hero);
+
+    if ((g.por_produto || []).length) {
+      wrap.appendChild(el('div', 'secao', 'Por produto'));
+      g.por_produto.forEach(function (p) {
+        var linha = el('div', 'giro-linha');
+        var lt = el('div', 'giro-lt');
+        lt.appendChild(el('div', 'giro-lnome', p.rotulo));
+        lt.appendChild(el('div', 'giro-lval',
+          p.total.toLocaleString('pt-BR') + ' un' + (p.share_pct != null ? ' · ' + p.share_pct + '%' : '')));
+        linha.appendChild(lt);
+        if (p.share_pct != null) {
+          var sh = el('div', 'giro-share');
+          var barra = document.createElement('i');
+          barra.style.width = Math.max(1, p.share_pct) + '%';
+          barra.style.background = cor;
+          sh.appendChild(barra);
+          linha.appendChild(sh);
+        }
+        var casas = Object.keys(p.por_casa || {});
+        if (casas.length) {
+          linha.appendChild(el('p', 'giro-sub', casas.map(function (c) {
+            return c + ' ' + p.por_casa[c];
+          }).join(' · ')));
+        }
+        wrap.appendChild(linha);
+      });
+    }
+
+    if ((g.por_casa || []).length) {
+      wrap.appendChild(el('div', 'secao', 'Por casa · cada barra é um mês'));
+      g.por_casa.forEach(function (c) {
+        var linha = el('div', 'giro-linha');
+        var lt = el('div', 'giro-lt');
+        var nome = el('div', 'giro-lnome', c.rotulo);
+        if (c.no_acordo) {
+          var tag = el('span', 'giro-tag', 'casa do acordo');
+          tag.style.background = cor + '33';
+          tag.style.color = corLegivel(cor);
+          nome.appendChild(tag);
+        }
+        lt.appendChild(nome);
+        var val = c.total.toLocaleString('pt-BR') + ' un';
+        if (c.variacao_pct != null) val += ' · ' + (c.variacao_pct > 0 ? '+' : '') + c.variacao_pct + '%';
+        lt.appendChild(el('div', 'giro-lval', val));
+        linha.appendChild(lt);
+        linha.appendChild(barras(c.serie, cor, 20, 'giro-mini'));
+        // Casa com janela parcial é DECLARADA, nunca lida como queda: sem esta
+        // linha, 10 meses sem dado desenhariam um tombo que não existiu.
+        if (c.meses_com_dado < g.meses.length) {
+          linha.appendChild(el('p', 'giro-sub',
+            'Temos ' + c.meses_com_dado + ' dos ' + g.meses.length +
+            ' meses desta casa — o resto não foi apurado, não é venda zero.'));
+        }
+        wrap.appendChild(linha);
+      });
+    }
+    return wrap;
+  }
+
   // P1 (PLANO_PARCEIRO_CICLO.md §8): a antiga renderiza() escrevia tudo num
   // painel só. Agora escreve nos 4 contêineres das abas. NENHUM dado novo foi
   // inventado aqui — cada bloco só mudou de endereço. "O acordo" (contrapartidas,
@@ -739,6 +920,44 @@ function nomeArquivoSeguro(base) {
           : 'O contrato ainda não foi assinado. As contrapartidas na aba Desempenho são as previstas e ainda não contam como pendência de entrega.'));
     }
 
+    // Prévia do giro no Mural (P2): o número que o representante leva pra
+    // indústria dele fica na primeira tela, resumido. O detalhe (produto,
+    // casa, série, share) mora na aba Desempenho.
+    var g = d.giro;
+    if (g && g.total) {
+      var cardG = el('div', 'giro-hero');
+      var topoG = el('div', 'giro-topo');
+      var titG = el('p', 'secao', 'Seu giro · 12 meses');
+      titG.style.margin = '0';
+      topoG.appendChild(titG);
+      var linkG = el('button', 'ver-mais', 'Ver desempenho ›');
+      linkG.type = 'button';
+      linkG.onclick = function () { mostraAba('desempenho'); };
+      topoG.appendChild(linkG);
+      cardG.appendChild(topoG);
+      var linha2 = el('div', 'giro-topo');
+      var nG = el('p', 'giro-n', g.total.toLocaleString('pt-BR'));
+      nG.style.color = cor;
+      nG.appendChild(el('span', 'giro-un', ' un'));
+      linha2.appendChild(nG);
+      var txtG = textoVariacao(g.variacao_trimestre_pct);
+      if (txtG) {
+        var vG = el('p', 'giro-var', txtG);
+        vG.style.color = g.variacao_trimestre_pct >= 0 ? 'var(--verde)' : 'var(--vermelho)';
+        linha2.appendChild(vG);
+      }
+      cardG.appendChild(linha2);
+      cardG.appendChild(barras(g.serie, cor, 26, 'giro-barras'));
+      var resumo = [];
+      var maior = (g.por_casa || [])[0];
+      if (maior) resumo.push(maior.rotulo + ' é sua maior casa (' + maior.total.toLocaleString('pt-BR') + ' un)');
+      var shareTopo = (d.share || []).filter(function (s) { return s.share_pct != null; })[0];
+      if (shareTopo) resumo.push(shareTopo.share_pct + '% dos ' + shareTopo.categoria);
+      resumo.push('venda apurada até ' + g.ate);
+      cardG.appendChild(el('p', 'giro-nota', resumo.join(' · ')));
+      painelMural.appendChild(cardG);
+    }
+
     // Hero + contadores: prévia do acordo na home, com link pra ver o
     // detalhe completo na aba Desempenho — nunca duplica a leitura, só
     // resume o que está lá.
@@ -762,6 +981,13 @@ function nomeArquivoSeguro(base) {
     // Itens individuais só. Metas agregadas (backbar %, cocktails por casa,
     // compra mínima) NUNCA entram aqui: têm seção própria mais abaixo,
     // computada de dado real.
+    // Giro (P2) e share (P3) abrem a aba Desempenho: é o que a indústria
+    // cobra do representante, e vem antes do acordo de propósito.
+    var giroEl = montaGiro(d.giro, cor);
+    if (giroEl) painelDesempenho.appendChild(giroEl);
+    var shareEl = montaShare(d.share, cor);
+    if (shareEl) painelDesempenho.appendChild(shareEl);
+
     var contrapartidas = d.contrapartidas || [];
     var comEvidencia = contrapartidas.filter(function (i) { return (i.evidencia || []).length; }).length;
     if (contrapartidas.length) {
@@ -951,6 +1177,50 @@ function nomeArquivoSeguro(base) {
     var c = contaEntregas(d, casasLabels);
     var b = [];
     var pct = c.previstas ? Math.round((c.concluidas / c.previstas) * 100) : 0;
+
+    // Giro e share primeiro (P2/P3): é o que o representante leva pra
+    // indústria dele. Sai do MESMO payload que a tela usa — nunca de um
+    // segundo cálculo, senão papel e tela discordam na frente do cliente.
+    var gPdf = d.giro;
+    if (gPdf && gPdf.total) {
+      b.push({ tipo: 'h1', texto: 'Seu giro no Grupo IZ' });
+      b.push({ texto: gPdf.total.toLocaleString('pt-BR') + ' unidades vendidas ao consumidor entre '
+        + gPdf.meses[0] + ' e ' + gPdf.ate + '.' });
+      if (gPdf.variacao_trimestre_pct != null) {
+        b.push({ texto: 'Último trimestre contra o anterior: '
+          + (gPdf.variacao_trimestre_pct > 0 ? '+' : '') + gPdf.variacao_trimestre_pct + '%'
+          + ((gPdf.variacao_base_casas || []).length
+            ? ' (comparando ' + gPdf.variacao_base_casas.join(', ') + ').' : '.') });
+      }
+      if ((gPdf.por_produto || []).length) {
+        b.push({ tipo: 'h2', texto: 'Por produto' });
+        gPdf.por_produto.forEach(function (p) {
+          b.push({ tipo: 'li', texto: p.rotulo + ': ' + p.total.toLocaleString('pt-BR') + ' un'
+            + (p.share_pct != null ? ' (' + p.share_pct + '%)' : '') });
+        });
+      }
+      if ((gPdf.por_casa || []).length) {
+        b.push({ tipo: 'h2', texto: 'Por casa' });
+        gPdf.por_casa.forEach(function (c) {
+          var t = c.rotulo + ': ' + c.total.toLocaleString('pt-BR') + ' un';
+          if (c.variacao_pct != null) t += ' (' + (c.variacao_pct > 0 ? '+' : '') + c.variacao_pct + '%)';
+          if (c.meses_com_dado < gPdf.meses.length) {
+            t += ' — apurados ' + c.meses_com_dado + ' de ' + gPdf.meses.length + ' meses';
+          }
+          b.push({ tipo: 'li', texto: t });
+        });
+      }
+      b.push({ tipo: 'sep' });
+    }
+    if ((d.share || []).length) {
+      b.push({ tipo: 'h2', texto: 'Share por categoria' });
+      d.share.forEach(function (s) {
+        b.push({ tipo: 'li', texto: s.share_pct != null
+          ? s.categoria + ': ' + s.share_pct + '%'
+          : s.categoria + ': sem base de comparação — ' + (s.motivo || '') });
+      });
+      b.push({ tipo: 'sep' });
+    }
 
     b.push({ tipo: 'h1', texto: 'Como está o acordo' });
     if (c.previstas) {
