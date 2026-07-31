@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Inventário · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=f8502d79be5f">
+<link rel="stylesheet" href="portal.css?v=500df6c08d21">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1874,9 +1874,6 @@ window.msgAcessoNegado = function (nomePagina) {
   .ve-lista { display:flex; flex-direction:column; gap:8px; }
   .ve-card { display:flex; gap:12px; align-items:center; background:var(--card); border:1px solid var(--border);
       border-radius:12px; padding:12px; }
-  .ve-card-foto { width:46px; height:46px; border-radius:9px; background:var(--bg); flex:none; overflow:hidden;
-      display:flex; align-items:center; justify-content:center; color:var(--text-3); }
-  .ve-card-foto img { width:100%; height:100%; object-fit:cover; display:block; }
   .ve-card-meio { min-width:0; flex:1; }
   .ve-card-nome { font-size:14px; color:var(--text); }
   .ve-card-sub { font-size:11px; color:var(--text-3); margin-top:2px; }
@@ -1910,6 +1907,34 @@ window.msgAcessoNegado = function (nomePagina) {
   .ve-mostrar select { padding:9px 8px; font-size:12.5px; border-radius:9px; border:1px solid var(--border);
       background:var(--bg); color:var(--text); font-family:inherit; }
   .ve-resumo b { color:var(--text-2); font-weight:600; }
+
+  /* Miniatura clicável (E1) — usada pelo cartão de hoje e pelas visões novas
+     (tabela/galeria do catálogo, detalhe do orçamento). Tamanho é var CSS pra
+     as 3 superfícies escolherem o próprio sem duplicar regra. */
+  .ve-mini { position:relative; width:var(--ve-mini, 46px); height:var(--ve-mini, 46px); border-radius:9px;
+      background:var(--bg); flex:none; overflow:hidden; display:flex; align-items:center; justify-content:center;
+      color:var(--text-3); border:none; padding:0; cursor:default; font:inherit; }
+  .ve-mini.tem-foto { cursor:zoom-in; }
+  .ve-mini img { width:100%; height:100%; object-fit:cover; display:block; }
+  .ve-mini .amp { position:absolute; right:1px; bottom:1px; width:15px; height:15px; border-radius:5px;
+      background:rgba(0,0,0,.55); color:#fff; display:flex; align-items:center; justify-content:center; }
+  .ve-mini .amp svg { width:9px; height:9px; }
+
+  .ve-lightbox { display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.86);
+      align-items:center; justify-content:center; padding:24px; flex-direction:column; gap:12px; }
+  .ve-lightbox.on { display:flex; }
+  .ve-lightbox img { max-width:100%; max-height:78vh; border-radius:8px; object-fit:contain; }
+  .ve-lightbox-legenda { color:#e9e2d3; font-size:13px; text-align:center; max-width:520px; }
+  .ve-lightbox-erro { color:#e9e2d3; font-size:13px; text-align:center; max-width:360px; line-height:1.6; }
+  .ve-lightbox-erro button { margin-top:10px; padding:9px 18px; border-radius:9px; border:1px solid var(--acc);
+      background:none; color:var(--acc); font:inherit; font-size:13px; cursor:pointer; }
+  .ve-lightbox-fecha { position:absolute; top:16px; right:18px; width:36px; height:36px; border-radius:50%;
+      border:none; background:rgba(255,255,255,.12); color:#fff; font-size:20px; cursor:pointer; line-height:1; }
+  .ve-lightbox-nav { position:absolute; top:50%; transform:translateY(-50%); width:44px; height:44px;
+      border-radius:50%; border:none; background:rgba(255,255,255,.12); color:#fff; font-size:20px; cursor:pointer; }
+  .ve-lightbox-nav.prev { left:14px; }
+  .ve-lightbox-nav.next { right:14px; }
+
   .ve-mutirao { background:var(--card); border:1px solid var(--border); border-radius:12px;
       padding:12px 14px; margin-bottom:14px; }
   .ve-mutirao-topo { display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; }
@@ -2004,6 +2029,18 @@ window.msgAcessoNegado = function (nomePagina) {
   <button class="ve-subtab on" type="button" data-sub="catalogo">Catálogo</button>
   <button class="ve-subtab" type="button" data-sub="orcar" id="ve-subtab-orcar" hidden>Montar orçamento</button>
   <button class="ve-subtab" type="button" data-sub="orcamentos" id="ve-subtab-orcamentos" hidden>Orçamentos</button>
+</div>
+
+<div class="ve-lightbox" id="ve-lightbox" role="dialog" aria-modal="true" aria-label="Foto ampliada">
+  <button type="button" class="ve-lightbox-fecha" id="ve-lightbox-fechar" aria-label="Fechar">&times;</button>
+  <button type="button" class="ve-lightbox-nav prev" id="ve-lightbox-prev" aria-label="Foto anterior" hidden>&#8249;</button>
+  <img id="ve-lightbox-img" alt="">
+  <div class="ve-lightbox-erro" id="ve-lightbox-erro" hidden>
+    Não foi possível carregar esta foto — o link pode ter expirado.
+    <br><button type="button" id="ve-lightbox-recarregar">Recarregar página</button>
+  </div>
+  <div class="ve-lightbox-legenda" id="ve-lightbox-legenda"></div>
+  <button type="button" class="ve-lightbox-nav next" id="ve-lightbox-next" aria-label="Próxima foto" hidden>&#8250;</button>
 </div>
 
 <div id="ve-pane-catalogo" class="ve-subpane">
@@ -2311,6 +2348,98 @@ function nomeArquivoSeguro(base) {
   }
   function trata401() { window.sessaoLimpar(); window.irParaLogin(SLUG); }
 
+  // ================= LIGHTBOX DE FOTO (E1) — compartilhado por Catálogo em
+  // tabela, Catálogo em galeria e o detalhe do orçamento =================
+  //
+  // A URL de foto que /api/venda-catalogo devolve é do Notion e EXPIRA em
+  // ~1h (medido na migração — ver docstring de migrar_bragatto.py). Uma
+  // página aberta desde cedo abre foto quebrada. Em vez de rota nova no
+  // Worker (302 assinado, como /api/agenda/:id/anexo/:i — exigiria deploy,
+  // justamente o que travou a E9/E10), a mitigação é do lado do cliente:
+  // no erro, recarrega o catálogo UMA vez (a nova consulta ao Notion traz
+  // URL fresca) e tenta de novo; se falhar de novo, diz pra recarregar a
+  // página em vez de deixar um ícone de imagem quebrada mudo.
+  var IC_AMPLIA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" '
+    + 'stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H4v4M16 3h4v4M8 21H4v-4M16 21h4v-4"/></svg>';
+
+  var LB = {
+    urls: [], idx: 0, legenda: '', itemId: null, onRefrescar: null, jaTentouRefrescar: false,
+  };
+  var lbEl = document.getElementById('ve-lightbox');
+  var lbImg = document.getElementById('ve-lightbox-img');
+  var lbErro = document.getElementById('ve-lightbox-erro');
+  var lbLegenda = document.getElementById('ve-lightbox-legenda');
+  var lbPrev = document.getElementById('ve-lightbox-prev');
+  var lbNext = document.getElementById('ve-lightbox-next');
+
+  function lbMostra() {
+    lbErro.hidden = true;
+    lbImg.hidden = false;
+    lbImg.src = LB.urls[LB.idx] || '';
+    lbLegenda.textContent = LB.legenda || '';
+    var varias = LB.urls.length > 1;
+    lbPrev.hidden = !varias; lbNext.hidden = !varias;
+  }
+  function veAbreLightbox(urls, idx, legenda, itemId, onRefrescar) {
+    if (!urls || !urls.length) return;
+    LB.urls = urls; LB.idx = idx || 0; LB.legenda = legenda || '';
+    LB.itemId = itemId || null; LB.onRefrescar = onRefrescar || null; LB.jaTentouRefrescar = false;
+    lbEl.classList.add('on');
+    lbMostra();
+  }
+  function veFechaLightbox() { lbEl.classList.remove('on'); lbImg.src = ''; }
+  document.getElementById('ve-lightbox-fechar').onclick = veFechaLightbox;
+  lbEl.addEventListener('click', function (e) { if (e.target === lbEl) veFechaLightbox(); });
+  document.addEventListener('keydown', function (e) {
+    if (!lbEl.classList.contains('on')) return;
+    if (e.key === 'Escape') veFechaLightbox();
+    else if (e.key === 'ArrowLeft') lbPrev.click();
+    else if (e.key === 'ArrowRight') lbNext.click();
+  });
+  lbPrev.onclick = function () { LB.idx = (LB.idx - 1 + LB.urls.length) % LB.urls.length; lbMostra(); };
+  lbNext.onclick = function () { LB.idx = (LB.idx + 1) % LB.urls.length; lbMostra(); };
+  document.getElementById('ve-lightbox-recarregar').onclick = function () { location.reload(); };
+
+  lbImg.onerror = function () {
+    if (!lbImg.src) return; // veFechaLightbox zera o src — não é erro de rede
+    if (!LB.jaTentouRefrescar && LB.onRefrescar) {
+      LB.jaTentouRefrescar = true;
+      LB.onRefrescar(LB.itemId).then(function (urlsFrescas) {
+        if (urlsFrescas && urlsFrescas.length) { LB.urls = urlsFrescas; lbMostra(); }
+        else { lbImg.hidden = true; lbErro.hidden = false; }
+      }).catch(function () { lbImg.hidden = true; lbErro.hidden = false; });
+    } else {
+      lbImg.hidden = true; lbErro.hidden = false;
+    }
+  };
+
+  // Miniatura clicável. `urls` pode vir vazio (item sem foto ainda) — nesse
+  // caso é só o ícone de caixa, sem cursor de zoom, igual ao cartão de hoje.
+  function veFotoThumb(urls, opts) {
+    opts = opts || {};
+    var el = document.createElement('button');
+    el.type = 'button';
+    el.className = 've-mini' + (urls && urls.length ? ' tem-foto' : '');
+    if (opts.tamanho) el.style.setProperty('--ve-mini', opts.tamanho + 'px');
+    if (urls && urls.length) {
+      var img = document.createElement('img'); img.src = urls[0]; img.alt = '';
+      img.loading = 'lazy';
+      el.appendChild(img);
+      var amp = document.createElement('span'); amp.className = 'amp'; amp.innerHTML = IC_AMPLIA;
+      el.appendChild(amp);
+      el.setAttribute('aria-label', 'Ampliar foto de ' + (opts.legenda || 'item'));
+      el.onclick = function (e) {
+        e.stopPropagation();
+        veAbreLightbox(urls, 0, opts.legenda, opts.itemId, opts.onRefrescar);
+      };
+    } else {
+      el.innerHTML = "<svg class=\"ic\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 8l8-4.5L20 8v9l-8 4.5L4 17z\"/><path d=\"M4 8l8 4.5M12 12.5L20 8M12 12.5V21\"/></svg>";
+      el.setAttribute('aria-hidden', 'true');
+      el.tabIndex = -1;
+    }
+    return el;
+  }
+
   // ---- sub-abas ----
   var subtabs = Array.prototype.slice.call(document.querySelectorAll('.ve-subtab'));
   var subpanes = {
@@ -2467,12 +2596,10 @@ function nomeArquivoSeguro(base) {
     lista.forEach(function (it) {
       var card = document.createElement('div'); card.className = 've-card';
 
-      var foto = document.createElement('div'); foto.className = 've-card-foto';
-      if (it.fotos && it.fotos.length) {
-        var img = document.createElement('img'); img.src = it.fotos[0]; foto.appendChild(img);
-      } else {
-        foto.innerHTML = "<svg class=\"ic\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 8l8-4.5L20 8v9l-8 4.5L4 17z\"/><path d=\"M4 8l8 4.5M12 12.5L20 8M12 12.5V21\"/></svg>";
-      }
+      var foto = veFotoThumb(it.fotos, {
+        itemId: it.id, legenda: it.nome, onRefrescar: refrescaFotoItem, tamanho: 46,
+      });
+      foto.className += ' ve-card-foto';
       card.appendChild(foto);
 
       var meio = document.createElement('div'); meio.className = 've-card-meio';
@@ -2542,6 +2669,24 @@ function nomeArquivoSeguro(base) {
         document.getElementById('ve-vazio').style.display = '';
         document.getElementById('ve-vazio').textContent = 'Sem conexão — tente recarregar.';
       });
+  }
+
+  // Refresco de foto pro lightbox (E1): busca o catálogo de novo (URL do
+  // Notion vem fresca) e devolve as fotos ATUAIS do item — usado como
+  // onRefrescar dos cartões desta aba. Também reaproveita renderLista() pra
+  // corrigir de tabela as miniaturas ainda visíveis, não só o lightbox aberto.
+  function refrescaFotoItem(itemId) {
+    var qs = filtroLocal ? '?local=' + encodeURIComponent(filtroLocal) : '';
+    return fetch(WORKER + '/api/venda-catalogo' + qs, { headers: { 'X-Token': TOKEN } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.itens) return null;
+        ITENS = d.itens;
+        renderLista();
+        var it = ITENS.filter(function (i) { return i.id === itemId; })[0];
+        return (it && it.fotos && it.fotos.length) ? it.fotos : null;
+      })
+      .catch(function () { return null; });
   }
 
   // ---- formulário (cadastrar / editar) ----
@@ -3470,7 +3615,7 @@ function nomeArquivoSeguro(base) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 30/07/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 31/07/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -4460,7 +4605,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'f8502d79be5f';
+  var BUILD = '500df6c08d21';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
