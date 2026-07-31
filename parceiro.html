@@ -202,6 +202,26 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .rupt-linha{font-size:13.5px;line-height:1.55;display:flex;justify-content:space-between;gap:8px}
 .rupt-linha span:last-child{color:var(--text-3);font-size:11.5px;white-space:nowrap}
 
+/* --- menu placement (P6) --- */
+.menu-linha{padding:8px 0;border-top:1px solid var(--border)}
+.menu-linha:last-of-type{border-bottom:1px solid var(--border)}
+.menu-lt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.menu-lnome{font-size:13.5px}
+.menu-lval{font-size:12.5px;color:var(--text-3);white-space:nowrap}
+.menu-sub{font-size:11px;color:var(--text-3);margin:4px 0 0;line-height:1.45}
+
+/* --- meta do ciclo (P7) --- */
+.meta-form{display:flex;gap:7px;margin-top:8px}
+.meta-form input{flex:1;font:inherit;font-size:14px;padding:10px 12px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card);color:var(--text)}
+.meta-form button{font:inherit;font-size:13px;font-weight:600;padding:0 16px;border-radius:10px;
+  border:none;background:var(--acc);color:#241a06;cursor:pointer}
+.meta-form button:disabled{opacity:.55;cursor:default}
+.meta-aviso{font-size:11.5px;margin:6px 0 0;min-height:1em}
+.meta-aviso.ok{color:var(--verde)}
+.meta-aviso.err{color:var(--vermelho)}
+.meta-editar{font-size:11.5px;color:var(--acc);background:none;border:none;cursor:pointer;padding:0}
+
 /* --- abas (P1, PLANO_PARCEIRO_CICLO.md §7-8): a página deixa de ser uma
    tela só. Mural é a home (resumo + próximos passos); Desempenho concentra
    o que já existe hoje (o acordo, backbar, cardápio, compra mínima) — as
@@ -905,6 +925,140 @@ function nomeArquivoSeguro(base) {
     return card;
   }
 
+  // Menu placement (P6): duas fontes — cardápio digital (sem preço, trava T1)
+  // e receitas do banco. Uma casa com foto mas sem item da marca é uma
+  // leitura diferente de "sem foto nenhuma" — a tela distingue as duas.
+  function montaMenu(m) {
+    if (!m) return null;
+    var wrap = el('div');
+    wrap.appendChild(el('div', 'secao', 'Sua marca na carta'));
+
+    var cd = m.cardapio_digital;
+    if (cd && (cd.casas_com_foto || []).length) {
+      var linha1 = el('div', 'menu-linha');
+      var lt1 = el('div', 'menu-lt');
+      lt1.appendChild(el('div', 'menu-lnome', 'No cardápio digital'));
+      lt1.appendChild(el('div', 'menu-lval',
+        cd.casas_com_marca.length + ' de ' + cd.casas_com_foto.length + ' casas'));
+      linha1.appendChild(lt1);
+      var casasSem = cd.casas_com_foto.filter(function (s) { return cd.casas_com_marca.indexOf(s) === -1; });
+      if (casasSem.length) {
+        linha1.appendChild(el('p', 'menu-sub',
+          'Sem item seu no cardápio de ' + casasSem.length + ' casa' + (casasSem.length === 1 ? '' : 's') + '.'));
+      }
+      wrap.appendChild(linha1);
+    }
+
+    var receitas = (m.receitas || []);
+    var linha2 = el('div', 'menu-linha');
+    var lt2 = el('div', 'menu-lt');
+    lt2.appendChild(el('div', 'menu-lnome', 'Em receita de cocktail'));
+    lt2.appendChild(el('div', 'menu-lval', receitas.length ? String(receitas.length) : 'nenhuma'));
+    linha2.appendChild(lt2);
+    if (receitas.length) {
+      var comCasa = receitas.filter(function (r) { return (r.casas || []).length; });
+      if (comCasa.length) {
+        linha2.appendChild(el('p', 'menu-sub',
+          comCasa.slice(0, 4).map(function (r) { return r.nome.trim(); }).join(' · ')
+          + (comCasa.length > 4 ? ' e mais ' + (comCasa.length - 4) : '')));
+      }
+    }
+    wrap.appendChild(linha2);
+
+    if (cd && (cd.casas_com_foto || []).length < 6) {
+      wrap.appendChild(el('p', 'giro-nota',
+        'Cardápio digital coletado de ' + cd.casas_com_foto.length + ' das 6 casas.'));
+    }
+    return wrap;
+  }
+
+  // Meta do ciclo (P7 — D1: primeira escrita de um parceiro no nosso
+  // sistema, autorizada 2026-07-31). Um número só, sem prazo nem texto —
+  // o acordo em si (contrapartidas, prazos) segue sendo só a coordenação
+  // quem define. Reusa POST /api/parceiro/meta; ao salvar, recarrega o
+  // painel inteiro (buscar()) em vez de remendar o DOM, mesmo padrão já
+  // usado em enviarCriar().
+  function montaMeta(meta, giroTotal, cor) {
+    var wrap = el('div');
+    wrap.appendChild(el('div', 'secao', 'Sua meta do ciclo'));
+    var card = el('div', 'giro-hero');
+
+    if (meta && meta.meta_un) {
+      var pct = Math.min(100, Math.round((giroTotal || 0) / meta.meta_un * 100));
+      var topo = el('div', 'giro-topo');
+      var n = el('p', 'giro-n', (giroTotal || 0).toLocaleString('pt-BR')
+        + ' de ' + meta.meta_un.toLocaleString('pt-BR') + ' un');
+      n.style.color = cor;
+      topo.appendChild(n);
+      var pctEl = el('p', 'giro-var', pct + '%');
+      pctEl.style.color = pct >= 100 ? 'var(--verde)' : 'var(--amarelo)';
+      topo.appendChild(pctEl);
+      card.appendChild(topo);
+      var barra = el('div', 'giro-share');
+      var fill = document.createElement('i');
+      fill.style.width = Math.max(1, pct) + '%';
+      fill.style.background = cor;
+      barra.appendChild(fill);
+      card.appendChild(barra);
+      var falta = Math.max(0, meta.meta_un - (giroTotal || 0));
+      card.appendChild(el('p', 'giro-nota',
+        (falta > 0 ? 'Faltam ' + falta.toLocaleString('pt-BR') + ' un para fechar o ciclo. '
+          : 'Meta atingida. ')
+        + 'Meta definida em ' + fmtData((meta.definida_em || '').slice(0, 10)) + '.'));
+      var btEditar = el('button', 'meta-editar', 'Trocar meta');
+      btEditar.type = 'button';
+      btEditar.onclick = function () { mostraFormMeta(card); };
+      card.appendChild(btEditar);
+    } else {
+      card.appendChild(el('p', 'giro-nota',
+        'Você ainda não definiu uma meta pra este ciclo. Ela é só sua — não muda o acordo nem é vista pela coordenação.'));
+      mostraFormMeta(card);
+    }
+    wrap.appendChild(card);
+    return wrap;
+  }
+
+  function mostraFormMeta(card) {
+    var existente = card.querySelector('.meta-form');
+    if (existente) { existente.remove(); card.querySelector('.meta-aviso').remove(); return; }
+    var form = el('div', 'meta-form');
+    var input = document.createElement('input');
+    input.type = 'number'; input.min = '1'; input.step = '1';
+    input.placeholder = 'Meta em unidades';
+    form.appendChild(input);
+    var bt = el('button', '', 'Salvar');
+    bt.type = 'button';
+    form.appendChild(bt);
+    card.appendChild(form);
+    var aviso = el('p', 'meta-aviso');
+    card.appendChild(aviso);
+    bt.onclick = function () {
+      var valor = Number(input.value);
+      if (!valor || valor <= 0) {
+        aviso.className = 'meta-aviso err';
+        aviso.textContent = 'Digite um número maior que zero.';
+        return;
+      }
+      if (!sessaoAtualGlobal) {
+        aviso.className = 'meta-aviso err';
+        aviso.textContent = 'Sua sessão expirou. Recarregue a página.';
+        return;
+      }
+      bt.disabled = true;
+      fetch(WORKER + '/api/parceiro/meta', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': sessaoAtualGlobal.token },
+        body: JSON.stringify({ meta_un: valor }),
+      }).then(function (r) {
+        if (!r.ok) throw new Error('falhou');
+        buscar(sessaoAtualGlobal);
+      }).catch(function () {
+        aviso.className = 'meta-aviso err';
+        aviso.textContent = 'Não deu pra salvar agora. Tente de novo.';
+        bt.disabled = false;
+      });
+    };
+  }
+
   function montaGiro(g, cor) {
     if (!g || !g.total) return null;
     var wrap = el('div');
@@ -1107,6 +1261,7 @@ function nomeArquivoSeguro(base) {
     // cobra do representante, e vem antes do acordo de propósito.
     var giroEl = montaGiro(d.giro, cor);
     if (giroEl) painelDesempenho.appendChild(giroEl);
+    painelDesempenho.appendChild(montaMeta(d.meta_ciclo, d.giro ? d.giro.total : 0, cor));
     var shareEl = montaShare(d.share, cor);
     if (shareEl) painelDesempenho.appendChild(shareEl);
     var posiEl = montaPositivacao(d.positivacao, cor);
@@ -1206,11 +1361,13 @@ function nomeArquivoSeguro(base) {
     }
     painelDesempenho.appendChild(el('p', 'rodape', rodapeTexto));
 
-    // Execução (P1): reservada. P6 (carta/backbar como prova), P8 (visitas e
-    // treinamentos) e P9 (revisão de conta) ainda não têm dado nem rota —
-    // um "em breve" declarado é mais honesto que uma aba vazia sem explicação.
+    // Execução: menu placement (P6) já tem dado — carta e receitas. Visitas,
+    // treinamentos e revisão de conta (P8/P9) ainda não têm rota, e ficam como
+    // aviso declarado abaixo, em vez de fingir que a aba está completa.
+    var menuEl = montaMenu(d.menu);
+    if (menuEl) painelExecucao.appendChild(menuEl);
     painelExecucao.appendChild(el('p', 'vazio',
-      'Em breve: presença da sua marca na carta e no backbar, registro de visitas e treinamentos, e uma revisão de conta pronta para apresentar à sua indústria.'));
+      'Em breve: registro de visitas e treinamentos, e uma revisão de conta pronta para apresentar à sua indústria.'));
 
     // "O que você enviou" (E3) fica na aba Conversa — nasce vazio,
     // carregaEnviados() preenche depois.

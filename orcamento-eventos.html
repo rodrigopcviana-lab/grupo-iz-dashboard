@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Orçamento de Eventos · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=7a07bc1cd3e0">
+<link rel="stylesheet" href="portal.css?v=673f60e63bf5">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -2471,10 +2471,14 @@ window.msgAcessoNegado = function (nomePagina) {
     if (prefix === 'orme') montaComercial(ctx);
 
     var wpp = document.getElementById(prefix + '-wpp');
+    // Por pessoa (E7): reusa `pp`/`unidade` já computados acima nesta mesma
+    // renderResumo() — é o número que o cliente repete na negociação, então
+    // é ele que precisa estar no texto que o chefe/coord vai mandar.
     var texto = 'Orçamento de evento — ' + ctx.convidados + ' convidado(s)'
       + (ctx.dias.length > 1 ? ', ' + ctx.dias.length + ' dias' : '') + '\n'
       + 'Cardápio: ' + (ctx.itensSel.map(function (i) { return i.nome; }).join(', ') || '—') + '\n'
-      + 'Total a cobrar: ' + fmtBRL(valorFinal) + ' (custo: ' + fmtBRL(ctx.custoTotal) + ')';
+      + 'Total a cobrar: ' + fmtBRL(valorFinal) + ' (custo: ' + fmtBRL(ctx.custoTotal) + ')'
+      + (pp ? '\nPor ' + unidade.rotulo + ': ' + fmtBRL(pp.preco) : '');
     wpp.href = 'https://wa.me/?text=' + encodeURIComponent(texto);
 
     return valorFinal;
@@ -5527,7 +5531,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '7a07bc1cd3e0';
+  var BUILD = '673f60e63bf5';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
