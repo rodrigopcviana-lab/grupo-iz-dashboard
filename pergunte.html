@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Pergunte ao bar · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=465886230d2f">
+<link rel="stylesheet" href="portal.css?v=ca1f588cc201">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -528,12 +528,23 @@ window.msgAcessoNegado = function (nomePagina) {
     { id: 'sabor', kw: ['combina', 'harmoniza', 'acompanha', 'vai bem com',
         'que prato', 'qual prato', 'indicar prato', 'sugerir prato',
         'casa com', 'par do', 'pra comer com'] },
+    // operacao ANTES de numeros: "quanto custa a hora extra" tem 'custo', que
+    // é keyword de números — sem esta ordem a pergunta de banco de horas cairia
+    // no cérebro de vendas e responderia sobre CMV.
+    { id: 'operacao', kw: ['férias', 'ferias', 'banco de horas', 'hora extra',
+        'saldo de horas', 'limite legal', 'folga', 'escala', 'quem está devendo',
+        'quem esta devendo', 'horas a favor', 'afastamento'] },
+    // 'vende'/'venda' e NÃO 'vend': "devendo" contém "vend", então a keyword
+    // gulosa fazia "quem está devendo horas?" casar também em números e a porta
+    // perguntava "números ou gente e tempo?" à toa (pego por
+    // cerebros/teste_porta.mjs ao adicionar o domínio operacao).
     { id: 'numeros', kw: ['margem', 'cmv', 'custo', 'receita', 'faturamento',
-        'vend', 'preço', 'preco', 'caiu', 'subiu', 'queda', 'divergen',
+        'vende', 'venda', 'preço', 'preco', 'caiu', 'subiu', 'queda', 'divergen',
         'concilia', 'sem custo', 'sem ficha', 'pendência', 'pendencia',
         'selo', 'treino', 'mais vendido', 'campeão', 'campeao'] },
   ];
-  var NOME_DOMINIO = { numeros: 'números e margem', cardapio: 'desenho da carta', sabor: 'harmonização de sala' };
+  var NOME_DOMINIO = { numeros: 'números e margem', cardapio: 'desenho da carta',
+    sabor: 'harmonização de sala', operacao: 'gente e tempo' };
   var ENCAMINHA_PAGINA = { cardapio: 'cerebro-cardapio.html', numeros: 'cerebro-numeros.html' };
   var ENCAMINHA_NOME = { cardapio: 'Cérebro do Cardápio', numeros: 'Cérebro dos Números' };
   var SUG_NUMEROS = [
@@ -552,8 +563,15 @@ window.msgAcessoNegado = function (nomePagina) {
   "a carta está completa em raízes e destilados?",
   "o que vende e não está no cardápio?",
 ];
-  var TODAS_SUGESTOES = SUG_NUMEROS.slice(0, 3).concat(SUG_CARDAPIO.slice(0, 3),
-    ['o que combina com o Negroni?']);
+  var SUG_OPERACAO = [
+  "quanto vou pagar de hora extra?",
+  "quem está no limite de férias?",
+  "quem está acumulando hora a favor?",
+  "quem está devendo horas?",
+  "dá pra confiar nesses saldos?",
+];
+  var TODAS_SUGESTOES = SUG_NUMEROS.slice(0, 3).concat(SUG_CARDAPIO.slice(0, 2),
+    SUG_OPERACAO.slice(0, 2), ['o que combina com o Negroni?']);
 
   function classifica(q) {
     var s = (q || '').toLowerCase();
@@ -690,6 +708,17 @@ window.msgAcessoNegado = function (nomePagina) {
       .catch(function () { erroTexto('Sem conexão.'); });
   }
 
+  // Operação NÃO leva casa: o payload é único (as rotas irmãs do mesmo dado,
+  // /api/banco-horas e /api/ferias-plano, já entregam todas as casas ao chefe).
+  // Cada alerta carrega a casa dentro dele.
+  function chamaOperacao(q) {
+    fetch(WORKER + '/api/cerebro/operacao?q=' + encodeURIComponent(q),
+          { headers: { 'X-Token': SESSAO.token } })
+      .then(tratarRespCentral)
+      .then(function (d) { if (d) render(adaptaCentral('operacao', d)); })
+      .catch(function () { erroTexto('Sem conexão.'); });
+  }
+
   // Números e Cardápio já devolvem o contrato (titulo/resposta/chips/itens/
   // fontes/confianca/encaminhar/sugestoes) — o adaptador é identidade + o
   // carimbo de qual domínio respondeu.
@@ -783,6 +812,7 @@ window.msgAcessoNegado = function (nomePagina) {
     if (dominio === 'numeros') return chamaNumeros(q);
     if (dominio === 'cardapio') return chamaCardapio(q);
     if (dominio === 'sabor') return chamaSabor(q);
+    if (dominio === 'operacao') return chamaOperacao(q);
   }
 
   function mostraEscolhaDominio(matches, q) {
@@ -806,7 +836,7 @@ window.msgAcessoNegado = function (nomePagina) {
     document.getElementById('pg-escolha').style.display = 'none';
     render({
       titulo: 'Não entendi essa pergunta',
-      resposta: 'Eu sei falar de números da casa (margem, CMV, preço, o que vende), desenho da carta (tamanho, o que sai/entra) e harmonização de sala (o que combina com um drink). Tente uma das sugestões abaixo.',
+      resposta: 'Eu sei falar de números da casa (margem, CMV, preço, o que vende), desenho da carta (tamanho, o que sai/entra), gente e tempo (banco de horas, férias) e harmonização de sala (o que combina com um drink). Tente uma das sugestões abaixo.',
       chips: [], itens: [], fontes: [], confianca: 'baixa', encaminhar: null,
       sugestoes: TODAS_SUGESTOES,
     });
@@ -1935,7 +1965,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '465886230d2f';
+  var BUILD = 'ca1f588cc201';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
