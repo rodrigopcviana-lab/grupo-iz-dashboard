@@ -185,6 +185,23 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .giro-share i{display:block;height:5px;border-radius:3px}
 .giro-tag{font-size:10.5px;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:1px}
 
+/* --- positivação: matriz SKU x casa (P4) --- */
+.posi-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 0 8px}
+.posi-tab{border-collapse:collapse;font-size:12px;white-space:nowrap}
+.posi-tab th,.posi-tab td{padding:7px 9px;text-align:center;border-bottom:1px solid var(--border)}
+.posi-tab th{color:var(--text-3);font-weight:400;font-size:10.5px}
+.posi-tab td:first-child,.posi-tab th:first-child{text-align:left;position:sticky;left:0;background:var(--bg);padding-right:14px}
+.posi-dot{display:inline-block;width:11px;height:11px;border-radius:50%}
+.posi-legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-3);margin:10px 0 6px}
+.posi-legenda span{display:flex;align-items:center;gap:5px}
+
+/* --- ruptura (P5) --- */
+.rupt-card{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--vermelho);
+  border-radius:0 12px 12px 0;padding:12px 14px;margin:0 0 9px}
+.rupt-cab{font-size:10.5px;color:var(--vermelho);text-transform:uppercase;letter-spacing:.05em;margin:0 0 5px}
+.rupt-linha{font-size:13.5px;line-height:1.55;display:flex;justify-content:space-between;gap:8px}
+.rupt-linha span:last-child{color:var(--text-3);font-size:11.5px;white-space:nowrap}
+
 /* --- abas (P1, PLANO_PARCEIRO_CICLO.md §7-8): a página deixa de ser uma
    tela só. Mural é a home (resumo + próximos passos); Desempenho concentra
    o que já existe hoje (o acordo, backbar, cardápio, compra mínima) — as
@@ -788,6 +805,106 @@ function nomeArquivoSeguro(base) {
     return wrap;
   }
 
+  // Positivação (P4): a única seção que mostra TRABALHO A FAZER em vez de
+  // resultado passado — cada célula vazia é um argumento de venda pronto.
+  // 4 estados (trava T7): "sem_dado" nunca é lido como "nunca vendeu".
+  var POSI_ROTULO = {
+    vende: 'Vende', parou: 'Parou', nunca_vendeu: 'Nunca vendeu', sem_dado: 'Sem dado',
+  };
+  var POSI_COR = {
+    vende: null, parou: '#8f8672', nunca_vendeu: 'transparent', sem_dado: 'transparent',
+  };
+  function montaPositivacao(p, cor) {
+    if (!p || !(p.produtos || []).length || !(p.casas || []).length) return null;
+    var wrap = el('div');
+    wrap.appendChild(el('div', 'secao', 'Positivação · SKU por casa'));
+
+    var scroll = el('div', 'posi-wrap');
+    var tab = document.createElement('table');
+    tab.className = 'posi-tab';
+    var thead = document.createElement('thead');
+    var trh = document.createElement('tr');
+    trh.appendChild(document.createElement('th'));
+    p.casas.forEach(function (c) {
+      var th = document.createElement('th');
+      th.textContent = c.rotulo;
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+    tab.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    p.produtos.forEach(function (prod) {
+      var tr = document.createElement('tr');
+      var tdNome = document.createElement('td');
+      tdNome.textContent = prod.rotulo;
+      tr.appendChild(tdNome);
+      p.casas.forEach(function (c) {
+        var td = document.createElement('td');
+        var estado = prod.por_casa[c.casa];
+        if (estado) {
+          var dot = el('span', 'posi-dot');
+          dot.title = POSI_ROTULO[estado] || estado;
+          if (estado === 'vende') dot.style.background = cor;
+          else if (estado === 'parou') dot.style.background = POSI_COR.parou;
+          else dot.style.border = '1px solid var(--border)';
+          td.appendChild(dot);
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    tab.appendChild(tbody);
+    scroll.appendChild(tab);
+    wrap.appendChild(scroll);
+
+    var legenda = el('div', 'posi-legenda');
+    [['vende', cor], ['parou', POSI_COR.parou], ['nunca_vendeu', null]].forEach(function (par) {
+      var item = el('span');
+      var dot = el('span', 'posi-dot');
+      if (par[1]) dot.style.background = par[1];
+      else dot.style.border = '1px solid var(--border)';
+      item.appendChild(dot);
+      item.appendChild(document.createTextNode(POSI_ROTULO[par[0]]));
+      legenda.appendChild(item);
+    });
+    wrap.appendChild(legenda);
+
+    var r = p.resumo || {};
+    var vazias = r.nunca_vendeu || 0;
+    if (vazias) {
+      wrap.appendChild(el('p', 'giro-nota',
+        vazias + (vazias === 1 ? ' célula vazia' : ' células vazias') + ' na matriz.'
+        + (r.sem_dado ? ' ' + r.sem_dado + ' sem dado suficiente pra avaliar.' : '')));
+    } else if (r.sem_dado) {
+      wrap.appendChild(el('p', 'giro-nota', r.sem_dado + ' célula(s) sem dado suficiente pra avaliar.'));
+    }
+    return wrap;
+  }
+
+  // Ruptura (P5): o dado mais fresco do painel — a contagem é semanal,
+  // enquanto o giro tem defasagem de meses. Cada linha só existe quando o
+  // produto APARECEU na última semana apurada da casa com estoque_fim=0
+  // (trava T6/T7): ausência de contagem nunca vira alerta de ruptura.
+  function montaRuptura(alertas) {
+    if (!alertas || !alertas.length) return null;
+    var card = el('div', 'rupt-card');
+    card.appendChild(el('p', 'rupt-cab', 'Ruptura · última contagem'));
+    alertas.slice(0, 8).forEach(function (a) {
+      var linha = el('div', 'rupt-linha');
+      linha.appendChild(el('span', '', a.casa_rotulo + ' · ' + a.produto));
+      linha.appendChild(el('span', '', 'estoque zerado'));
+      card.appendChild(linha);
+    });
+    if (alertas.length > 8) {
+      card.appendChild(el('p', 'giro-sub', '+' + (alertas.length - 8) + ' outro(s) item(ns) zerado(s).'));
+    }
+    card.appendChild(el('p', 'giro-sub',
+      'Da contagem semanal da casa (fechamento em ' + alertas[0].semana_fim.split('-').reverse().join('/') + '). '
+      + 'É o dado mais fresco do painel.'));
+    return card;
+  }
+
   function montaGiro(g, cor) {
     if (!g || !g.total) return null;
     var wrap = el('div');
@@ -913,6 +1030,11 @@ function nomeArquivoSeguro(base) {
     cab.appendChild(corpo);
     painelMural.appendChild(cab);
 
+    // Ruptura (P5) primeiro: é o alerta mais fresco do painel, e o mural
+    // é a home — "precisa de atenção" vem antes de qualquer resumo.
+    var ruptMural = montaRuptura(d.ruptura);
+    if (ruptMural) painelMural.appendChild(ruptMural);
+
     if (d.contrato_status !== 'ativo') {
       painelMural.appendChild(el('p', 'nota',
         d.contrato_status === 'em_negociacao'
@@ -987,6 +1109,10 @@ function nomeArquivoSeguro(base) {
     if (giroEl) painelDesempenho.appendChild(giroEl);
     var shareEl = montaShare(d.share, cor);
     if (shareEl) painelDesempenho.appendChild(shareEl);
+    var posiEl = montaPositivacao(d.positivacao, cor);
+    if (posiEl) painelDesempenho.appendChild(posiEl);
+    var ruptDesemp = montaRuptura(d.ruptura);
+    if (ruptDesemp) painelDesempenho.appendChild(ruptDesemp);
 
     var contrapartidas = d.contrapartidas || [];
     var comEvidencia = contrapartidas.filter(function (i) { return (i.evidencia || []).length; }).length;
