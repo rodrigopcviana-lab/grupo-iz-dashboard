@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Definir obrigações · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=16b812f6af69">
+<link rel="stylesheet" href="portal.css?v=40174a9d812f">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -544,11 +544,13 @@ window.msgAcessoNegado = function (nomePagina) {
       <select id="ob-grupo"></select>
     </div>
   </div>
+  <p class="sub" id="ob-previa" style="margin:0 0 10px;font-size:12.5px;color:var(--text-2)"></p>
   <button class="ob-salvar" id="ob-criar" type="button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Criar obrigação</button>
   <p class="ob-aviso" id="ob-aviso" role="status" aria-live="polite"></p>
 </div>
 
 <div class="ob-lista-cab"><b>Obrigações ativas</b><span id="ob-conta">—</span></div>
+<div style="margin:0 0 8px"><select id="ob-filtro-casa" style="padding:9px 10px;font-size:13px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text)"><option value="">Todas as casas</option></select></div>
 <div id="ob-lista"></div>
 <p class="ob-vazio" id="ob-vazio" style="display:none">Nenhuma obrigação cadastrada ainda.</p>
 </div><!-- ob-corpo -->
@@ -628,12 +630,14 @@ window.msgAcessoNegado = function (nomePagina) {
       if (!b.dataset.slug) { b.className = todasOn ? 'on' : ''; return; }
       b.className = casasSel[b.dataset.slug] ? 'on' : '';
     });
+    atualizaPrevia();
   }
 
   function mostraCampoCadencia() {
     document.getElementById('ob-dia-wrap').style.display = (cadSel === 'Mensal') ? '' : 'none';
     document.getElementById('ob-sem-wrap').style.display = (cadSel === 'Semanal') ? '' : 'none';
     document.getElementById('ob-data-wrap').style.display = (cadSel === 'Pontual') ? '' : 'none';
+    atualizaPrevia();
   }
 
   // Preenche o formulário a partir de um modelo (paleta). NÃO salva — a coord
@@ -683,6 +687,38 @@ window.msgAcessoNegado = function (nomePagina) {
     });
   }
 
+  // M4 — próxima ocorrência da cadência atual (pra prévia do efeito).
+  function proximaOcorrencia() {
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    function clamp(y, m, day) { var last = new Date(y, m + 1, 0).getDate(); return new Date(y, m, Math.min(day, last)); }
+    if (cadSel === 'Mensal') {
+      var d = Number(document.getElementById('ob-dia').value); if (!d) return null;
+      var cand = clamp(hoje.getFullYear(), hoje.getMonth(), d);
+      if (cand < hoje) cand = clamp(hoje.getFullYear(), hoje.getMonth() + 1, d);
+      return cand;
+    }
+    if (cadSel === 'Semanal') {
+      var w = Number(document.getElementById('ob-sem').value); if (!w) return null;
+      var iso = ((hoje.getDay() + 6) % 7) + 1;
+      var c = new Date(hoje); c.setDate(hoje.getDate() + ((w - iso + 7) % 7)); return c;
+    }
+    if (cadSel === 'Pontual') {
+      var dp = document.getElementById('ob-data').value; if (!dp) return null;
+      var pp = dp.split('-'); var pc = new Date(Number(pp[0]), Number(pp[1]) - 1, Number(pp[2]));
+      return pc >= hoje ? pc : null;
+    }
+    return null;
+  }
+  function atualizaPrevia() {
+    var el = document.getElementById('ob-previa'); if (!el) return;
+    var n = Object.keys(casasSel).filter(function (s) { return casasSel[s]; }).length;
+    var dt = proximaOcorrencia();
+    if (!dt) { el.textContent = (cadSel === 'Pontual') ? 'Escolha uma data futura.' : 'Preencha a cadência pra ver a próxima criação.'; return; }
+    var dd = ('0' + dt.getDate()).slice(-2), mm = ('0' + (dt.getMonth() + 1)).slice(-2);
+    var casasTxt = n ? (n + (n === 1 ? ' casa (' : ' casas (') + n + (n === 1 ? ' demanda)' : ' demandas)')) : 'nenhuma casa selecionada';
+    el.textContent = 'Próxima criação: ' + dd + '/' + mm + ' · ' + casasTxt;
+  }
+
   function montaForm() {
     montaSeg(document.getElementById('ob-tipo'), TIPOS, tipoSel, function (v) { tipoSel = v; });
     montaSeg(document.getElementById('ob-cad'), CADENCIAS, cadSel, function (v) { cadSel = v; mostraCampoCadencia(); });
@@ -699,7 +735,14 @@ window.msgAcessoNegado = function (nomePagina) {
       var on = tog.classList.toggle('on');
       tog.setAttribute('aria-checked', on ? 'true' : 'false');
     };
+    var fc = document.getElementById('ob-filtro-casa');
+    Object.keys(CASAS).forEach(function (slug) { opt(fc, slug, CASAS[slug]); });
+    fc.onchange = carregaLista;
+    ['ob-dia', 'ob-sem', 'ob-data'].forEach(function (id) {
+      var e = document.getElementById(id); if (e) e.addEventListener('input', atualizaPrevia);
+    });
     mostraCampoCadencia();
+    atualizaPrevia();
     document.getElementById('ob-criar').onclick = criar;
   }
 
@@ -808,6 +851,10 @@ window.msgAcessoNegado = function (nomePagina) {
     meta.appendChild(tag(descCasas(o), IC_CASA));
     if (o.exige_anexo) meta.appendChild(tag('Relatório', IC_REL2));
     if (!o.ativa) meta.appendChild(tag('Pausada'));
+    if (o.ultima_geracao) {
+      var ug = (o.ultima_geracao || '').slice(0, 10).split('-');
+      if (ug.length === 3) meta.appendChild(tag('gerou ' + ug[2] + '/' + ug[1]));
+    }
     div.appendChild(meta);
     return div;
   }
@@ -840,9 +887,12 @@ window.msgAcessoNegado = function (nomePagina) {
         document.getElementById('ob-conta').textContent = itens.length ? String(itens.length) : '';
         if (!itens.length) { vazio.style.display = ''; return; }
         vazio.style.display = 'none';
+        // M6 — filtro por casa (compara pelo rótulo, que é o que o worker devolve).
+        var fCasa = (document.getElementById('ob-filtro-casa') || {}).value || '';
+        var mostra = fCasa ? itens.filter(function (o) { return (o.casas || []).indexOf(CASAS[fCasa]) >= 0; }) : itens;
         // Agrupa por Grupo, na ordem de GRUPOS (+ "Sem grupo" no fim).
         var porGrupo = {};
-        itens.forEach(function (o) { var g = o.grupo || 'Sem grupo'; (porGrupo[g] = porGrupo[g] || []).push(o); });
+        mostra.forEach(function (o) { var g = o.grupo || 'Sem grupo'; (porGrupo[g] = porGrupo[g] || []).push(o); });
         GRUPOS.concat(['Sem grupo']).forEach(function (g) {
           var arr = porGrupo[g]; if (!arr || !arr.length) return;
           var h = document.createElement('div');
@@ -1949,7 +1999,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '16b812f6af69';
+  var BUILD = '40174a9d812f';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
