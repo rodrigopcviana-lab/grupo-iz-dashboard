@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Buscador entre casas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=a0c204756d39">
+<link rel="stylesheet" href="portal.css?v=6ace452be0e2">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -460,9 +460,16 @@ window.msgAcessoNegado = function (nomePagina) {
   .tr-casa .folga.zero, .tr-casa .folga.neg,
   .tr-casa .folga.sem { background:rgba(255,255,255,.06); color:var(--text-3); }
   .tr-casa .local { font-size:11px; color:var(--text-3); }
-  .tr-casa button { margin-left:auto; font-size:12px; padding:6px 12px; border-radius:8px;
+  /* Onda 2, A1: botão de Transferir + WhatsApp do chefe da casa lado a lado —
+     margin-left:auto foi do botão pro grupo, senão os dois brigam pela borda. */
+  .tr-casa .btns { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
+  .tr-casa button { font-size:12px; padding:6px 12px; border-radius:8px;
     background:var(--card); color:var(--text); border:1px solid var(--border); cursor:pointer; }
   .tr-casa button:hover { border-color:var(--acento, #8fd6a8); }
+  .tr-casa button:disabled { opacity:.55; cursor:default; }
+  .tr-casa button:disabled:hover { border-color:var(--border); }
+  .tr-wa { display:inline-flex; align-items:center; gap:5px; border-color:#3a6b52 !important; }
+  .tr-wa svg { width:13px; height:13px; flex:none; }
   .tr-vazio { color:var(--text-3); font-size:13.5px; padding:18px 2px; }
   .tr-nota { font-size:11.5px; color:var(--text-3); border-left:2px solid var(--border);
     padding:2px 0 2px 10px; margin:14px 0 0; }
@@ -490,7 +497,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .tr-msg.bom { color:#8fd6a8; }
   @media (max-width:420px) {
     .tr-casa .nm { min-width:0; flex:1 1 100%; }
-    .tr-casa button { margin-left:0; }
+    .tr-casa .btns { margin-left:0; width:100%; }
+    .tr-casa .btns button { flex:1; }
   }
 </style>
 
@@ -619,6 +627,24 @@ window.msgAcessoNegado = function (nomePagina) {
     });
   }
 
+  // Contato do chefe da casa doadora (Onda 2, A1): "achei quem tem, e agora
+  // ligo pra quem?" — o telefone NUNCA está no HTML, chega só por esta rota
+  // sob token. Cache por slug: uma vez resolvido (mesmo sem telefone), não
+  // refaz a chamada a cada clique na mesma sessão de página.
+  var CONTATOS_CACHE = {};
+  function contatoCasa(slug) {
+    if (Object.prototype.hasOwnProperty.call(CONTATOS_CACHE, slug)) {
+      return Promise.resolve(CONTATOS_CACHE[slug]);
+    }
+    return fetch(WORKER + '/api/transferencias/contato?casa=' + encodeURIComponent(slug),
+      { headers: { 'X-Token': SESSAO.token } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        CONTATOS_CACHE[slug] = d.contato || null;
+        return CONTATOS_CACHE[slug];
+      });
+  }
+
   function linhaCasa(slug, d, itemNome) {
     var l = el('div', 'tr-casa');
     l.appendChild(el('span', 'nm', nomeCasa(slug)));
@@ -645,9 +671,36 @@ window.msgAcessoNegado = function (nomePagina) {
       l.appendChild(el('span', 'local', 'lá é "' + d.nome_local + '"'));
     }
 
+    var btns = el('span', 'btns');
+
+    var wa = el('button', 'tr-wa');
+    wa.type = 'button';
+    wa.innerHTML = '<svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3h2.8l1.7 4.2-2.2 1.9a11.7 11.7 0 0 0 6.3 6.3l1.9-2.2 4.2 1.7v2.8a1.8 1.8 0 0 1-1.9 1.8A15.8 15.8 0 0 1 4.5 4.9 1.8 1.8 0 0 1 6.3 3z"/></svg><span>Chamar</span>';
+    wa.addEventListener('click', function () {
+      wa.disabled = true;
+      contatoCasa(slug).then(function (c) {
+        if (!c || !c.telefone) {
+          wa.querySelector('span').textContent = 'sem número';
+          return; // fica desabilitado — nunca número chutado
+        }
+        var nomeItem = d.nome_local || itemNome;
+        var texto = 'Oi ' + c.nome + '! Vi no Buscador entre casas que aí tem "' +
+          nomeItem + '" guardado. Dá pra transferir agora?';
+        window.open('https://wa.me/' + c.telefone + '?text=' + encodeURIComponent(texto),
+          '_blank', 'noopener');
+        wa.disabled = false;
+      }).catch(function () {
+        wa.querySelector('span').textContent = 'tentar de novo';
+        wa.disabled = false;
+      });
+    });
+    btns.appendChild(wa);
+
     var b = el('button', null, 'Transferir');
     b.addEventListener('click', function () { abreFolha(slug, d.nome_local || itemNome); });
-    l.appendChild(b);
+    btns.appendChild(b);
+
+    l.appendChild(btns);
     return l;
   }
 
@@ -1962,7 +2015,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a0c204756d39';
+  var BUILD = '6ace452be0e2';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
