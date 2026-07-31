@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=40174a9d812f">
+<link rel="stylesheet" href="portal.css?v=465886230d2f">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1299,19 +1299,73 @@ window.msgAcessoNegado = function (nomePagina) {
     .mrh-blk-casas  { order:5; }
     .mrh-blk-areas  { order:6; }
 
+    /* TODO filho do flex precisa de `order`. Sem isto o parágrafo de avisos
+       (último no HTML, sem order = 0) sortava ANTES dos blocos 1..6 e virava
+       a PRIMEIRA coisa da tela: um muro de 8 linhas cinza no topo do mural
+       do RH. Achado abrindo a página real no celular, não no mockup. */
+    #mrh-aviso-rodape { order:7; }
+
+    /* Respiro uniforme entre blocos — antes cada bloco trazia a própria
+       margem e os títulos de seção encostavam na caixa de cima. */
+    .mrh-tela { gap:14px; }
+    .mrh-tela > div { margin:0; }
+    .mrh-sec-tt { margin:0 0 6px 3px; }
+
+    /* ---- identidade: linha fina, não cartão (63px -> ~22px) ---- */
+    .mrh-idfaixa { padding:0 3px; border:0; background:none; display:block; }
+    .mrh-idfaixa .ic { display:none; }
+    .mrh-idfaixa b { display:none; }
+    .mrh-idfaixa #mrh-id-sub { font-size:10.5px; color:var(--text-3); }
+
+    /* ---- painel rápido: só as 3 AÇÕES ----
+       Os 3 de cima (Férias/BH/Conduta) repetem, com o mesmo número, as 3
+       primeiras linhas de "Precisa de você" logo acima, e levam ao mesmo
+       lugar. Lado a lado no PC são atalho; empilhados no celular são a
+       informação duas vezes. (Mesma decisão do mockup v4 aprovado.) */
+    .mrh-pr:first-of-type { display:none; }
     .mrh-prb { padding:10px 4px 9px; font-size:10.5px; gap:5px; border-radius:11px; }
     .mrh-prb .sub { display:none; }
-    .mrh-rlin { padding:9px 10px 9px 11px; font-size:12px; border-left:3px solid transparent; }
+
+    /* ---- riscos: pastilha de 62px vira ponto de 7px ---- */
+    .mrh-rlin { padding:8px 10px 8px 11px; font-size:11.5px; line-height:1.3;
+                 border-left:3px solid transparent; }
     .mrh-rlin .tag { min-width:0; padding:0; width:7px; height:7px; border-radius:99px;
                       overflow:hidden; text-indent:-99px; margin-top:4px; }
     .mrh-t-critico { background:#e08b8b; }
     .mrh-t-atencao { background:#e0b05c; }
     .mrh-t-ok      { background:#9fe1cb; }
+
+    /* ---- números: 3 cartões viram 1 linha (78px -> ~32px) ---- */
+    .mrh-tiles { display:flex; gap:10px; padding:7px 9px; white-space:nowrap;
+                  border:1px solid var(--border); border-radius:10px;
+                  background:var(--card); }
+    .mrh-tile { border:0; background:none; padding:0; display:flex;
+                 align-items:baseline; gap:4px; text-align:left; }
+    .mrh-tile .n { font-size:14px; }
+    .mrh-tile .l { font-size:10px; margin:0; }
+
+    /* ---- por casa: densa, cabe em 375px sem rolar ---- */
     table.mrh-casas { table-layout:fixed; font-size:11.5px; }
     table.mrh-casas th:nth-child(2), table.mrh-casas td:nth-child(2) { display:none; }
-    table.mrh-casas th, table.mrh-casas td { padding:7px 6px; }
-    .mrh-links { grid-template-columns:1fr; }
-    .mrh-idfaixa { padding:9px 11px; }
+    table.mrh-casas th, table.mrh-casas td { padding:5px 6px; }
+
+    /* ---- onde ir: 12 links numa grade ÚNICA de 4 (652px -> ~180px) ----
+       O maior ganho da tela: como lista de 1 coluna eram 12 linhas de ~50px,
+       40% da altura do mural inteiro.
+       Os 4 cartões de grupo (Gente/Jornada/Entrada e saída/Dia a dia) são
+       afordância de PC — no celular viram moldura pura: 4 bordas, 4 títulos
+       e 4× padding pra 12 atalhos. `display:contents` dissolve o cartão E o
+       container de links, então os 12 <a> viram filhos diretos de UMA grade
+       de 4 colunas. Os agrupamentos continuam no HTML e voltam no desktop. */
+    .mrh-blk-areas { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; }
+    .mrh-blk-areas > .mrh-sec-tt { grid-column:1/-1; }
+    .mrh-area { display:contents; }
+    .mrh-area h4 { display:none; }
+    .mrh-links { display:contents; }
+    .mrh-lk { flex-direction:column; align-items:center; justify-content:center;
+               text-align:center; gap:3px; padding:8px 3px; min-height:46px;
+               font-size:8.5px; line-height:1.15; border-radius:9px; }
+    .mrh-lk .d { width:5px; height:5px; }
   }
 </style>
 
@@ -3072,7 +3126,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '40174a9d812f';
+  var BUILD = '465886230d2f';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

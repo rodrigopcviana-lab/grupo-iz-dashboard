@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Definir obrigações · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=40174a9d812f">
+<link rel="stylesheet" href="portal.css?v=465886230d2f">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -501,7 +501,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="ob-seg" id="ob-tipo"></div>
   </div>
   <div class="ob-campo">
-    <label>Casas</label>
+    <label>Casas <span id="ob-casas-n" style="color:var(--text-3);font-weight:400;font-size:11px"></span></label>
     <div class="ob-chips" id="ob-casas"></div>
   </div>
   <div class="ob-linha">
@@ -514,6 +514,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="ob-campo" id="ob-dia-wrap">
       <label for="ob-dia">Dia do mês</label>
       <input id="ob-dia" type="number" min="1" max="31" step="1" inputmode="numeric" placeholder="5">
+      <span style="font-size:11px;color:var(--text-3)">31 cai no último dia em meses curtos.</span>
     </div>
     <div class="ob-campo" id="ob-sem-wrap" style="display:none">
       <label for="ob-sem">Dia da semana</label>
@@ -526,6 +527,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="ob-campo">
       <label for="ob-prazo">Prazo (dias)</label>
       <input id="ob-prazo" type="number" min="0" max="365" step="1" inputmode="numeric" placeholder="3">
+      <span id="ob-prazo-aviso" style="font-size:11px;color:var(--amarelo);display:none">Sem prazo, sem cobrança de atraso.</span>
     </div>
   </div>
   <div class="ob-campo">
@@ -546,6 +548,7 @@ window.msgAcessoNegado = function (nomePagina) {
   </div>
   <p class="sub" id="ob-previa" style="margin:0 0 10px;font-size:12.5px;color:var(--text-2)"></p>
   <button class="ob-salvar" id="ob-criar" type="button"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Criar obrigação</button>
+  <button type="button" id="ob-cancelar-edicao" style="display:none;width:100%;margin-top:8px;padding:10px;font:inherit;font-size:13px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--text-2);cursor:pointer">Cancelar edição</button>
   <p class="ob-aviso" id="ob-aviso" role="status" aria-live="polite"></p>
 </div>
 
@@ -580,6 +583,7 @@ window.msgAcessoNegado = function (nomePagina) {
   var tipoSel = TIPOS[0] || '';
   var cadSel = CADENCIAS[0] || '';
   var casasSel = {};
+  var editandoId = null; // M2: id da regra em edição, ou null (modo criar)
 
   function trata401() { window.sessaoLimpar(); window.irParaLogin(SLUG); }
 
@@ -630,6 +634,8 @@ window.msgAcessoNegado = function (nomePagina) {
       if (!b.dataset.slug) { b.className = todasOn ? 'on' : ''; return; }
       b.className = casasSel[b.dataset.slug] ? 'on' : '';
     });
+    var cn = document.getElementById('ob-casas-n');
+    if (cn) { var nSel = slugs.filter(function (s) { return casasSel[s]; }).length; cn.textContent = nSel ? '· ' + nSel + ' selecionada' + (nSel === 1 ? '' : 's') : ''; }
     atualizaPrevia();
   }
 
@@ -710,6 +716,8 @@ window.msgAcessoNegado = function (nomePagina) {
     return null;
   }
   function atualizaPrevia() {
+    var pa = document.getElementById('ob-prazo-aviso'), pv = document.getElementById('ob-prazo');
+    if (pa && pv) pa.style.display = (pv.value.trim() === '') ? '' : 'none';
     var el = document.getElementById('ob-previa'); if (!el) return;
     var n = Object.keys(casasSel).filter(function (s) { return casasSel[s]; }).length;
     var dt = proximaOcorrencia();
@@ -717,6 +725,41 @@ window.msgAcessoNegado = function (nomePagina) {
     var dd = ('0' + dt.getDate()).slice(-2), mm = ('0' + (dt.getMonth() + 1)).slice(-2);
     var casasTxt = n ? (n + (n === 1 ? ' casa (' : ' casas (') + n + (n === 1 ? ' demanda)' : ' demandas)')) : 'nenhuma casa selecionada';
     el.textContent = 'Próxima criação: ' + dd + '/' + mm + ' · ' + casasTxt;
+  }
+
+  // M2 — editar uma regra existente: preenche o form e passa pra modo PATCH.
+  function chaveDe(mapa, valor) { for (var k in mapa) { if (mapa[k] === valor) return k; } return ''; }
+  function editaRegra(o) {
+    editandoId = o.id;
+    document.getElementById('ob-titulo').value = o.titulo || '';
+    document.getElementById('ob-desc').value = o.descricao || '';
+    document.getElementById('ob-prazo').value = (o.prazo_dias != null && o.prazo_dias !== '') ? o.prazo_dias : '';
+    var ss = chaveDe(SETORES, o.setor); if (ss) document.getElementById('ob-setor').value = ss;
+    if (o.grupo) document.getElementById('ob-grupo').value = o.grupo;
+    var tg = document.getElementById('ob-anexo');
+    tg.classList.toggle('on', !!o.exige_anexo); tg.setAttribute('aria-checked', o.exige_anexo ? 'true' : 'false');
+    if (o.tipo && TIPOS.indexOf(o.tipo) >= 0) { tipoSel = o.tipo; montaSeg(document.getElementById('ob-tipo'), TIPOS, tipoSel, function (v) { tipoSel = v; }); }
+    if (o.cadencia && CADENCIAS.indexOf(o.cadencia) >= 0) { cadSel = o.cadencia; montaSeg(document.getElementById('ob-cad'), CADENCIAS, cadSel, function (v) { cadSel = v; mostraCampoCadencia(); }); }
+    mostraCampoCadencia();
+    if (o.cadencia === 'Mensal' && o.dia) document.getElementById('ob-dia').value = o.dia;
+    else if (o.cadencia === 'Semanal' && o.dia) document.getElementById('ob-sem').value = String(o.dia);
+    else if (o.cadencia === 'Pontual' && o.data_pontual) document.getElementById('ob-data').value = (o.data_pontual || '').slice(0, 10);
+    Object.keys(casasSel).forEach(function (k) { delete casasSel[k]; });
+    (o.casas || []).forEach(function (lab) { var s = chaveDe(CASAS, lab); if (s) casasSel[s] = true; });
+    pintaCasas();
+    document.getElementById('ob-criar').innerHTML = "<svg class=\"ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M8 12.5l2.5 2.5L16 9\"/></svg>" + ' Salvar alterações';
+    document.getElementById('ob-cancelar-edicao').style.display = '';
+    var av = document.getElementById('ob-aviso'); av.className = 'ob-aviso'; av.textContent = 'Editando: ' + (o.titulo || '');
+    atualizaPrevia();
+    document.getElementById('ob-titulo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function cancelaEdicao() {
+    editandoId = null;
+    document.getElementById('ob-criar').innerHTML = "<svg class=\"ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>" + ' Criar obrigação';
+    document.getElementById('ob-cancelar-edicao').style.display = 'none';
+    document.getElementById('ob-titulo').value = '';
+    document.getElementById('ob-desc').value = '';
+    var av = document.getElementById('ob-aviso'); av.className = 'ob-aviso'; av.textContent = '';
   }
 
   function montaForm() {
@@ -738,12 +781,13 @@ window.msgAcessoNegado = function (nomePagina) {
     var fc = document.getElementById('ob-filtro-casa');
     Object.keys(CASAS).forEach(function (slug) { opt(fc, slug, CASAS[slug]); });
     fc.onchange = carregaLista;
-    ['ob-dia', 'ob-sem', 'ob-data'].forEach(function (id) {
+    ['ob-dia', 'ob-sem', 'ob-data', 'ob-prazo'].forEach(function (id) {
       var e = document.getElementById(id); if (e) e.addEventListener('input', atualizaPrevia);
     });
     mostraCampoCadencia();
     atualizaPrevia();
     document.getElementById('ob-criar').onclick = criar;
+    document.getElementById('ob-cancelar-edicao').onclick = cancelaEdicao;
   }
 
   // ---- criar ----
@@ -781,8 +825,10 @@ window.msgAcessoNegado = function (nomePagina) {
 
     var bt = document.getElementById('ob-criar');
     bt.disabled = true; aviso.textContent = 'Salvando…';
-    fetch(WORKER + '/api/obrigacao', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
+    var editando = editandoId;
+    var url = WORKER + '/api/obrigacao' + (editando ? '/' + encodeURIComponent(editando) : '');
+    fetch(url, {
+      method: editando ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
       body: JSON.stringify(payload),
     }).then(function (r) {
       if (r.status === 401) { trata401(); return null; }
@@ -791,9 +837,9 @@ window.msgAcessoNegado = function (nomePagina) {
       bt.disabled = false;
       if (!res) return;
       if (!res.ok) { aviso.className = 'ob-aviso err'; aviso.textContent = (res.d && res.d.erro) || 'Falha ao salvar.'; return; }
-      aviso.className = 'ob-aviso ok'; aviso.textContent = 'Obrigação criada.';
-      document.getElementById('ob-titulo').value = '';
-      document.getElementById('ob-desc').value = '';
+      aviso.className = 'ob-aviso ok'; aviso.textContent = editando ? 'Obrigação atualizada.' : 'Obrigação criada.';
+      if (editando) cancelaEdicao();
+      else { document.getElementById('ob-titulo').value = ''; document.getElementById('ob-desc').value = ''; }
       carregaLista();
     }).catch(function () {
       bt.disabled = false; aviso.className = 'ob-aviso err'; aviso.textContent = 'Falha de rede.';
@@ -843,7 +889,14 @@ window.msgAcessoNegado = function (nomePagina) {
     tog.setAttribute('role', 'switch'); tog.setAttribute('aria-checked', o.ativa ? 'true' : 'false');
     tog.setAttribute('aria-label', 'Ativa'); tog.innerHTML = '<span class="knob"></span>';
     tog.onclick = function () { alternaAtiva(o, tog); };
-    top.appendChild(tog);
+    var edt = document.createElement('button');
+    edt.type = 'button';
+    edt.style.cssText = 'background:none;border:1px solid var(--border);border-radius:8px;padding:4px 9px;color:var(--text-2);cursor:pointer;font:inherit;font-size:12px;margin-right:8px';
+    edt.textContent = 'editar';
+    edt.onclick = function () { editaRegra(o); };
+    var acoes = document.createElement('div'); acoes.style.cssText = 'display:flex;align-items:center';
+    acoes.appendChild(edt); acoes.appendChild(tog);
+    top.appendChild(acoes);
     div.appendChild(top);
 
     var meta = document.createElement('div'); meta.className = 'ob-item-meta';
@@ -1999,7 +2052,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '40174a9d812f';
+  var BUILD = '465886230d2f';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
