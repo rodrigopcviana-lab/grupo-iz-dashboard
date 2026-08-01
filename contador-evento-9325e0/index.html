@@ -144,6 +144,20 @@ body{
 .rel-ins{display:flex;flex-wrap:wrap;gap:6px 8px}
 .rel-vazio{color:var(--text-3);font-size:12.5px}
 .rel-ok{color:var(--verde);font-size:13px;margin-top:10px;line-height:1.5;min-height:16px}
+
+/* --- PTT ao vivo (E10) — walkie-talkie entre os tablets do MESMO evento --- */
+.ptt{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);
+  background:var(--card2);color:var(--text-2);cursor:pointer;flex:0 0 auto;
+  display:none;align-items:center;justify-content:center;touch-action:none}
+.ptt.on{display:flex}
+.ptt.ligado{border-color:var(--acc);color:var(--acc)}
+.ptt.falando{background:#e07a63;border-color:#e07a63;color:#2a0f08}
+.ptt svg{width:22px;height:22px}
+.ptt-aviso{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:30;
+  background:var(--card);border:1px solid var(--acc);color:var(--text);
+  border-radius:999px;padding:9px 18px;font-size:13px;display:none;
+  box-shadow:0 6px 24px rgba(0,0,0,.45)}
+.ptt-aviso.on{display:block}
 </style>
 </head>
 <body>
@@ -154,6 +168,9 @@ body{
   <div class="topo-total"><div class="n" id="totGeral">0</div><div class="l">drinks na festa</div></div>
   <button class="lock" id="relBtn" title="Relatório / fechar evento (chefe ou coordenador)" type="button" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1V5a1 1 0 0 1 1-1z"/><path d="M9 12h6M9 16h4"/></svg>
+  </button>
+  <button class="ptt" id="pttBtn" title="Falar com os outros tablets deste evento (segure para falar)" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
   </button>
   <button class="lock" id="lockBtn" title="Travar toques (evita toque sem querer)" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
@@ -166,6 +183,8 @@ body{
   <div class="lanc b" id="lanc-b"></div>
 </div>
 
+<div class="ptt-aviso" id="pttAviso"></div>
+
 <div class="modal" id="relModal">
   <div class="modal-card">
     <div class="modal-hd"><h2>Relatório do evento</h2><button class="modal-x" id="relFechar" type="button">✕</button></div>
@@ -174,7 +193,7 @@ body{
 </div>
 
 <script>
-var CFG = {"workerUrl": "https://contador-evento.rodrigopcviana.workers.dev", "loginWorkerUrl": "https://contagem-bares.rodrigopcviana.workers.dev"};
+var CFG = {"workerUrl": "https://contador-evento.rodrigopcviana.workers.dev", "loginWorkerUrl": "https://contagem-bares.rodrigopcviana.workers.dev", "pttAtivo": false};
 var params = new URLSearchParams(location.search);
 var EVENTO_ID = params.get('evento') || '';
 
@@ -224,6 +243,189 @@ function fetchComTimeout(url, opts, ms){
   var ctrl = new AbortController();
   var t = setTimeout(function(){ ctrl.abort(); }, ms || 10000);
   return fetch(url, Object.assign({}, opts, { signal: ctrl.signal })).finally(function(){ clearTimeout(t); });
+}
+
+// ------------------------------------------------------------ PTT ao vivo ---
+// PLANO_INTERCOM_VOZ.md E10 (Onda 3). Walkie-talkie entre os tablets do MESMO
+// evento: segura o botão, fala, solta → toca nos outros ~1s depois.
+//
+// EFÊMERO POR CONSTRUÇÃO: o áudio vai pro Worker, é repassado e some. Não
+// grava em lugar nenhum, não transcreve. É o oposto do canal assíncrono do
+// Intercom (`canais.html`), que existe justamente pra deixar registro — e é
+// por isso que aqui não há aviso de retenção pra dar: não há retenção.
+//
+// DESLIGADO por padrão (CFG.pttAtivo): a E10 exige prova de que a Onda 1
+// pegou, e o piloto E6 só fecha em 2026-09-01. Com o flag off, o botão nem
+// entra no DOM visível e nenhum socket é aberto.
+var ptt = {
+  ws: null, gravando: false, rec: null, chunks: [], mime: '',
+  conectado: false, tentativas: 0, timerFala: null,
+};
+var PTT_MAX_MS = 15000;   // teto por fala — o Worker corta em 512 KB de qualquer jeito
+
+function pttTokenAtual(){
+  // O PTT é do TABLET, não de um lado: usa a sessão de quem estiver logado
+  // (A tem preferência). Sem ninguém logado não há o que autenticar.
+  var s = sess.a || sess.b;
+  return s && s.token ? s.token : null;
+}
+
+function pttAviso(texto){
+  var el = document.getElementById('pttAviso');
+  if (!el) return;
+  if (!texto) { el.classList.remove('on'); return; }
+  el.textContent = texto;
+  el.classList.add('on');
+}
+
+function pttMimeSuportado(){
+  if (typeof MediaRecorder === 'undefined') return '';
+  var tentar = ['audio/webm;codecs=opus','audio/webm','audio/mp4'];
+  for (var i=0;i<tentar.length;i++){
+    if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(tentar[i])) return tentar[i];
+  }
+  return '';
+}
+
+function pttConecta(){
+  if (!CFG.pttAtivo || !EVENTO_ID) return;
+  var token = pttTokenAtual();
+  if (!token) return;                       // ninguém logado ainda
+  if (ptt.ws && ptt.ws.readyState <= 1) return;
+
+  var base = CFG.workerUrl.replace(/^http/, 'ws');
+  var ws;
+  try {
+    ws = new WebSocket(base + '/api/evento/ptt?eventoId=' + encodeURIComponent(EVENTO_ID));
+  } catch(e){ return; }
+  ws.binaryType = 'arraybuffer';
+  ptt.ws = ws;
+
+  ws.onopen = function(){
+    // Token no CORPO da primeira mensagem, nunca na URL: URL de WebSocket
+    // entra em log de servidor, e token de sessão em log é vazamento mudo.
+    ws.send(JSON.stringify({ t:'auth', token: pttTokenAtual(), mime: (ptt.mime || 'audio/webm').split(';')[0] }));
+  };
+
+  ws.onmessage = function(ev){
+    if (typeof ev.data === 'string') {
+      var d;
+      try { d = JSON.parse(ev.data); } catch(e){ return; }
+      if (d.t === 'pronto') {
+        ptt.conectado = true; ptt.tentativas = 0;
+        document.getElementById('pttBtn').classList.add('ligado');
+      } else if (d.t === 'erro') {
+        pttAviso(d.erro || 'falha no rádio');
+        setTimeout(function(){ pttAviso(''); }, 2500);
+      }
+      return;
+    }
+    pttToca(ev.data);
+  };
+
+  ws.onclose = function(){
+    ptt.conectado = false;
+    var b = document.getElementById('pttBtn');
+    if (b) b.classList.remove('ligado');
+    // Reconexão com recuo: evento de 4h num wifi de bar cai, e um loop de
+    // reconexão apertado só piora. Teto de 30s.
+    if (!CFG.pttAtivo) return;
+    ptt.tentativas = Math.min(ptt.tentativas + 1, 6);
+    setTimeout(pttConecta, Math.min(1000 * Math.pow(2, ptt.tentativas), 30000));
+  };
+  ws.onerror = function(){ /* onclose cuida do retry */ };
+}
+
+// Recebe [2 bytes de tamanho][cabeçalho JSON][áudio] — o cabeçalho é montado
+// pelo SERVIDOR, então `de` é identidade verificada, não algo que outro
+// cliente possa forjar.
+function pttToca(buf){
+  try {
+    var view = new DataView(buf);
+    var n = view.getUint16(0);
+    var cab = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 2, n)));
+    var audio = new Blob([new Uint8Array(buf, 2 + n)], { type: cab.mime || 'audio/webm' });
+    var url = URL.createObjectURL(audio);
+    var el = new Audio(url);
+    pttAviso(cab.de + ' está falando');
+    el.onended = el.onerror = function(){
+      URL.revokeObjectURL(url);
+      pttAviso('');
+    };
+    el.play().catch(function(){
+      // Autoplay bloqueado (tablet que ainda não recebeu toque nenhum):
+      // avisa em vez de engolir a fala em silêncio.
+      pttAviso(cab.de + ' chamou — toque na tela pra ouvir');
+      URL.revokeObjectURL(url);
+    });
+  } catch(e){ /* quadro corrompido — descarta, nunca derruba a tela */ }
+}
+
+async function pttComeca(){
+  if (ptt.gravando || !ptt.conectado) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+  var mime = ptt.mime || pttMimeSuportado();
+  if (!mime) { pttAviso('este aparelho não grava áudio'); setTimeout(function(){pttAviso('');},2500); return; }
+  ptt.mime = mime;
+  var stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+  } catch(e){
+    pttAviso('sem permissão de microfone');
+    setTimeout(function(){ pttAviso(''); }, 2800);
+    return;
+  }
+  ptt.chunks = [];
+  try { ptt.rec = new MediaRecorder(stream, { mimeType: mime }); }
+  catch(e){ stream.getTracks().forEach(function(t){t.stop();}); return; }
+
+  ptt.rec.ondataavailable = function(e){ if (e.data && e.data.size) ptt.chunks.push(e.data); };
+  ptt.rec.onstop = function(){
+    stream.getTracks().forEach(function(t){ t.stop(); });   // solta o microfone SEMPRE
+    var blob = new Blob(ptt.chunks, { type: mime });
+    ptt.chunks = [];
+    if (blob.size && ptt.ws && ptt.ws.readyState === 1) {
+      blob.arrayBuffer().then(function(ab){
+        try { ptt.ws.send(ab); } catch(e){ /* caiu no meio — a fala se perde, e é assim mesmo num rádio */ }
+      });
+    }
+  };
+  ptt.rec.start();
+  ptt.gravando = true;
+  document.getElementById('pttBtn').classList.add('falando');
+  pttAviso('no ar');
+  // Teto duro: dedo preso no botão (ou tablet na bandeja) não pode abrir
+  // microfone eterno — o §2 do plano rejeita microfone aberto em bar cheio.
+  ptt.timerFala = setTimeout(pttPara, PTT_MAX_MS);
+}
+
+function pttPara(){
+  if (!ptt.gravando) return;
+  ptt.gravando = false;
+  if (ptt.timerFala) { clearTimeout(ptt.timerFala); ptt.timerFala = null; }
+  try { if (ptt.rec && ptt.rec.state !== 'inactive') ptt.rec.stop(); } catch(e){}
+  var b = document.getElementById('pttBtn');
+  if (b) b.classList.remove('falando');
+  pttAviso('');
+}
+
+function pttLiga(){
+  if (!CFG.pttAtivo) return;
+  var b = document.getElementById('pttBtn');
+  if (!b) return;
+  b.classList.add('on');
+  // pointer* cobre toque e mouse com um par de eventos só. pointercancel e
+  // pointerleave são obrigatórios: sem eles, o dedo que escorrega pra fora do
+  // botão deixa a gravação aberta pra sempre.
+  b.addEventListener('pointerdown', function(e){ e.preventDefault(); pttComeca(); });
+  ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+    b.addEventListener(ev, function(){ pttPara(); });
+  });
+  // Aba escondida (tablet bloqueado no meio da fala) fecha o microfone.
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState !== 'visible') pttPara();
+  });
+  pttConecta();
 }
 
 function uuid(){
@@ -372,6 +574,7 @@ function montaGate(slug){
     sessaoSalvar(slug, res.sessao);
     sess[slug] = res.sessao;
     await iniciaLado(slug);
+    pttConecta();   // agora existe token neste tablet — ver PTT ao vivo (E10)
   }
   btn.addEventListener('click', tenta);
   input.addEventListener('keydown', function(e){ if (e.key === 'Enter') tenta(); });
@@ -460,7 +663,7 @@ function render(slug){
       : '<span class="chip vazio">nada lançado ainda</span>';
   }
   var filaBadge = document.getElementById('fila-' + slug);
-  if (filaBadge) filaBadge.textContent = fila[slug].length ? ('⏳ ' + fila[slug].length + ' aguardando rede') : '';
+  if (filaBadge) filaBadge.textContent = fila[slug].length ? (fila[slug].length + ' aguardando rede') : '';
 
   var g = 0;
   ['a','b'].forEach(function(sl){ Object.keys(contagem[sl]).forEach(function(k){ g += contagem[sl][k]; }); });
@@ -497,7 +700,8 @@ async function iniciaLado(slug){
       return;
     }
     cardapio = res.dado;
-    document.getElementById('evTopo').innerHTML = '📍 <b>' + cardapio.nome + '</b> · ' + (cardapio.casa || '').toUpperCase() + ' · ' + (cardapio.data || '');
+    var pin = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
+    document.getElementById('evTopo').innerHTML = pin + '<b>' + cardapio.nome + '</b> · ' + (cardapio.casa || '').toUpperCase() + ' · ' + (cardapio.data || '');
   }
   carregaFila(slug);
   await carregaEstadoServidor(slug);
@@ -748,7 +952,7 @@ async function fechaEvento(){
   var d = await r.json().catch(function(){ return {}; });
   if (!r.ok) { erro.textContent = d.erro || 'erro ao fechar'; btn.disabled = false; btn.textContent = rotulo; return; }
   var n = (d.gravados || []).length;
-  ok.textContent = '✅ Evento fechado — ' + n + ' linha(s) gravada(s) no histórico.';
+  ok.textContent = 'Evento fechado — ' + n + ' linha(s) gravada(s) no histórico.';
   btn.textContent = 'Fechar de novo (atualiza)'; btn.disabled = false;
 }
 
@@ -769,6 +973,7 @@ async function init(){
     if (restaurada) { sess[slug] = restaurada; await iniciaLado(slug); }
     else montaGate2(slug);
   }
+  pttLiga();   // PTT ao vivo (E10) — no-op quando CFG.pttAtivo é false
 }
 
 document.getElementById('lockBtn').addEventListener('click', function(){
@@ -807,7 +1012,7 @@ init();
 </div>
 <script>
 (function () {
-  var BUILD = '4b02ee4576a6';
+  var BUILD = '0656a53e4f99';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
