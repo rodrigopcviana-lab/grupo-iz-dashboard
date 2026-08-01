@@ -1677,9 +1677,15 @@ function nomeArquivoSeguro(base) {
     if (ULTIMOS_REGISTROS.length) {
       b.push({ tipo: 'h2', texto: 'Visitas e treinamentos' });
       ULTIMOS_REGISTROS.slice(0, 12).forEach(function (r) {
+        // Autoria dos dois lados no papel, não só na tela (trava de evidência
+        // do P8): quem registrou e, se confirmado, quem confirmou e quando.
+        var status = r.confirmado
+          ? 'confirmado por ' + (r.confirmado_por || 'coordenação') + ' em ' + fmtData((r.confirmado_em || '').slice(0, 10))
+          : 'aguardando confirmação';
         b.push({ tipo: 'li', texto: (ROTULO_REGISTRO_TIPO[r.tipo] || r.tipo) + ' em ' + fmtData(r.data)
           + (r.casa ? ' · ' + (CASAS_LABEL[r.casa] || r.casa) : '')
-          + ' — ' + (r.confirmado ? 'confirmado' : 'aguardando confirmação') });
+          + (r.criado_por ? ' · registrado por ' + r.criado_por : '')
+          + ' — ' + status });
       });
       b.push({ tipo: 'sep' });
     }

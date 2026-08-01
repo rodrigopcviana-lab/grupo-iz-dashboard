@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Buscador entre casas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=a5dbe9eb6773">
+<link rel="stylesheet" href="portal.css?v=a4e263cef64b">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -772,11 +772,18 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     // Cada grafia é uma LINHA PRÓPRIA: nada aqui funde dois nomes sem
     // evidência (§3.4 do plano). Ordena por quem tem mais folga.
+    //
+    // C2 (Onda 2, 2026-07-31): TODAS as palavras do termo precisam aparecer
+    // em algum lugar do item, em QUALQUER ordem — antes era substring única,
+    // então "spritz aperol" não achava "Pre Aperol Spritz" (a ordem das
+    // palavras não batia). Isso NÃO funde nome nenhum: continua comparando
+    // só dentro do mesmo item (nome + chave + grafia de cada casa), a regra
+    // de "cada grafia é uma linha própria" não muda em nada.
+    var palavras = termo.split(' ').filter(function (p) { return p.length > 0; });
     var achados = (DADOS.itens || []).filter(function (i) {
-      if (norm(i.nome).indexOf(termo) >= 0 || i.chave.indexOf(termo) >= 0) return true;
-      return Object.keys(i.casas).some(function (s) {
-        return norm(i.casas[s].nome_local).indexOf(termo) >= 0;
-      });
+      var pilha = norm(i.nome) + ' ' + i.chave + ' ' +
+        Object.keys(i.casas).map(function (s) { return norm(i.casas[s].nome_local); }).join(' ');
+      return palavras.every(function (p) { return pilha.indexOf(p) >= 0; });
     });
     if (!achados.length) {
       res.appendChild(el('p', 'tr-vazio',
@@ -2240,7 +2247,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a5dbe9eb6773';
+  var BUILD = 'a4e263cef64b';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
