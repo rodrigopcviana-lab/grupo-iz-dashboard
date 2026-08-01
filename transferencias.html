@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Buscador entre casas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=2535b27d4f11">
+<link rel="stylesheet" href="portal.css?v=a66dfc751259">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1007,9 +1007,44 @@ window.msgAcessoNegado = function (nomePagina) {
       clearTimeout(t);
       var v = campo.value;
       t = setTimeout(function () { busca(v); }, 130);
+      agendaEventoBusca(v);
     });
     campo.focus();
     ligaVistas();
+  }
+
+  // D2 (Onda 3, PLANO_TRANSFERENCIAS.md §14): o buscador não registrava
+  // nenhum evento — sem isso não dá pra saber quantas buscas houve, o que é
+  // mais procurado, nem quantas acharam e mesmo assim não viraram
+  // transferência. Debounce PRÓPRIO (1,2s), separado do debounce visual
+  // (130ms): busca() roda a cada pausa de digitação, mas um evento por
+  // TECLA lotaria o D1 sem dizer nada a mais — só um por busca que "assentou".
+  //
+  // Lê o resultado do DOM já renderizado (não recalcula o filtro): fonte
+  // única de verdade, sem manter uma segunda cópia da lógica de match.
+  //
+  // Fire-and-forget, e só quando a sessão tem identidade individual — sem
+  // `pessoa` o Worker devolve 401 (mesma regra de "ficha"/"registro": sessão
+  // de nível compartilhado não grava evento, por desenho). Checar aqui evita
+  // um 401 previsível a cada busca de quem usa senha de tier.
+  var tEvt = null, ultimoTermoLogado = null;
+  function agendaEventoBusca(valorCru) {
+    clearTimeout(tEvt);
+    tEvt = setTimeout(function () {
+      if (!SESSAO || !SESSAO.pessoa || !SESSAO.token) return;
+      var termo = norm(valorCru);
+      if (termo.length < 2 || termo === ultimoTermoLogado) return;
+      ultimoTermoLogado = termo;
+      var achou = document.querySelectorAll('#tr-res .tr-item').length > 0;
+      fetch(WORKER + '/api/evento', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Token': SESSAO.token },
+        body: JSON.stringify({
+          tipo: achou ? 'busca_transferencia_achou' : 'busca_transferencia_vazia',
+          ref: termo.slice(0, 200),
+        }),
+      }).catch(function () {});
+    }, 1200);
   }
 
   // --- Vista "Transferências" (B2) ------------------------------------------
@@ -2307,7 +2342,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '2535b27d4f11';
+  var BUILD = 'a66dfc751259';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
