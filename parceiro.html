@@ -271,6 +271,20 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .vista-voltar{background:none;border:none;color:var(--text-3);font-size:13px;
   font-family:inherit;cursor:pointer;padding:0;margin-bottom:14px}
 .vista-voltar:hover{color:var(--text)}
+/* A etiqueta "Criar" é fixa na borda direita e centrada na vertical, então
+   ela passa POR CIMA do que estiver na meia-altura da tela. No celular, onde
+   o conteúdo vai de ponta a ponta, isso cobria o valor da direita das linhas
+   de produto (medido a 375px: a etiqueta ocupa 342-376 e a linha ia até 357,
+   escondendo o "54%"). Reserva-se a faixa dela. No desktop o .wrap já é
+   centrado com folga de sobra e não precisa. */
+@media (max-width:700px){
+  .vista{padding-right:22px}
+}
+/* No mural, o texto que a PRÓPRIA marca escreveu vai clampado em 3 linhas —
+   ela já sabe o que mandou, e o card inteiro empurrava o resto da página.
+   A RESPOSTA da coordenação nunca é clampada: é o que a pessoa veio ler. */
+#env-holder .desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  overflow:hidden}
 .ver-mais{display:inline-block;font-size:12.5px;color:var(--acc);background:none;border:none;
   cursor:pointer;padding:0;font-family:inherit}
 </style>
@@ -509,15 +523,18 @@ function nomeArquivoSeguro(base) {
 
   // Vistas: o mural é a página; Desempenho e Execução são destinos abertos a
   // partir dele. Troca só o que está visível, nunca refaz fetch — o payload já
-  // está todo em memória (ULTIMO_D) desde a primeira carga. Volta sempre ao
-  // topo: sem isso, abrir Desempenho estando no fim do mural cai no meio da
-  // vista nova, sem cabeçalho nem botão de voltar à vista.
+  // está todo em memória (ULTIMO_D) desde a primeira carga. Volta ao topo por
+  // padrão: sem isso, abrir Desempenho estando no fim do mural cai no meio da
+  // vista nova, sem cabeçalho nem botão de voltar. `manterScroll` existe para
+  // quem já sabe onde quer parar — hoje só o sino, que troca de vista e em
+  // seguida rola até o próprio alvo; deixar os dois scrolls na mesma volta
+  // fazia um cancelar o outro.
   var VISTAS = ['mural', 'desempenho', 'execucao'];
-  function mostraVista(nome) {
+  function mostraVista(nome, manterScroll) {
     VISTAS.forEach(function (t) {
       document.getElementById('vista-' + t).classList.toggle('ativa', t === nome);
     });
-    window.scrollTo(0, 0);
+    if (!manterScroll) window.scrollTo(0, 0);
   }
 
   var ROTULO_STATUS = {
@@ -1416,11 +1433,6 @@ function nomeArquivoSeguro(base) {
           : 'O contrato ainda não foi assinado. As contrapartidas são as previstas e ainda não contam como pendência de entrega.'));
     }
 
-    // Conversa com a coordenação: era uma aba própria e voltou pro mural.
-    // Resposta da coordenação é NOVIDADE — mora onde o sino aponta, não atrás
-    // de um clique que a pessoa precisa lembrar de dar. Nasce vazio;
-    // carregaEnviados() preenche.
-    painelMural.appendChild(el('div', '', null)).id = 'env-holder';
 
     // Prévia do giro no Mural (P2): o número que o representante leva pra
     // indústria dele fica na primeira tela, resumido. O detalhe (produto,
@@ -1475,6 +1487,14 @@ function nomeArquivoSeguro(base) {
     }
     var stats = montaStats(d, cor, cont);
     if (stats) painelMural.appendChild(stats);
+
+    // Conversa com a coordenação: era uma aba própria e voltou pro mural.
+    // Fica DEPOIS do giro e do acordo, e não no topo, por medida: com os
+    // cards de conversa acima, o giro caía em y=1100 num aparelho de 375px —
+    // duas dobras abaixo do número que o representante abriu a página pra ver.
+    // Quem carrega a novidade é o sino, que aponta pra cá. Nasce vazio;
+    // carregaEnviados() preenche.
+    painelMural.appendChild(el('div', '', null)).id = 'env-holder';
 
     // Agenda (E7): populado por buscarAgenda(), chamada logo depois desta
     // função — o container nasce aqui, vazio, pra existir no DOM a tempo.
@@ -2161,6 +2181,12 @@ function nomeArquivoSeguro(base) {
   // nada. O scroll suave vai num quadro à parte porque mostraVista() zera o
   // scroll na hora, e os dois na mesma volta se anulam.
   document.getElementById('sino-btn').onclick = function () {
+    // O alvo é lido ANTES de marcar como lida. Marcar zera SINO.resposta, e
+    // atualizaSino() recalcula SINO.alvo a partir dele — quem lesse depois
+    // receberia sempre 'ag-holder' e o sino de "resposta nova" levava pra
+    // agenda. Bug antigo, que só ficou visível quando a conversa voltou pro
+    // mural e passou a disputar o mesmo destino com os compromissos.
+    var alvo = SINO.alvo;
     // Abrir o sino é o que marca a resposta como lida — não o simples carregar
     // da página, senão ela apagaria antes de alguém ter olhado.
     if (SINO.resposta && SINO.maisNova) {
@@ -2169,13 +2195,9 @@ function nomeArquivoSeguro(base) {
       atualizaSino();
     }
     mostraPainel();
-    mostraVista('mural');
-    var holder = document.getElementById(SINO.alvo) || document.getElementById('ag-holder');
-    if (holder) {
-      requestAnimationFrame(function () {
-        holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }
+    mostraVista('mural', true);
+    var holder = document.getElementById(alvo) || document.getElementById('ag-holder');
+    if (holder) holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   // Etiqueta "Criar" puxável (PLANO_TRANSFERENCIAS.md §8): Ideia e Receita são
