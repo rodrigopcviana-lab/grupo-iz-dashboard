@@ -252,20 +252,25 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
   background:var(--text-3);transition:transform .15s,background .15s}
 .av-sw[aria-checked="true"]::after{transform:translateX(17px);background:#241a06}
 
-/* --- abas (P1, PLANO_PARCEIRO_CICLO.md §7-8): a página deixa de ser uma
-   tela só. Mural é a home (resumo + próximos passos); Desempenho concentra
-   o que já existe hoje (o acordo, backbar, cardápio, compra mínima) — as
-   métricas de resultado (giro, share, positivação, ruptura) entram aqui só
-   quando o motor da P2 existir; Execução é reservada e mostra um aviso
-   honesto enquanto P6/P8/P9 não estão no ar; Conversa promove "o que você
-   enviou" a aba própria. Nenhum dado novo nasce nesta etapa — só o lugar. */
-.tabs{display:flex;gap:16px;border-bottom:1px solid var(--border);margin-bottom:18px;
-  overflow-x:auto;-webkit-overflow-scrolling:touch}
-.tab-btn{background:none;border:none;color:var(--text-3);font-size:13px;font-family:inherit;
-  cursor:pointer;padding:0 0 10px;white-space:nowrap;border-bottom:2px solid transparent;flex:none}
-.tab-btn.ativo{color:var(--text);border-bottom-color:var(--acc)}
-.tab-painel{display:none}
-.tab-painel.ativo{display:block}
+/* --- mural + vistas (P1 revisto): a barra de 4 abas foi REMOVIDA. Ela punha
+   o mural como um quarto da página e, pior, exilava a conversa com a
+   coordenação atrás de um clique — uma resposta é NOVIDADE, e novidade mora
+   no mural, que é onde o sino aponta. O mural volta a ser a página inteira
+   (rolagem única de blocos, igual ao mural interno); Desempenho e Execução
+   viram VISTAS abertas a partir dele, com o mesmo mecanismo que esta página
+   já usava no "Meu perfil" (div escondido + "‹ Mural" no topo). A linha de
+   atalhos abaixo do cabeçalho é o Painel Rápido daqui. */
+.vista{display:none}
+.vista.ativa{display:block}
+.pr-linha{display:flex;gap:8px;margin:14px 0 18px}
+.pr-bt{flex:1;display:flex;align-items:center;gap:8px;background:var(--card);
+  border:1px solid var(--border);border-radius:12px;padding:11px 12px;cursor:pointer;
+  color:var(--text);font-family:inherit;font-size:13px;text-align:left;line-height:1.25}
+.pr-bt svg{width:17px;height:17px;flex:none;color:var(--acc)}
+.pr-bt:hover{border-color:var(--acc)}
+.vista-voltar{background:none;border:none;color:var(--text-3);font-size:13px;
+  font-family:inherit;cursor:pointer;padding:0;margin-bottom:14px}
+.vista-voltar:hover{color:var(--text)}
 .ver-mais{display:inline-block;font-size:12.5px;color:var(--acc);background:none;border:none;
   cursor:pointer;padding:0;font-family:inherit}
 </style>
@@ -294,16 +299,9 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
     </div>
   </div>
   <div id="abas-wrap">
-    <div class="tabs" id="tabs" role="tablist">
-      <button type="button" class="tab-btn ativo" data-tab="mural" role="tab" aria-selected="true">Mural</button>
-      <button type="button" class="tab-btn" data-tab="desempenho" role="tab" aria-selected="false">Desempenho</button>
-      <button type="button" class="tab-btn" data-tab="execucao" role="tab" aria-selected="false">Execução</button>
-      <button type="button" class="tab-btn" data-tab="conversa" role="tab" aria-selected="false">Conversa</button>
-    </div>
-    <div id="tab-mural" class="tab-painel ativo" role="tabpanel"></div>
-    <div id="tab-desempenho" class="tab-painel" role="tabpanel"></div>
-    <div id="tab-execucao" class="tab-painel" role="tabpanel"></div>
-    <div id="tab-conversa" class="tab-painel" role="tabpanel"></div>
+    <div id="vista-mural" class="vista ativa"></div>
+    <div id="vista-desempenho" class="vista"></div>
+    <div id="vista-execucao" class="vista"></div>
   </div>
   <div id="tela-perfil" style="display:none"></div>
 </div>
@@ -501,32 +499,26 @@ function nomeArquivoSeguro(base) {
   var gate = document.getElementById('gate');
   var app = document.getElementById('app');
   var abasWrap = document.getElementById('abas-wrap');
-  var painelMural = document.getElementById('tab-mural');
-  var painelDesempenho = document.getElementById('tab-desempenho');
-  var painelExecucao = document.getElementById('tab-execucao');
-  var painelConversa = document.getElementById('tab-conversa');
+  var painelMural = document.getElementById('vista-mural');
+  var painelDesempenho = document.getElementById('vista-desempenho');
+  var painelExecucao = document.getElementById('vista-execucao');
   var telaPerfil = document.getElementById('tela-perfil');
   var erro = document.getElementById('g-erro');
   var ULTIMO_D = null; // último payload de GET /api/parceiro — reusado pelo pill/perfil
   var ULTIMOS_REGISTROS = []; // cache do GET /api/parceiro/registros (P8) — reusado pelo PDF (P9), sem refetch
 
-  // Abas (P1): troca só o que está visível, nunca refaz fetch — o payload já
-  // está todo em memória (ULTIMO_D) desde a primeira carga.
-  var ABAS = ['mural', 'desempenho', 'execucao', 'conversa'];
-  function mostraAba(nome) {
-    ABAS.forEach(function (t) {
-      var ativo = t === nome;
-      document.getElementById('tab-' + t).classList.toggle('ativo', ativo);
+  // Vistas: o mural é a página; Desempenho e Execução são destinos abertos a
+  // partir dele. Troca só o que está visível, nunca refaz fetch — o payload já
+  // está todo em memória (ULTIMO_D) desde a primeira carga. Volta sempre ao
+  // topo: sem isso, abrir Desempenho estando no fim do mural cai no meio da
+  // vista nova, sem cabeçalho nem botão de voltar à vista.
+  var VISTAS = ['mural', 'desempenho', 'execucao'];
+  function mostraVista(nome) {
+    VISTAS.forEach(function (t) {
+      document.getElementById('vista-' + t).classList.toggle('ativa', t === nome);
     });
-    document.querySelectorAll('.tab-btn').forEach(function (b) {
-      var ativo = b.dataset.tab === nome;
-      b.classList.toggle('ativo', ativo);
-      b.setAttribute('aria-selected', ativo ? 'true' : 'false');
-    });
+    window.scrollTo(0, 0);
   }
-  document.querySelectorAll('.tab-btn').forEach(function (b) {
-    b.onclick = function () { mostraAba(b.dataset.tab); };
-  });
 
   var ROTULO_STATUS = {
     nao_iniciado: 'Não iniciado', em_andamento: 'Em andamento', entregue: 'Entregue',
@@ -1351,14 +1343,21 @@ function nomeArquivoSeguro(base) {
     return wrap;
   }
 
-  // P1 (PLANO_PARCEIRO_CICLO.md §8): a antiga renderiza() escrevia tudo num
-  // painel só. Agora escreve nos 4 contêineres das abas. NENHUM dado novo foi
-  // inventado aqui — cada bloco só mudou de endereço. "O acordo" (contrapartidas,
-  // backbar, cardápio, compra mínima) segue em Desempenho porque é a única
-  // leitura de resultado que o payload de hoje sustenta; giro/share/positivação/
-  // ruptura (P2-P5) entram nesta mesma aba quando o motor existir. Execução
-  // fica com um aviso honesto — P6/P8/P9 (carta, visitas, treinamentos, revisão
-  // de conta) ainda não têm dado nem rota.
+  // Botão de volta das vistas secundárias. Existe um por vista (o mesmo nó não
+  // pode estar em dois pais), por isso é fábrica e não constante.
+  function voltarMural() {
+    var b = el('button', 'vista-voltar', '‹ Mural');
+    b.type = 'button';
+    b.onclick = function () { mostraVista('mural'); };
+    return b;
+  }
+
+  // O mural é a página (P1 revisto): rolagem única, do que mudou para o que é
+  // permanente — alerta de ruptura, conversa com a coordenação, giro, acordo,
+  // agenda. Desempenho e Execução são vistas abertas pela linha de atalhos:
+  // guardam a leitura longa (série mês a mês, share, positivação, backbar,
+  // carta, registros, PDF) que não cabe num mural sem virar rolagem infinita.
+  // NENHUM dado novo nasce aqui — só o lugar de cada bloco.
   function renderiza(d) {
     painelMural.innerHTML = '';
     painelDesempenho.innerHTML = '';
@@ -1382,6 +1381,29 @@ function nomeArquivoSeguro(base) {
     cab.appendChild(corpo);
     painelMural.appendChild(cab);
 
+    // Linha de atalhos — o Painel Rápido daqui. Sempre visível, logo abaixo do
+    // cabeçalho: é o que substitui a barra de abas sem competir com o mural.
+    var pr = el('div', 'pr-linha');
+    [['desempenho', 'Desempenho',
+      '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>'],
+     ['execucao', 'Execução',
+      '<path d="M4 12l5 5L20 6"/>']].forEach(function (a) {
+      var bt = el('button', 'pr-bt', null);
+      bt.type = 'button';
+      var ic = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      ic.setAttribute('viewBox', '0 0 24 24');
+      ic.setAttribute('fill', 'none');
+      ic.setAttribute('stroke', 'currentColor');
+      ic.setAttribute('stroke-width', '1.7');
+      ic.setAttribute('stroke-linecap', 'round');
+      ic.innerHTML = a[2];
+      bt.appendChild(ic);
+      bt.appendChild(el('span', '', a[1]));
+      bt.onclick = function () { mostraVista(a[0]); };
+      pr.appendChild(bt);
+    });
+    painelMural.appendChild(pr);
+
     // Ruptura (P5) primeiro: é o alerta mais fresco do painel, e o mural
     // é a home — "precisa de atenção" vem antes de qualquer resumo.
     var ruptMural = montaRuptura(d.ruptura);
@@ -1390,9 +1412,15 @@ function nomeArquivoSeguro(base) {
     if (d.contrato_status !== 'ativo') {
       painelMural.appendChild(el('p', 'nota',
         d.contrato_status === 'em_negociacao'
-          ? 'Ainda não temos contrapartidas fechadas. Assim que o acordo for definido, elas aparecem na aba Desempenho, no mesmo formato desta página. Enquanto isso, esta página já é sua: use "Criar" para mandar uma ideia, propor um cocktail ou tirar uma dúvida — tudo fica registrado e a coordenação responde na aba Conversa.'
-          : 'O contrato ainda não foi assinado. As contrapartidas na aba Desempenho são as previstas e ainda não contam como pendência de entrega.'));
+          ? 'Ainda não temos contrapartidas fechadas. Assim que o acordo for definido, elas aparecem aqui no mural e em Desempenho, no mesmo formato desta página. Enquanto isso, esta página já é sua: use "Criar" para mandar uma ideia, propor um cocktail ou tirar uma dúvida — tudo fica registrado e a coordenação responde aqui mesmo.'
+          : 'O contrato ainda não foi assinado. As contrapartidas são as previstas e ainda não contam como pendência de entrega.'));
     }
+
+    // Conversa com a coordenação: era uma aba própria e voltou pro mural.
+    // Resposta da coordenação é NOVIDADE — mora onde o sino aponta, não atrás
+    // de um clique que a pessoa precisa lembrar de dar. Nasce vazio;
+    // carregaEnviados() preenche.
+    painelMural.appendChild(el('div', '', null)).id = 'env-holder';
 
     // Prévia do giro no Mural (P2): o número que o representante leva pra
     // indústria dele fica na primeira tela, resumido. O detalhe (produto,
@@ -1406,7 +1434,7 @@ function nomeArquivoSeguro(base) {
       topoG.appendChild(titG);
       var linkG = el('button', 'ver-mais', 'Ver desempenho ›');
       linkG.type = 'button';
-      linkG.onclick = function () { mostraAba('desempenho'); };
+      linkG.onclick = function () { mostraVista('desempenho'); };
       topoG.appendChild(linkG);
       cardG.appendChild(topoG);
       var linha2 = el('div', 'giro-topo');
@@ -1442,7 +1470,7 @@ function nomeArquivoSeguro(base) {
       var verMais = el('button', 'ver-mais', 'Ver desempenho ›');
       verMais.type = 'button';
       verMais.style.marginTop = '-4px';
-      verMais.onclick = function () { mostraAba('desempenho'); };
+      verMais.onclick = function () { mostraVista('desempenho'); };
       painelMural.appendChild(verMais);
     }
     var stats = montaStats(d, cor, cont);
@@ -1455,8 +1483,9 @@ function nomeArquivoSeguro(base) {
     // Itens individuais só. Metas agregadas (backbar %, cocktails por casa,
     // compra mínima) NUNCA entram aqui: têm seção própria mais abaixo,
     // computada de dado real.
-    // Giro (P2) e share (P3) abrem a aba Desempenho: é o que a indústria
+    // Giro (P2) e share (P3) abrem a vista Desempenho: é o que a indústria
     // cobra do representante, e vem antes do acordo de propósito.
+    painelDesempenho.appendChild(voltarMural());
     var giroEl = montaGiro(d.giro, cor);
     if (giroEl) painelDesempenho.appendChild(giroEl);
     painelDesempenho.appendChild(montaMeta(d.meta_ciclo, d.giro ? d.giro.total : 0, cor));
@@ -1564,6 +1593,7 @@ function nomeArquivoSeguro(base) {
     // preenche. Revisão de conta (P9): mesmo gerador de baixaResumoPdf(),
     // agora enriquecido com positivação/execução/pendências — nunca um
     // segundo mecanismo de PDF.
+    painelExecucao.appendChild(voltarMural());
     var menuEl = montaMenu(d.menu);
     if (menuEl) painelExecucao.appendChild(menuEl);
     painelExecucao.appendChild(el('div', 'secao', 'Seu trabalho no ciclo'));
@@ -1586,11 +1616,6 @@ function nomeArquivoSeguro(base) {
     painelExecucao.appendChild(el('p', 'giro-sub',
       'Você decide o que chega no seu celular. Nada é enviado à sua indústria pelo Grupo IZ — o que sai daqui, sai por você.'));
     painelExecucao.appendChild(el('div', '', null)).id = 'av-holder';
-
-    // "O que você enviou" (E3) fica na aba Conversa — nasce vazio,
-    // carregaEnviados() preenche depois.
-    painelConversa.innerHTML = '';
-    painelConversa.appendChild(el('div', '', null)).id = 'env-holder';
   }
 
   var sessaoAtualGlobal = null;
@@ -2108,11 +2133,13 @@ function nomeArquivoSeguro(base) {
     telaPerfil.style.display = '';
     renderPerfil();
   };
-  // ag-holder mora na aba Mural, env-holder mora na aba Conversa (P1) — o
-  // sino agora precisa trocar de aba antes de rolar até o alvo, senão o
-  // holder está escondido num painel com display:none e scrollIntoView não
-  // faz nada.
-  var ABA_DO_HOLDER = { 'ag-holder': 'mural', 'env-holder': 'conversa' };
+  // Os DOIS alvos do sino (compromisso e resposta da coordenação) moram no
+  // mural — foi justamente por isso que a conversa saiu de uma aba própria.
+  // Some o mapa holder→aba que existia só pra contornar aquilo; resta garantir
+  // que a tela de perfil não esteja por cima e que a vista ativa seja o mural,
+  // senão o holder fica num container display:none e scrollIntoView não faz
+  // nada. O scroll suave vai num quadro à parte porque mostraVista() zera o
+  // scroll na hora, e os dois na mesma volta se anulam.
   document.getElementById('sino-btn').onclick = function () {
     // Abrir o sino é o que marca a resposta como lida — não o simples carregar
     // da página, senão ela apagaria antes de alguém ter olhado.
@@ -2121,9 +2148,14 @@ function nomeArquivoSeguro(base) {
       SINO.resposta = false;
       atualizaSino();
     }
-    mostraAba(ABA_DO_HOLDER[SINO.alvo] || 'mural');
+    mostraPainel();
+    mostraVista('mural');
     var holder = document.getElementById(SINO.alvo) || document.getElementById('ag-holder');
-    if (holder) holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (holder) {
+      requestAnimationFrame(function () {
+        holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
   };
 
   // Etiqueta "Criar" puxável (PLANO_TRANSFERENCIAS.md §8): Ideia e Receita são
