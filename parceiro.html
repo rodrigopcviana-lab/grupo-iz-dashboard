@@ -1903,7 +1903,7 @@ function nomeArquivoSeguro(base) {
           var vazio = el('div', 'card');
           vazio.appendChild(el('div', 'titulo', 'Você ainda não mandou nada por aqui'));
           vazio.appendChild(el('div', 'meta',
-            'Use a etiqueta "Criar", na lateral, para mandar uma ideia, propor um cocktail com a marca ou tirar uma dúvida sobre o acordo. A resposta da coordenação aparece nesta mesma página.'));
+            'Use a etiqueta "Criar", na lateral, para mandar uma ideia, propor um cocktail com a marca ou tirar uma dúvida sobre o acordo. A resposta da coordenação aparece aqui no mural.'));
           var btVazio = el('button', 'criar-salvar', 'Criar');
           btVazio.type = 'button';
           btVazio.style.marginTop = '10px';
@@ -1922,8 +1922,8 @@ function nomeArquivoSeguro(base) {
         SINO.maisNova = maisNova;
         atualizaSino();
         if (!itens.length) return;
-        holder.appendChild(el('div', 'secao', 'O que você enviou'));
-        itens.slice(0, 12).forEach(function (it) {
+
+        function cardEnviado(it) {
           var card = el('div', 'card');
           var topo = el('div', 'topo');
           topo.appendChild(el('div', 'titulo', it.titulo || it.tipo));
@@ -1943,8 +1943,28 @@ function nomeArquivoSeguro(base) {
             resp.appendChild(el('div', 'resposta-txt', it.resposta));
             card.appendChild(resp);
           }
-          holder.appendChild(card);
-        });
+          return card;
+        }
+
+        // "Conversa com a coordenação", e não mais "O que você enviou": o bloco
+        // mostra os dois lados, e o que interessa na volta é a RESPOSTA.
+        holder.appendChild(el('div', 'secao', 'Conversa com a coordenação'));
+        // Num mural, histórico não pode empurrar o resto da página pra baixo:
+        // mostra os 3 mais recentes e abre o resto NO LUGAR, sem navegar.
+        var MURAL_N = 3;
+        var visiveis = itens.slice(0, MURAL_N);
+        var resto = itens.slice(MURAL_N, 12);
+        visiveis.forEach(function (it) { holder.appendChild(cardEnviado(it)); });
+        if (resto.length) {
+          var maisEnv = el('button', 'ver-mais',
+            'Ver ' + resto.length + (resto.length === 1 ? ' anterior' : ' anteriores') + ' ›');
+          maisEnv.type = 'button';
+          maisEnv.onclick = function () {
+            resto.forEach(function (it) { holder.insertBefore(cardEnviado(it), maisEnv); });
+            maisEnv.remove();
+          };
+          holder.appendChild(maisEnv);
+        }
       })
       .catch(function () { /* complemento: falha aqui não derruba o painel */ });
   }
