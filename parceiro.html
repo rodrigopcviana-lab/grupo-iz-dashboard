@@ -222,6 +222,24 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .meta-aviso.err{color:var(--vermelho)}
 .meta-editar{font-size:11.5px;color:var(--acc);background:none;border:none;cursor:pointer;padding:0}
 
+/* --- registro de visita/treinamento (P8) --- */
+.reg-form{display:flex;flex-direction:column;gap:9px;margin-top:10px}
+.reg-form select,.reg-form input,.reg-form textarea{font:inherit;font-size:14px;padding:10px 12px;
+  border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);width:100%;box-sizing:border-box}
+.reg-form textarea{resize:vertical;min-height:60px}
+.reg-form button{font:inherit;font-size:13.5px;font-weight:600;padding:11px;border-radius:10px;
+  border:none;background:var(--acc);color:#241a06;cursor:pointer}
+.reg-form button:disabled{opacity:.55;cursor:default}
+.reg-lista{margin-top:12px}
+.reg-item{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:9px 0;border-top:1px solid var(--border)}
+.reg-item:last-child{border-bottom:1px solid var(--border)}
+.reg-item-txt{font-size:13.5px}
+.reg-item-sub{font-size:11.5px;color:var(--text-3);margin-top:2px}
+.reg-tag{font-size:10.5px;padding:2px 9px;border-radius:999px;white-space:nowrap;flex:none}
+.reg-tag.pendente{background:#e0b05c33;color:var(--amarelo)}
+.reg-tag.ok{background:#9fe1cb33;color:var(--verde)}
+.reg-toggle{font-size:12.5px;color:var(--acc);background:none;border:none;cursor:pointer;padding:0;margin-top:10px}
+
 /* --- abas (P1, PLANO_PARCEIRO_CICLO.md §7-8): a página deixa de ser uma
    tela só. Mural é a home (resumo + próximos passos); Desempenho concentra
    o que já existe hoje (o acordo, backbar, cardápio, compra mínima) — as
@@ -478,6 +496,7 @@ function nomeArquivoSeguro(base) {
   var telaPerfil = document.getElementById('tela-perfil');
   var erro = document.getElementById('g-erro');
   var ULTIMO_D = null; // último payload de GET /api/parceiro — reusado pelo pill/perfil
+  var ULTIMOS_REGISTROS = []; // cache do GET /api/parceiro/registros (P8) — reusado pelo PDF (P9), sem refetch
 
   // Abas (P1): troca só o que está visível, nunca refaz fetch — o payload já
   // está todo em memória (ULTIMO_D) desde a primeira carga.
@@ -1059,6 +1078,110 @@ function nomeArquivoSeguro(base) {
     };
   }
 
+  // --- Registro de visita/treinamento (P8) ----------------------------------
+  // Segunda escrita do parceiro (D1, autorizada 2026-07-31 pra registro +
+  // confirmação). Fica PENDENTE até a coordenação confirmar — a tag nunca
+  // mostra "confirmado" antes disso, e a lista mostra as duas cores.
+  var ROTULO_REGISTRO_TIPO = { visita: 'Visita', treinamento: 'Treinamento' };
+  function montaRegistroForm() {
+    var wrap = el('div', 'reg-form');
+    var selTipo = document.createElement('select');
+    [['visita', 'Visita'], ['treinamento', 'Treinamento']].forEach(function (t) {
+      var op = document.createElement('option'); op.value = t[0]; op.textContent = t[1];
+      selTipo.appendChild(op);
+    });
+    wrap.appendChild(selTipo);
+
+    var inpData = document.createElement('input');
+    inpData.type = 'date';
+    inpData.max = new Date().toISOString().slice(0, 10);
+    wrap.appendChild(inpData);
+
+    var selCasa = document.createElement('select');
+    var opVazia = document.createElement('option'); opVazia.value = ''; opVazia.textContent = 'Casa (opcional)';
+    selCasa.appendChild(opVazia);
+    Object.keys(CASAS_LABEL).forEach(function (slug) {
+      var op = document.createElement('option'); op.value = slug; op.textContent = CASAS_LABEL[slug];
+      selCasa.appendChild(op);
+    });
+    wrap.appendChild(selCasa);
+
+    var txtNota = document.createElement('textarea');
+    txtNota.maxLength = 300;
+    txtNota.placeholder = 'O que foi feito (opcional)';
+    wrap.appendChild(txtNota);
+
+    var bt = el('button', '', 'Registrar');
+    bt.type = 'button';
+    wrap.appendChild(bt);
+    var aviso = el('p', 'meta-aviso');
+    wrap.appendChild(aviso);
+
+    bt.onclick = function () {
+      if (!inpData.value) {
+        aviso.className = 'meta-aviso err'; aviso.textContent = 'Escolha a data.';
+        return;
+      }
+      if (!sessaoAtualGlobal) {
+        aviso.className = 'meta-aviso err'; aviso.textContent = 'Sua sessão expirou. Recarregue a página.';
+        return;
+      }
+      bt.disabled = true;
+      fetch(WORKER + '/api/parceiro/registro', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': sessaoAtualGlobal.token },
+        body: JSON.stringify({
+          tipo: selTipo.value, data: inpData.value,
+          casa: selCasa.value || null, nota: txtNota.value.trim() || null,
+        }),
+      }).then(function (r) {
+        if (!r.ok) throw new Error('falhou');
+        aviso.className = 'meta-aviso ok'; aviso.textContent = 'Registrado.';
+        inpData.value = ''; txtNota.value = '';
+        carregaRegistros();
+      }).catch(function () {
+        aviso.className = 'meta-aviso err'; aviso.textContent = 'Não deu pra registrar agora. Tente de novo.';
+      }).finally(function () { bt.disabled = false; });
+    };
+    return wrap;
+  }
+
+  function montaListaRegistros(itens) {
+    var wrap = el('div', 'reg-lista');
+    if (!itens.length) {
+      wrap.appendChild(el('p', 'giro-sub', 'Nada registrado ainda neste ciclo.'));
+      return wrap;
+    }
+    itens.forEach(function (it) {
+      var linha = el('div', 'reg-item');
+      var esq = el('div');
+      var casaTxt = it.casa ? ' · ' + (CASAS_LABEL[it.casa] || it.casa) : '';
+      esq.appendChild(el('div', 'reg-item-txt', ROTULO_REGISTRO_TIPO[it.tipo] + casaTxt));
+      var sub = fmtData(it.data);
+      if (it.nota) sub += ' · ' + it.nota;
+      esq.appendChild(el('div', 'reg-item-sub', sub));
+      linha.appendChild(esq);
+      var tag = el('span', 'reg-tag ' + (it.confirmado ? 'ok' : 'pendente'),
+        it.confirmado ? 'Confirmado' : 'Aguardando confirmação');
+      linha.appendChild(tag);
+      wrap.appendChild(linha);
+    });
+    return wrap;
+  }
+
+  function carregaRegistros() {
+    var holder = document.getElementById('reg-holder');
+    if (!holder || !sessaoAtualGlobal) return;
+    fetch(WORKER + '/api/parceiro/registros', { headers: { 'X-Token': sessaoAtualGlobal.token } })
+      .then(function (r) { return r.ok ? r.json() : { registros: [] }; })
+      .then(function (j) {
+        ULTIMOS_REGISTROS = j.registros || [];
+        var lista = holder.querySelector('.reg-lista');
+        if (lista) lista.remove();
+        holder.appendChild(montaListaRegistros(ULTIMOS_REGISTROS));
+      })
+      .catch(function () { /* complemento — falha aqui não derruba a aba */ });
+  }
+
   function montaGiro(g, cor) {
     if (!g || !g.total) return null;
     var wrap = el('div');
@@ -1361,13 +1484,27 @@ function nomeArquivoSeguro(base) {
     }
     painelDesempenho.appendChild(el('p', 'rodape', rodapeTexto));
 
-    // Execução: menu placement (P6) já tem dado — carta e receitas. Visitas,
-    // treinamentos e revisão de conta (P8/P9) ainda não têm rota, e ficam como
-    // aviso declarado abaixo, em vez de fingir que a aba está completa.
+    // Execução: menu placement (P6) já tem dado — carta e receitas. Registro
+    // de visita/treinamento (P8) também: nasce vazio, carregaRegistros()
+    // preenche. Revisão de conta (P9): mesmo gerador de baixaResumoPdf(),
+    // agora enriquecido com positivação/execução/pendências — nunca um
+    // segundo mecanismo de PDF.
     var menuEl = montaMenu(d.menu);
     if (menuEl) painelExecucao.appendChild(menuEl);
-    painelExecucao.appendChild(el('p', 'vazio',
-      'Em breve: registro de visitas e treinamentos, e uma revisão de conta pronta para apresentar à sua indústria.'));
+    painelExecucao.appendChild(el('div', 'secao', 'Seu trabalho no ciclo'));
+    painelExecucao.appendChild(el('p', 'giro-sub',
+      'Registre visitas e treinamentos com a equipe — a coordenação confirma.'));
+    painelExecucao.appendChild(montaRegistroForm());
+    painelExecucao.appendChild(el('div', '', null)).id = 'reg-holder';
+
+    painelExecucao.appendChild(el('div', 'secao', 'Revisão de conta'));
+    painelExecucao.appendChild(el('p', 'giro-sub',
+      'Giro, share, positivação, presença na carta e pendências — tudo num PDF pronto pra apresentar à sua indústria.'));
+    var btRevisao = el('button', 'perfil-btn', 'Baixar revisão do ciclo (PDF)');
+    btRevisao.type = 'button';
+    btRevisao.style.marginTop = '9px';
+    btRevisao.onclick = baixaResumoPdf;
+    painelExecucao.appendChild(btRevisao);
 
     // "O que você enviou" (E3) fica na aba Conversa — nasce vazio,
     // carregaEnviados() preenche depois.
@@ -1505,6 +1642,48 @@ function nomeArquivoSeguro(base) {
       b.push({ tipo: 'sep' });
     }
 
+    // Positivação (P4/P9): resumo + só as células "nunca vendeu" — é a lista
+    // acionável, a matriz inteira não cabe (nem faz sentido) em texto corrido.
+    if (d.positivacao && (d.positivacao.produtos || []).length) {
+      var posR = d.positivacao.resumo || {};
+      b.push({ tipo: 'h2', texto: 'Positivação — SKU por casa' });
+      b.push({ texto: (posR.vende || 0) + ' vendendo, ' + (posR.parou || 0) + ' pararam, '
+        + (posR.nunca_vendeu || 0) + ' nunca venderam'
+        + (posR.sem_dado ? ', ' + posR.sem_dado + ' sem dado suficiente' : '') + '.' });
+      var casasPorSlug = {};
+      (d.positivacao.casas || []).forEach(function (c) { casasPorSlug[c.casa] = c.rotulo; });
+      d.positivacao.produtos.forEach(function (p) {
+        var faltando = Object.keys(p.por_casa || {}).filter(function (c) { return p.por_casa[c] === 'nunca_vendeu'; });
+        if (faltando.length) {
+          b.push({ tipo: 'li', texto: p.rotulo + ': nunca vendeu em '
+            + faltando.map(function (c) { return casasPorSlug[c] || c; }).join(', ') });
+        }
+      });
+      b.push({ tipo: 'sep' });
+    }
+
+    // Execução (P6/P8/P9): carta e trabalho registrado — o mesmo dado da aba.
+    if (d.menu) {
+      b.push({ tipo: 'h2', texto: 'Sua marca na carta' });
+      var cdPdf = d.menu.cardapio_digital;
+      if (cdPdf && (cdPdf.casas_com_foto || []).length) {
+        b.push({ texto: 'No cardápio digital: ' + cdPdf.casas_com_marca.length + ' de '
+          + cdPdf.casas_com_foto.length + ' casas.' });
+      }
+      var receitasPdf = d.menu.receitas || [];
+      b.push({ texto: 'Em receita de cocktail: ' + (receitasPdf.length ? receitasPdf.length : 'nenhuma') + '.' });
+      b.push({ tipo: 'sep' });
+    }
+    if (ULTIMOS_REGISTROS.length) {
+      b.push({ tipo: 'h2', texto: 'Visitas e treinamentos' });
+      ULTIMOS_REGISTROS.slice(0, 12).forEach(function (r) {
+        b.push({ tipo: 'li', texto: (ROTULO_REGISTRO_TIPO[r.tipo] || r.tipo) + ' em ' + fmtData(r.data)
+          + (r.casa ? ' · ' + (CASAS_LABEL[r.casa] || r.casa) : '')
+          + ' — ' + (r.confirmado ? 'confirmado' : 'aguardando confirmação') });
+      });
+      b.push({ tipo: 'sep' });
+    }
+
     b.push({ tipo: 'h1', texto: 'Como está o acordo' });
     if (c.previstas) {
       b.push({ texto: pct + '% concluído — ' + c.concluidas + ' de ' + c.previstas
@@ -1551,6 +1730,30 @@ function nomeArquivoSeguro(base) {
       cm.itens.forEach(function (i) {
         b.push({ tipo: 'li', texto: i.nome + ' — ' + (i.entregue ? 'registrada' : 'pendente') });
       });
+    }
+
+    // Pendências (P9): consolida o que falta dos DOIS lados — contrapartida
+    // não entregue, ruptura da última contagem, registro ainda sem
+    // confirmação. Sai por último, é o resumo executivo da revisão.
+    var pendencias = [];
+    (d.contrapartidas || []).forEach(function (i) {
+      if (i.status !== 'entregue') {
+        pendencias.push('Contrapartida: ' + (i.descricao || i.tipo) + (i.casa ? ' (' + i.casa + ')' : '')
+          + ' — ' + (ROTULO_STATUS[i.status] || i.status || 'pendente'));
+      }
+    });
+    (d.ruptura || []).forEach(function (a) {
+      pendencias.push('Ruptura: ' + a.produto + ' · ' + a.casa_rotulo + ' — estoque zerado na última contagem');
+    });
+    ULTIMOS_REGISTROS.forEach(function (r) {
+      if (!r.confirmado) {
+        pendencias.push('Registro aguardando confirmação: ' + (ROTULO_REGISTRO_TIPO[r.tipo] || r.tipo)
+          + ' em ' + fmtData(r.data));
+      }
+    });
+    if (pendencias.length) {
+      b.push({ tipo: 'h2', texto: 'Pendências' });
+      pendencias.forEach(function (t) { b.push({ tipo: 'li', texto: t }); });
     }
 
     b.push({ tipo: 'sep' });
@@ -1960,6 +2163,7 @@ function nomeArquivoSeguro(base) {
           renderPill();
           buscarAgenda();
           carregaEnviados();
+          carregaRegistros();
         });
       })
       .catch(function () { erro.textContent = 'Sem conexão. Tente de novo.'; });

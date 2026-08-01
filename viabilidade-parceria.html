@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Viabilidade de Parceria · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=9892b1db5a63">
+<link rel="stylesheet" href="portal.css?v=a5dbe9eb6773">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -549,12 +549,66 @@ window.msgAcessoNegado = function (nomePagina) {
   #vp-corpo .vp-msg { font-size:12.5px; margin:10px 0; min-height:1em; }
   #vp-corpo .vp-msg.err { color:var(--vermelho); }
   #vp-corpo .vp-msg.ok { color:var(--verde); }
+
+  /* comparador (E7) */
+  #vp-corpo .vp-comp-topo { display:flex; align-items:center; justify-content:space-between;
+      gap:12px; flex-wrap:wrap; margin:0 0 10px; }
+  #vp-corpo .vp-comp-nota { font-size:11.5px; color:var(--text-3); }
+  #vp-corpo .vp-comp-base { font-size:11.5px; color:var(--text-3); display:flex; align-items:center; gap:6px; }
+  #vp-corpo .vp-comp-base select { padding:6px 8px; font-size:12.5px; border-radius:8px;
+      border:1px solid var(--border); background:var(--card); color:var(--text); font-family:inherit; }
+  #vp-corpo .vp-comp-linha.vencedora td { background:rgba(159,225,203,.07); }
+  #vp-corpo .vp-comp-pos { display:inline-block; min-width:18px; font-weight:700; color:var(--text-3); }
+  #vp-corpo .vp-comp-linha.vencedora .vp-comp-pos { color:var(--verde); }
+  #vp-corpo .vp-comp-marca { font-weight:600; }
+  #vp-corpo .vp-comp-abrir { background:none; border:none; padding:0; font:inherit; font-size:11px;
+      color:var(--acc); text-decoration:underline; cursor:pointer; display:block; margin-top:2px; }
+  #vp-corpo .vp-comp-tag { display:inline-block; font-size:10px; padding:1px 6px; border-radius:999px;
+      background:var(--bg); color:var(--text-3); margin-right:3px; }
+  #vp-corpo .vp-comp-aviso { display:flex; align-items:flex-start; gap:8px; font-size:12px;
+      color:var(--text-2); padding:8px 11px; border:1px solid var(--border); border-radius:9px;
+      background:var(--card); margin-top:8px; }
+  #vp-corpo .vp-comp-aviso .d { width:8px; height:8px; border-radius:50%; flex:none; margin-top:4px; }
+  #vp-corpo .vp-comp-aviso .d.am { background:var(--amarelo); }
+  #vp-corpo .vp-comp-aviso .d.vm { background:var(--vermelho); }
+  #vp-corpo .vp-comp-aviso b { color:var(--text); }
 </style>
 
 <div class="vp-chips" id="vp-chips"></div>
 <p class="vp-msg" id="vp-carrega-msg" role="status" aria-live="polite"></p>
 
 <div id="vp-conteudo" style="display:none">
+
+<!-- Comparador (E7). Só aparece com 2+ simulações salvas — com uma só não há
+     o que comparar, e a seção vazia seria ruído em toda abertura da tela. -->
+<div class="vp-sec" id="vp-comp-sec" style="display:none">
+  <div class="vp-h"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M8 20h8"/><path d="M3 8h18"/><path d="M6.5 8 3 14h7z"/><path d="M17.5 8 14 14h7z"/></svg> Comparar propostas salvas</div>
+  <div class="vp-comp-topo">
+    <span class="vp-comp-nota" id="vp-comp-base-nota"></span>
+    <label class="vp-comp-base">Base de volume
+      <select id="vp-comp-base">
+        <option value="medido">medido (piso)</option>
+        <option value="extrapolado">extrapolado</option>
+      </select>
+    </label>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="vp-tb">
+      <thead><tr>
+        <th style="width:20%">Marca</th>
+        <th class="num">Saldo 12m</th>
+        <th class="num">Investimento</th>
+        <th class="num">Impacto CMV</th>
+        <th class="num">Volume</th>
+        <th class="num">Vira no mês</th>
+        <th>Confiança</th>
+        <th>Exclusividade</th>
+      </tr></thead>
+      <tbody id="vp-comp-linhas"></tbody>
+    </table>
+  </div>
+  <div id="vp-comp-avisos"></div>
+</div>
 
 <div class="vp-sec">
   <div class="vp-h"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg> A proposta</div>
@@ -568,6 +622,13 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="vp-campo"><label for="vpf-compra-minima">Compra mínima obrigatória (R$)</label><input id="vpf-compra-minima" type="number" min="0" step="1" placeholder="não declarada"></div>
     <div class="vp-campo"><label for="vpf-investimento-perdido">Investimento que se perde (R$)</label><input id="vpf-investimento-perdido" type="number" min="0" step="1" placeholder="não declarada"></div>
     <div class="vp-campo"><label for="vpf-contrapartidas">Contrapartidas valoradas (R$)</label><input id="vpf-contrapartidas" type="number" min="0" step="1" placeholder="não declarada"></div>
+    <!-- Exclusividade é DECLARADA aqui, nunca inferida: medido em 2026-07-31,
+         nem config/parceiros.json (categorias/exclusividade vêm null nas 3
+         marcas) nem contratos.json (zero ocorrências de "exclusiv") guardam
+         isso. Sem este campo o comparador não teria como saber que duas
+         propostas brigam pela mesma categoria — e inventar o conflito seria
+         o mesmo erro que a tela inteira existe pra evitar. -->
+    <div class="vp-campo"><label for="vpf-exclusividade">Exclusividade exigida</label><input id="vpf-exclusividade" type="text" maxlength="120" placeholder="ex.: gin, bourbon"></div>
   </div>
 </div>
 
@@ -987,8 +1048,15 @@ if (typeof module !== "undefined" && module.exports) {
   function propostaDefault() {
     return {
       marca: '', investimento: null, parcelas: 1, base_volume: 'medido',
-      casas_acordo: [], trocas: [], linhas: {},
+      casas_acordo: [], trocas: [], linhas: {}, exclusividade: [],
     };
+  }
+  // "gin, Bourbon " -> ["gin","bourbon"]. Normaliza pra o cruzamento entre
+  // propostas casar "Gin" com "gin " — comparar cru perderia o conflito.
+  function listaExclusividade(txt) {
+    return String(txt || '').split(',')
+      .map(function (s) { return s.trim().toLowerCase(); })
+      .filter(Boolean);
   }
   function trocaDefault() {
     return { cocktail: '', de_id: '', para_id: '', dose_ml: 50, escopo: 'acordo' };
@@ -1044,6 +1112,7 @@ if (typeof module !== "undefined" && module.exports) {
       if (!res.ok) return;
       SIMULACOES = res.corpo.simulacoes || [];
       renderChips();
+      atualizaComparador();
     });
   }
 
@@ -1136,6 +1205,7 @@ if (typeof module !== "undefined" && module.exports) {
     document.getElementById('vpf-compra-minima').value = (proposta.linhas || {}).compra_minima == null ? '' : proposta.linhas.compra_minima;
     document.getElementById('vpf-investimento-perdido').value = (proposta.linhas || {}).investimento_perdido == null ? '' : proposta.linhas.investimento_perdido;
     document.getElementById('vpf-contrapartidas').value = (proposta.linhas || {}).contrapartidas == null ? '' : proposta.linhas.contrapartidas;
+    document.getElementById('vpf-exclusividade').value = (proposta.exclusividade || []).join(', ');
     sincronizaCasasAcordo();
   }
 
@@ -1151,6 +1221,12 @@ if (typeof module !== "undefined" && module.exports) {
         renderTudo();
       };
     });
+    document.getElementById('vpf-exclusividade').oninput = function () {
+      proposta.exclusividade = listaExclusividade(this.value);
+    };
+    document.getElementById('vp-comp-base').onchange = function () {
+      COMP_BASE = this.value; renderComparador();
+    };
     document.getElementById('vpt-add').onclick = function () { proposta.trocas.push(trocaDefault()); renderTrocas(); renderTudo(); };
     document.getElementById('vp-nova').onclick = resetProposta;
     document.getElementById('vp-salvar').onclick = salvar;
@@ -1589,6 +1665,194 @@ if (typeof module !== "undefined" && module.exports) {
     if (!wrap2.children.length) selo('ok', 'Sem pendência conhecida nas trocas configuradas.');
   }
 
+  // ==== comparador de propostas (E7) ====
+  // Duas decisões que sustentam este bloco:
+  //
+  // 1. RECOMPUTA cada proposta salva contra o corpus DE HOJE, em vez de exibir
+  //    o `resultado` congelado no momento em que foi salva. O corpus é
+  //    regenerado todo dia pelo robô das 7h — comparar um saldo calculado em
+  //    julho com outro calculado em setembro é comparar volumes diferentes
+  //    disfarçados de comparação de propostas. Quando o recomputado diverge do
+  //    que foi salvo, isso vira AVISO (é informação: "valia X, hoje vale Y"),
+  //    nunca uma correção silenciosa.
+  // 2. TODAS na mesma base de volume (medido/extrapolado), escolhida aqui, não
+  //    a que cada uma usou quando foi salva. Uma proposta salva em extrapolado
+  //    ao lado de outra em medido produz uma diferença que é do MÉTODO, não do
+  //    negócio.
+  var COMP_CACHE = {};   // id -> {proposta, resultado} do detalhe da simulação
+  var COMP_BASE = 'medido';
+
+  function carregaPropostasSalvas() {
+    var faltando = SIMULACOES.filter(function (s) { return !COMP_CACHE[s.id]; });
+    if (!faltando.length) return Promise.resolve();
+    return Promise.all(faltando.map(function (s) {
+      return fetchAPI('/api/viabilidade/simulacoes?id=' + encodeURIComponent(s.id))
+        .then(function (res) { if (res.ok) COMP_CACHE[s.id] = res.corpo; })
+        .catch(function () { /* uma que falhe não derruba a comparação das outras */ });
+    }));
+  }
+
+  function atualizaComparador() {
+    var sec = document.getElementById('vp-comp-sec');
+    if (!BASE || SIMULACOES.length < 2) { sec.style.display = 'none'; return; }
+    carregaPropostasSalvas().then(function () {
+      sec.style.display = '';
+      renderComparador();
+    });
+  }
+
+  function renderComparador() {
+    var corpoTb = document.getElementById('vp-comp-linhas');
+    var avisos = document.getElementById('vp-comp-avisos');
+    corpoTb.innerHTML = '';
+    avisos.innerHTML = '';
+
+    var linhas = [];
+    var semDetalhe = [];
+    SIMULACOES.forEach(function (s) {
+      var det = COMP_CACHE[s.id];
+      if (!det || !det.proposta) { semDetalhe.push(s.marca || '(sem marca)'); return; }
+      var p = Object.assign({}, det.proposta, { base_volume: COMP_BASE });
+      var r = simulaSeguro(BASE, p);
+      if (!r) { semDetalhe.push(s.marca || '(sem marca)'); return; }
+      // A OUTRA base, só pra saber se o veredito depende do método. Achado
+      // real ao testar: uma proposta no NIP (2 meses de venda) dá saldo
+      // POSITIVO na base medida e NEGATIVO na extrapolada — o sinal vira.
+      // Quem olhasse só a base padrão assinaria sem saber disso.
+      var outraBase = COMP_BASE === 'medido' ? 'extrapolado' : 'medido';
+      var rOutra = simulaSeguro(BASE, Object.assign({}, det.proposta, { base_volume: outraBase }));
+      linhas.push({
+        id: s.id, marca: s.marca || '(sem marca)', r: r,
+        saldoSalvo: s.saldo,
+        saldoOutraBase: rOutra ? rOutra.saldo : null,
+        outraBase: outraBase,
+        exclusividade: (det.proposta.exclusividade || []).map(function (x) { return String(x).toLowerCase(); }),
+      });
+    });
+
+    // Ordem: melhor saldo primeiro (o plano pede "ordenadas por saldo líquido").
+    // Saldo nulo (nenhuma troca calculável) vai pro fim — não é "zero".
+    linhas.sort(function (a, b) {
+      if (a.r.saldo == null) return 1;
+      if (b.r.saldo == null) return -1;
+      return b.r.saldo - a.r.saldo;
+    });
+
+    linhas.forEach(function (ln, i) {
+      var tr = document.createElement('tr');
+      tr.className = 'vp-comp-linha' + (i === 0 && ln.r.saldo != null ? ' vencedora' : '');
+      var virada = ln.r.curva && ln.r.curva.ponto_virada_mes;
+      var tdMarca = document.createElement('td');
+      var pos = document.createElement('span');
+      pos.className = 'vp-comp-pos'; pos.textContent = (i + 1) + '.';
+      var nome = document.createElement('span');
+      nome.className = 'vp-comp-marca'; nome.textContent = ln.marca;
+      tdMarca.appendChild(pos); tdMarca.appendChild(nome);
+      var abrir = document.createElement('button');
+      abrir.type = 'button'; abrir.className = 'vp-comp-abrir'; abrir.textContent = 'abrir';
+      abrir.onclick = function () { carregaSimulacao(ln.id); };
+      tdMarca.appendChild(abrir);
+      tr.appendChild(tdMarca);
+
+      function cel(txt, classe) {
+        var td = document.createElement('td');
+        if (classe) td.className = classe;
+        td.textContent = txt;
+        return td;
+      }
+      tr.appendChild(cel(rsSinal(ln.r.saldo), 'num'));
+      tr.appendChild(cel(rs(ln.r.investimento), 'num'));
+      // Sinal INVERTIDO de propósito: `drenagem_total` é positivo quando a
+      // troca encarece, mas na tela o que importa é o efeito no caixa, com a
+      // mesma convenção do saldo (negativo = contra nós). Sem isso a coluna
+      // ficava ambígua — uma troca que ECONOMIZA saía com hífen cru na frente,
+      // indistinguível de uma que drena (achado ao testar com uma proposta
+      // cuja troca barateia a receita).
+      tr.appendChild(cel(ln.r.drenagem_total == null ? '—' : rsSinal(-ln.r.drenagem_total), 'num'));
+      tr.appendChild(cel(num(ln.r.volume_afetado) + ' un', 'num'));
+      tr.appendChild(cel(virada ? String(virada) : '—', 'num'));
+      tr.appendChild(cel(ln.r.confianca || '—'));
+
+      var tdEx = document.createElement('td');
+      if (ln.exclusividade.length) {
+        ln.exclusividade.forEach(function (e) {
+          var t = document.createElement('span');
+          t.className = 'vp-comp-tag'; t.textContent = e;
+          tdEx.appendChild(t);
+        });
+      } else {
+        tdEx.textContent = '—';
+      }
+      tr.appendChild(tdEx);
+      corpoTb.appendChild(tr);
+    });
+
+    document.getElementById('vp-comp-base-nota').textContent =
+      linhas.length + ' proposta(s) recalculada(s) com o corpus de hoje, todas na mesma base.';
+
+    function aviso(cor, html) {
+      var d = document.createElement('div');
+      d.className = 'vp-comp-aviso';
+      d.innerHTML = '<span class="d ' + cor + '"></span><span>' + html + '</span>';
+      avisos.appendChild(d);
+    }
+
+    // Conflito de exclusividade — só o que foi DECLARADO em cada proposta.
+    var conflitos = [];
+    for (var i = 0; i < linhas.length; i++) {
+      for (var j = i + 1; j < linhas.length; j++) {
+        var comum = linhas[i].exclusividade.filter(function (x) {
+          return linhas[j].exclusividade.indexOf(x) >= 0;
+        });
+        if (comum.length) conflitos.push({ a: linhas[i], b: linhas[j], cats: comum });
+      }
+    }
+    conflitos.forEach(function (c) {
+      aviso('vm', '<b>' + escTxt(c.a.marca) + '</b> e <b>' + escTxt(c.b.marca) +
+        '</b> disputam a mesma exclusividade (' + escTxt(c.cats.join(', ')) +
+        ') — assinar uma exclui a outra.');
+    });
+
+    // Sem NENHUMA declaração, o comparador diz que não sabe. Ele nunca afirma
+    // que as propostas podem coexistir: exclusividade não existe como dado em
+    // config/parceiros.json nem em contratos.json (medido 2026-07-31).
+    var comDeclaracao = linhas.filter(function (l) { return l.exclusividade.length; }).length;
+    if (!comDeclaracao && linhas.length >= 2) {
+      aviso('am', 'Nenhuma proposta declarou exclusividade — o comparador <b>não sabe</b> se elas ' +
+        'podem ser assinadas juntas. Preencha "Exclusividade exigida" em cada uma para cruzar.');
+    } else if (comDeclaracao && comDeclaracao < linhas.length) {
+      aviso('am', 'Só ' + comDeclaracao + ' de ' + linhas.length + ' propostas declararam exclusividade — ' +
+        'o cruzamento cobre apenas essas.');
+    }
+
+    // Veredito que muda de sinal conforme a base — é o caso mais perigoso da
+    // tela: a proposta parece boa no piso medido e vira prejuízo ao completar
+    // o ano, ou o contrário. Quem não tocasse no seletor nunca saberia.
+    linhas.forEach(function (ln) {
+      if (ln.r.saldo == null || ln.saldoOutraBase == null) return;
+      if ((ln.r.saldo >= 0) === (ln.saldoOutraBase >= 0)) return;
+      aviso('vm', '<b>' + escTxt(ln.marca) + '</b> muda de lado conforme a base: ' +
+        rsSinal(ln.r.saldo) + ' em base ' + escTxt(COMP_BASE) + ', ' +
+        rsSinal(ln.saldoOutraBase) + ' em base ' + escTxt(ln.outraBase) +
+        '. O veredito depende do método — não assine por este número sozinho.');
+    });
+
+    // Divergência entre o que foi salvo e o que vale hoje.
+    linhas.forEach(function (ln) {
+      if (ln.saldoSalvo == null || ln.r.saldo == null) return;
+      var dif = ln.r.saldo - ln.saldoSalvo;
+      if (Math.abs(dif) < 1) return;
+      aviso('am', '<b>' + escTxt(ln.marca) + '</b> valia ' + rsSinal(ln.saldoSalvo) +
+        ' quando foi salva; com o dado de hoje vale ' + rsSinal(ln.r.saldo) +
+        ' (' + sinal(dif) + rs(Math.abs(dif)) + ').');
+    });
+
+    if (semDetalhe.length) {
+      aviso('vm', 'Não deu pra recalcular: <b>' + escTxt(semDetalhe.join(', ')) +
+        '</b>. Essas propostas ficaram fora da comparação (nunca contadas como zero).');
+    }
+  }
+
   // ==== salvar ====
   function salvar() {
     if (salvando) return;
@@ -1613,6 +1877,10 @@ if (typeof module !== "undefined" && module.exports) {
         if (!res.ok) { msg.className = 'vp-msg err'; msg.textContent = res.corpo && res.corpo.erro ? res.corpo.erro : 'Não deu pra salvar (' + res.status + ').'; return; }
         if (!current.id) current.id = res.corpo.id;
         msg.className = 'vp-msg ok'; msg.textContent = 'Simulação salva.';
+        // O detalhe em cache virou passado no instante em que esta gravou —
+        // sem invalidar, o comparador seguiria mostrando a versão anterior
+        // desta mesma proposta.
+        delete COMP_CACHE[current.id];
         carregaSimulacoes();
       })
       .catch(function () {
@@ -2746,7 +3014,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '9892b1db5a63';
+  var BUILD = 'a5dbe9eb6773';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

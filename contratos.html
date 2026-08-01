@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Contratos On Trade · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=9892b1db5a63">
+<link rel="stylesheet" href="portal.css?v=a5dbe9eb6773">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -441,6 +441,8 @@ window.msgAcessoNegado = function (nomePagina) {
     style="background:none;border:none;padding:10px 4px;font-size:14px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">Contrapartidas</button>
   <button type="button" class="ct-aba-btn" data-aba="recebido"
     style="background:none;border:none;padding:10px 4px;font-size:14px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">Recebido<span id="ct-badge-rec" style="display:none;margin-left:6px;background:var(--acc);color:var(--bg);border-radius:999px;padding:1px 7px;font-size:11px"></span></button>
+  <button type="button" class="ct-aba-btn" data-aba="registros"
+    style="background:none;border:none;padding:10px 4px;font-size:14px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">Registros</button>
 </div>
 
 <div id="ct-aba-vigencia">
@@ -617,6 +619,32 @@ window.msgAcessoNegado = function (nomePagina) {
 <p class="ct-vazio" id="rec-vazio" style="display:none">Nada recebido nesse filtro.</p>
 </div><!-- ct-aba-recebido -->
 
+<div id="ct-aba-registros" style="display:none">
+<style>
+  .reg2-marcas { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .reg2-marca-btn { padding:8px 14px; border-radius:999px; font-size:13px; cursor:pointer;
+      border:1px solid var(--border); background:var(--card); color:var(--text-2); }
+  .reg2-marca-btn.ativo { color:var(--bg); border-color:transparent; }
+  .reg2-card { background:var(--card); border:1px solid var(--border); border-radius:12px;
+      padding:13px 15px; margin-bottom:9px; }
+  .reg2-topo { display:flex; align-items:center; gap:10px; justify-content:space-between; }
+  .reg2-tit { font-size:14.5px; }
+  .reg2-meta { font-size:12px; color:var(--text-2); margin-top:3px; }
+  .reg2-tag { display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px; flex:none; }
+  .reg2-tag.pendente { background:#3a2d12; color:var(--amarelo); }
+  .reg2-tag.ok { background:#17352b; color:var(--verde); }
+  .reg2-acoes { margin-top:9px; }
+  .reg2-acoes button { padding:7px 13px; border-radius:8px; font-size:12.5px; cursor:pointer;
+      border:1px solid var(--border); background:var(--bg); color:var(--text); }
+</style>
+
+<p class="sub" style="margin:0 0 14px">Visitas e treinamentos que a marca registrou no painel dela. Confirmar vira evidência do trabalho feito.</p>
+
+<div class="reg2-marcas" id="reg2-marcas"></div>
+<div id="reg2-lista"></div>
+<p class="ct-vazio" id="reg2-vazio" style="display:none">Nenhuma marca com registro ainda.</p>
+</div><!-- ct-aba-registros -->
+
 </div><!-- ct-corpo -->
 
 <script>
@@ -643,8 +671,10 @@ window.msgAcessoNegado = function (nomePagina) {
       document.getElementById('ct-aba-vigencia').style.display = aba === 'vigencia' ? '' : 'none';
       document.getElementById('ct-aba-contra').style.display = aba === 'contra' ? '' : 'none';
       document.getElementById('ct-aba-recebido').style.display = aba === 'recebido' ? '' : 'none';
+      document.getElementById('ct-aba-registros').style.display = aba === 'registros' ? '' : 'none';
       if (aba === 'contra' && window._ctpIniciar) window._ctpIniciar();
       if (aba === 'recebido' && window._recIniciar) window._recIniciar();
+      if (aba === 'registros' && window._reg2Iniciar) window._reg2Iniciar();
     });
   });
 
@@ -1188,6 +1218,125 @@ window.msgAcessoNegado = function (nomePagina) {
         if (!s) return;
         st.sessao = s;
       }
+      if (st.itens === null) carregar(); else desenha();
+    };
+  })();
+
+  // --- Aba Registros (P8, PLANO_PARCEIRO_CICLO.md) ---------------------------
+  // Visita/treinamento que a marca registrou no painel dela. Confirmar é a
+  // única escrita desta aba — a fila é lida direto de
+  // parceiro:registros:<marca> no KV do contagem-worker (mesmo WORKER da
+  // aba Vigência/Contrapartidas, rota nova).
+  (function () {
+    var MARCAS = {"redbull": {"nome": "Red Bull", "cor": "#0A2A5E", "casas": ["nip"]}, "diageo": {"nome": "Diageo", "cor": "#1D4A3C", "casas": ["nip", "gra-bistro", "1929"]}, "beamsuntory": {"nome": "Beam Suntory", "cor": "#B0741A", "casas": ["iz"]}};
+    var CASAS = {"iz": "Iz", "gra-bistro": "Grá", "1929": "1929", "famu": "FAMU", "fulles": "Fulles", "nip": "Nip"};
+    var ROTULO_TIPO = { visita: 'Visita', treinamento: 'Treinamento' };
+    var marcasSlugs = Object.keys(MARCAS);
+    var st = { sessao: null, marca: marcasSlugs[0] || null, itens: null };
+
+    var elMarcas = document.getElementById('reg2-marcas');
+    var elLista = document.getElementById('reg2-lista');
+    var elVazio = document.getElementById('reg2-vazio');
+
+    if (!marcasSlugs.length) {
+      elVazio.style.display = '';
+      window._reg2Iniciar = function () {};
+      return;
+    }
+
+    function renderMarcas() {
+      elMarcas.innerHTML = '';
+      marcasSlugs.forEach(function (slug) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'reg2-marca-btn' + (slug === st.marca ? ' ativo' : '');
+        b.textContent = MARCAS[slug].nome;
+        if (slug === st.marca) b.style.background = MARCAS[slug].cor || 'var(--acc)';
+        b.onclick = function () { st.marca = slug; st.itens = null; renderMarcas(); carregar(); };
+        elMarcas.appendChild(b);
+      });
+    }
+
+    function card(it) {
+      var c = document.createElement('div'); c.className = 'reg2-card';
+      var topo = document.createElement('div'); topo.className = 'reg2-topo';
+      var esq = document.createElement('div');
+      var casaTxt = it.casa && CASAS[it.casa] ? ' · ' + CASAS[it.casa] : '';
+      var tit = document.createElement('div'); tit.className = 'reg2-tit';
+      tit.textContent = (ROTULO_TIPO[it.tipo] || it.tipo) + casaTxt;
+      esq.appendChild(tit);
+      var meta = document.createElement('div'); meta.className = 'reg2-meta';
+      var metaTxt = fmtData(it.data);
+      if (it.criado_por) metaTxt += ' · registrado por ' + it.criado_por;
+      meta.textContent = metaTxt;
+      esq.appendChild(meta);
+      if (it.nota) {
+        var nota = document.createElement('div'); nota.className = 'reg2-meta';
+        nota.style.marginTop = '6px'; nota.textContent = it.nota;
+        esq.appendChild(nota);
+      }
+      topo.appendChild(esq);
+      var tag = document.createElement('span');
+      tag.className = 'reg2-tag ' + (it.confirmado ? 'ok' : 'pendente');
+      tag.textContent = it.confirmado ? 'Confirmado' : 'Pendente';
+      topo.appendChild(tag);
+      c.appendChild(topo);
+      if (it.confirmado) {
+        var confMeta = document.createElement('div'); confMeta.className = 'reg2-meta';
+        confMeta.style.marginTop = '8px';
+        confMeta.textContent = 'Confirmado por ' + (it.confirmado_por || 'coordenação')
+          + ' em ' + fmtData((it.confirmado_em || '').slice(0, 10)) + '.';
+        c.appendChild(confMeta);
+      } else {
+        var acoes = document.createElement('div'); acoes.className = 'reg2-acoes';
+        var bt = document.createElement('button'); bt.type = 'button'; bt.textContent = 'Confirmar';
+        bt.onclick = function () {
+          bt.disabled = true;
+          fetch(WORKER + '/api/parceiro/registro/confirmar', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': st.sessao.token },
+            body: JSON.stringify({ marca: st.marca, id: it.id }),
+          }).then(function (r) {
+            if (!r.ok) throw new Error('falhou');
+            st.itens = null; carregar();
+          }).catch(function () { bt.disabled = false; });
+        };
+        acoes.appendChild(bt);
+        c.appendChild(acoes);
+      }
+      return c;
+    }
+
+    function desenha() {
+      elLista.innerHTML = '';
+      var itens = st.itens || [];
+      if (!itens.length) {
+        var vazio = document.createElement('p'); vazio.className = 'ct-vazio';
+        vazio.textContent = 'Nenhum registro desta marca ainda.';
+        elLista.appendChild(vazio);
+        return;
+      }
+      // Pendente primeiro — é o que exige ação da coordenação.
+      itens.slice().sort(function (a, b) {
+        if (a.confirmado !== b.confirmado) return a.confirmado ? 1 : -1;
+        return (b.data || '').localeCompare(a.data || '');
+      }).forEach(function (it) { elLista.appendChild(card(it)); });
+    }
+
+    function carregar() {
+      if (!st.marca) return;
+      fetch(WORKER + '/api/parceiro/registros?marca=' + encodeURIComponent(st.marca),
+        { headers: { 'X-Token': st.sessao.token } })
+        .then(function (r) { return r.ok ? r.json() : { registros: [] }; })
+        .then(function (j) { st.itens = j.registros || []; desenha(); })
+        .catch(function () { st.itens = []; desenha(); });
+    }
+
+    window._reg2Iniciar = function () {
+      if (!st.sessao) {
+        var s = window.sessaoLer();
+        if (!s) return;
+        st.sessao = s;
+      }
+      if (!elMarcas.children.length) renderMarcas();
       if (st.itens === null) carregar(); else desenha();
     };
   })();
@@ -2307,7 +2456,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '9892b1db5a63';
+  var BUILD = 'a5dbe9eb6773';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
