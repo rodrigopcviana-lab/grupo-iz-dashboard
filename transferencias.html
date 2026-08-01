@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Buscador entre casas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=a4e263cef64b">
+<link rel="stylesheet" href="portal.css?v=2f49bbb344c4">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -440,6 +440,18 @@ window.msgAcessoNegado = function (nomePagina) {
     background:var(--card); border:1px solid var(--border); color:var(--text-3); }
   .tr-fonte.velha { border-color:#7a5c22; color:#f0cf8a; }
   .tr-fonte.sem { border-color:#6b3540; color:#ff9aa8; }
+  /* C3: lacuna de mínimo, só chefe/coord. Nota discreta, não alarme — é
+     cadastro pendente, não erro (mesma régua do "abaixo do mínimo" não ser
+     vermelho: mostrar demais treina o olho a ignorar). */
+  .tr-min { margin:14px 0 0; padding:10px 12px; border-radius:10px;
+    background:var(--card); border:1px dashed var(--border); }
+  .tr-min .tit { font-size:11px; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--text-3); margin:0 0 7px; }
+  .tr-min-linha { display:flex; align-items:center; gap:8px; padding:3px 0; font-size:12.5px; }
+  .tr-min-linha .nm { flex:1; min-width:0; }
+  .tr-min-linha .pct { font-variant-numeric:tabular-nums; color:var(--text-2); min-width:34px; text-align:right; }
+  .tr-min-linha a { color:var(--acento, #8fd6a8); text-decoration:none; white-space:nowrap; }
+  .tr-min-linha a:hover { text-decoration:underline; }
   .tr-item { background:var(--card); border:1px solid var(--border); border-radius:12px;
     padding:12px 14px; margin:0 0 10px; }
   .tr-item h3 { margin:0 0 2px; font-size:16px; }
@@ -581,6 +593,10 @@ window.msgAcessoNegado = function (nomePagina) {
   </details>
   <p class="tr-nota">Este buscador responde <b>quem provavelmente tem</b>, não quem tem agora: a contagem de cada casa é semanal, e o que está &ldquo;guardado&rdquo; é a soma das colunas de armazenagem (estoque, pulmão, corredor) — a contagem não separa garrafa lacrada de aberta. Confirme com a casa antes de buscar.</p>
   <p class="tr-nota">Sobre o <b>mínimo</b>: ele é o alvo de reposição da casa, não um piso proibido. Quase dois terços dos itens ficam abaixo dele na semana, então &ldquo;abaixo do mínimo&rdquo; aqui é o estado comum — quem manda é a quantidade guardada. O Grá não tem mínimo cadastrado, e por isso aparece sem folga em vez de aparecer com folga zero.</p>
+  <!-- C3 (Onda 2, 2026-07-31): só chefe/coord, porque só eles podem cadastrar
+       mínimo (gate do próprio Worker em /api/gravar). Vazio pra quem não é —
+       populado por JS, nunca hardcoded (dado real, calculado no gerador). -->
+  <div id="tr-minimo" hidden></div>
 </div>
 </div>
 
@@ -682,6 +698,49 @@ window.msgAcessoNegado = function (nomePagina) {
         t = el('span', 'tr-fonte' + (c.velha ? ' velha' : ''), txt);
       }
       cx.appendChild(t);
+    });
+  }
+
+  // C3 (Onda 2, E6 do plano): a lacuna de mínimo vira tarefa visível, não só
+  // nota de rodapé — mas só pra quem PODE cadastrar (chefe/coord, mesmo gate
+  // de /api/gravar no Worker). Equipe/bartender não veem: mostrar uma tarefa
+  // que não conseguem executar seria ruído, não ajuda.
+  function renderMinimo() {
+    var cx = document.getElementById('tr-minimo');
+    if (!SESSAO || !['chefe', 'coord'].includes(SESSAO.nivel)) { cx.hidden = true; return; }
+
+    var slugs = Object.keys(DADOS.casas || {}).filter(function (s) {
+      return !DADOS.casas[s].sem_contagem;
+    });
+    // Chefe com casa concreta só cadastra a própria (mesma trava de sempre —
+    // /api/gravar grava na casa da SESSÃO, não numa escolhida na tela).
+    // Chefe/coord "amplos" (casa '*', ou senha compartilhada sem casa) veem
+    // as 6 — não há uma casa só pra apontar.
+    var amplo = SESSAO.casa === '*' || SESSAO.nivel === 'coord' || !SESSAO.casa;
+    if (!amplo) slugs = slugs.filter(function (s) { return s === SESSAO.casa; });
+    if (!slugs.length) { cx.hidden = true; return; }
+
+    // Só mostra o que é lacuna de verdade — casa com cobertura completa não
+    // vira "tarefa" (nada pra fazer).
+    var comLacuna = slugs.filter(function (s) {
+      return typeof DADOS.casas[s].cobertura_minimo === 'number' && DADOS.casas[s].cobertura_minimo < 1;
+    }).sort(function (a, b) {
+      return DADOS.casas[a].cobertura_minimo - DADOS.casas[b].cobertura_minimo;
+    });
+    if (!comLacuna.length) { cx.hidden = true; return; }
+
+    cx.hidden = false;
+    cx.innerHTML = '';
+    cx.className = 'tr-min';
+    cx.appendChild(el('p', 'tit', 'Mínimo cadastrado, por casa'));
+    comLacuna.forEach(function (s) {
+      var linha = el('div', 'tr-min-linha');
+      linha.appendChild(el('span', 'nm', nomeCasa(s)));
+      linha.appendChild(el('span', 'pct', Math.round(DADOS.casas[s].cobertura_minimo * 100) + '%'));
+      var a = el('a', null, 'Cadastrar →');
+      a.href = 'gestao-produto.html?tab=contagem';
+      linha.appendChild(a);
+      cx.appendChild(linha);
     });
   }
 
@@ -925,6 +984,7 @@ window.msgAcessoNegado = function (nomePagina) {
     gate.hidden = true;
     wrap.hidden = false;
     renderFontes();
+    renderMinimo();
     // Resumo de UMA linha no topo: o detalhe por casa está recolhido abaixo,
     // mas o que muda a leitura (contagem velha, casa sem mínimo, casa sem
     // fonte) não pode ficar escondido atrás de um clique.
@@ -2247,7 +2307,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a4e263cef64b';
+  var BUILD = '2f49bbb344c4';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

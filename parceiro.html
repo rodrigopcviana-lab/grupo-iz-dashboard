@@ -240,6 +240,18 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .reg-tag.ok{background:#9fe1cb33;color:var(--verde)}
 .reg-toggle{font-size:12.5px;color:var(--acc);background:none;border:none;cursor:pointer;padding:0;margin-top:10px}
 
+/* --- avisos configuráveis (P10) --- */
+.av-linha{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 0;border-top:1px solid var(--border)}
+.av-linha:last-of-type{border-bottom:1px solid var(--border)}
+.av-nome{font-size:13.5px}
+.av-desc{font-size:11.5px;color:var(--text-3);margin-top:2px;line-height:1.45}
+.av-sw{position:relative;width:40px;height:23px;flex:none;border-radius:999px;background:var(--bg);
+  border:1px solid var(--border);cursor:pointer;padding:0;transition:background .15s}
+.av-sw[aria-checked="true"]{background:var(--acc);border-color:var(--acc)}
+.av-sw::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
+  background:var(--text-3);transition:transform .15s,background .15s}
+.av-sw[aria-checked="true"]::after{transform:translateX(17px);background:#241a06}
+
 /* --- abas (P1, PLANO_PARCEIRO_CICLO.md §7-8): a página deixa de ser uma
    tela só. Mural é a home (resumo + próximos passos); Desempenho concentra
    o que já existe hoje (o acordo, backbar, cardápio, compra mínima) — as
@@ -1182,6 +1194,69 @@ function nomeArquivoSeguro(base) {
       .catch(function () { /* complemento — falha aqui não derruba a aba */ });
   }
 
+  // --- Avisos configuráveis (P10) -------------------------------------------
+  // A marca escolhe o que quer receber no celular. O canal em si tem uma
+  // chave mestra do nosso lado (config/parceiros.json → avisos.ativo), e
+  // enquanto ela estiver desligada a tela DIZ isso — senão a marca liga o
+  // aviso, não recebe nada e conclui que está quebrado.
+  var AVISO_TEXTO = {
+    ruptura: ['Casa ficou sem estoque',
+      'Quando a contagem semanal de uma casa fecha zerada num produto seu.'],
+    saiu_da_carta: ['Seu produto saiu da carta',
+      'Quando um produto seu some do cardápio digital de uma casa que continua publicando cardápio.'],
+    queda: ['Queda forte numa casa',
+      'Quando o giro de uma casa cai além do limite no último trimestre apurado.'],
+  };
+
+  function carregaAvisos() {
+    var holder = document.getElementById('av-holder');
+    if (!holder || !sessaoAtualGlobal) return;
+    fetch(WORKER + '/api/parceiro/avisos', { headers: { 'X-Token': sessaoAtualGlobal.token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j) return;
+        holder.innerHTML = '';
+        (j.tipos || []).forEach(function (t) {
+          var txt = AVISO_TEXTO[t] || [t, ''];
+          var linha = el('div', 'av-linha');
+          var esq = el('div');
+          esq.appendChild(el('div', 'av-nome', txt[0]));
+          if (txt[1]) esq.appendChild(el('div', 'av-desc', txt[1]));
+          linha.appendChild(esq);
+          var sw = el('button', 'av-sw');
+          sw.type = 'button';
+          sw.setAttribute('role', 'switch');
+          sw.setAttribute('aria-label', txt[0]);
+          sw.setAttribute('aria-checked', (j.preferencias || {})[t] ? 'true' : 'false');
+          sw.onclick = function () {
+            var novo = sw.getAttribute('aria-checked') !== 'true';
+            sw.setAttribute('aria-checked', novo ? 'true' : 'false');
+            salvaAvisos(holder);
+          };
+          sw.dataset.tipo = t;
+          linha.appendChild(sw);
+          holder.appendChild(linha);
+        });
+        if (!j.canal_ativo) {
+          holder.appendChild(el('p', 'giro-nota',
+            'Estes avisos ainda não estão ligados do lado do Grupo IZ — sua escolha fica guardada e passa a valer quando ligarmos.'));
+        }
+      })
+      .catch(function () { /* complemento — falha aqui não derruba a aba */ });
+  }
+
+  function salvaAvisos(holder) {
+    if (!sessaoAtualGlobal) return;
+    var corpo = {};
+    holder.querySelectorAll('.av-sw').forEach(function (sw) {
+      corpo[sw.dataset.tipo] = sw.getAttribute('aria-checked') === 'true';
+    });
+    fetch(WORKER + '/api/parceiro/avisos', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': sessaoAtualGlobal.token },
+      body: JSON.stringify(corpo),
+    }).catch(function () { /* silencioso: o estado do botão já mudou na tela */ });
+  }
+
   function montaGiro(g, cor) {
     if (!g || !g.total) return null;
     var wrap = el('div');
@@ -1505,6 +1580,12 @@ function nomeArquivoSeguro(base) {
     btRevisao.style.marginTop = '9px';
     btRevisao.onclick = baixaResumoPdf;
     painelExecucao.appendChild(btRevisao);
+
+    // Avisos (P10): nasce vazio, carregaAvisos() preenche.
+    painelExecucao.appendChild(el('div', 'secao', 'Avisos que você recebe'));
+    painelExecucao.appendChild(el('p', 'giro-sub',
+      'Você decide o que chega no seu celular. Nada é enviado à sua indústria pelo Grupo IZ — o que sai daqui, sai por você.'));
+    painelExecucao.appendChild(el('div', '', null)).id = 'av-holder';
 
     // "O que você enviou" (E3) fica na aba Conversa — nasce vazio,
     // carregaEnviados() preenche depois.
@@ -2170,6 +2251,7 @@ function nomeArquivoSeguro(base) {
           buscarAgenda();
           carregaEnviados();
           carregaRegistros();
+          carregaAvisos();
         });
       })
       .catch(function () { erro.textContent = 'Sem conexão. Tente de novo.'; });
