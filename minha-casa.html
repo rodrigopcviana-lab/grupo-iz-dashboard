@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Minha casa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=a66dfc751259">
+<link rel="stylesheet" href="portal.css?v=9a0bcab928cd">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -500,15 +500,23 @@ window.msgAcessoNegado = function (nomePagina) {
     var box = document.getElementById('mc-financeiro');
     var c = DADOS && DADOS.casas ? DADOS.casas[casaAtual] : null;
     if (!c) { box.innerHTML = '<p class="mc-vazio">Sem dado financeiro para esta casa.</p>'; return; }
+    // cmv_fonte diz se o CMV veio de compra REAL casada no mês (raro hoje —
+    // a leva de compras importada ainda não cobre a janela de análise) ou da
+    // estimativa por ficha (o normal, por enquanto). O rótulo segue o dado —
+    // nunca chama de "estimado" um valor que já é realizado, nem o contrário.
+    var cmvReal = c.cmv_fonte === 'realizado';
+    var cmvTagLinha = cmvReal ? 'realizado (compra real do mês)' : 'estimado (ficha)';
+    var cmvTagKpi = cmvReal ? 'CMV (realizado)' : 'CMV (ficha)';
+    var notaCmv = cmvReal ? '' : 'o CMV é por ficha (não realizado), ';
     var linhas =
       '<div class="mc-linha"><span class="lb">Faturamento do bar</span><span class="vl">' + rs(c.faturamento_rs) + '</span></div>' +
-      '<div class="mc-linha"><span class="lb">− CMV <span style="color:var(--text-3);font-size:11px">estimado (ficha)</span></span><span class="vl neg">− ' + rs(c.cmv_estimado_rs) + '</span></div>' +
+      '<div class="mc-linha"><span class="lb">− CMV <span style="color:var(--text-3);font-size:11px">' + esc(cmvTagLinha) + '</span></span><span class="vl neg">− ' + rs(c.cmv_estimado_rs) + '</span></div>' +
       '<div class="mc-linha"><span class="lb">− Pessoal <span style="color:var(--text-3);font-size:11px">hora-extra, saldo atual</span></span><span class="vl neg">− ' + rs(c.hora_extra_rs) + '</span></div>' +
       '<div class="mc-total"><span class="lb">Resultado estimado</span><span class="vl">' + rs(c.resultado_estimado_rs) + '</span></div>' +
-      '<div class="mc-nota"><span class="ic">' + "<svg class=\"ic\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3.5l9 15.5H3z\"/><path d=\"M12 10v4M12 16.5h.01\"/></svg>" + '</span><span><b style="color:var(--text-2);font-weight:500">Estimativa</b>, não lucro líquido: o CMV é por ficha (não realizado), a hora-extra é o saldo atual (não o custo do mês), e <b style="color:var(--text-2);font-weight:500">não inclui</b> perdas nem custos fixos (aluguel, energia, impostos, folha).</span></div>';
+      '<div class="mc-nota"><span class="ic">' + "<svg class=\"ic\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3.5l9 15.5H3z\"/><path d=\"M12 10v4M12 16.5h.01\"/></svg>" + '</span><span><b style="color:var(--text-2);font-weight:500">Estimativa</b>, não lucro líquido: ' + notaCmv + 'a hora-extra é o saldo atual (não o custo do mês), e <b style="color:var(--text-2);font-weight:500">não inclui</b> perdas nem custos fixos (aluguel, energia, impostos, folha).</span></div>';
     var kpis =
       '<div class="mc-kpis">' +
-        '<div class="mc-kpi"><div class="k">CMV (ficha)</div><div class="v">' + pct(c.cmv_pct_ficha) + '</div></div>' +
+        '<div class="mc-kpi"><div class="k">' + esc(cmvTagKpi) + '</div><div class="v">' + pct(c.cmv_pct_ficha) + '</div></div>' +
         '<div class="mc-kpi"><div class="k">Margem est.</div><div class="v">' + pct(c.margem_estimada_pct) + '</div></div>' +
         '<div class="mc-kpi"><div class="k">Mês</div><div class="v" style="font-size:14px">' + esc(c.mes_ref || '—') + '</div></div>' +
       '</div>';
@@ -1678,7 +1686,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a66dfc751259';
+  var BUILD = '9a0bcab928cd';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

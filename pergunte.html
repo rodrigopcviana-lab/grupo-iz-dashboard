@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Pergunte ao bar · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=a66dfc751259">
+<link rel="stylesheet" href="portal.css?v=9a0bcab928cd">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -630,7 +630,13 @@ window.msgAcessoNegado = function (nomePagina) {
       itens.appendChild(row);
     });
     if (d.encaminhar) {
-      var pagina = d.encaminhar.pagina || ENCAMINHA_PAGINA[d.encaminhar.cerebro] || null;
+      // ALLOWLIST no href: é o único sink não-textual desta página (todo o
+      // resto vai por textContent). Hoje o Worker só manda constantes, mas um
+      // href vindo de servidor aceita javascript:/data: — então a página só
+      // navega pra destino que ela própria conhece.
+      var PAGINAS_OK = [ENCAMINHA_PAGINA.cardapio, ENCAMINHA_PAGINA.numeros, 'harmonizacao.html'];
+      var proposta = d.encaminhar.pagina || ENCAMINHA_PAGINA[d.encaminhar.cerebro] || null;
+      var pagina = PAGINAS_OK.indexOf(proposta) >= 0 ? proposta : null;
       if (pagina) {
         var rot = d.encaminhar.rotulo || ('Abrir ' + (ENCAMINHA_NOME[d.encaminhar.cerebro] || 'a página certa'));
         var a = el('a', 'pg-link', rot);
@@ -674,8 +680,32 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   // -- Números / Cardápio (contagem-worker, X-Token do portal) --------------
+  // 401 aqui tem DOIS significados e eles não podem ser tratados igual:
+  //  - sessão expirada  -> é caso de relogar;
+  //  - nível insuficiente -> é permanente e legítimo, e apagar a sessão por
+  //    causa dele DESLOGA do portal inteiro alguém que só perguntou de um
+  //    assunto que não é dele. A Porta é nível `equipe` e despacha pra rotas
+  //    chefe+, então isso acontecia no PRIMEIRO clique nas sugestões que a
+  //    própria página oferece — inclusive pra bartender, que herda a
+  //    superfície de equipe.
+  // Como o Worker devolve 401 nos dois casos, a sessão local decide: se ela
+  // ainda é válida (não expirou), o 401 só pode ser de nível — aí mostra um
+  // card honesto, no mesmo espírito do saborFechado(), e NÃO mexe na sessão.
   function tratarRespCentral(r) {
-    if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return null; }
+    if (r.status === 401) {
+      var viva = null;
+      try { viva = window.sessaoLer ? window.sessaoLer() : null; } catch (e) {}
+      if (viva) {
+        render({
+          titulo: 'Esse assunto é da chefia',
+          resposta: 'Seu acesso atual não abre esse assunto aqui. Números da casa, desenho da carta e banco de horas/férias são da chefia e da coordenação. Você continua logado — pergunte outra coisa ou fale com a coordenação.',
+          chips: [], itens: [], fontes: [], confianca: 'baixa',
+          encaminhar: null, sugestoes: [],
+        });
+        return null;
+      }
+      window.sessaoLimpar(); window.irParaLogin(SLUG); return null;
+    }
     if (r.status === 400) {
       return r.json().then(function (dj) {
         if (dj && dj.precisa_casa) { mostraSeletorCasa(); return null; }
@@ -708,12 +738,16 @@ window.msgAcessoNegado = function (nomePagina) {
       .catch(function () { erroTexto('Sem conexão.'); });
   }
 
-  // Operação NÃO leva casa: o payload é único (as rotas irmãs do mesmo dado,
-  // /api/banco-horas e /api/ferias-plano, já entregam todas as casas ao chefe).
-  // Cada alerta carrega a casa dentro dele.
+  // Quem decide o escopo é o SERVIDOR, pelo token: chefe com casa no token lê
+  // só a própria casa (chave cerebro:operacao:<casa>, que já nasce recortada),
+  // coord/rh leem o consolidado. O ?casa= daqui só é olhado pelo Worker no caso
+  // do chefe de senha COMPARTILHADA (sem casa no token), que responde 400
+  // precisa_casa e cai no seletor — mandar sempre evita o laço nesse caso e é
+  // ignorado em todos os outros.
   function chamaOperacao(q) {
-    fetch(WORKER + '/api/cerebro/operacao?q=' + encodeURIComponent(q),
-          { headers: { 'X-Token': SESSAO.token } })
+    var u = WORKER + '/api/cerebro/operacao?q=' + encodeURIComponent(q);
+    if (casaWorker()) u += '&casa=' + encodeURIComponent(casaWorker());
+    fetch(u, { headers: { 'X-Token': SESSAO.token } })
       .then(tratarRespCentral)
       .then(function (d) { if (d) render(adaptaCentral('operacao', d)); })
       .catch(function () { erroTexto('Sem conexão.'); });
@@ -1994,7 +2028,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a66dfc751259';
+  var BUILD = '9a0bcab928cd';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
