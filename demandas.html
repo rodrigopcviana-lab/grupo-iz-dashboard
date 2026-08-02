@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Central de Demandas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=0656a53e4f99">
+<link rel="stylesheet" href="portal.css?v=be0c0ac82bdd">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1489,6 +1489,14 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     var cad = cadenciaDoPeriodo(d.periodo);
     return '<span class="dm-chip" style="color:var(--acc);border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent)">' + esc('Obrigação' + (cad ? ' · ' + cad : '')) + '</span>';
   }
+  // Parceiro On Trade (2026-08-01): a fila passou a receber demanda de gente
+  // de FORA da empresa. Sem este chip, um pedido de fornecedor fica
+  // indistinguível de um da própria casa — e quem responde precisa saber que
+  // está falando com alguém de fora antes de escrever a resposta.
+  function chipParceiro(d) {
+    if (!d.marca) return '';
+    return '<span class="dm-chip" style="color:var(--tipo-ocorrencia);border-color:var(--tipo-ocorrencia);background:color-mix(in srgb,var(--tipo-ocorrencia) 14%,transparent)">' + esc('Parceiro · ' + d.marca) + '</span>';
+  }
   function chipVenceu(d) {
     var p = (d.vence_em || '').slice(0, 10).split('-');
     var quando = p.length === 3 ? p[2] + '/' + p[1] : '';
@@ -1906,7 +1914,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     head.setAttribute('aria-expanded', 'false');
 
     var l1 = document.createElement('div'); l1.className = 'l1';
-    l1.innerHTML = chipCasa(d.casa) + chipUrgencia(d.urgencia) + chipObrigacao(d) + (vencida ? chipVenceu(d) : '');
+    l1.innerHTML = chipCasa(d.casa) + chipUrgencia(d.urgencia) + chipParceiro(d) + chipObrigacao(d) + (vencida ? chipVenceu(d) : '');
     head.appendChild(l1);
 
     // Etiqueta de status (toque avança pra próxima etapa) + select completo
@@ -3776,7 +3784,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 01/08/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 02/08/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -4800,7 +4808,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '0656a53e4f99';
+  var BUILD = 'be0c0ac82bdd';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

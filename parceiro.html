@@ -147,10 +147,17 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
   padding:0;margin-bottom:14px;font-family:inherit}
 .criar-campo{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .criar-campo label{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3)}
-.criar-campo input,.criar-campo textarea{padding:11px 10px;font-size:14px;border-radius:10px;
+.criar-campo input,.criar-campo textarea,.criar-campo select{padding:11px 10px;font-size:14px;border-radius:10px;
   border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;
   box-sizing:border-box;width:100%}
 .criar-campo textarea{resize:vertical;min-height:90px}
+/* Sem o appearance:none o select herda o widget nativo do sistema — fundo
+   branco e texto preto dentro de um drawer escuro. A seta vai como data URI
+   inline (nada de asset externo: o portal é PWA com CSP). */
+.criar-campo select{appearance:none;-webkit-appearance:none;padding-right:30px;cursor:pointer;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238f8672' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 9px center;background-size:15px}
+.criar-campo select option{background:var(--card);color:var(--text)}
 .criar-nota{font-size:11.5px;color:var(--text-3);margin:0 0 14px;line-height:1.5}
 .criar-salvar{width:100%;padding:12px;font-size:14px;font-weight:600;border:none;border-radius:10px;
   background:var(--acc);color:#241a06;cursor:pointer}
@@ -346,21 +353,42 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
         <svg viewBox="0 0 24 24" fill="none" stroke="#e0b05c" stroke-width="1.6"><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>
       <div><p class="criar-opt">Nota</p><p class="criar-opd">Anotação sua, privada — ninguém do grupo vê</p></div>
     </div>
-    <div class="criar-op" data-tipo="Pergunta" role="button" tabindex="0">
+    <div class="criar-op" data-tipo="Demanda" role="button" tabindex="0">
       <span class="criar-opi" style="background:rgba(200,160,220,.16)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#c8a0dc" stroke-width="1.6"><path d="M9.2 9a2.8 2.8 0 1 1 3.8 2.6c-.7.3-1 .9-1 1.6v.6"/><path d="M12 17.2v.1"/><circle cx="12" cy="12" r="9"/></svg></span>
-      <div><p class="criar-opt">Pergunta</p>
-        <p class="criar-opd">Dúvida sobre o acordo — fica registrada aqui e a coordenação responde nesta página</p></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c8a0dc" stroke-width="1.6"><path d="M4 6h16M4 12h10M4 18h13"/><circle cx="18.5" cy="12" r="2.5"/></svg></span>
+      <div><p class="criar-opt">Demanda</p>
+        <p class="criar-opd">Pedido ou ocorrência para a coordenação, Suprimentos ou o chefe de uma casa — entra na mesma fila da equipe</p></div>
     </div>
     <p class="criar-fn">Nada é enviado sem você confirmar.</p>
   </div>
 
   <div id="criar-form" style="display:none">
-    <button type="button" class="criar-voltar" id="criar-voltar">‹ Ideia · Receita · Nota</button>
+    <button type="button" class="criar-voltar" id="criar-voltar">‹ Voltar</button>
     <p class="criar-nota" id="criar-nota-tipo"></p>
-    <div class="criar-campo">
+    <div class="criar-campo" id="cr-titulo-linha">
       <label for="cr-titulo">Título</label>
       <input id="cr-titulo" type="text" maxlength="120" placeholder="Um nome curto">
+    </div>
+    <div id="cr-demanda-campos" style="display:none">
+      <div class="criar-campo">
+        <label for="cr-dem-tipo">Tipo</label>
+        <select id="cr-dem-tipo">
+          <option value="solicitacao">Solicitação — preciso de algo</option>
+          <option value="ocorrencia">Ocorrência — algo aconteceu</option>
+        </select>
+      </div>
+      <div class="criar-campo">
+        <label for="cr-dem-setor">Para quem vai</label>
+        <select id="cr-dem-setor"></select>
+      </div>
+      <div class="criar-campo">
+        <label for="cr-dem-casa">Casa</label>
+        <select id="cr-dem-casa"></select>
+      </div>
+      <div class="criar-campo">
+        <label for="cr-dem-urg">Necessário desde</label>
+        <select id="cr-dem-urg"></select>
+      </div>
     </div>
     <div class="criar-campo">
       <label for="cr-desc" id="cr-desc-label">Descrição</label>
@@ -508,7 +536,20 @@ function nomeArquivoSeguro(base) {
 
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  // Segundo Worker. Esta página fala com DOIS: o contagem-bares serve o painel
+  // (/api/parceiro, agenda, meta, registros de visita, avisos) e o
+  // registro-bares serve a Central de Demandas, a caderneta e o push
+  // (/api/demandas, /api/registro, /api/ideias, /api/notas, /api/push/*).
+  //
+  // Havia UMA constante só até 2026-08-01, e as quatro rotas do registro-bares
+  // saíam apontadas pro contagem-bares — que responde "rota desconhecida".
+  // Falhava em silêncio porque cada chamada degrada pra vazio (`r.ok ? … : []`),
+  // então a tela dizia "você ainda não mandou nada" em vez de "não consegui
+  // perguntar". Nunca deixar uma URL de Worker implícita: são dois.
+  var WORKER_REG = "https://registro-bares.rodrigopcviana.workers.dev";
   var CASAS_LABEL = {"iz": "Iz", "gra-bistro": "Grá", "1929": "1929", "famu": "FAMU", "fulles": "Fulles", "nip": "Nip"};
+  var SETORES_DEMANDA = {"coordenacao": "Coordenação", "compras_insumos": "Compras / Insumos", "gerencia_casa": "Gerência da casa", "manutencao": "Manutenção", "operacao_bar": "Operação de bar", "marketing": "Marketing"};
+  var URGENCIAS_DEMANDA = {"hoje": "Hoje", "uma_semana": "Uma semana", "um_mes": "Um mês", "tres_meses": "3 meses+"};
   var CHAVE_SESSAO = 'parceiro_sessao';
   var gate = document.getElementById('gate');
   var app = document.getElementById('app');
@@ -1488,11 +1529,11 @@ function nomeArquivoSeguro(base) {
     var stats = montaStats(d, cor, cont);
     if (stats) painelMural.appendChild(stats);
 
-    // Conversa com a coordenação: era uma aba própria e voltou pro mural.
+    // Demandas: já foi aba própria ("Conversa"), virou bloco do mural.
     // Fica DEPOIS do giro e do acordo, e não no topo, por medida: com os
-    // cards de conversa acima, o giro caía em y=1100 num aparelho de 375px —
-    // duas dobras abaixo do número que o representante abriu a página pra ver.
-    // Quem carrega a novidade é o sino, que aponta pra cá. Nasce vazio;
+    // cards acima, o giro caía em y=1100 num aparelho de 375px — duas dobras
+    // abaixo do número que o representante abriu a página pra ver. Quem
+    // carrega a novidade é o sino, que aponta pra cá. Nasce vazio;
     // carregaEnviados() preenche.
     painelMural.appendChild(el('div', '', null)).id = 'env-holder';
 
@@ -1898,43 +1939,62 @@ function nomeArquivoSeguro(base) {
       + (casasLabels.length ? ' · ' + casasLabels.join(', ') : ''), b);
   }
 
-  // --- O que você enviou (E3) ----------------------------------------------
-  // Antes disto o parceiro via só um contador no perfil: mandava ideia,
-  // receita ou dúvida e nunca sabia o que tinha acontecido. Agora a lista fica
-  // no painel, com o status e a resposta da coordenação quando houver.
+  // --- Demandas (2026-08-01) ------------------------------------------------
+  // Substitui a antiga "Conversa com a coordenação", que era um canal paralelo
+  // só para este painel. Agora é a MESMA Central de Demandas da equipe: mesma
+  // database, mesma triagem, mesma resposta, mesmo fechamento. O parceiro fala
+  // com coordenação, Suprimentos e chefes de bar pelos trilhos que já existem,
+  // em vez de uma caixa de entrada que só a coordenação olhava.
+  //
+  // O que ele vê é recortado pela MARCA DO TOKEN, no servidor — nunca por
+  // parâmetro daqui (ver credencialDemandaParceiro no registro-bares). Demanda
+  // interna não tem marca e por isso nunca aparece.
   var COR_STATUS = {
-    'Nova': '#8f8672', 'Em análise': '#7fb8e0',
-    'Respondida': '#9fe1cb', 'Arquivada': '#8f8672',
+    'Novo': '#e0b05c', 'Visto': '#7fb8e0', 'Em andamento': '#7fb8e0',
+    'Resolvido': '#9fe1cb', 'Arquivado': '#8f8672',
   };
   function carregaEnviados() {
     var holder = document.getElementById('env-holder');
     if (!holder || !sessaoAtualGlobal) return;
-    fetch(WORKER + '/api/ideias', { headers: { 'X-Token': sessaoAtualGlobal.token } })
-      .then(function (r) { return r.ok ? r.json() : { ideias: [] }; })
+    fetch(WORKER_REG + '/api/demandas', { headers: { 'X-Token': sessaoAtualGlobal.token } })
+      .then(function (r) { return r.ok ? r.json() : { demandas: [], falhou: true }; })
       .then(function (j) {
         holder.innerHTML = '';
-        var itens = j.ideias || [];
-        // Estado VAZIO convidativo (2026-07-30): a seção sumia quando a marca
-        // ainda não tinha mandado nada — e era justamente aí que ela precisava
-        // descobrir que pode mandar. Numa conta nova o painel inteiro é
-        // "0% · não iniciado", e esta era a única coisa acionável da tela.
+        var itens = j.demandas || [];
+        // Falha de rede/credencial NÃO pode virar "você não tem demanda": são
+        // coisas opostas, e a versão anterior desta tela dizia a primeira
+        // quando o que houve foi a segunda (a chamada saía pro Worker errado
+        // e o `r.ok ? … : []` engolia). Estado vazio só quando a resposta veio.
+        if (j.falhou) {
+          holder.appendChild(el('div', 'secao', 'Demandas'));
+          var errCard = el('div', 'card');
+          errCard.appendChild(el('div', 'titulo', 'Não consegui carregar suas demandas'));
+          errCard.appendChild(el('div', 'meta', 'Tente recarregar a página. Nada do que você enviou se perdeu.'));
+          holder.appendChild(errCard);
+          return;
+        }
         if (!itens.length) {
-          holder.appendChild(el('div', 'secao', 'Falar com a coordenação'));
+          holder.appendChild(el('div', 'secao', 'Demandas'));
           var vazio = el('div', 'card');
-          vazio.appendChild(el('div', 'titulo', 'Você ainda não mandou nada por aqui'));
+          vazio.appendChild(el('div', 'titulo', 'Nenhuma demanda aberta'));
           vazio.appendChild(el('div', 'meta',
-            'Use a etiqueta "Criar", na lateral, para mandar uma ideia, propor um cocktail com a marca ou tirar uma dúvida sobre o acordo. A resposta da coordenação aparece aqui no mural.'));
-          var btVazio = el('button', 'criar-salvar', 'Criar');
+            'Precisa de algo da coordenação, de Suprimentos ou do chefe de uma casa? Use a etiqueta "Criar", na lateral, e abra uma demanda. Ela entra na mesma fila da equipe e a resposta aparece aqui no mural.'));
+          var btVazio = el('button', 'criar-salvar', 'Abrir demanda');
           btVazio.type = 'button';
           btVazio.style.marginTop = '10px';
-          btVazio.onclick = function () { abreCriar(); };
+          btVazio.onclick = function () { abreCriar('Demanda'); };
           vazio.appendChild(btVazio);
           holder.appendChild(vazio);
         }
-        // Acende o sino se existe resposta mais nova do que a última já vista.
+        // Acende o sino quando há resposta ou fechamento mais novo que o já
+        // visto. Duas fontes agora (a demanda pode ser respondida OU
+        // resolvida), então vale a mais recente entre as duas — mesma régua
+        // content-based do sino interno.
         var maisNova = '';
         itens.forEach(function (i) {
-          if (i.resposta && i.respondido_em && i.respondido_em > maisNova) maisNova = i.respondido_em;
+          [i.respondido_em, i.resolvido_em].forEach(function (q) {
+            if (q && q > maisNova) maisNova = q;
+          });
         });
         var vista = '';
         try { vista = localStorage.getItem(LIDO_KEY) || ''; } catch (e) { /* modo privado */ }
@@ -1943,44 +2003,58 @@ function nomeArquivoSeguro(base) {
         atualizaSino();
         if (!itens.length) return;
 
-        function cardEnviado(it) {
+        function cardDemanda(it) {
           var card = el('div', 'card');
           var topo = el('div', 'topo');
-          topo.appendChild(el('div', 'titulo', it.titulo || it.tipo));
-          var st = it.status || 'Nova';
+          topo.appendChild(el('div', 'titulo', it.tipo + (it.casa ? ' · ' + it.casa : '')));
+          var st = it.status || 'Novo';
           var tag = el('span', 'status', st);
           var cs = COR_STATUS[st] || '#8f8672';
           tag.style.background = cs + '33'; tag.style.color = cs;
           topo.appendChild(tag);
           card.appendChild(topo);
-          card.appendChild(el('div', 'meta', it.tipo + (it.criado ? ' · ' + fmtData((it.criado || '').slice(0, 10)) : '')));
+          var meta = [];
+          if (it.setor) meta.push(it.setor);
+          if (it.urgencia) meta.push('necessário desde ' + it.urgencia.toLowerCase());
+          var quando = it.recebido_em || it.data;
+          if (quando) meta.push(fmtData(String(quando).slice(0, 10)));
+          card.appendChild(el('div', 'meta', meta.join(' · ')));
           if (it.descricao) card.appendChild(el('div', 'desc', it.descricao));
+          // Quem abriu importa: a fila agora tem os dois sentidos, e sem isto
+          // uma demanda que a coordenação abriu PARA a marca parece uma que a
+          // marca abriu e esqueceu.
+          if (it.solicitante || it.registrado_por) {
+            card.appendChild(el('div', 'meta', 'Aberta por ' + (it.solicitante || it.registrado_por)));
+          }
           if (it.resposta) {
             var resp = el('div', 'resposta');
-            resp.appendChild(el('div', 'resposta-cab', 'Resposta da coordenação'
+            resp.appendChild(el('div', 'resposta-cab', 'Resposta'
               + (it.respondido_por ? ' · ' + it.respondido_por : '')
               + (it.respondido_em ? ' · ' + fmtData((it.respondido_em || '').slice(0, 10)) : '')));
             resp.appendChild(el('div', 'resposta-txt', it.resposta));
             card.appendChild(resp);
           }
+          if (it.status === 'Resolvido' && (it.resolvido_por || it.resolvido_em)) {
+            card.appendChild(el('div', 'meta', 'Resolvida'
+              + (it.resolvido_por ? ' por ' + it.resolvido_por : '')
+              + (it.resolvido_em ? ' em ' + fmtData((it.resolvido_em || '').slice(0, 10)) : '')));
+          }
           return card;
         }
 
-        // "Conversa com a coordenação", e não mais "O que você enviou": o bloco
-        // mostra os dois lados, e o que interessa na volta é a RESPOSTA.
-        holder.appendChild(el('div', 'secao', 'Conversa com a coordenação'));
+        holder.appendChild(el('div', 'secao', 'Demandas'));
         // Num mural, histórico não pode empurrar o resto da página pra baixo:
-        // mostra os 3 mais recentes e abre o resto NO LUGAR, sem navegar.
+        // mostra as 3 mais recentes e abre o resto NO LUGAR, sem navegar.
         var MURAL_N = 3;
         var visiveis = itens.slice(0, MURAL_N);
         var resto = itens.slice(MURAL_N, 12);
-        visiveis.forEach(function (it) { holder.appendChild(cardEnviado(it)); });
+        visiveis.forEach(function (it) { holder.appendChild(cardDemanda(it)); });
         if (resto.length) {
           var maisEnv = el('button', 'ver-mais',
             'Ver ' + resto.length + (resto.length === 1 ? ' anterior' : ' anteriores') + ' ›');
           maisEnv.type = 'button';
           maisEnv.onclick = function () {
-            resto.forEach(function (it) { holder.insertBefore(cardEnviado(it), maisEnv); });
+            resto.forEach(function (it) { holder.insertBefore(cardDemanda(it), maisEnv); });
             maisEnv.remove();
           };
           holder.appendChild(maisEnv);
@@ -2004,7 +2078,7 @@ function nomeArquivoSeguro(base) {
     }
     var pend = 2;
     function feito() { pend--; if (pend === 0) cb(out); }
-    fetch(WORKER + '/api/ideias', { headers: { 'X-Token': sessaoAtualGlobal.token } })
+    fetch(WORKER_REG + '/api/ideias', { headers: { 'X-Token': sessaoAtualGlobal.token } })
       .then(function (r) { return r.ok ? r.json() : { ideias: [] }; })
       .then(function (j) {
         (j.ideias || []).forEach(function (i) {
@@ -2012,7 +2086,7 @@ function nomeArquivoSeguro(base) {
           considera(i.criado, i.tipo === 'Receita' ? 'receita' : 'ideia');
         });
       }).catch(function () {}).finally(feito);
-    fetch(WORKER + '/api/notas', { headers: { 'X-Token': sessaoAtualGlobal.token } })
+    fetch(WORKER_REG + '/api/notas', { headers: { 'X-Token': sessaoAtualGlobal.token } })
       .then(function (r) { return r.ok ? r.json() : { notas: [] }; })
       .then(function (j) {
         var notas = j.notas || [];
@@ -2045,7 +2119,7 @@ function nomeArquivoSeguro(base) {
       }).then(function (reg) {
         return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC) });
       }).then(function (sub) {
-        return fetch(WORKER + '/api/push/subscribe', {
+        return fetch(WORKER_REG + '/api/push/subscribe', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': sessaoAtualGlobal.token },
           body: JSON.stringify({ subscription: sub.toJSON() }),
         });
@@ -2214,7 +2288,7 @@ function nomeArquivoSeguro(base) {
     Ideia: { label: 'O que você imagina', nota: 'Vai para a coordenação como sugestão.' },
     Receita: { label: 'Descreva o cocktail', nota: 'Proposta — a coordenação decide se ela entra no cardápio.' },
     Nota: { label: 'Sua nota', nota: 'Privada — só você vê, ninguém do grupo tem acesso.' },
-    Pergunta: { label: 'Sua dúvida', nota: 'A resposta aparece aqui mesmo, em "O que você enviou".' },
+    Demanda: { label: 'O que você precisa', nota: 'Entra na mesma fila da equipe. A resposta aparece no mural.' },
   };
 
   // Drawer abre sempre no MENU (as 3 opções) — a forma escolhida só aparece
@@ -2234,12 +2308,28 @@ function nomeArquivoSeguro(base) {
     document.getElementById('cr-titulo').value = '';
     document.getElementById('cr-desc').value = '';
     document.getElementById('cr-aviso').textContent = '';
+    // A demanda precisa de destino (setor), casa e desde quando — é o que
+    // permite a ela entrar na MESMA fila da equipe em vez de virar um recado
+    // sem dono. Ideia/Receita/Nota seguem só com título e texto.
+    var ehDemanda = tipo === 'Demanda';
+    document.getElementById('cr-demanda-campos').style.display = ehDemanda ? 'block' : 'none';
+    document.getElementById('cr-titulo-linha').style.display = ehDemanda ? 'none' : 'block';
+    if (ehDemanda) preencheCamposDemanda();
     criarMenu.style.display = 'none';
     criarForm.style.display = '';
   }
-  function abreCriar() { criarBackdrop.classList.add('aberto'); criarDrawer.classList.add('aberto'); mostraMenu(); }
+  function abreCriar(tipo) {
+    criarBackdrop.classList.add('aberto');
+    criarDrawer.classList.add('aberto');
+    mostraMenu();
+    // O estado vazio do mural chama abreCriar('Demanda'): quem tocou "Abrir
+    // demanda" já disse o que quer, e cair no menu genérico seria um passo a
+    // mais pra repetir a mesma escolha.
+    if (tipo && TEXTOS_TIPO[tipo]) escolheTipo(tipo);
+  }
   function fechaCriar() { criarBackdrop.classList.remove('aberto'); criarDrawer.classList.remove('aberto'); }
-  criarTab.onclick = abreCriar;
+  // Sem o wrapper, o Event do clique chegaria como `tipo` em abreCriar.
+  criarTab.onclick = function () { abreCriar(); };
   criarTab.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abreCriar(); } };
   criarBackdrop.onclick = fechaCriar;
   document.getElementById('criar-fechar').onclick = fechaCriar;
@@ -2253,6 +2343,36 @@ function nomeArquivoSeguro(base) {
   });
 
   function chaveNova() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+  // A MESMA divergência de slug que já mordeu a Central de Demandas: o painel
+  // do parceiro fala 'gra-bistro' (config/parceiros.json, herdado do
+  // contagem-worker) e o registro-bares fala 'gra' (config/registro.json).
+  // Sem traduzir, o Grá — e SÓ o Grá — levaria 400 "campo casa inválido" em
+  // toda demanda, calado, porque nenhuma outra casa diverge.
+  var CASA_SLUG_REGISTRO = { 'gra-bistro': 'gra' };
+  function casaParaRegistro(slug) { return CASA_SLUG_REGISTRO[slug] || slug; }
+
+  // Preenche os selects da demanda. Casas: só as do acordo desta marca (vem do
+  // payload, não da lista do grupo) — abrir demanda numa casa onde ela não
+  // opera não faz sentido e ainda contaria como pista sobre o grupo.
+  function preencheCamposDemanda() {
+    function opcoes(sel, pares, selecionado) {
+      sel.innerHTML = '';
+      pares.forEach(function (par) {
+        var o = document.createElement('option');
+        o.value = par[0]; o.textContent = par[1];
+        if (selecionado && par[0] === selecionado) o.selected = true;
+        sel.appendChild(o);
+      });
+    }
+    opcoes(document.getElementById('cr-dem-setor'),
+      Object.keys(SETORES_DEMANDA).map(function (k) { return [k, SETORES_DEMANDA[k]]; }));
+    var casas = (ULTIMO_D && ULTIMO_D.casas) || [];
+    opcoes(document.getElementById('cr-dem-casa'),
+      casas.map(function (slug) { return [slug, CASAS_LABEL[slug] || slug]; }));
+    opcoes(document.getElementById('cr-dem-urg'),
+      Object.keys(URGENCIAS_DEMANDA).map(function (k) { return [k, URGENCIAS_DEMANDA[k]]; }), 'uma_semana');
+  }
 
   function enviarCriar() {
     var bt = document.getElementById('cr-salvar');
@@ -2272,7 +2392,7 @@ function nomeArquivoSeguro(base) {
 
     var pronto;
     if (tipoAtual === 'Nota') {
-      pronto = fetch(WORKER + '/api/notas', { headers: { 'X-Token': sessaoAtualGlobal.token } })
+      pronto = fetch(WORKER_REG + '/api/notas', { headers: { 'X-Token': sessaoAtualGlobal.token } })
         .then(function (r) { return r.json(); })
         .then(function (j) {
           var notas = j.notas || [];
@@ -2280,13 +2400,32 @@ function nomeArquivoSeguro(base) {
             id: chaveNova(), titulo: titulo, conteudo: desc, tipo: 'nota',
             itens: [], fixada: false, cor: null, anexos: [], criado_em: new Date().toISOString(),
           });
-          return fetch(WORKER + '/api/notas', {
+          return fetch(WORKER_REG + '/api/notas', {
             method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Token': sessaoAtualGlobal.token },
             body: JSON.stringify({ notas: notas }),
           });
         });
+    } else if (tipoAtual === 'Demanda') {
+      // MESMA rota que a equipe usa (POST /api/registro no registro-bares) —
+      // não existe endpoint de demanda "de parceiro". A marca não vai no
+      // corpo: o Worker a grava a partir do token, e mandá-la daqui só criaria
+      // a ilusão de que o cliente escolhe (ele não escolhe — ver o teste
+      // testa_marca_parceiro.mjs, bloco F).
+      var casaSel = document.getElementById('cr-dem-casa').value;
+      pronto = fetch(WORKER_REG + '/api/registro', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': sessaoAtualGlobal.token },
+        body: JSON.stringify({
+          tipo: document.getElementById('cr-dem-tipo').value,
+          casa: casaParaRegistro(casaSel),
+          categoria: document.getElementById('cr-dem-setor').value,
+          urgencia: document.getElementById('cr-dem-urg').value,
+          descricao: desc,
+          registrado_por: (sessaoAtualGlobal.pessoa || (ULTIMO_D && ULTIMO_D.marca) || 'Parceiro'),
+          chave_registro: chaveNova(),
+        }),
+      });
     } else {
-      pronto = fetch(WORKER + '/api/ideias', {
+      pronto = fetch(WORKER_REG + '/api/ideias', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': sessaoAtualGlobal.token },
         body: JSON.stringify({ titulo: titulo, descricao: desc, tipo: tipoAtual, chave: chaveNova() }),
       });
@@ -2296,7 +2435,7 @@ function nomeArquivoSeguro(base) {
       if (!r.ok) throw new Error('falhou');
       aviso.className = 'criar-aviso ok';
       aviso.textContent = { Nota: 'Nota salva.', Receita: 'Receita enviada.',
-        Pergunta: 'Pergunta enviada — a resposta aparece nesta página.' }[tipoAtual] || 'Ideia enviada.';
+        Demanda: 'Demanda aberta — ela entra na fila da equipe e a resposta aparece no mural.' }[tipoAtual] || 'Ideia enviada.';
       document.getElementById('cr-titulo').value = '';
       document.getElementById('cr-desc').value = '';
       // A lista "O que você enviou" fica logo abaixo do painel: sem recarregar

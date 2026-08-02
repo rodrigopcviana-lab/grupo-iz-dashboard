@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Registro Rápido · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=0656a53e4f99">
+<link rel="stylesheet" href="portal.css?v=be0c0ac82bdd">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -286,7 +286,15 @@ direto para a coordenação.</p>
   .rr-urg.on-tres_meses { border-color: var(--text-3); background: var(--card2, #262626); }
   .rr-aviso-urgencia { font-size: 12.5px; color: var(--text-3); margin-top: 8px; display: none; }
   .rr-aviso-urgencia.on { display: block; }
-  .rr-textarea { width: 100%; min-height: 96px; padding: 12px; font-size: 15px; font-family: inherit;
+  .rr-marca { width: 100%; padding: 11px 10px; font: inherit; font-size: 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text); box-sizing: border-box; }
+  .rr-marca-aviso { font-size: 12.5px; color: var(--text-3); margin-top: 8px; }
+  /* box-sizing é obrigatório: `width:100%` num textarea SOMA padding e borda,
+     então a caixa saía com 383px num aparelho de 375 e a página inteira do
+     Registro Rápido rolava de lado no celular. Medido a 375px em 2026-08-01;
+     era o único elemento a estourar a largura. */
+  .rr-textarea { width: 100%; box-sizing: border-box; min-height: 96px; padding: 12px;
+                 font-size: 15px; font-family: inherit;
                  border-radius: 12px; border: 1px solid var(--border); background: var(--card);
                  color: var(--text); resize: vertical; }
   .rr-nome-chip { display: flex; align-items: center; gap: 10px; padding: 11px 14px;
@@ -453,6 +461,19 @@ direto para a coordenação.</p>
     </p>
   </div>
 
+  <!-- Endereçar a demanda a uma marca parceira (2026-08-01). Nasce ESCONDIDO
+       e só aparece pra chefe/coord/controladoria — o Worker recusa os demais
+       com 403, e oferecer um campo que a pessoa não pode usar é pior do que
+       não o ter. Opcional por definição: em branco, a demanda é interna e o
+       parceiro nunca a enxerga. -->
+  <div class="rr-bloco" data-bloco="parceiro" id="rr-bloco-parceiro" style="display:none">
+    <span class="rr-label">7 · Enviar também para uma marca parceira</span>
+    <select id="rr-marca" class="rr-marca">
+      <option value="">Não — demanda interna</option>
+    </select>
+    <p class="rr-marca-aviso">Escolhendo uma marca, o representante dela passa a ver esta demanda e a resposta no painel de parceiros.</p>
+  </div>
+
   <div class="rr-bloco" data-bloco="nome">
     <span class="rr-label">7 · Seu nome</span>
     <div id="rr-nome-area"></div>
@@ -503,8 +524,22 @@ direto para a coordenação.</p>
   var CFG = {
     categorias: {"ocorrencia": [{"slug": "manutencao", "label": "Manutenção", "placeholder": "O que quebrou/avariou? Onde? Dá pra operar sem isso? Há risco imediato?", "icone": "<path d=\"M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-1.4 1.4-2-2z\"/>"}, {"slug": "compras_insumos", "label": "Compras / Insumos", "placeholder": "O que faltou ou veio errado? Quanto ainda tem? Afeta o serviço de hoje?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "rh_pessoas", "label": "RH & Pessoas", "placeholder": "O que aconteceu (escala, folga, conduta, equipe)? Quem estava presente?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "gerencia_casa", "label": "Gerência da casa", "placeholder": "O que houve (cliente, limpeza, segurança, avaria do salão)? Como foi contornado?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "operacao_bar", "label": "Operação de bar", "placeholder": "O que aconteceu na operação do bar? Desde quando? Afeta o serviço?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "marketing", "label": "Marketing", "placeholder": "O que houve (material, divulgação, evento, redes sociais)? Qual o impacto?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "coordenacao", "label": "Coordenação", "placeholder": "Descreva com detalhes: o quê, onde, quando e quem.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}], "solicitacao": [{"slug": "manutencao", "label": "Manutenção", "placeholder": "O que precisa de reparo/manutenção? Onde? Atrapalha a operação?", "icone": "<path d=\"M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-1.4 1.4-2-2z\"/>"}, {"slug": "compras_insumos", "label": "Compras / Insumos", "placeholder": "O que comprar/repor? Quantidade? Para quando? Motivo.", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "rh_pessoas", "label": "RH & Pessoas", "placeholder": "Do que precisa (escala, troca, folga, treinamento)? Quem? Qual dia/turno?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "gerencia_casa", "label": "Gerência da casa", "placeholder": "O que você precisa da gerência da casa? Para quando?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "operacao_bar", "label": "Operação de bar", "placeholder": "Qual a ideia/melhoria ou apoio na operação do bar? Que problema resolve?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "marketing", "label": "Marketing", "placeholder": "O que precisa (divulgação, material gráfico, evento, redes)? Para quando?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}, {"slug": "coordenacao", "label": "Coordenação", "placeholder": "O que você precisa da coordenação? Qual o prazo?", "icone": "<circle cx=\"6\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"18\" cy=\"12\" r=\"1.4\"/>"}]},
     setores: [{"slug": "manutencao", "label": "Manutenção"}, {"slug": "compras_insumos", "label": "Compras / Insumos"}, {"slug": "rh_pessoas", "label": "RH & Pessoas"}, {"slug": "gerencia_casa", "label": "Gerência da casa"}, {"slug": "operacao_bar", "label": "Operação de bar"}, {"slug": "marketing", "label": "Marketing"}, {"slug": "coordenacao", "label": "Coordenação"}],
+    marcas: {"redbull": "Red Bull", "diageo": "Diageo", "beamsuntory": "Beam Suntory"},
     worker: "https://registro-bares.rodrigopcviana.workers.dev"
   };
+
+  // Endereçar a demanda a uma marca parceira. O gate é o MESMO do Worker
+  // (chefe/coord/controladoria — ver handleRegistro no registro-bares); aqui
+  // ele só evita oferecer um campo que levaria 403. A garantia é a de lá.
+  var elMarca = document.getElementById('rr-marca');
+  if (['chefe', 'coord', 'controladoria'].indexOf(NIVEL) >= 0 && Object.keys(CFG.marcas).length) {
+    Object.keys(CFG.marcas).forEach(function (slug) {
+      var o = document.createElement('option');
+      o.value = slug; o.textContent = CFG.marcas[slug];
+      elMarca.appendChild(o);
+    });
+    document.getElementById('rr-bloco-parceiro').style.display = '';
+  }
   // Setor -> cor: MESMA paleta da Central de Demandas (dm-setor / SETOR_COR
   // em gera_demandas). Mudou lá? Espelhar aqui.
   var SETOR_COR = {
@@ -1000,7 +1035,7 @@ direto para a coordenação.</p>
     var body = {
       tipo: item.tipo, casa: item.casa, categoria: item.categoria, urgencia: item.urgencia,
       descricao: item.descricao, registrado_por: item.registrado_por,
-      solicitante_manual: item.solicitante_manual,
+      solicitante_manual: item.solicitante_manual, marca: item.marca || null,
       criado_em: item.criado_em, chave_registro: item.chave_registro,
       // Anexos que JÁ subiram numa tentativa anterior: os arquivos estão no
       // Notion e os ids continuam válidos, então o reenvio pela fila tem que
@@ -1172,7 +1207,7 @@ direto para a coordenação.</p>
     function criarRegistro() {
       var body = { tipo: item.tipo, casa: item.casa, categoria: item.categoria, urgencia: item.urgencia,
                    descricao: item.descricao, registrado_por: item.registrado_por,
-                   solicitante_manual: item.solicitante_manual,
+                   solicitante_manual: item.solicitante_manual, marca: item.marca || null,
                    criado_em: item.criado_em, chave_registro: item.chave_registro,
                    anexos: ids.filter(function (x) { return x; }) };
       fetch(CFG.worker + '/api/registro', {
@@ -1359,7 +1394,12 @@ direto para a coordenação.</p>
       // histórico de "Enviadas" daquela pessoa quando ela logar com a
       // própria senha individual (pedido do Rodrigo, 2026-07-13). Com
       // PESSOA, o Worker já usa o token assinado — null aqui não muda nada.
-      solicitante_manual: PESSOA ? null : nomeAtual()
+      solicitante_manual: PESSOA ? null : nomeAtual(),
+      // Marca parceira endereçada (vazio = demanda interna). Viaja NA FILA,
+      // e não só no POST: um envio que caiu offline e volta amanhã tem que
+      // chegar ao mesmo destinatário — sem isto, a demanda ressuscitaria
+      // interna e o parceiro nunca saberia que ela existiu.
+      marca: (elMarca && elMarca.value) || null
     };
 
     // Motor 3: aconselha antes de subir (só se há descrição — sem texto não há
@@ -1463,7 +1503,7 @@ direto para a coordenação.</p>
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 01/08/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 02/08/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -2487,7 +2527,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '0656a53e4f99';
+  var BUILD = 'be0c0ac82bdd';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
