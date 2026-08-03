@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Gestão de Produto · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=bc20dc32e6bb">
+<link rel="stylesheet" href="portal.css?v=031883056b97">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1476,6 +1476,15 @@ a contagem daquela semana.</p>
   table.cp-rev-tab td.rs { color:var(--text-3); font-size:11.5px; white-space:nowrap; }
   table.cp-rev-tab td.rs .sem { color:var(--amarelo); }
   table.cp-rev-tab tr.dif td.ap { background:color-mix(in srgb, var(--amarelo) 12%, transparent); }
+  /* zerado = cancelado da compra: fica na tela pra poder ser desfeito, mas
+     lido de relance como "não vai". O campo NÃO desbota — é por ele que se
+     volta atrás. */
+  table.cp-rev-tab tr.fora td { opacity:.55; }
+  table.cp-rev-tab tr.fora td.ap { opacity:1; }
+  table.cp-rev-tab tr.fora td:first-child { text-decoration:line-through; }
+  .cp-fora-tag { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:99px;
+    font-size:9.5px; letter-spacing:.04em; text-transform:uppercase; text-decoration:none;
+    background:color-mix(in srgb, var(--text-3) 16%, transparent); color:var(--text-2); }
   .cp-apr-inp { width:64px; padding:4px 6px; font:inherit; font-size:13px; text-align:right;
     border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text); }
   .cp-apr-inp:focus { border-color:var(--acc); outline:none; }
@@ -1564,6 +1573,9 @@ a contagem daquela semana.</p>
     <button class="cp-btn oco" id="cp-rev-aprovar-tudo" type="button">Aprovar tudo com o Pedido 1</button>
     <span class="cp-status" id="cp-rev-aprovar-status"></span>
   </div>
+  <p class="sub" style="margin:-4px 0 10px">Mude a quantidade só do que precisa ajustar —
+  <b>0 tira o item da compra</b>. Ao clicar em <b>Aprovar ajustes</b>, quem ficou em branco
+  é aprovado com a quantidade do <b>Pedido 1</b>, e é essa lista que vai para o everloja.</p>
   <div id="cp-rev"></div>
   <h2 style="font-size:15px">Sobras — candidatas a transferência</h2>
   <div class="cp-sobra-bloco">
@@ -2246,7 +2258,18 @@ a contagem daquela semana.</p>
     if (!DADOS) return;
     document.getElementById('cp-rev-titulo').textContent = 'Revisão do pedido — ' + nomeCasa(casaSel) + ' · ' + (DADOS.semana.titulo || '');
     var porForn = {};
-    PRODUTOS.forEach(function (p) { if (qEff(p) > 0) { var f = p.fornecedor || '(sem fornecedor)'; (porForn[f] = porForn[f] || []).push(p); } });
+    // Item ZERADO continua na tabela (2026-08-03). Zerar é como se cancela um
+    // item, e antes ele sumia da revisão no primeiro re-render: um 0 digitado
+    // por engano virava irrecuperável nesta tela — some a linha, some o campo
+    // pra corrigir. Ele fica visível, riscado, fora dos subtotais e fora do
+    // texto de WhatsApp; só a linha sobrevive, pra poder ser desfeita.
+    function zerado(p) { return p.pedido > 0 && p.pd_aprovado === 0; }
+    PRODUTOS.forEach(function (p) {
+      if (qEff(p) > 0 || zerado(p)) {
+        var f = p.fornecedor || '(sem fornecedor)';
+        (porForn[f] = porForn[f] || []).push(p);
+      }
+    });
     var h = '', txt = '';
     var txtForn = {};
     var fornOrd = Object.keys(porForn).sort();
@@ -2261,6 +2284,7 @@ a contagem daquela semana.</p>
         var tf = 'Pedido ' + nomeCasa(casaSel) + ' — ' + f + ' — semana ' + (DADOS.semana.titulo || '') + '\n\n';
         txt += '\n*' + f + '*\n';
         porForn[f].forEach(function (p) {
+          if (!(qEff(p) > 0)) return;  // zerado não vai pro fornecedor
           txt += '• ' + p.nome + ' — ' + fmt(qEff(p)) + '\n';
           tf += '• ' + p.nome + ' — ' + fmt(qEff(p)) + '\n';
         });
@@ -2272,7 +2296,10 @@ a contagem daquela semana.</p>
 
     fornOrd.forEach(function (f, fi) {
       var sub = 0, semP = 0;
-      porForn[f].forEach(function (p) { if (p.preco_unit != null) sub += qEff(p) * p.preco_unit; else semP++; });
+      porForn[f].forEach(function (p) {
+        if (zerado(p)) return;  // fora da compra: não soma nem conta como "sem preço"
+        if (p.preco_unit != null) sub += qEff(p) * p.preco_unit; else semP++;
+      });
       // O subtotal ganhou id: atualizaTotais() reescreve só ele quando a
       // quantidade aprovada muda, sem refazer a tabela inteira.
       h += '<div class="cp-forn-bloco"><h4>' + esc(f) +
@@ -2304,8 +2331,10 @@ a contagem daquela semana.</p>
           : (p.pd_aprovado != null ? fmt(p.pd_aprovado) : '<span class="ctx">—</span>');
         // aprovado diferente do Pedido 1 fica marcado — o que vai pro
         // fornecedor é o aprovado, e a diferença não pode passar despercebida.
-        var dif = (p.pd_aprovado != null && p.pd_aprovado !== p.pedido) ? ' class="dif"' : '';
-        h += '<tr' + dif + '><td>' + esc(p.nome) + '</td>' +
+        var cls = zerado(p) ? 'fora' : ((p.pd_aprovado != null && p.pd_aprovado !== p.pedido) ? 'dif' : '');
+        var dif = cls ? ' class="' + cls + '"' : '';
+        h += '<tr' + dif + '><td>' + esc(p.nome) +
+          (zerado(p) ? ' <span class="cp-fora-tag">fora da compra</span>' : '') + '</td>' +
           '<td class="n">' + fmt(p.contado) + '</td>' +
           '<td class="n op">' + (p.min != null ? fmt(p.min) : '—') + '</td>' +
           '<td class="n op venda">' + (p.venda != null ? fmt(p.venda) : '—') + '</td>' +
@@ -2313,7 +2342,8 @@ a contagem daquela semana.</p>
           '<td class="n pd1">' + fmt(p.pedido) + '</td>' +
           '<td class="n ap">' + aprCel + '</td>' +
           '<td class="n op rs" id="cp-rs-' + idx + '">' +
-          (p.preco_unit != null ? rs(q * p.preco_unit) : '<span class="sem">sem preço</span>') +
+          (zerado(p) ? '<span class="ctx">—</span>'
+            : (p.preco_unit != null ? rs(q * p.preco_unit) : '<span class="sem">sem preço</span>')) +
           '</td></tr>';
       });
       h += '</tbody></table></div></div>';
@@ -2326,29 +2356,69 @@ a contagem daquela semana.</p>
     // exatamente o contrário de "alterar a quantidade de forma mais fácil".
     function atualizaLinha(idx) {
       var p = PRODUTOS[idx];
+      var fora = zerado(p);
       var cel = document.getElementById('cp-rs-' + idx);
       if (cel) {
-        cel.innerHTML = p.preco_unit != null
-          ? rs(qEff(p) * p.preco_unit) : '<span class="sem">sem preço</span>';
+        cel.innerHTML = fora ? '<span class="ctx">—</span>'
+          : (p.preco_unit != null
+            ? rs(qEff(p) * p.preco_unit) : '<span class="sem">sem preço</span>');
       }
       var inp = document.querySelector('.cp-apr-inp[data-i="' + idx + '"]');
       var tr = inp ? inp.closest('tr') : null;
-      if (tr) tr.classList.toggle('dif', p.pd_aprovado != null && p.pd_aprovado !== p.pedido);
+      if (tr) {
+        tr.classList.toggle('fora', fora);
+        tr.classList.toggle('dif', !fora && p.pd_aprovado != null && p.pd_aprovado !== p.pedido);
+        // A etiqueta "fora da compra" acompanha na hora: digitar 0 sem
+        // re-render deixava a linha só riscada, sem dizer o que aconteceu.
+        var tag = tr.querySelector('.cp-fora-tag');
+        if (fora && !tag) {
+          tag = document.createElement('span');
+          tag.className = 'cp-fora-tag';
+          tag.textContent = 'fora da compra';
+          tr.cells[0].appendChild(document.createTextNode(' '));
+          tr.cells[0].appendChild(tag);
+        } else if (!fora && tag) {
+          tag.remove();
+        }
+      }
       atualizaTotais();
+    }
+
+    // Total + linha de cobertura ("cobre N de M itens") juntos. Estavam
+    // separados: atualizaTotais() reescrevia só o total, e a cobertura ficava
+    // no fim de revisao(). Zerar um item muda a CONTAGEM sem re-render — o
+    // total caía certo e a linha embaixo continuava afirmando o número velho.
+    function escreveOrcamento() {
+      var o = orcamento();
+      var elTot = document.getElementById('cp-rev-total');
+      if (elTot) elTot.textContent = o.itens ? rs(o.tot) : rs(0);
+      var elCob = document.getElementById('cp-rev-cob');
+      if (elCob) {
+        elCob.innerHTML = o.itens
+          ? 'Estimativa cobre <b style="color:var(--verde)">' + o.com + ' de ' + o.itens + ' itens</b>.' +
+            (o.sem ? ' <b style="color:var(--amarelo)">' + o.sem + ' sem preço no B.D.1</b> — use o filtro "Sem preço" na aba anterior pra completar o catálogo.' : '')
+          : 'Nenhum item no pedido ainda.';
+      }
+      // O rodapé fixo mostra o MESMO orçamento e só era redesenhado na carga
+      // e ao cruzar o breakpoint mobile: ajustar quantidade aqui deixava os
+      // dois totais divergentes na mesma tela (medido no harness — o rodapé
+      // ficava com o valor de antes da revisão). Sem cifra neste comentário:
+      // ele vai pro HTML publicado, e _checa_publica aborta a build inteira
+      // se um valor em reais aparecer numa página fora de PAGINAS_PRECO_OK.
+      renderRodape();
     }
 
     function atualizaTotais() {
       fornOrd.forEach(function (f, i) {
         var sub = 0, semP = 0;
         porForn[f].forEach(function (p) {
+          if (zerado(p)) return;
           if (p.preco_unit != null) sub += qEff(p) * p.preco_unit; else semP++;
         });
         var el = document.getElementById('cp-sub-' + i);
         if (el) el.textContent = (sub ? rs(sub) : '') + (semP ? ' +' + semP + ' s/ preço' : '');
       });
-      var o2 = orcamento();
-      var elTot = document.getElementById('cp-rev-total');
-      if (elTot) elTot.textContent = o2.itens ? rs(o2.tot) : rs(0);
+      escreveOrcamento();
       montaTexto();
     }
 
@@ -2384,37 +2454,46 @@ a contagem daquela semana.</p>
           alvo.length ? jaAjustados + ' de ' + alvo.length + ' com Pd ajustado' : '';
         btnTudo.disabled = !alvo.length;
 
-        // "Aprovar ajustes": confirma a coluna Pd ajustado COMO ESTÁ, sem
-        // mexer em número nenhum (decisão do Rodrigo, 2026-07-27). Não existe
-        // hoje um campo de "pedido aprovado" no Notion separado das
-        // quantidades — a própria coluna é a aprovação. Então o que este botão
-        // faz de concreto é: garantir que tudo que foi digitado chegou ao
-        // Notion (drena a fila) e dizer, sem rodeio, o que está aprovado e o
-        // que ficou em branco.
+        // "Aprovar ajustes" = APROVAR O PEDIDO. Corrigido em 2026-08-03, a
+        // partir do procedimento real do Rodrigo: ele confere item a item, e
+        // deixar a linha EM BRANCO quer dizer "aprovei do jeito que estava"
+        // (a quantidade do Pedido 1). Até aqui o botão não escrevia nada — só
+        // drenava a fila —, então a linha em branco continuava com Pd ajustado
+        // vazio e `itensAprovadosCasa` (worker.js) a descartava
+        // (`if (!p.pd_aprovado) continue`): o pedido que ia pro everloja era
+        // SÓ o que ele tinha digitado. Pior, a MESMA tela já usava a outra
+        // semântica — o texto de WhatsApp sai de qEff(), que cai no Pedido 1
+        // quando o ajustado é vazio. Duas verdades no mesmo pedido.
+        // Agora o botão MATERIALIZA a herança: em branco vira o Pedido 1 na
+        // coluna, e o que foi digitado NUNCA é tocado — inclusive o 0, que é
+        // como se cancela um item (0 grava, e o worker o exclui do envio).
         var btnAjustes = document.getElementById('cp-rev-aprovar-ajustes');
         if (btnAjustes) {
           btnAjustes.disabled = !alvo.length;
           btnAjustes.onclick = function () {
-            var ajustados = alvo.filter(function (p) { return p.pd_aprovado != null; });
-            var vazios = alvo.length - ajustados.length;
-            var msg = 'Aprovar o pedido com os ajustes como estão?\n\n' +
-              ajustados.length + ' item(ns) com quantidade no Pd ajustado\n' +
-              vazios + ' item(ns) em branco';
-            if (vazios) {
-              // Armadilha real: a tela mostra o Pedido 1 em cinza na linha
-              // vazia (herança), mas o envio ao everloja só leva item com
-              // número gravado nesta coluna — item em branco fica de fora, em
-              // silêncio. Avisar aqui é o mínimo; ver nota no CLAUDE.md.
-              msg += ' — na tela valem o Pedido 1, mas NÃO entram no envio ao ' +
-                'everloja, que só leva item com número nesta coluna.\n\n' +
-                'Para incluir os que faltam, use "Aprovar tudo com o Pedido 1".';
+            var vazios = alvo.filter(function (p) { return p.pd_aprovado == null; });
+            var digitados = alvo.length - vazios.length;
+            var zerados = alvo.filter(function (p) { return p.pd_aprovado === 0; }).length;
+            var msg = 'Aprovar o pedido desta semana?\n\n' +
+              digitados + ' item(ns) com quantidade digitada no Pd ajustado\n' +
+              vazios.length + ' item(ns) em branco — serão aprovados com a ' +
+              'quantidade do Pedido 1';
+            if (zerados) {
+              msg += '\n' + zerados + ' item(ns) zerados — ficam FORA da compra';
             }
             if (!confirm(msg)) return;
+            vazios.forEach(function (p) {
+              p.pd_aprovado = p.pedido;
+              agendaGrava(p, DADOS.campo_pd_aprovado, p.pedido);
+            });
             envia();  // drena a fila: o que foi digitado tem que estar no Notion
+            revisao();  // re-render: as linhas em branco passam a exibir o número
+            // DEPOIS do re-render: revisao() reescreve este mesmo status com a
+            // contagem padrão, e a mensagem da aprovação sumiria sem eco.
             var st = document.getElementById('cp-rev-aprovar-status');
-            st.textContent = 'ajustes aprovados — ' + ajustados.length + ' com Pd ajustado' +
-              (vazios ? ' · ' + vazios + ' em branco (fora do everloja)' : '');
-            st.className = vazios ? 'cp-status pend' : 'cp-status';
+            st.textContent = 'pedido aprovado — ' + (alvo.length - zerados) +
+              ' item(ns) na compra' + (zerados ? ' · ' + zerados + ' zerado(s) fora' : '');
+            st.className = 'cp-status';
           };
         }
         btnTudo.onclick = function () {
@@ -2449,12 +2528,7 @@ a contagem daquela semana.</p>
       };
     });
 
-    var o = orcamento();
-    document.getElementById('cp-rev-total').textContent = o.itens ? rs(o.tot) : rs(0);
-    document.getElementById('cp-rev-cob').innerHTML = o.itens
-      ? 'Estimativa cobre <b style="color:var(--verde)">' + o.com + ' de ' + o.itens + ' itens</b>.' +
-        (o.sem ? ' <b style="color:var(--amarelo)">' + o.sem + ' sem preço no B.D.1</b> — use o filtro "Sem preço" na aba anterior pra completar o catálogo.' : '')
-      : 'Nenhum item no pedido ainda.';
+    escreveOrcamento();
 
     var sh = '';
     PRODUTOS.filter(function (p) { return p.sobra > 0; }).forEach(function (p) {
@@ -2484,6 +2558,32 @@ a contagem daquela semana.</p>
     if (PODE_APROVAR) {
       everlojaBloco.style.display = '';
       everlojaBtn.onclick = function () {
+        // Duas travas antes de snapshotar (2026-08-03). A rota lê o Pd
+        // ajustado DO NOTION, não desta tela: sair daqui com número que ainda
+        // não chegou lá manda um pedido incompleto sem ninguém perceber.
+        // (a) fila de gravação ainda drenando — inclusive a que "Aprovar
+        // ajustes" acabou de enfileirar (debounce de 900ms + ~350ms por item).
+        if (enviando || fila.length) {
+          everlojaStatus.className = 'cp-status pend';
+          everlojaStatus.textContent = 'Ainda salvando ' + (fila.length || 1) +
+            ' item(ns) no Notion — espere o "✓ tudo salvo" e clique de novo.';
+          return;
+        }
+        // (b) item em branco no Pd ajustado NÃO entra no envio (o worker só
+        // leva o que tem número na coluna). Em vez de descobrir isso pela
+        // ausência lá no everloja, cobra a aprovação aqui.
+        if (DADOS.campo_pd_aprovado) {
+          var faltam = PRODUTOS.filter(function (p) {
+            return p.pedido > 0 && p.pd_aprovado == null;
+          }).length;
+          if (faltam) {
+            everlojaStatus.className = 'cp-status erro';
+            everlojaStatus.textContent = faltam + ' item(ns) sem quantidade no ' +
+              'Pd ajustado ficariam de fora. Clique em "Aprovar ajustes" primeiro ' +
+              '— quem está em branco entra com a quantidade do Pedido 1.';
+            return;
+          }
+        }
         everlojaBtn.disabled = true;
         everlojaStatus.className = 'cp-status pend';
         everlojaStatus.textContent = 'Enviando pra fila…';
@@ -5422,7 +5522,7 @@ a contagem daquela semana.</p>
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 02/08/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 03/08/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -6446,7 +6546,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'bc20dc32e6bb';
+  var BUILD = '031883056b97';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
