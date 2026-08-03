@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Gestão de Produto · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=031883056b97">
+<link rel="stylesheet" href="portal.css?v=d2b19fe03bce">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -3086,6 +3086,17 @@ a contagem daquela semana.</p>
   .evc-categoria { color:var(--text-3); font-size:12px; }
   .evc-vazio { text-align:center; color:var(--text-3); padding:30px 10px; }
   .evc-pendencias { background:#3a2d12; color:var(--amarelo); border-radius:10px; padding:10px 14px; font-size:13px; margin:14px 0; }
+  /* Bloco que responde "o pedido está feito lá?". Verde só quando existe o
+     número da Solicitação — o resto é neutro, nunca alarme: pedido na fila é
+     o curso normal, e pintar de vermelho a espera treina o olho a ignorar. */
+  .evc-lancado { border-radius:12px; padding:12px 16px; margin:0 0 14px; border:1px solid var(--border); }
+  .evc-lancado.ok { background:color-mix(in srgb, var(--verde) 12%, transparent);
+    border-color:color-mix(in srgb, var(--verde) 45%, transparent); }
+  .evc-lancado.espera { background:var(--bg-2); }
+  .evc-lancado-tit { font-weight:600; font-size:14px; }
+  .evc-lancado.ok .evc-lancado-tit { color:var(--verde); }
+  .evc-lancado-sub { font-family:var(--serif); font-size:19px; margin-top:3px; }
+  .evc-lancado-obs { font-size:12px; color:var(--text-3); margin-top:5px; }
   .evc-acoes { display:flex; gap:10px; align-items:center; margin-top:16px; }
   .evc-foot { font-size:11.5px; color:var(--text-3); margin-top:16px; }
 </style>
@@ -3164,6 +3175,51 @@ a contagem daquela semana.</p>
     kpiItens.appendChild(vItens); kpiItens.appendChild(lItens);
     resumo.appendChild(kpiItens);
     view.appendChild(resumo);
+
+    // A RESPOSTA "o pedido está feito?" — 2026-08-03, pedido do Rodrigo:
+    // "quero uma forma de confirmação aqui pra não precisar entrar no site do
+    // everloja". Os dados já vinham na rota (solicitacao/montado_em/total);
+    // faltava a tela dizer. O sinal de que existe do outro lado é o NÚMERO da
+    // Solicitação: é ele que o robô só grava depois de ler da tela do everloja
+    // (a prova de salvo, ver 0a2656e), então ter número = existe lá. O chip de
+    // status sozinho não serve: "Aguardando conferência" é verdade e não
+    // responde a pergunta.
+    var aviso = document.createElement('div');
+    if (pedido.solicitacao) {
+      aviso.className = 'evc-lancado ok';
+      var t1 = document.createElement('div');
+      t1.className = 'evc-lancado-tit';
+      t1.textContent = 'Pedido lançado no everloja';
+      var t2 = document.createElement('div');
+      t2.className = 'evc-lancado-sub';
+      var partes = ['Solicitação nº ' + pedido.solicitacao];
+      if (pedido.montado_em) partes.push('em ' + fmtData(pedido.montado_em));
+      if (pedido.total != null) partes.push(fmtBRL(pedido.total));
+      t2.textContent = partes.join(' · ');
+      var t3 = document.createElement('div');
+      t3.className = 'evc-lancado-obs';
+      t3.textContent = 'Você não precisa abrir o everloja pra conferir — '
+        + 'este número é o mesmo do histórico de Solicitações de lá.';
+      aviso.appendChild(t1); aviso.appendChild(t2); aviso.appendChild(t3);
+    } else {
+      // Sem número não se afirma que está lá. Erro/Cancelado ganham texto
+      // próprio: dizer "aguardando o robô" num pedido que FALHOU manda a
+      // pessoa esperar por algo que não vai acontecer sozinho.
+      aviso.className = 'evc-lancado espera';
+      var e1 = document.createElement('div');
+      e1.className = 'evc-lancado-tit';
+      e1.textContent = (pedido.status === 'Erro' || pedido.status === 'Cancelado')
+        ? 'Ainda NÃO está no everloja — este pedido parou'
+        : 'Ainda NÃO está no everloja';
+      var e2 = document.createElement('div');
+      e2.className = 'evc-lancado-obs';
+      e2.textContent = (pedido.status === 'Erro' || pedido.status === 'Cancelado')
+        ? 'Veja o motivo abaixo. Enquanto não for resolvido, nada será lançado.'
+        : 'Está na fila. Quando o robô montar a solicitação, o número dela '
+          + 'aparece aqui — é por ele que você confirma, sem abrir o everloja.';
+      aviso.appendChild(e1); aviso.appendChild(e2);
+    }
+    view.appendChild(aviso);
 
     if (pedido.pendencias) {
       var pend = document.createElement('div');
@@ -3246,6 +3302,9 @@ a contagem daquela semana.</p>
 
     var datas = [];
     if (pedido.aprovado_em) datas.push('Aprovado em ' + fmtData(pedido.aprovado_em));
+    // "Montado em" é o instante em que o pedido passou a existir no everloja —
+    // faltava na linha do tempo, que pulava de Aprovado pra Confirmado.
+    if (pedido.montado_em) datas.push('Lançado no everloja em ' + fmtData(pedido.montado_em));
     if (pedido.confirmado_em) datas.push('Confirmado em ' + fmtData(pedido.confirmado_em));
     if (pedido.finalizado_em) datas.push('Finalizado em ' + fmtData(pedido.finalizado_em));
     if (datas.length) {
@@ -6546,7 +6605,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '031883056b97';
+  var BUILD = 'd2b19fe03bce';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
