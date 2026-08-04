@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Sessão Criativa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=01ffc73a7e50">
+<link rel="stylesheet" href="portal.css?v=4918febb31c1">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -503,9 +503,28 @@ window.msgAcessoNegado = function (nomePagina) {
                   color:#f3ede2;font-size:14px;padding:8px;resize:vertical;font-family:Georgia,serif;}
   .sc-ed .lin{display:flex;gap:7px;margin-top:9px;justify-content:flex-end;}
   .sc-gal{margin-top:16px;position:relative;}
+  /* Galeria como TELA (2026-08-04): sem folha aberta em cima, ela deixa de
+     ser rodapé e vira o conteúdo — daí o respiro maior e o título em corpo
+     de página, não de seção. */
+  .sc-gal-sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8f8672;
+             font-weight:600;margin:18px 0 8px;}
+  .sc-gal-sec:first-child{margin-top:0;}
+  /* Atalho "continuar": borda dourada porque é a ação provável, não mais uma
+     linha da lista. `display:flex` no próprio elemento tem que perder pro
+     [hidden] — por isso a regra explícita logo abaixo (a mesma armadilha do
+     `.ac-ok[hidden]` da tela de entrada, terceira vez no projeto). */
+  .sc-gal-cont{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+              background:#211c15;border:1px solid #d0a352;border-radius:10px;
+              padding:10px 12px;cursor:pointer;color:inherit;margin-bottom:4px;font-family:inherit;}
+  .sc-gal-cont[hidden]{display:none;}
+  .sc-gal-cont:hover{background:#2a2419;}
+  .sc-gal-cont .tx{min-width:0;flex:1;}
+  .sc-gal-cont .nm{display:block;font-family:Georgia,serif;font-size:13.5px;color:#f3ede2;
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sc-gal-cont .qd{display:block;font-size:10.5px;color:#8f8672;margin-top:1px;}
   .sc-gal-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px;}
-  .sc-gal h3{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#8f8672;
-             margin:0;font-weight:600;}
+  /* Corpo de página, não de seção: a galeria virou a tela de entrada. */
+  .sc-gal h3{font-family:Georgia,serif;font-size:19px;color:#f3ede2;margin:0;font-weight:500;}
   .sc-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;}
   .sc-tile{background:#211c15;border:1px solid #3a3428;border-radius:10px;overflow:hidden;
            cursor:pointer;text-align:left;padding:0;color:inherit;}
@@ -1009,7 +1028,14 @@ window.msgAcessoNegado = function (nomePagina) {
   <div id="sc-gate" class="sc-gate" hidden></div>
 
   <div id="sc-app" hidden>
+    <!-- A folha aberta é um ESTADO da tela, não a tela inteira: entrar na
+         Sessão Criativa mostra a GALERIA (`#sc-gal`), e este bloco só aparece
+         quando alguém escolhe uma folha. Antes o boot abria a folha mais
+         recente sozinho — você caía num canvas que não escolheu, e a galeria
+         ficava numa faixa abaixo da dobra. Pedido do Rodrigo, 2026-08-04. -->
+    <div id="sc-folha-view" hidden>
     <div class="sc-topo">
+      <button id="sc-voltar-gal" class="sc-b" type="button"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg> Galeria</button>
       <input id="sc-titulo" class="sc-tit" maxlength="120" placeholder="Folha sem título"
              aria-label="Título da folha">
       <span id="sc-estado" class="sc-est"></span>
@@ -1109,16 +1135,43 @@ window.msgAcessoNegado = function (nomePagina) {
         </div>
       </div>
     </div>
+    </div><!-- /#sc-folha-view -->
 
     <div class="sc-gal" id="sc-gal">
       <div class="sc-gal-h">
-        <h3>Minhas folhas e cadernos</h3>
-        <button class="sc-b" id="sc-cdn-novo" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Novo caderno</button>
+        <h3>Sessão criativa</h3>
+        <div class="sc-acoes">
+          <button class="sc-b" id="sc-cdn-novo" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Novo caderno</button>
+          <button class="sc-b" id="sc-nova-gal" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Folha nova</button>
+        </div>
       </div>
-      <div id="sc-tiles" class="sc-tiles"></div>
+
+      <!-- "Continuar" existe pra não cobrar 2 cliques de quem passa o dia na
+           MESMA folha — era a única coisa boa do boot antigo (abrir sozinho a
+           mais recente). Aqui vira oferta, não imposição. Escondido quando não
+           há nada recente. -->
+      <button class="sc-gal-cont" id="sc-gal-cont" type="button" hidden>
+        <svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor" stroke="none"/></svg>
+        <span class="tx">
+          <span class="nm" id="sc-gal-cont-nome"></span>
+          <span class="qd" id="sc-gal-cont-meta"></span>
+        </span>
+      </button>
+
+      <div id="sc-gal-cadernos" hidden>
+        <div class="sc-gal-sec">Cadernos</div>
+        <div id="sc-tiles-cdn" class="sc-tiles"></div>
+      </div>
+
+      <div id="sc-gal-soltas" hidden>
+        <div class="sc-gal-sec">Sessões avulsas</div>
+        <div id="sc-tiles" class="sc-tiles"></div>
+      </div>
+
       <div id="sc-gvazio" class="sc-vazio" hidden>
-        Nenhuma folha ainda. Toque em <b>Folha nova</b> e comece a rabiscar — ela se
-        salva sozinha e você reabre daqui, de qualquer aparelho.
+        Nada por aqui ainda. <b>Novo caderno</b> agrupa as folhas de uma carta;
+        <b>Folha nova</b> abre um rascunho solto — ele se salva sozinho e você
+        reabre daqui, de qualquer aparelho.
       </div>
     </div>
 
@@ -3591,8 +3644,12 @@ window.msgAcessoNegado = function (nomePagina) {
         reconstruir(); botoes();
         return reidrata();
       })
-      .then(function(){ enquadra(); marca('salvo'); listaGaleria(); carregaConsumo(); })
-      .catch(function(){ marca('não consegui abrir', true); });
+      .then(function(){
+        mostraFolha();               // troca de estado só DEPOIS de ter conteúdo
+        lembraUltima(folhaId, elTitulo.value);
+        marca('salvo'); carregaConsumo();
+      })
+      .catch(function(){ marca('não consegui abrir', true); toast('Não consegui abrir essa folha.', true); });
   }
   function nova(){
     if (sujo && folhaId) salva();
@@ -3609,7 +3666,8 @@ window.msgAcessoNegado = function (nomePagina) {
         // gaveta com a frase de "abra uma folha".
         consumoCache = {linhas:[], resumo:{gasto:0, lancamentos:0, sem_preco:0, parcial:false}};
         pintaConsumo();
-        marca('salvo'); listaGaleria(); ferramenta('pen'); elTitulo.focus(); elTitulo.select();
+        mostraFolha(); lembraUltima(folhaId, j.titulo);
+        marca('salvo'); ferramenta('pen'); elTitulo.focus(); elTitulo.select();
       })
       .catch(function(){ marca('não consegui criar', true); });
   }
@@ -3723,9 +3781,17 @@ window.msgAcessoNegado = function (nomePagina) {
     }).then(function(r){
       if (!r.ok) throw new Error('x');
       toast('Folha arquivada — nada foi apagado.');
-      folhaId = null; limpa(); elTitulo.value = ''; marca(''); listaGaleria();
+      // Arquivar tira a folha da tela: sem estado de folha pra mostrar, o
+      // lugar certo é a galeria (antes ficava um canvas vazio no lugar).
+      esqueceUltima(folhaId);
+      folhaId = null; limpa(); elTitulo.value = ''; marca(''); mostraGaleria();
     }).catch(function(){ toast('não consegui arquivar', true); });
   };
+  document.getElementById('sc-voltar-gal').onclick = function(){
+    if (sujo && folhaId) salva();   // o autosave tem 1,2s de debounce
+    mostraGaleria();
+  };
+  document.getElementById('sc-nova-gal').onclick = nova;
   elTitulo.addEventListener('input', function(){ if (folhaId) agenda(); });
 
   // K5 (PLANO_CADERNO.md): tile de UMA folha — extraído de listaGaleria()
@@ -3759,7 +3825,10 @@ window.msgAcessoNegado = function (nomePagina) {
       meta.appendChild(dn);
     }
     b.appendChild(mini); b.appendChild(meta);
-    b.onclick = function(){ if (f.id !== folhaId) abre(f.id); };
+    // Se a folha do card JÁ é a que está carregada, não recarrega do
+    // servidor — só volta pra ela. Sem isto o clique não fazia nada, e
+    // agora que a galeria é uma tela separada isso pareceria travamento.
+    b.onclick = function(){ if (f.id === folhaId) mostraFolha(); else abre(f.id); };
     return b;
   }
 
@@ -3791,6 +3860,71 @@ window.msgAcessoNegado = function (nomePagina) {
   // /api/sessao/folhas) e cadernos juntos, mais recente primeiro. Sessão
   // dentro de um caderno não aparece aqui de novo — ela mora na galeria de
   // dentro do caderno (abreCaderno), pra não listar a mesma coisa 2x.
+  /* ---------------- galeria × folha: dois estados da tela ----------------
+     A galeria é a ENTRADA. A folha só aparece quando alguém escolhe uma —
+     e some quando volta. Não é cosmético: com a folha sempre montada, o
+     canvas ocupava ~460px acima da lista mesmo pra quem só trabalha em
+     caderno (efeito colateral do K5, que já mostrava a galeria nesse caso).
+
+     `hidden` puro nos dois containers porque nenhum dos dois tem `display`
+     vindo de regra de classe — a armadilha registrada no CLAUDE.md ("Lição
+     de CSS") só morde quem tem. O `.sc-gal-cont` TEM (`display:flex`), e por
+     isso ganhou `[hidden]{display:none}` explícito no CSS. */
+  /* Resolvidos na hora, não guardados numa var: o bloco do K5 declara
+     `cdnGal`/`cdnView` pros MESMOS nós mais abaixo neste arquivo, e depender
+     de qual atribuição roda primeiro é o tipo de fragilidade que quebra
+     quando alguém reordena o código. Estas funções rodam raramente. */
+  function mostraGaleria(){
+    document.getElementById('sc-folha-view').hidden = true;
+    document.getElementById('sc-cdn-view').hidden = true;
+    document.getElementById('sc-gal').hidden = false;
+    listaGaleria();
+  }
+  function mostraFolha(){
+    document.getElementById('sc-gal').hidden = true;
+    document.getElementById('sc-cdn-view').hidden = true;
+    document.getElementById('sc-folha-view').hidden = false;
+    // O canvas mede 0×0 enquanto está com [hidden] — sem redimensionar aqui,
+    // a folha abre em branco até o primeiro resize da janela.
+    dimensiona(); enquadra();
+  }
+
+  /* A última folha mexida, pra oferecer "continuar" sem impor. Guardada no
+     próprio aparelho: é preferência de quem está sentado ali, não estado da
+     folha — duas pessoas na mesma folha compartilhada não têm por que
+     herdar o "continuar" uma da outra. */
+  var CONT_LS = 'sessao_criativa_ultima';
+  function lembraUltima(id, titulo){
+    try { localStorage.setItem(CONT_LS, JSON.stringify({id:id, titulo:titulo, quando:Date.now()})); } catch(e){}
+  }
+  function esqueceUltima(id){
+    try {
+      var u = JSON.parse(localStorage.getItem(CONT_LS) || 'null');
+      if (u && (!id || u.id === id)) localStorage.removeItem(CONT_LS);
+    } catch(e){}
+  }
+  function pintaContinuar(folhas){
+    var el = document.getElementById('sc-gal-cont');
+    var u = null;
+    try { u = JSON.parse(localStorage.getItem(CONT_LS) || 'null'); } catch(e){}
+    // Só oferece o que AINDA existe e não foi arquivada — senão o atalho
+    // levaria a um 404 (folha apagada noutro aparelho é o caso comum).
+    var viva = u && (folhas || []).filter(function(f){ return f.id === u.id; })[0];
+    if (!viva){ el.hidden = true; return; }
+    document.getElementById('sc-gal-cont-nome').textContent = 'Continuar: ' + viva.titulo;
+    document.getElementById('sc-gal-cont-meta').textContent =
+      (viva.meu === false ? 'de ' + (viva.dono || 'outra pessoa') + ' · ' : '') + quando(viva.atualizado);
+    el.hidden = false;
+    el.onclick = function(){ abre(viva.id); };
+  }
+  function quando(iso){
+    var d = new Date(iso), min = Math.round((Date.now() - d) / 60000);
+    if (min < 1) return 'agora';
+    if (min < 60) return 'há ' + min + ' min';
+    if (min < 1440) return 'há ' + Math.round(min/60) + 'h';
+    return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+  }
+
   function listaGaleria(){
     Promise.all([
       fetch(WORKER + '/api/sessao/folhas', {headers:cab()})
@@ -3799,15 +3933,20 @@ window.msgAcessoNegado = function (nomePagina) {
         .then(function(r){ return r.ok ? r.json() : {cadernos:[]}; }).catch(function(){ return {cadernos:[]}; }),
     ]).then(function(res){
       var fs = res[0].folhas || [], cds = res[1].cadernos || [];
-      var box = document.getElementById('sc-tiles');
-      box.textContent = '';
+      // Cadernos ANTES das avulsas, cada um na sua seção — o caderno é o
+      // organizador do trabalho; misturar os dois numa lista só por data
+      // (como era) fazia rascunho solto empurrar carta inteira pra baixo.
+      var boxC = document.getElementById('sc-tiles-cdn');
+      var boxF = document.getElementById('sc-tiles');
+      boxC.textContent = ''; boxF.textContent = '';
+      cds.slice().sort(function(a,b){ return new Date(b.atualizado) - new Date(a.atualizado); })
+        .forEach(function(c){ boxC.appendChild(tileCaderno(c)); });
+      fs.slice().sort(function(a,b){ return new Date(b.atualizado) - new Date(a.atualizado); })
+        .forEach(function(f){ boxF.appendChild(tileFolha(f)); });
+      document.getElementById('sc-gal-cadernos').hidden = !cds.length;
+      document.getElementById('sc-gal-soltas').hidden = !fs.length;
       document.getElementById('sc-gvazio').hidden = (fs.length + cds.length) > 0;
-      var itens = fs.map(function(f){ return {c:'folha', d:f}; })
-        .concat(cds.map(function(c){ return {c:'caderno', d:c}; }));
-      itens.sort(function(a,b){ return new Date(b.d.atualizado) - new Date(a.d.atualizado); });
-      itens.forEach(function(it){
-        box.appendChild(it.c === 'caderno' ? tileCaderno(it.d) : tileFolha(it.d));
-      });
+      pintaContinuar(fs);
     });
   }
 
@@ -4358,6 +4497,9 @@ window.msgAcessoNegado = function (nomePagina) {
         document.getElementById('sc-cdn-arquivar').innerHTML =
           (j.caderno.estado === 'arquivado' ? '<svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg> Reabrir' : '<svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg> Arquivar');
         cdnAba('sessoes');
+        // A folha view também sai: caderno e folha são estados irmãos, e
+        // deixar o canvas montado atrás reintroduzia o bloco vazio no topo.
+        document.getElementById('sc-folha-view').hidden = true;
         cdnGal.hidden = true; cdnView.hidden = false;
         marca('salvo');
         // Folhas soltas MINHAS pra oferecer no seletor "trazer" — reusa
@@ -4557,6 +4699,10 @@ window.msgAcessoNegado = function (nomePagina) {
     }).then(function(r){ if (!r.ok) throw new Error('criar'); return r.json(); })
       .then(function(j){
         limpa(); folhaId = j.id; versao = j.versao; elTitulo.value = j.titulo;
+        // ANTES de medir o canvas: com a folha ainda [hidden] o
+        // getBoundingClientRect abaixo devolve 0×0 e o cartão da ficha
+        // nasceria fora da área visível.
+        mostraFolha(); lembraUltima(folhaId, j.titulo);
         var r = cv.getBoundingClientRect(), p = paraMundo(r.left + r.width/2, r.top + r.height/2);
         var id = novoId();
         push({t:'obj+', obj:{
@@ -4567,27 +4713,22 @@ window.msgAcessoNegado = function (nomePagina) {
           insumos: prefillFicha.insumos || [],
         }});
         selecionado = id; ferramenta('mover'); desenha(); atualizaPreco();
-        marca('salvo'); listaGaleria(); enquadra();
+        marca('salvo'); enquadra();
         toast('Ficha trazida pra folha nova — confira os insumos antes de gravar de novo.');
       })
       .catch(function(){ marca('não consegui criar', true); });
   } else {
-    // K5 (PLANO_CADERNO.md): /api/sessao/folhas só devolve SOLTA agora — sem
-    // nenhuma, não significa "nunca usou a Sessão Criativa", pode ser gente
-    // que só trabalha dentro de cadernos. Criar uma folha em branco a cada
-    // carga pra essa pessoa poluiria a galeria com rascunho vazio atrás de
-    // rascunho vazio. Só cria de fato quando não há folha solta NEM caderno.
-    Promise.all([
-      fetch(WORKER + '/api/sessao/folhas', {headers:cab()})
-        .then(function(r){ return r.ok ? r.json() : {folhas:[]}; }).catch(function(){ return {folhas:[]}; }),
-      fetch(WORKER + '/api/caderno', {headers:cab()})
-        .then(function(r){ return r.ok ? r.json() : {cadernos:[]}; }).catch(function(){ return {cadernos:[]}; }),
-    ]).then(function(res){
-      var fs = (res[0].folhas || []).filter(function(f){ return f.estado !== 'arquivada'; });
-      if (fs.length) { abre(fs[0].id); return; }
-      if ((res[1].cadernos || []).length) { listaGaleria(); marca('salvo'); return; }
-      nova();
-    }).catch(function(){ marca('sem conexão', true); });
+    // ENTRA NA GALERIA, sempre (2026-08-04). Antes daqui saía um
+    // `abre(fs[0].id)`: a página escolhia por você a folha mexida mais
+    // recentemente — de qualquer casa, de qualquer contexto — e a lista do
+    // que existe ficava numa faixa abaixo da dobra. Ver quais cadernos e
+    // quais avulsas existem É a primeira decisão, e ela é de quem entrou.
+    //
+    // Nada de criar folha em branco no boot: rascunho vazio a cada carga
+    // era exatamente o que o K5 já evitava pra quem só usa caderno. A folha
+    // nasce quando alguém pede — botão "Folha nova".
+    mostraGaleria();
+    marca('');
   }
 })();
 </script>
@@ -5706,7 +5847,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '01ffc73a7e50';
+  var BUILD = '4918febb31c1';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
