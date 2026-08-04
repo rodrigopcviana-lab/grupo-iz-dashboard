@@ -450,28 +450,66 @@ function pdfQuebra(texto, tam, largura) {
 
 // blocos: [{t:'h1'|'h2'|'p'|'li'|'sep', texto}] — a paginação é decidida aqui,
 // não pelo chamador.
-function pdfMonta(titulo, subtitulo, blocos) {
+// Largura estimada com a mesma constante do quebrador (0,52 em). Serve pra
+// centralizar e pra alinhar preço à direita — não é métrica real da fonte, e
+// não precisa ser: erro de alguns pontos não se percebe num cardápio.
+function pdfLarguraAprox(txt, tam) { return String(txt).length * tam * 0.52; }
+
+// `opts` é opcional e TODO chamador antigo continua passando 3 argumentos —
+// sem ele o PDF sai exatamente como antes. Aceita:
+//   opts.logo = {b64, w, h, alt}  imagem JPEG (baseline, DCTDecode) no topo
+//   opts.tituloCentro = true      título/subtítulo centralizados
+function pdfMonta(titulo, subtitulo, blocos, opts) {
+  opts = opts || {};
   var larg = PDF_L - PDF_MARGEM * 2;
   var paginas = [], atual = [], y = PDF_A - PDF_MARGEM;
   function novaPagina() { if (atual.length) paginas.push(atual); atual = []; y = PDF_A - PDF_MARGEM; }
-  function escreve(txt, tam, negrito, recuo) {
+  function escreve(txt, tam, negrito, recuo, centro) {
     var linhas = pdfQuebra(txt, tam, larg - (recuo || 0));
     for (var i = 0; i < linhas.length; i++) {
       if (y < PDF_MARGEM + 28) novaPagina();
-      atual.push({ x: PDF_MARGEM + (recuo || 0), y: y, tam: tam, negrito: negrito, txt: linhas[i] });
+      var x = PDF_MARGEM + (recuo || 0);
+      if (centro) x = (PDF_L - pdfLarguraAprox(linhas[i], tam)) / 2;
+      atual.push({ x: x, y: y, tam: tam, negrito: negrito, txt: linhas[i] });
       y -= tam * 1.42;
     }
   }
-  escreve(titulo, 18, true, 0); y -= 4;
-  if (subtitulo) { escreve(subtitulo, 9.5, false, 0); }
+  // Nome à esquerda e preço à direita na MESMA linha — é a forma de cardápio,
+  // e um `escreve` normal empilharia os dois.
+  function escreveLinha(esq, dir, tam, negrito) {
+    if (y < PDF_MARGEM + 28) novaPagina();
+    atual.push({ x: PDF_MARGEM, y: y, tam: tam, negrito: negrito, txt: String(esq) });
+    if (dir) {
+      var xd = PDF_L - PDF_MARGEM - pdfLarguraAprox(dir, tam);
+      atual.push({ x: xd, y: y, tam: tam, negrito: negrito, txt: String(dir) });
+    }
+    y -= tam * 1.42;
+  }
+
+  // Espaço reservado pro logo ANTES de qualquer texto (só na página 1). A
+  // imagem em si é desenhada na emissão do fluxo, mas o espaço tem que sair
+  // daqui, senão o título nasceria por cima dela.
+  var logo = opts.logo && opts.logo.b64 ? opts.logo : null;
+  var logoLado = 0;
+  if (logo) {
+    logoLado = 56;
+    y -= logoLado + 14;
+  }
+
+  escreve(titulo, 18, true, 0, !!opts.tituloCentro); y -= 4;
+  if (subtitulo) { escreve(subtitulo, 9.5, false, 0, !!opts.tituloCentro); }
   y -= 10;
   blocos.forEach(function (b) {
     if (!b) return;
     if (b.tipo === 'sep') { y -= 9; return; }
-    if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0); y -= 3; return; }
-    if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0); y -= 2; return; }
+    if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0, !!b.centro); y -= 3; return; }
+    if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0, !!b.centro); y -= 2; return; }
     if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }
-    escreve(b.texto, 10.5, false, 0);
+    if (b.tipo === 'linha') { escreveLinha(b.esq, b.dir, b.tam || 11, !!b.negrito); return; }
+    // Descrição do item: respiro embaixo, senão ela encosta no nome do item
+    // seguinte e o cardápio vira um bloco só (visto na primeira prova impressa).
+    if (b.tipo === 'nota') { escreve(b.texto, 9, false, b.recuo || 0); y -= 5; return; }
+    escreve(b.texto, 10.5, false, 0, !!b.centro);
     y -= 4;
   });
   if (atual.length) paginas.push(atual);
@@ -479,17 +517,36 @@ function pdfMonta(titulo, subtitulo, blocos) {
 
   var objs = [], corpo = '%PDF-1.4\n';
   function add(txt) { objs.push(corpo.length); corpo += txt; }
-  // 1 catálogo, 2 páginas, 3 e 4 fontes, depois 2 objetos por página.
+  // 1 catálogo, 2 páginas, 3 e 4 fontes, 5 a imagem (só quando há logo),
+  // depois 2 objetos por página.
   var nPag = paginas.length;
+  var nImg = logo ? 1 : 0;
+  var basePag = 5 + nImg;
   var kids = [];
-  for (var i = 0; i < nPag; i++) kids.push((5 + i * 2) + ' 0 R');
+  for (var i = 0; i < nPag; i++) kids.push((basePag + i * 2) + ' 0 R');
   add('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
   add('2 0 obj\n<</Type/Pages/Kids[' + kids.join(' ') + ']/Count ' + nPag + '>>\nendobj\n');
   add('3 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>\nendobj\n');
   add('4 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>\nendobj\n');
+  if (logo) {
+    // JPEG entra CRU no PDF (DCTDecode) — sem recodificar, sem canvas. Os
+    // logos são baseline 120x120 RGB (conferido em build); JPEG progressivo
+    // NÃO funciona aqui, e por isso as dimensões e o nº de componentes vêm
+    // medidos do Python, nunca adivinhados no cliente.
+    var img = atob(logo.b64);
+    add('5 0 obj\n<</Type/XObject/Subtype/Image/Width ' + logo.w + '/Height ' + logo.h +
+        '/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ' + img.length +
+        '>>\nstream\n' + img + '\nendstream\nendobj\n');
+  }
   paginas.forEach(function (linhas, idx) {
-    var num = 5 + idx * 2;
-    var fluxo = 'BT\n';
+    var num = basePag + idx * 2;
+    var fluxo = '';
+    if (logo && idx === 0) {
+      var lx = ((PDF_L - logoLado) / 2).toFixed(2);
+      var ly = (PDF_A - PDF_MARGEM - logoLado).toFixed(2);
+      fluxo += 'q ' + logoLado + ' 0 0 ' + logoLado + ' ' + lx + ' ' + ly + ' cm /Im0 Do Q\n';
+    }
+    fluxo += 'BT\n';
     var fonteAtual = null, tamAtual = null;
     linhas.forEach(function (l) {
       var f = l.negrito ? '/F2' : '/F1';
@@ -501,8 +558,10 @@ function pdfMonta(titulo, subtitulo, blocos) {
       fluxo += '(' + pdfEsc(winansi(l.txt)) + ') Tj\n';
     });
     fluxo += 'ET';
+    var recursos = '<</Font<</F1 3 0 R/F2 4 0 R>>' +
+      (logo && idx === 0 ? '/XObject<</Im0 5 0 R>>' : '') + '>>';
     add(num + ' 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 ' + PDF_L.toFixed(2) + ' ' + PDF_A.toFixed(2) +
-        ']/Resources<</Font<</F1 3 0 R/F2 4 0 R>>>>/Contents ' + (num + 1) + ' 0 R>>\nendobj\n');
+        ']/Resources' + recursos + '/Contents ' + (num + 1) + ' 0 R>>\nendobj\n');
     add((num + 1) + ' 0 obj\n<</Length ' + fluxo.length + '>>\nstream\n' + fluxo + '\nendstream\nendobj\n');
   });
   // O padding do xref é montado em laço de propósito: um literal de 10 zeros
@@ -520,8 +579,8 @@ function pdfMonta(titulo, subtitulo, blocos) {
   return new Blob([bytes], { type: 'application/pdf' });
 }
 
-function pdfBaixa(nomeArquivo, titulo, subtitulo, blocos) {
-  var blob = pdfMonta(titulo, subtitulo, blocos);
+function pdfBaixa(nomeArquivo, titulo, subtitulo, blocos, opts) {
+  var blob = pdfMonta(titulo, subtitulo, blocos, opts);
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url; a.download = nomeArquivo.replace(/[^\w.\- ]+/g, '').slice(0, 90) || 'treinamento.pdf';
