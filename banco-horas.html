@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Banco de Horas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=d2b19fe03bce">
+<link rel="stylesheet" href="portal.css?v=bf5dfcac0c76">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -435,6 +435,32 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <div id="bh-corpo" style="display:none">
 <style>
+  /* --verm não é var global do portal (cada página que precisa define a
+     própria, ver CLAUDE.md/portal_gen.py outras páginas) — sem isto, todo
+     uso de var(--verm) abaixo (badges crítico/divergência, hover de ação)
+     cai em herdado em vez de vermelho. PLANO_BH_V2.md E1: reservado para
+     prazo estourado, divergência de cadastro e dado não confiável — nunca
+     mais para saldo positivo comum. */
+  body { --verm:#dc9a8e; }
+
+  /* ---- 4 vistas (PLANO_BH_V2.md E1) --------------------------------------
+     Panorama · Pessoas · Plano · Conformidade. A barra de filtros (setor,
+     casa, busca) fica FORA das vistas, logo acima das abas — persistente,
+     porque o recorte (setor/casa/busca) vale pras 4 igualmente. */
+  .bh-abas { display:flex; gap:2px; border-bottom:1px solid var(--border);
+      margin:0 0 16px; overflow-x:auto; }
+  .bh-aba { font:inherit; font-size:13.5px; padding:10px 14px; color:var(--text-3);
+      background:transparent; border:none; border-bottom:2px solid transparent;
+      cursor:pointer; white-space:nowrap; }
+  .bh-aba:hover { color:var(--text-2); }
+  .bh-aba.on { color:var(--text); border-bottom-color:var(--acc); font-weight:600; }
+  .bh-vista { display:none; }
+  .bh-vista.on { display:block; }
+  /* Filtros próprios da vista Pessoas (além do setor/casa/busca de cima):
+     "só quem deve" absorve a antiga tabela "Quem deve horas pra casa" e
+     "mostrar desativadas" absorve a seção "Matrículas desativadas" — as
+     duas viram um toggle em vez de uma tabela paralela sempre visível. */
+  .bh-filtros-extra { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
   .bh-pendencia { background:var(--card); border:1px solid var(--amarelo); border-radius:12px;
       padding:10px 14px; margin-bottom:14px; font-size:13px; color:var(--amarelo); }
   .bh-controles { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
@@ -600,7 +626,66 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-rh-resposta b { color:var(--text-2); }
   #bh-desativadas-wrap .bh-nome { color:var(--text-2); font-weight:600; }
   #bh-desativadas-wrap .bh-saldo { color:var(--text-3); }
+
+  /* Vista Conformidade (E1): por ora só o detalhe do selo, hoje recolhido
+     no Panorama — aqui ele fica sempre aberto (é a própria vista, não
+     precisa de clique). E6/E7/E8 (procedência/CLT/trilha) enchem o resto
+     desta vista depois; reusa as classes bh-selo-item/-limites pra não
+     duplicar visual. */
+  .bh-conf-card { border:1px solid var(--border); border-radius:12px; background:var(--card);
+      padding:14px 16px; margin-bottom:14px; }
+  .bh-conf-card h3 { font-size:14px; margin:0 0 4px; color:var(--text); }
+  .bh-conf-card .sub { margin:0 0 10px; }
+
+  /* ---- Panorama: agregações NOVAS, grupo inteiro (E2, PLANO_BH_V2.md) ---
+     Diferente do bh-hero/Por time/Por casa logo abaixo (que respeitam o
+     setor/casa selecionados): estes números são SEMPRE o grupo inteiro —
+     97 pessoas, 4.690h, o que a leitura de hoje realmente pesa — porque foi
+     justamente um hero "scoped" mostrando 10% da exposição real que
+     motivou a reforma (PLANO_BH_V2.md §1). */
+  .bh-pan-herois { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+  .bh-pan-heroi { flex:1; min-width:230px; padding-left:14px; border-left:3px solid var(--border); }
+  .bh-pan-heroi.deve { border-left-color:var(--amarelo); }
+  .bh-pan-heroi .v { font-size:30px; font-weight:800; line-height:1.1;
+      font-variant-numeric:tabular-nums; margin:2px 0 2px; }
+  .bh-pan-heroi.deve .v { color:var(--amarelo); }
+  .bh-pan-heroi .d { font-size:12.5px; color:var(--text-2); }
+  .bh-pan-heroi .e { font-size:11.5px; color:var(--amarelo); margin-top:3px; }
+  .bh-pan-heroi .n { font-size:11.5px; color:var(--text-3); margin-top:3px; }
+  .bh-pan-lbl { font-size:10.5px; color:var(--text-3); text-transform:uppercase;
+      letter-spacing:.06em; display:block; margin-bottom:6px; }
+  .bh-pan-barra { display:flex; height:24px; border-radius:8px; overflow:hidden; margin:2px 0 6px; }
+  .bh-pan-barra i { display:block; height:100%; }
+  .bh-pan-leg { display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px;
+      color:var(--text-2); margin-bottom:18px; }
+  table.bh-matriz td.quente, table.bh-matriz td.n.quente {
+      background:rgba(224,176,92,.12); color:var(--amarelo); font-weight:600; }
+  table.bh-matriz td.tot { border-top:2px solid var(--border); font-weight:700; }
+  table.bh-matriz td.bh-sem-cobertura { color:var(--text-3); font-size:11.5px; text-align:center; }
+  .bh-pan-cards { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+  .bh-pan-card { flex:1; min-width:170px; border:1px solid var(--border); border-radius:10px; padding:10px 13px; }
+  .bh-pan-card.alerta { border-color:#4a3d22; background:#221c10; }
+  .bh-pan-card .v { font-size:21px; font-weight:700; }
+  .bh-pan-card.alerta .v { color:var(--amarelo); }
+  .bh-pan-card .l { font-size:11.5px; color:var(--text-2); line-height:1.45; }
+
+  /* Exportação em PDF/Excel (E4, E5) — presente em todas as vistas */
+  .bh-exp { display:flex; gap:9px; align-items:center; flex-wrap:wrap; padding:13px 18px 0;
+      border-top:1px solid var(--border); margin-top:4px; }
+  .bh-btn { font-size:12.5px; border:1px solid var(--border); border-radius:9px; padding:7px 13px;
+      color:var(--text-2); display:inline-flex; align-items:center; gap:6px; background:transparent;
+      cursor:pointer; }
+  .bh-btn:hover { border-color:var(--acc); color:var(--acc); }
+  .bh-btn.forte { border-color:var(--acc); color:var(--acc); }
+  .bh-btn.forte:hover { background:rgba(208,163,82,.10); }
+  .bh-btn:disabled { opacity:.5; cursor:not-allowed; }
+
   @media (max-width: 640px) {
+    .bh-pan-heroi .v { font-size:26px; }
+    table.bh-matriz { table-layout:fixed; width:100%; }
+    table.bh-matriz th, table.bh-matriz td { padding:6px 6px; font-size:11.5px; white-space:normal; }
+    table.bh-matriz th:nth-child(1), table.bh-matriz td:nth-child(1) { width:30%; }
+    table.bh-matriz th:nth-child(n+2), table.bh-matriz td:nth-child(n+2) { width:17.5%; text-align:right; }
     .bh-hero { padding:14px 15px; gap:12px 20px; }
     .bh-hero-val { font-size:32px; }
     .bh-hero-stats { gap:16px; }
@@ -611,21 +696,26 @@ window.msgAcessoNegado = function (nomePagina) {
     /* CELULAR: as tabelas cabem na largura da tela SEM rolar pro lado
        (pedido do Rodrigo). Some as colunas secundárias e deixa só o
        essencial, com linhas finas. Nada de overflow horizontal. */
-    .bh-panel-lista, .bh-panel-devendo, .bh-panel-plano,
+    .bh-panel-lista, .bh-panel-plano,
     #bh-porcasa-wrap .panel, #bh-portime-wrap .panel, .bh-rh-panel { overflow-x:hidden !important; padding:6px 8px; }
     table.bh, table.bh-plano-tb { width:100%; table-layout:fixed; }
     table.bh td, table.bh th,
     table.bh-plano-tb td, table.bh-plano-tb th {
       padding:6px 8px; font-size:12.5px; white-space:normal; overflow-wrap:anywhere; }
 
-    /* Lista de pessoas: Nome + Saldo + Ação (esconde Casa/Matrícula/Situação/Tendência) */
-    table.bh th:nth-child(1), table.bh td:nth-child(1),
-    table.bh th:nth-child(3), table.bh td:nth-child(3),
-    table.bh th:nth-child(5), table.bh td:nth-child(5),
-    table.bh th:nth-child(6), table.bh td:nth-child(6) { display:none; }
-    table.bh th:nth-child(2), table.bh td:nth-child(2) { width:50%; }
-    table.bh th:nth-child(4), table.bh td:nth-child(4) { width:32%; text-align:right; }
-    table.bh th:nth-child(7), table.bh td:nth-child(7) { width:18%; }
+    /* Lista de pessoas (E1, PLANO_BH_V2.md): a tabela caiu de 7 pra 5
+       colunas — casa/setor/matrícula saíram pra 2ª linha do nome
+       (.bh-sub), então "no celular nenhuma coluna precisa sumir" (texto
+       do plano). Pessoa | Saldo | Tendência | Custo | Ação, todas
+       visíveis, só estreitas. ARMADILHA (mesma de sempre): mudou o nº de
+       colunas da tabela.bh → reescrever este bloco inteiro, nunca só
+       ajustar um nth-child solto — o seletor antigo (7 colunas) esconderia
+       a coluna errada em silêncio. */
+    table.bh th:nth-child(1), table.bh td:nth-child(1) { width:38%; }
+    table.bh th:nth-child(2), table.bh td:nth-child(2) { width:17%; }
+    table.bh th:nth-child(3), table.bh td:nth-child(3) { width:16%; }
+    table.bh th:nth-child(4), table.bh td:nth-child(4) { width:16%; }
+    table.bh th:nth-child(5), table.bh td:nth-child(5) { width:13%; }
 
     /* Desativadas: Nome | Saldo | Ação (esconde Casa/Matrícula/Desativada) */
     table.bh-tb-desat th:nth-child(1), table.bh-tb-desat td:nth-child(1),
@@ -652,11 +742,9 @@ window.msgAcessoNegado = function (nomePagina) {
     table.bh-portime th:nth-child(3), table.bh-portime td:nth-child(3) { width:28%; }
     table.bh-portime th:nth-child(6), table.bh-portime td:nth-child(6) { width:34%; }
 
-    /* Devendo horas: Nome | Deve (esconde Casa/Situação) */
-    table.bh-tb-dev th:nth-child(1), table.bh-tb-dev td:nth-child(1),
-    table.bh-tb-dev th:nth-child(4), table.bh-tb-dev td:nth-child(4) { display:none; }
-    table.bh-tb-dev th:nth-child(2), table.bh-tb-dev td:nth-child(2) { width:64%; }
-    table.bh-tb-dev th:nth-child(3), table.bh-tb-dev td:nth-child(3) { width:36%; }
+    /* "Quem deve horas pra casa" (tabela paralela) saiu (E1, PLANO_BH_V2.md
+       — virou o filtro "Só quem deve horas" na própria lista de Pessoas,
+       acima). Sem tabela própria, sem bloco mobile próprio. */
 
     /* Plano de zerar: Nome | Opção 1 | Custo (esconde Casa/Saldo/Opção 2) */
     table.bh-tb-plano th:nth-child(1), table.bh-tb-plano td:nth-child(1),
@@ -677,116 +765,224 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 </style>
 
-<div class="bh-selo" id="bh-selo" style="display:none">
-  <button type="button" class="bh-selo-cab" id="bh-selo-cab" aria-expanded="false" aria-controls="bh-selo-det">
-    <span class="bh-selo-dot" id="bh-selo-dot"></span>
-    <span class="bh-selo-txt" id="bh-selo-txt"></span>
-    <span class="bh-selo-mais" id="bh-selo-mais">ver o que foi conferido</span>
-  </button>
-  <div class="bh-selo-det" id="bh-selo-det" style="display:none">
-    <div id="bh-selo-itens"></div>
-    <div class="bh-selo-limites">
-      <b>O que este selo NÃO garante</b>
-      <ul id="bh-selo-limites"></ul>
-    </div>
-  </div>
-</div>
-
-<div class="bh-hero">
-  <div class="bh-hero-cost">
-    <div class="bh-hero-lbl">Horas extras a pagar<span class="bh-hero-escopo" id="bh-hero-escopo"></span></div>
-    <div class="bh-hero-val" id="bh-hero-custo">—</div>
-    <div class="bh-hero-hint">O que a empresa desembolsaria pagando as horas positivas em dinheiro, em vez de zerar com folga. Toque numa casa abaixo pra ver só ela.</div>
-  </div>
-  <div class="bh-hero-stats">
-    <div class="bh-mini"><span class="v" id="bh-kpi-liquido">—</span><span class="l">Saldo líquido</span></div>
-    <div class="bh-mini"><span class="v" id="bh-kpi-n">—</span><span class="l" id="bh-kpi-n-rot">Pessoas</span></div>
-    <div class="bh-mini"><span class="v" id="bh-kpi-alerta">—</span><span class="l">Atenção / crítico</span></div>
-    <div class="bh-mini"><span class="v" id="bh-kpi-semdados">—</span><span class="l">Sem dados</span></div>
-  </div>
-</div>
-
-<p class="bh-fechamento" id="bh-fechamento"></p>
-
+<!-- Barra de filtros: PERSISTENTE acima das abas (PLANO_BH_V2.md E1) — setor,
+     casa e busca valem pras 4 vistas igualmente, então não pertencem a
+     nenhuma vista sozinha. -->
 <div class="bh-controles">
   <div class="chips" id="bh-setor" style="display:none"></div>
   <div class="chips" id="bh-casas"></div>
   <input type="text" id="bh-busca" placeholder="Buscar por nome…">
 </div>
 
-<div class="bh-plano" id="bh-portime-wrap" style="display:none">
-  <h2>Por time</h2>
-  <p class="sub">Bar, salão e cozinha lado a lado — para ver de onde vem o problema sem trocar de aba e perder a comparação. Respeita o filtro de casa acima; clicar numa linha troca o time selecionado.</p>
-  <div class="panel" style="padding:8px 10px;overflow-x:auto">
-  <table class="bh-plano-tb bh-portime"><thead><tr>
-    <th>Time</th>
-    <th class="n">Pessoas</th>
-    <th class="n">Saldo líquido</th>
-    <th class="n">Atenção / crítico</th>
-    <th class="n">Devendo / a favor</th>
-    <th class="n">Horas extras a pagar</th>
-  </tr></thead>
-  <tbody id="bh-portime-lista"></tbody></table>
+<div class="bh-abas" role="tablist">
+  <button type="button" class="bh-aba on" id="bh-aba-panorama" role="tab" aria-selected="true" aria-controls="bh-vista-panorama" data-vista="panorama">Panorama</button>
+  <button type="button" class="bh-aba" id="bh-aba-pessoas" role="tab" aria-selected="false" aria-controls="bh-vista-pessoas" data-vista="pessoas">Pessoas</button>
+  <button type="button" class="bh-aba" id="bh-aba-plano" role="tab" aria-selected="false" aria-controls="bh-vista-plano" data-vista="plano">Plano</button>
+  <button type="button" class="bh-aba" id="bh-aba-conformidade" role="tab" aria-selected="false" aria-controls="bh-vista-conformidade" data-vista="conformidade">Conformidade</button>
+</div>
+
+<!-- ===== PANORAMA — selo + heróis + composição por setor/casa (E1: hoje
+     ainda são as tabelas "Por time"/"Por casa" existentes; a barra de
+     composição e os cartões de decisão novos são E2, agregação nova). ===== -->
+<div class="bh-vista on" id="bh-vista-panorama" role="tabpanel" aria-labelledby="bh-aba-panorama">
+  <div class="bh-selo" id="bh-selo" style="display:none">
+    <button type="button" class="bh-selo-cab" id="bh-selo-cab" aria-expanded="false" aria-controls="bh-selo-det">
+      <span class="bh-selo-dot" id="bh-selo-dot"></span>
+      <span class="bh-selo-txt" id="bh-selo-txt"></span>
+      <span class="bh-selo-mais" id="bh-selo-mais">ver o que foi conferido</span>
+    </button>
+    <div class="bh-selo-det" id="bh-selo-det" style="display:none">
+      <div id="bh-selo-itens"></div>
+      <div class="bh-selo-limites">
+        <b>O que este selo NÃO garante</b>
+        <ul id="bh-selo-limites"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== E2 (PLANO_BH_V2.md) — agregações NOVAS, grupo inteiro (todas as
+       casas, todos os setores), calculadas no cliente a partir do payload
+       que já chega. NUNCA respeitam o filtro de setor/casa acima — são o
+       retrato macro que faltava (a exposição real, não 10% dela). ===== -->
+  <div class="bh-pan-herois" id="bh-pan-herois" style="display:none">
+    <div class="bh-pan-heroi deve">
+      <div class="bh-pan-lbl">A empresa deve — vira dinheiro no fechamento</div>
+      <div class="v" id="bh-pan-empresa-val">—</div>
+      <div class="d" id="bh-pan-empresa-desc"></div>
+      <div class="e" id="bh-pan-empresa-extra"></div>
+    </div>
+    <div class="bh-pan-heroi">
+      <div class="bh-pan-lbl">A equipe deve — some se ninguém cobrar</div>
+      <div class="v" id="bh-pan-equipe-val">—</div>
+      <div class="d" id="bh-pan-equipe-desc"></div>
+      <div class="n" id="bh-pan-equipe-extra"></div>
+    </div>
+  </div>
+
+  <div id="bh-pan-comp-wrap" style="display:none">
+    <span class="bh-pan-lbl">Onde estão as horas que a empresa deve</span>
+    <div class="bh-pan-barra" id="bh-pan-barra"></div>
+    <div class="bh-pan-leg" id="bh-pan-leg"></div>
+  </div>
+
+  <div id="bh-pan-matriz-wrap" style="display:none">
+    <span class="bh-pan-lbl">Horas a pagar por casa e setor</span>
+    <div class="panel" style="padding:8px 10px;overflow-x:auto;margin-bottom:18px">
+    <table class="bh-matriz"><thead><tr>
+      <th>Casa</th><th class="n">Bar</th><th class="n">Salão</th><th class="n">Cozinha</th><th class="n">Total</th>
+    </tr></thead>
+    <tbody id="bh-pan-matriz-lista"></tbody></table>
+    </div>
+  </div>
+
+  <div id="bh-pan-cards-wrap" style="display:none">
+    <span class="bh-pan-lbl" id="bh-pan-cards-lbl">Precisa de decisão</span>
+    <div class="bh-pan-cards">
+      <div class="bh-pan-card alerta"><div class="v" id="bh-pan-card-44">—</div>
+        <div class="l">pessoas acima de 44h — uma semana inteira acumulada</div></div>
+      <div class="bh-pan-card"><div class="v" id="bh-pan-card-semsalario">—</div>
+        <div class="l">sem salário cadastrado — custo não calculável</div></div>
+      <div class="bh-pan-card"><div class="v" id="bh-pan-card-atipico">—</div>
+        <div class="l">variação atípica a confirmar com o RH</div></div>
+    </div>
+  </div>
+
+  <div class="bh-hero">
+    <div class="bh-hero-cost">
+      <div class="bh-hero-lbl">Horas extras a pagar<span class="bh-hero-escopo" id="bh-hero-escopo"></span></div>
+      <div class="bh-hero-val" id="bh-hero-custo">—</div>
+      <div class="bh-hero-hint">O que a empresa desembolsaria pagando as horas positivas em dinheiro, em vez de zerar com folga. Toque numa casa abaixo pra ver só ela.</div>
+    </div>
+    <div class="bh-hero-stats">
+      <div class="bh-mini"><span class="v" id="bh-kpi-liquido">—</span><span class="l">Saldo líquido</span></div>
+      <div class="bh-mini"><span class="v" id="bh-kpi-n">—</span><span class="l" id="bh-kpi-n-rot">Pessoas</span></div>
+      <div class="bh-mini"><span class="v" id="bh-kpi-alerta">—</span><span class="l">Atenção / crítico</span></div>
+      <div class="bh-mini"><span class="v" id="bh-kpi-semdados">—</span><span class="l">Sem dados</span></div>
+    </div>
+  </div>
+
+  <p class="bh-fechamento" id="bh-fechamento"></p>
+
+  <div class="bh-plano" id="bh-portime-wrap" style="display:none">
+    <h2>Por time</h2>
+    <p class="sub">Bar, salão e cozinha lado a lado — para ver de onde vem o problema sem trocar de aba e perder a comparação. Respeita o filtro de casa acima; clicar numa linha troca o time selecionado.</p>
+    <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <table class="bh-plano-tb bh-portime"><thead><tr>
+      <th>Time</th>
+      <th class="n">Pessoas</th>
+      <th class="n">Saldo líquido</th>
+      <th class="n">Atenção / crítico</th>
+      <th class="n">Devendo / a favor</th>
+      <th class="n">Horas extras a pagar</th>
+    </tr></thead>
+    <tbody id="bh-portime-lista"></tbody></table>
+    </div>
+  </div>
+
+  <div class="bh-plano" id="bh-porcasa-wrap" style="display:none">
+    <h2>Por casa</h2>
+    <p class="sub">Cada casa no time selecionado. "Horas extras a pagar" é a soma do que a empresa desembolsaria pagando as horas positivas em dinheiro; "saldo líquido" soma tudo (positivos − negativos) e diz se, no geral, a casa deve horas ou tem horas a favor.</p>
+    <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <table class="bh-plano-tb bh-porcasa"><thead><tr>
+      <th>Casa</th>
+      <th class="n">Pessoas</th>
+      <th class="n">Saldo líquido</th>
+      <th class="n">Atenção / crítico</th>
+      <th class="n">Devendo / a favor</th>
+      <th class="n">Horas extras a pagar</th>
+    </tr></thead>
+    <tbody id="bh-porcasa-lista"></tbody></table>
+    </div>
+  </div>
+
+  <div class="bh-atipico" id="bh-atipico" style="display:none"></div>
+
+  <div class="bh-plano" id="bh-rh-wrap" style="display:none">
+    <h2>Pendências para o RH</h2>
+    <p class="sub">Coisas que precisam de confirmação humana antes de tratar o número como certo — variação de saldo fora do normal, cargo que parece errado, ou qualquer outra dúvida sinalizada na lista abaixo. Sinalizar não conserta nada sozinho; é um pedido de checagem.</p>
+    <div class="panel bh-rh-panel" style="padding:8px 10px">
+    <div id="bh-rh-lista"></div>
+    <p class="bh-vazio" id="bh-rh-vazio" style="display:none">Nenhuma pendência aberta.</p>
+    </div>
+  </div>
+
+  <div class="bh-exp">
+    <span style="flex:1;font-size:11.5px;color:var(--text-3)">Exporta sempre o recorte que está na tela</span>
+    <button type="button" class="bh-btn forte" id="bh-btn-pdf-panorama">PDF assinado</button>
+    <button type="button" class="bh-btn forte" id="bh-btn-xlsx-panorama">Excel editável</button>
   </div>
 </div>
 
-<div class="bh-atipico" id="bh-atipico" style="display:none"></div>
+<!-- ===== PESSOAS — a lista, linha de ~44px (casa/setor/matrícula na 2ª
+     linha do nome). "Quem deve horas" e "Matrículas desativadas" viraram
+     filtro em vez de tabela paralela (E1: absorve). ===== -->
+<div class="bh-vista" id="bh-vista-pessoas" role="tabpanel" aria-labelledby="bh-aba-pessoas">
+  <div class="bh-filtros-extra">
+    <button type="button" class="chip" id="bh-filtro-devendo">Só quem deve horas</button>
+    <button type="button" class="chip" id="bh-filtro-desativadas">Mostrar desativadas</button>
+  </div>
 
-<div class="bh-plano" id="bh-rh-wrap" style="display:none">
-  <h2>Pendências para o RH</h2>
-  <p class="sub">Coisas que precisam de confirmação humana antes de tratar o número como certo — variação de saldo fora do normal, cargo que parece errado, ou qualquer outra dúvida sinalizada na lista abaixo. Sinalizar não conserta nada sozinho; é um pedido de checagem.</p>
-  <div class="panel bh-rh-panel" style="padding:8px 10px">
-  <div id="bh-rh-lista"></div>
-  <p class="bh-vazio" id="bh-rh-vazio" style="display:none">Nenhuma pendência aberta.</p>
+  <div class="panel bh-panel-lista" style="padding:8px 10px;overflow-x:auto">
+  <table class="bh"><thead><tr><th id="bh-col-nome">Pessoa</th><th class="n">Saldo</th><th>Tendência</th><th class="n">Custo</th><th class="bh-acao-col">Ação</th></tr></thead>
+  <tbody id="bh-corpo-lista"></tbody></table>
+  <p class="bh-vazio" id="bh-vazio" style="display:none">Nenhuma pessoa com dado ainda.</p>
+  </div>
+
+  <div class="bh-plano" id="bh-desativadas-wrap" style="display:none">
+    <h2>Matrículas desativadas</h2>
+    <p class="sub">Marcadas como fora da equipe — não entram nas contas ativas (custo, saldo líquido, por casa). Nada foi apagado; o saldo fica congelado como estava. Toque em reativar pra trazer de volta.</p>
+    <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <table class="bh-plano-tb bh-tb-desat"><thead><tr><th>Casa</th><th>Nome</th><th>Matrícula</th><th class="n">Saldo</th><th>Desativada</th><th class="bh-acao-col">Ação</th></tr></thead>
+    <tbody id="bh-desativadas-lista"></tbody></table>
+    </div>
+  </div>
+
+  <div class="bh-exp">
+    <span style="flex:1;font-size:11.5px;color:var(--text-3)">Exporta sempre o recorte que está na tela</span>
+    <button type="button" class="bh-btn forte" id="bh-btn-pdf-pessoas">PDF assinado</button>
+    <button type="button" class="bh-btn forte" id="bh-btn-xlsx-pessoas">Excel editável</button>
   </div>
 </div>
 
-<div class="bh-plano" id="bh-porcasa-wrap" style="display:none">
-  <h2>Por casa</h2>
-  <p class="sub">Cada casa no time selecionado. "Horas extras a pagar" é a soma do que a empresa desembolsaria pagando as horas positivas em dinheiro; "saldo líquido" soma tudo (positivos − negativos) e diz se, no geral, a casa deve horas ou tem horas a favor.</p>
-  <div class="panel" style="padding:8px 10px;overflow-x:auto">
-  <table class="bh-plano-tb bh-porcasa"><thead><tr>
-    <th>Casa</th>
-    <th class="n">Pessoas</th>
-    <th class="n">Saldo líquido</th>
-    <th class="n">Atenção / crítico</th>
-    <th class="n">Devendo / a favor</th>
-    <th class="n">Horas extras a pagar</th>
-  </tr></thead>
-  <tbody id="bh-porcasa-lista"></tbody></table>
+<!-- ===== PLANO — só quem precisa de ação, ordenado pelo custo de não
+     fazer (E1). ===== -->
+<div class="bh-vista" id="bh-vista-plano" role="tabpanel" aria-labelledby="bh-aba-plano">
+  <div class="bh-plano" id="bh-plano-wrap" style="display:none">
+    <h2>Plano pra zerar horas extras</h2>
+    <p class="sub">Quem tem saldo a favor precisa zerar antes do fechamento, senão vira pagamento em dinheiro. Duas formas de zerar — liberação diária ou folga(s) inteira(s) — escolha a que fizer mais sentido pra operação de cada casa. Ordenado pelo que custa mais caro não fazer — custo desconhecido (sem salário configurado) vem antes de qualquer valor conhecido, porque não é o mesmo que custo zero.</p>
+    <div class="panel bh-panel-plano" style="padding:8px 10px;overflow-x:auto">
+    <table class="bh-plano-tb bh-tb-plano"><thead><tr><th>Casa</th><th id="bh-col-nome-plano">Bartender</th><th class="n">Saldo</th><th>Opção 1 — liberar mais cedo</th><th>Opção 2 — folga(s) inteira(s)</th><th class="n">Custo se não abater</th></tr></thead>
+    <tbody id="bh-plano-lista"></tbody></table>
+    </div>
+  </div>
+  <p class="bh-vazio" id="bh-plano-vazio" style="display:none">Ninguém neste recorte precisa de ação agora.</p>
+
+  <div class="bh-exp">
+    <span style="flex:1;font-size:11.5px;color:var(--text-3)">Exporta sempre o recorte que está na tela</span>
+    <button type="button" class="bh-btn forte" id="bh-btn-pdf-plano">PDF assinado</button>
+    <button type="button" class="bh-btn forte" id="bh-btn-xlsx-plano">Excel editável</button>
   </div>
 </div>
 
-<div class="panel bh-panel-lista" style="padding:8px 10px;overflow-x:auto">
-<table class="bh"><thead><tr><th>Casa</th><th id="bh-col-nome">Bartender</th><th>Matrícula</th><th class="n">Saldo atual</th><th>Situação</th><th>Tendência</th><th class="bh-acao-col">Ação</th></tr></thead>
-<tbody id="bh-corpo-lista"></tbody></table>
-<p class="bh-vazio" id="bh-vazio" style="display:none">Nenhuma pessoa com dado ainda.</p>
-</div>
-
-<div class="bh-plano" id="bh-devendo-wrap" style="display:none">
-  <h2>Quem deve horas pra casa</h2>
-  <p class="sub">Saldo negativo — a pessoa deve horas ao invés de a empresa dever a ela. Ordenado do mais crítico pro menos.</p>
-  <div class="panel bh-panel-devendo" style="padding:8px 10px;overflow-x:auto">
-  <table class="bh-plano-tb bh-tb-dev"><thead><tr><th>Casa</th><th id="bh-col-nome-dev">Bartender</th><th class="n">Deve</th><th>Situação</th></tr></thead>
-  <tbody id="bh-devendo-lista"></tbody></table>
+<!-- ===== CONFORMIDADE — por ora só o detalhe do selo (E1). E6/E7/E8
+     (procedência do documento / conformidade trabalhista / trilha de
+     auditoria) enchem o resto desta vista depois. ===== -->
+<div class="bh-vista" id="bh-vista-conformidade" role="tabpanel" aria-labelledby="bh-aba-conformidade">
+  <div class="bh-conf-card">
+    <h3>Selo de confiabilidade da coleta</h3>
+    <p class="sub">Confere a COLETA (cobertura, frescor, continuidade, plausibilidade) — nunca o valor do saldo em si. Não existe hoje uma segunda fonte que confirme os números contra o AHgora.</p>
+    <div id="bh-selo-conf-txt" style="margin-bottom:10px;font-size:13px;color:var(--text-2)"></div>
+    <div id="bh-selo-conf-itens"></div>
+    <div class="bh-selo-limites">
+      <b>O que este selo NÃO garante</b>
+      <ul id="bh-selo-conf-limites"></ul>
+    </div>
   </div>
-</div>
 
-<div class="bh-plano" id="bh-plano-wrap" style="display:none">
-  <h2>Plano pra zerar horas extras</h2>
-  <p class="sub">Quem tem saldo a favor precisa zerar antes do fechamento, senão vira pagamento em dinheiro. Duas formas de zerar — liberação diária ou folga(s) inteira(s) — escolha a que fizer mais sentido pra operação de cada casa.</p>
-  <div class="panel bh-panel-plano" style="padding:8px 10px;overflow-x:auto">
-  <table class="bh-plano-tb bh-tb-plano"><thead><tr><th>Casa</th><th id="bh-col-nome-plano">Bartender</th><th class="n">Saldo</th><th>Opção 1 — liberar mais cedo</th><th>Opção 2 — folga(s) inteira(s)</th><th class="n">Custo se não abater</th></tr></thead>
-  <tbody id="bh-plano-lista"></tbody></table>
-  </div>
-</div>
-
-<div class="bh-plano" id="bh-desativadas-wrap" style="display:none">
-  <h2>Matrículas desativadas</h2>
-  <p class="sub">Marcadas como fora da equipe — não entram nas contas ativas (custo, saldo líquido, por casa). Nada foi apagado; o saldo fica congelado como estava. Toque em reativar pra trazer de volta.</p>
-  <div class="panel" style="padding:8px 10px;overflow-x:auto">
-  <table class="bh-plano-tb bh-tb-desat"><thead><tr><th>Casa</th><th>Nome</th><th>Matrícula</th><th class="n">Saldo</th><th>Desativada</th><th class="bh-acao-col">Ação</th></tr></thead>
-  <tbody id="bh-desativadas-lista"></tbody></table>
+  <div class="bh-exp">
+    <span style="flex:1;font-size:11.5px;color:var(--text-3)">Exporta sempre o recorte que está na tela</span>
+    <button type="button" class="bh-btn forte" id="bh-btn-pdf-conformidade">PDF assinado</button>
+    <button type="button" class="bh-btn forte" id="bh-btn-xlsx-conformidade">Excel editável</button>
   </div>
 </div>
 
@@ -802,6 +998,11 @@ window.msgAcessoNegado = function (nomePagina) {
   var NIVEIS_OK = ['chefe', 'coord', 'controladoria', 'rh'];
   var SLUG = 'banco-horas.html';
   var ALERTAS = {"_nota": "Limiares PROPOSTOS (não confirmados pelo Rodrigo) — ajustar aqui quando ele validar, nunca no código. Baseado nos ⚠️/🔴 informais do relatório de 02/07, não é regra oficial de RH.", "atencao_minutos": -750, "critico_minutos": -3000};
+  // Só pra converter saldo em "turnos equivalentes" no heroi "Equipe deve"
+  // (E2, PLANO_BH_V2.md) — mesmo valor que o servidor já usa pra
+  // dias_folga_necessarios, nunca recalculado, só espelhado como constante
+  // do lado do cliente (config/banco_horas.json: turno_minutos).
+  var TURNO_MINUTOS = 440;
   var msg = document.getElementById('bh-msg');
   var gate = document.getElementById('bh-gate');
   var wrap = document.getElementById('bh-corpo');
@@ -1243,6 +1444,16 @@ window.msgAcessoNegado = function (nomePagina) {
     return s + h + ':' + (m < 10 ? '0' : '') + m;
   }
 
+  // Horas inteiras arredondadas com separador de milhar pt-BR — "4.690 h",
+  // o formato dos heróis/matriz do Panorama (E2, PLANO_BH_V2.md). Diferente
+  // de fmtSaldoAgg (sinal + HH:MM, pro saldo POR PESSOA): aqui é sempre uma
+  // soma de várias pessoas, já sem sinal (quem chama decide "deve"/"a
+  // favor" pelo rótulo, não por um "-" na frente de uma centena de horas).
+  function fmtHorasInt(min) {
+    if (min == null) return '—';
+    return Math.round(Math.abs(min) / 60).toLocaleString('pt-BR') + ' h';
+  }
+
   function fmtRS(v) {
     if (v == null) return '—';
     return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -1419,12 +1630,261 @@ window.msgAcessoNegado = function (nomePagina) {
   var setorAtual = 'bar';
   var casaLembrada = '';   // filtro de casa que atravessa a troca de time
   var PAYLOAD = null;
+  // Filtros próprios da vista Pessoas (E1, PLANO_BH_V2.md) — atravessam a
+  // troca de time/casa igual a casaLembrada, pro toggle não se perder ao
+  // trocar de aba do seletor de setor.
+  var somenteDevendo = false;
+  var mostrarDesativadas = false;
+  var desenhaAtual = null;  // ponteiro pra desenha() do montaSetor mais recente
 
   function inicia(payload) {
     PAYLOAD = payload;
     renderSelo(payload.selo);
     montaSeletor();
     montaSetor();
+    montaPanorama();
+  }
+
+  // ---- Panorama: agregações NOVAS, grupo inteiro (E2, PLANO_BH_V2.md) ----
+  // Independente do setor/casa selecionados acima — sempre TODAS as casas e
+  // os 3 setores juntos. Roda uma vez por payload (não depende de filtro),
+  // então não precisa de re-render ao trocar time/casa.
+  //
+  // Prova (PLANO_BH_V2.md E2): com o payload real os totais têm que bater
+  // com a medição da seção 1 do plano (horas positivas, pessoas com saldo
+  // positivo, custo total precificado, e as horas do setor cozinha — só ela
+  // tem custoTemAlgum=false hoje — batendo como "sem preço") — conferido
+  // fora deste arquivo com um harness Node, nunca um valor exemplo aqui.
+  function montaPanorama() {
+    var payload = PAYLOAD || {};
+    var casasObj = payload.casas || {};
+    var slugs = Object.keys(casasObj);
+    var CHAVES = Object.keys(SETORES); // ['bar','salao','cozinha']
+
+    var totPosMin = 0, totNegMin = 0, nPos = 0, nNeg = 0;
+    var custoTotal = 0, nAcima44 = 0, nSemSalario = 0;
+    var porSetor = {};
+    CHAVES.forEach(function (k) { porSetor[k] = { horasMin: 0, custo: 0, custoTemAlgum: false }; });
+    // porCasa[slug]: horas positivas por setor + se a casa tem cobertura
+    // nenhuma (as 3 listas vazias = "casa não lida", NUNCA linha zerada —
+    // é o caso do Íz, sem código AHgora, regra dura desta etapa).
+    var porCasa = {};
+
+    slugs.forEach(function (slug) {
+      var c = casasObj[slug] || {};
+      var totalGente = CHAVES.reduce(function (s, k) { return s + ((c[SETORES[k].chave] || []).length); }, 0);
+      var pc = { nome: c.bar || slug, coberta: totalGente > 0 };
+      CHAVES.forEach(function (k) { pc[k] = 0; });
+      CHAVES.forEach(function (k) {
+        (c[SETORES[k].chave] || []).forEach(function (b) {
+          var sm = b.saldo_atual_minutos;
+          if (sm == null) return;
+          if (sm > 0) {
+            nPos++; totPosMin += sm;
+            porSetor[k].horasMin += sm;
+            pc[k] += sm;
+            if (sm >= 44 * 60) nAcima44++;
+            var cu = (b.plano_zerar_horas && b.plano_zerar_horas.custo_se_nao_abater != null)
+              ? b.plano_zerar_horas.custo_se_nao_abater : null;
+            if (cu != null) { custoTotal += cu; porSetor[k].custo += cu; porSetor[k].custoTemAlgum = true; }
+            else nSemSalario++;
+          } else if (sm < 0) {
+            nNeg++; totNegMin += sm;
+          }
+        });
+      });
+      porCasa[slug] = pc;
+    });
+
+    // Variação atípica, grupo inteiro: o MESMO algoritmo de marcaAtipicos
+    // (mediana+MAD do próprio time), rodado por setor com TODAS as casas —
+    // nunca compara bar com cozinha na mesma baseline, mesma disciplina do
+    // "Por time" de hoje. marcaAtipicos exige historico+variação por
+    // pessoa; aqui só interessa a CONTAGEM, então a lista é descartável.
+    var nAtipico = 0;
+    CHAVES.forEach(function (k) {
+      var lista = [];
+      slugs.forEach(function (slug) {
+        ((casasObj[slug] || {})[SETORES[k].chave] || []).forEach(function (b) {
+          lista.push({ variacao: variacaoDe(b.historico), atipico: null });
+        });
+      });
+      nAtipico += marcaAtipicos(lista);
+    });
+
+    if (!slugs.length) return; // payload sem casas: nada pra desenhar
+
+    document.getElementById('bh-pan-herois').style.display = '';
+    document.getElementById('bh-pan-comp-wrap').style.display = '';
+    document.getElementById('bh-pan-matriz-wrap').style.display = '';
+    document.getElementById('bh-pan-cards-wrap').style.display = '';
+
+    // ---- Heróis: os dois totais separados (positivo × negativo) --------
+    document.getElementById('bh-pan-empresa-val').textContent = fmtHorasInt(totPosMin);
+    document.getElementById('bh-pan-empresa-desc').textContent =
+      nPos + (nPos === 1 ? ' pessoa' : ' pessoas') +
+      (custoTotal > 0 ? ' · ' + fmtRS(custoTotal) + ' já precificados' : ' · nenhum custo precificável ainda');
+    // Setor sem salário configurado (regra dura desta etapa): mostra as
+    // HORAS e "sem preço" — nunca um valor fabricado, nunca omitido.
+    var semPrecoMin = 0, semPrecoNomes = [];
+    CHAVES.forEach(function (k) {
+      if (porSetor[k].horasMin > 0 && !porSetor[k].custoTemAlgum) {
+        semPrecoMin += porSetor[k].horasMin;
+        semPrecoNomes.push(SETORES[k].rotulo.toLowerCase());
+      }
+    });
+    document.getElementById('bh-pan-empresa-extra').textContent = semPrecoMin > 0
+      ? fmtHorasInt(semPrecoMin) + ' ainda sem preço (' + semPrecoNomes.join(', ') + ')'
+      : '';
+
+    document.getElementById('bh-pan-equipe-val').textContent = fmtHorasInt(totNegMin);
+    document.getElementById('bh-pan-equipe-desc').textContent =
+      nNeg + (nNeg === 1 ? ' pessoa' : ' pessoas') + ' · crédito da empresa';
+    var turnosEquiv = TURNO_MINUTOS > 0 ? Math.round(Math.abs(totNegMin) / TURNO_MINUTOS) : null;
+    document.getElementById('bh-pan-equipe-extra').textContent = turnosEquiv
+      ? 'Equivale a ' + turnosEquiv.toLocaleString('pt-BR') + ' turnos de ' + fmtMinutos(TURNO_MINUTOS)
+      : '';
+
+    // ---- Composição por setor -------------------------------------------
+    var CORES = { bar: '#5c5342', salao: '#c3baa9', cozinha: '#e0b05c' };
+    var barraEl = document.getElementById('bh-pan-barra');
+    var legEl = document.getElementById('bh-pan-leg');
+    barraEl.innerHTML = ''; legEl.innerHTML = '';
+    CHAVES.forEach(function (k) {
+      var h = porSetor[k].horasMin;
+      if (!h) return;
+      var pct = totPosMin > 0 ? (h / totPosMin * 100) : 0;
+      var i = document.createElement('i');
+      i.style.width = pct.toFixed(1) + '%';
+      i.style.background = CORES[k] || 'var(--text-3)';
+      barraEl.appendChild(i);
+      var span = document.createElement('span');
+      var semPreco = !porSetor[k].custoTemAlgum;
+      if (semPreco) span.style.color = 'var(--amarelo)';
+      span.textContent = SETORES[k].rotulo + ' ' + fmtHorasInt(h) +
+        (semPreco ? ' — ' + pct.toFixed(0) + '% do total, sem preço na tela de hoje' : '');
+      legEl.appendChild(span);
+    });
+
+    // ---- Matriz casa × setor ---------------------------------------------
+    // "quente" é o setor mais pesado DENTRO da própria casa (mockup: Nip
+    // destaca cozinha, Grá destaca salão — cada casa tem um problema
+    // diferente) — nunca um único máximo global, que apagaria o problema
+    // das outras casas da tela.
+    var tbody = document.getElementById('bh-pan-matriz-lista');
+    tbody.innerHTML = '';
+    var casasOrdenadas = slugs.slice().sort(function (a, b) {
+      var ta = CHAVES.reduce(function (s, k) { return s + porCasa[a][k]; }, 0);
+      var tb = CHAVES.reduce(function (s, k) { return s + porCasa[b][k]; }, 0);
+      return tb - ta;
+    });
+    var totaisCol = { bar: 0, salao: 0, cozinha: 0, geral: 0 };
+    casasOrdenadas.forEach(function (slug) {
+      var pc = porCasa[slug];
+      var tr = document.createElement('tr');
+      var tdNome = document.createElement('td');
+      tdNome.textContent = pc.nome;
+      if (!pc.coberta) tdNome.style.color = 'var(--text-3)';
+      tr.appendChild(tdNome);
+      if (!pc.coberta) {
+        // Casa sem código AHgora (Íz): DECLARADA, nunca linha zerada.
+        var tdVazio = document.createElement('td');
+        tdVazio.colSpan = 3;
+        tdVazio.className = 'bh-sem-cobertura';
+        tdVazio.textContent = 'sem código AHgora — casa não lida';
+        tr.appendChild(tdVazio);
+        var tdTot = document.createElement('td');
+        tdTot.className = 'n';
+        tdTot.style.color = 'var(--text-3)';
+        tdTot.textContent = '—';
+        tr.appendChild(tdTot);
+        tbody.appendChild(tr);
+        return;
+      }
+      var totalCasa = 0;
+      var maiorDaCasa = Math.max.apply(null, CHAVES.map(function (k) { return pc[k]; }));
+      CHAVES.forEach(function (k) {
+        var td = document.createElement('td');
+        td.className = 'n' + (pc[k] === maiorDaCasa && pc[k] > 0 ? ' quente' : '');
+        td.textContent = pc[k] > 0 ? fmtHorasInt(pc[k]) : '—';
+        tr.appendChild(td);
+        totalCasa += pc[k];
+        totaisCol[k] += pc[k];
+      });
+      totaisCol.geral += totalCasa;
+      var tdTotal = document.createElement('td');
+      tdTotal.className = 'n';
+      tdTotal.style.fontWeight = '700';
+      tdTotal.textContent = fmtHorasInt(totalCasa);
+      tr.appendChild(tdTotal);
+      tbody.appendChild(tr);
+    });
+    // Linha de total, só quando há mais de uma casa coberta pra comparar.
+    var casasCobertas = casasOrdenadas.filter(function (slug) { return porCasa[slug].coberta; });
+    if (casasCobertas.length > 1) {
+      var trT = document.createElement('tr');
+      var tdNomeT = document.createElement('td'); tdNomeT.className = 'tot'; tdNomeT.textContent = 'Todas as casas';
+      trT.appendChild(tdNomeT);
+      CHAVES.forEach(function (k) {
+        var td = document.createElement('td'); td.className = 'n tot';
+        td.textContent = fmtHorasInt(totaisCol[k]);
+        trT.appendChild(td);
+      });
+      var tdTotT = document.createElement('td'); tdTotT.className = 'n tot';
+      tdTotT.textContent = fmtHorasInt(totaisCol.geral);
+      trT.appendChild(tdTotT);
+      tbody.appendChild(trT);
+    }
+
+    // ---- Cartões "precisa de decisão" -------------------------------------
+    document.getElementById('bh-pan-card-44').textContent = nAcima44;
+    document.getElementById('bh-pan-card-semsalario').textContent = nSemSalario;
+    document.getElementById('bh-pan-card-atipico').textContent = nAtipico;
+  }
+
+  // ---- 4 vistas (E1) -------------------------------------------------------
+  (function ligaAbas() {
+    var abas = document.querySelectorAll('.bh-aba');
+    abas.forEach(function (aba) {
+      aba.addEventListener('click', function () {
+        var alvo = aba.dataset.vista;
+        abas.forEach(function (a) {
+          var on = a === aba;
+          a.classList.toggle('on', on);
+          a.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('.bh-vista').forEach(function (v) {
+          v.classList.toggle('on', v.id === 'bh-vista-' + alvo);
+        });
+      });
+    });
+  })();
+
+  (function ligaFiltrosExtra() {
+    var bDev = document.getElementById('bh-filtro-devendo');
+    var bDes = document.getElementById('bh-filtro-desativadas');
+    if (bDev) bDev.addEventListener('click', function () {
+      somenteDevendo = !somenteDevendo;
+      bDev.classList.toggle('on', somenteDevendo);
+      if (desenhaAtual) desenhaAtual();
+    });
+    if (bDes) bDes.addEventListener('click', function () {
+      mostrarDesativadas = !mostrarDesativadas;
+      bDes.classList.toggle('on', mostrarDesativadas);
+      aplicaFiltroDesativadas();
+    });
+  })();
+
+  // "Mostrar desativadas" (E1) é o toggle que decide a VISIBILIDADE da
+  // tabela; renderDesativados() continua sendo quem monta as linhas (roda a
+  // cada troca de time). Separar as duas evita reconstruir a tabela só pra
+  // esconder/mostrar.
+  function aplicaFiltroDesativadas() {
+    var wrapEl = document.getElementById('bh-desativadas-wrap');
+    if (!wrapEl) return;
+    var tbody = document.getElementById('bh-desativadas-lista');
+    var temLinhas = !!(tbody && tbody.children.length);
+    wrapEl.style.display = (mostrarDesativadas && temLinhas) ? '' : 'none';
   }
 
   // ---- Selo de confiabilidade (E2.3) --------------------------------------
@@ -1441,8 +1901,14 @@ window.msgAcessoNegado = function (nomePagina) {
   function renderSelo(selo) {
     var box = document.getElementById('bh-selo');
     // Payload antigo (publicado antes do E2) simplesmente não tem selo — a
-    // barra some, em vez de mentir um verde que ninguém verificou.
-    if (!selo || !selo.status) { box.style.display = 'none'; return; }
+    // barra some, em vez de mentir um verde que ninguém verificou. O espelho
+    // da Conformidade segue a mesma regra: declara ausência, nunca inventa.
+    if (!selo || !selo.status) {
+      box.style.display = 'none';
+      var txtConfVazio = document.getElementById('bh-selo-conf-txt');
+      if (txtConfVazio) txtConfVazio.textContent = 'Sem selo de coleta neste payload.';
+      return;
+    }
     box.style.display = 'block';
     box.className = 'bh-selo ' + selo.status;
 
@@ -1476,6 +1942,44 @@ window.msgAcessoNegado = function (nomePagina) {
       li.textContent = l;
       limEl.appendChild(li);
     });
+
+    // Espelho na vista Conformidade (E1, PLANO_BH_V2.md): mesmo selo, mesmo
+    // dado — só sempre aberto, porque lá já é a vista dedicada a isto, não
+    // precisa do clique-pra-expandir do Panorama.
+    var txtConf = document.getElementById('bh-selo-conf-txt');
+    if (txtConf) {
+      txtConf.innerHTML = '';
+      var forteConf = document.createElement('b');
+      forteConf.textContent = SELO_ROTULO[selo.status] || selo.status;
+      txtConf.appendChild(forteConf);
+      if (selo.legenda) txtConf.appendChild(document.createTextNode(' — ' + selo.legenda));
+    }
+    var itensConf = document.getElementById('bh-selo-conf-itens');
+    if (itensConf) {
+      itensConf.innerHTML = '';
+      (selo.itens || []).forEach(function (it) {
+        var linha = document.createElement('div');
+        linha.className = 'bh-selo-item ' + it.status;
+        var ponto = document.createElement('span'); ponto.className = 'p';
+        linha.appendChild(ponto);
+        var corpo = document.createElement('div');
+        var t = document.createElement('span'); t.className = 't'; t.textContent = it.titulo + ': ';
+        corpo.appendChild(t);
+        var r = document.createElement('span'); r.className = 'r'; r.textContent = it.resumo || '';
+        corpo.appendChild(r);
+        linha.appendChild(corpo);
+        itensConf.appendChild(linha);
+      });
+    }
+    var limConf = document.getElementById('bh-selo-conf-limites');
+    if (limConf) {
+      limConf.innerHTML = '';
+      (selo.limites || []).forEach(function (l) {
+        var li = document.createElement('li');
+        li.textContent = l;
+        limConf.appendChild(li);
+      });
+    }
   }
 
   (function ligaSeloCab() {
@@ -1550,12 +2054,12 @@ window.msgAcessoNegado = function (nomePagina) {
     var planoPessoas = [];
     // Re-render limpo: sem isso, trocar de time ia ANEXANDO nas tabelas em
     // vez de substituir (as listas abaixo usam appendChild).
-    ['bh-devendo-lista', 'bh-plano-lista', 'bh-corpo-lista', 'bh-casas'].forEach(function (id) {
+    ['bh-plano-lista', 'bh-corpo-lista', 'bh-casas'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.innerHTML = '';
     });
-    document.getElementById('bh-devendo-wrap').style.display = 'none';
     document.getElementById('bh-plano-wrap').style.display = 'none';
+    document.getElementById('bh-plano-vazio').style.display = 'none';
     var pendAntiga = wrap.querySelector('.bh-pendencia');
     if (pendAntiga) pendAntiga.remove();
     document.getElementById('bh-busca').value = '';
@@ -1563,7 +2067,6 @@ window.msgAcessoNegado = function (nomePagina) {
     // seria mentira de interface.
     document.getElementById('bh-kpi-n-rot').textContent = SET.plural;
     document.getElementById('bh-col-nome').textContent = SET.pessoa;
-    document.getElementById('bh-col-nome-dev').textContent = SET.pessoa;
     document.getElementById('bh-col-nome-plano').textContent = SET.pessoa;
     document.getElementById('bh-vazio').textContent = 'Nenhuma pessoa com dado ainda.';
     // Agregado por casa (independe do filtro de casa/busca — é O resumo por
@@ -1657,6 +2160,7 @@ window.msgAcessoNegado = function (nomePagina) {
       });
     });
     renderDesativados(desativados);
+    aplicaFiltroDesativadas();
 
     if (pendenciasCasa.length) {
       var pend = document.createElement('div');
@@ -1673,48 +2177,25 @@ window.msgAcessoNegado = function (nomePagina) {
         'zerar até lá (ver "Plano pra zerar horas extras" abaixo) — senão vira pagamento em dinheiro.';
     }
 
-    var devendoPessoas = pessoas.filter(function (p) { return p.saldo_minutos != null && p.saldo_minutos < 0; })
-      .sort(function (a, b) { return a.saldo_minutos - b.saldo_minutos; });
-    if (devendoPessoas.length) {
-      document.getElementById('bh-devendo-wrap').style.display = '';
-      var devendoLista = document.getElementById('bh-devendo-lista');
-      devendoPessoas.forEach(function (p) {
-        var tr = document.createElement('tr');
-        tr.appendChild(td(p.casa));
-        var tdNome = document.createElement('td');
-        var nomeWrap = document.createElement('div'); nomeWrap.className = 'bh-nome-wrap';
-        var nomeEl = document.createElement('div'); nomeEl.className = 'bh-nome'; nomeEl.textContent = p.nome;
-        nomeWrap.appendChild(nomeEl);
-        if (p.divergencia) {
-          var divBadge = document.createElement('span');
-          divBadge.className = 'bh-badge divergencia'; divBadge.textContent = 'Divergência';
-          divBadge.title = p.divergencia;
-          nomeWrap.appendChild(divBadge);
-        }
-        if (p.atipico) nomeWrap.appendChild(badgeAtipico(p));
-        tdNome.appendChild(nomeWrap);
-        tr.appendChild(tdNome);
-        var tdSaldo = document.createElement('td'); tdSaldo.className = 'n';
-        var saldoEl = document.createElement('span'); saldoEl.className = 'bh-saldo neg';
-        saldoEl.textContent = p.saldo_texto;
-        tdSaldo.appendChild(saldoEl);
-        var alerta = alertaDe(p.saldo_minutos);
-        if (alerta && alerta !== 'ok') {
-          var badge = document.createElement('span');
-          badge.className = 'bh-badge ' + alerta; badge.style.marginLeft = '6px';
-          badge.textContent = alerta === 'critico' ? 'Crítico' : 'Atenção';
-          tdSaldo.appendChild(badge);
-        }
-        tr.appendChild(tdSaldo);
-        tr.appendChild(td(p.situacao || '—'));
-        devendoLista.appendChild(tr);
-      });
-    }
+    // "Quem deve horas pra casa" (tabela paralela) saiu daqui — virou o
+    // filtro "Só quem deve horas" na vista Pessoas (E1, PLANO_BH_V2.md),
+    // aplicado em desenha() sobre a MESMA lista, sem tabela própria.
 
     if (planoPessoas.length) {
       document.getElementById('bh-plano-wrap').style.display = '';
+      document.getElementById('bh-plano-vazio').style.display = 'none';
       var planoLista = document.getElementById('bh-plano-lista');
-      planoPessoas.sort(function (a, b) { return b.saldo_minutos - a.saldo_minutos; });
+      // Ordenado pelo que custa mais caro NÃO fazer (E1). Custo desconhecido
+      // (salário não configurado) não é custo zero — pode ser o maior saldo
+      // do grupo (é o caso real da cozinha, ver PLANO_BH_V2.md seção 1) —
+      // então vem ANTES de qualquer valor conhecido, nunca depois.
+      planoPessoas.sort(function (a, b) {
+        var ca = a.custo_se_nao_abater, cb = b.custo_se_nao_abater;
+        if (ca == null && cb == null) return b.saldo_minutos - a.saldo_minutos;
+        if (ca == null) return -1;
+        if (cb == null) return 1;
+        return cb - ca;
+      });
       planoPessoas.forEach(function (pl) {
         var tr = document.createElement('tr');
         tr.appendChild(td(pl.casa));
@@ -1748,6 +2229,8 @@ window.msgAcessoNegado = function (nomePagina) {
         tr.appendChild(tdCusto);
         planoLista.appendChild(tr);
       });
+    } else {
+      document.getElementById('bh-plano-vazio').style.display = '';
     }
 
     var estado = { casa: '', busca: '' };
@@ -1804,6 +2287,9 @@ window.msgAcessoNegado = function (nomePagina) {
       var visiveis = ordenada.filter(function (p) {
         if (estado.casa && p.casa !== estado.casa) return false;
         if (estado.busca && (p.nome || '').toLowerCase().indexOf(estado.busca) < 0) return false;
+        // "Só quem deve horas" (E1): absorve a antiga tabela "Quem deve
+        // horas pra casa" — mesma condição, agora um filtro sobre a lista.
+        if (somenteDevendo && !(p.saldo_minutos != null && p.saldo_minutos < 0)) return false;
         return true;
       });
       corpoLista.innerHTML = '';
@@ -1819,8 +2305,10 @@ window.msgAcessoNegado = function (nomePagina) {
         else { saldoLiquido += p.saldo_minutos; comSaldo++; }
         if (p.custo != null) { custoTotal += p.custo; custoTemAlgum = true; }
 
+        // Linha compacta (E1, PLANO_BH_V2.md): Pessoa | Saldo | Tendência |
+        // Custo | Ação — casa/setor/matrícula descem pra 2ª linha do nome
+        // (.bh-sub), no lugar da coluna própria de antes.
         var tr = document.createElement('tr');
-        tr.appendChild(td(p.casa || '—'));
         var tdNome = document.createElement('td');
         var nomeWrap = document.createElement('div'); nomeWrap.className = 'bh-nome-wrap';
         var nomeEl = document.createElement('div'); nomeEl.className = 'bh-nome'; nomeEl.textContent = p.nome || '—';
@@ -1833,8 +2321,10 @@ window.msgAcessoNegado = function (nomePagina) {
         }
         if (p.atipico) nomeWrap.appendChild(badgeAtipico(p));
         tdNome.appendChild(nomeWrap);
+        var subEl = document.createElement('div'); subEl.className = 'bh-sub';
+        subEl.textContent = (p.casa || '—') + ' · ' + SET.rotulo.toLowerCase() + ' · ' + (p.matricula || '—');
+        tdNome.appendChild(subEl);
         tr.appendChild(tdNome);
-        tr.appendChild(td(p.matricula || '—'));
 
         var tdSaldo = document.createElement('td'); tdSaldo.className = 'n';
         var saldoEl = document.createElement('span');
@@ -1850,8 +2340,6 @@ window.msgAcessoNegado = function (nomePagina) {
         }
         tr.appendChild(tdSaldo);
 
-        tr.appendChild(td(p.situacao || (p.saldo_minutos == null ? 'sem dados' : '—')));
-
         var tdTend = document.createElement('td');
         var spark = sparklineSVG(p.historico, p.tendencia);
         if (spark) tdTend.appendChild(spark);
@@ -1864,6 +2352,15 @@ window.msgAcessoNegado = function (nomePagina) {
           tdTend.textContent = '—';
         }
         tr.appendChild(tdTend);
+
+        // Custo (novo nesta coluna, E1): mesmo p.custo que já alimentava
+        // "Plano pra zerar horas extras" — não é dado novo, só exposto aqui
+        // também. null (sem plano OU sem salário configurado) é sempre
+        // "—", nunca um valor zerado fabricado (Regra Zero / dado financeiro não se fabrica).
+        var tdCusto = document.createElement('td'); tdCusto.className = 'n';
+        tdCusto.textContent = p.custo != null ? fmtRS(p.custo) : '—';
+        if (p.custo == null) tdCusto.style.color = 'var(--text-3)';
+        tr.appendChild(tdCusto);
 
         var tdAcao = document.createElement('td'); tdAcao.className = 'bh-acao-col';
         var acaoGrupo = document.createElement('div'); acaoGrupo.className = 'bh-acao-grupo';
@@ -1884,6 +2381,7 @@ window.msgAcessoNegado = function (nomePagina) {
       });
       vazio.style.display = visiveis.length ? 'none' : '';
       document.getElementById('bh-kpi-n').textContent = visiveis.length;
+      atualizaBotoesExportacao(visiveis.length > 0);
       document.getElementById('bh-kpi-alerta').textContent = comAlerta;
       document.getElementById('bh-kpi-semdados').textContent = semDados;
       // custo: se há gente a favor mas nenhum custo pôde ser calculado
@@ -1937,6 +2435,7 @@ window.msgAcessoNegado = function (nomePagina) {
     renderPorCasa(porCasa, selecionarCasa, estado.casa);
     renderPorTime(setoresComGente(), estado.casa, setorAtual, selecionarSetor);
     renderPendenciasRH(casasObj, estado.casa);
+    desenhaAtual = desenha;  // pro toggle "Só quem deve horas" chamar a versão atual
     desenha();
 
     // Cada time pode ter sido lido em dias diferentes — um "Última
@@ -1957,6 +2456,113 @@ window.msgAcessoNegado = function (nomePagina) {
       ? SET.rotulo + ': última leitura em ' + fmtDataBR(ultimaSetor) + '.'
       : (payload.gerado_em ? 'Última atualização da página: ' + new Date(payload.gerado_em).toLocaleString('pt-BR') + '.' : '');
   }
+
+  // ---- E4 — Exportação em PDF (ligação a pdfBaixa existente) -----------
+  // Monta os blocos PDF a partir do recorte em tela (setor/casa/busca).
+  // Chamado pelos botões "PDF assinado" em cada vista.
+  function atualizaBotoesExportacao(podeExportar) {
+    ['panorama', 'pessoas', 'plano', 'conformidade'].forEach(function (v) {
+      var btnPdf = document.getElementById('bh-btn-pdf-' + v);
+      var btnXlsx = document.getElementById('bh-btn-xlsx-' + v);
+      if (btnPdf) btnPdf.disabled = !podeExportar;
+      if (btnXlsx) btnXlsx.disabled = !podeExportar;
+    });
+  }
+
+  function exportaPDF(vistaAtual) {
+    var visiveis = filtraVisiveis(PAYLOAD || {}, estado);
+    if (!visiveis.length) {
+      alert('Nenhuma pessoa neste recorte.');
+      return;
+    }
+    var blocos = [];
+    blocos.push({ tipo: 'h1', texto: 'Banco de Horas · Bar.IZ — Grupo IZ' });
+    var SET = SETORES[setorAtual];
+    blocos.push({ tipo: 'h2', texto: 'Vista: ' + (vistaAtual === 'panorama' ? 'Panorama' : vistaAtual === 'pessoas' ? 'Pessoas' : vistaAtual === 'plano' ? 'Plano' : 'Conformidade') });
+    blocos.push({ tipo: 'sep' });
+    blocos.push({ texto: 'Gerado em ' + new Date().toLocaleString('pt-BR') });
+    if (estado.casa && estado.casa !== '') blocos.push({ texto: 'Casa: ' + estado.casa });
+    blocos.push({ texto: SET.rotulo });
+    blocos.push({ tipo: 'sep' });
+    blocos.push({ tipo: 'h2', texto: visiveis.length + ' pessoas no recorte' });
+    visiveis.forEach(function (p) {
+      blocos.push({ tipo: 'li', texto: p.nome + ' (' + p.casa + ' · ' + p.matricula + '): ' + (p.saldo_texto || '—') + ' — R$ ' + (p.custo != null ? p.custo.toFixed(2) : '—') });
+    });
+    var nomeArquivo = 'banco-horas-' + (estado.casa || 'grupo') + '-' + vistaAtual + '.pdf';
+    pdfBaixa(nomeArquivo, 'Banco de Horas', 'Recorte do dia', blocos);
+  }
+
+  function exportaXLSX(vistaAtual) {
+    var visiveis = filtraVisiveis(PAYLOAD || {}, estado);
+    if (!visiveis.length) {
+      alert('Nenhuma pessoa neste recorte.');
+      return;
+    }
+    var abas = [];
+
+    // Aba para cada vista (Panorama/Pessoas/Plano/Conformidade)
+    var nomesVistas = { panorama: 'Panorama', pessoas: 'Pessoas', plano: 'Plano', conformidade: 'Conformidade' };
+
+    // Estrutura comum: Pessoa | Casa | Setor | Matrícula | Saldo | Tendência | Custo
+    var colunas = [
+      { titulo: 'Pessoa', tipo: 'texto', largura: 25 },
+      { titulo: 'Casa', tipo: 'texto', largura: 15 },
+      { titulo: 'Setor', tipo: 'texto', largura: 15 },
+      { titulo: 'Matrícula', tipo: 'texto', largura: 12 },
+      { titulo: 'Saldo (h)', tipo: 'numero', largura: 12 },
+      { titulo: 'Tendência', tipo: 'texto', largura: 12 },
+      { titulo: 'Custo (R$)', tipo: 'moeda', largura: 12 }
+    ];
+
+    var linhas = [];
+    visiveis.forEach(function (p) {
+      linhas.push([
+        p.nome || '',
+        p.casa || '',
+        p.setor || '',
+        p.matricula || '',
+        p.saldo_minutos != null ? p.saldo_minutos / 60 : null,
+        p.tendencia || '',
+        p.custo || null
+      ]);
+    });
+
+    abas.push({
+      nome: nomesVistas[vistaAtual] || 'Panorama',
+      colunas: colunas,
+      linhas: linhas
+    });
+
+    // Aba "Procedência" (E6, será preenchida depois)
+    abas.push({
+      nome: 'Procedência',
+      colunas: [
+        { titulo: 'Campo', tipo: 'texto', largura: 30 },
+        { titulo: 'Valor', tipo: 'texto', largura: 50 }
+      ],
+      linhas: [
+        ['Gerado em', new Date().toLocaleString('pt-BR')],
+        ['Casa', estado.casa || 'Grupo'],
+        ['Setor', SETORES[setorAtual].rotulo],
+        ['Pessoas', String(visiveis.length)]
+      ]
+    });
+
+    var nomeArquivo = 'banco-horas-' + (estado.casa || 'grupo') + '-' + vistaAtual;
+    window.xlsxBaixa(abas, nomeArquivo);
+  }
+
+  // Liga os botões de PDF e Excel em cada vista
+  ['panorama', 'pessoas', 'plano', 'conformidade'].forEach(function (v) {
+    var btnPdf = document.getElementById('bh-btn-pdf-' + v);
+    var btnXlsx = document.getElementById('bh-btn-xlsx-' + v);
+    if (btnPdf) {
+      btnPdf.addEventListener('click', function () { exportaPDF(v); });
+    }
+    if (btnXlsx) {
+      btnXlsx.addEventListener('click', function () { exportaXLSX(v); });
+    }
+  });
 
   function buscaDados(token) {
     msg.textContent = 'Carregando…';
@@ -1982,6 +2588,414 @@ window.msgAcessoNegado = function (nomePagina) {
   else if (!r.redirecionou) msg.innerHTML = window.msgAcessoNegado('o Banco de Horas');
 })();
 </script>
+
+
+<script>
+// bh_xlsx.py :: JS_XLSX — escritor de .xlsx sem biblioteca (Etapa E3,
+// PLANO_BH_V2.md). ZIP em método store (sem compressão) + OOXML mínimo.
+// Roda em navegador (window.*) e em Node para o harness de teste, que
+// injeta `global.window = global` antes de carregar este bloco.
+(function (window) {
+  'use strict';
+
+  // ---------- bytes / util ----------
+
+  function u16LE(n) { return new Uint8Array([n & 0xFF, (n >>> 8) & 0xFF]); }
+  function u32LE(n) {
+    return new Uint8Array([
+      n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF,
+    ]);
+  }
+  function utf8Bytes(str) { return new TextEncoder().encode(str); }
+
+  function concatBytes(arrays) {
+    var total = 0;
+    for (var i = 0; i < arrays.length; i++) total += arrays[i].length;
+    var out = new Uint8Array(total);
+    var offset = 0;
+    for (var j = 0; j < arrays.length; j++) {
+      out.set(arrays[j], offset);
+      offset += arrays[j].length;
+    }
+    return out;
+  }
+
+  function xmlEsc(s) {
+    return String(s).replace(/[&<>'"]/g, function (c) {
+      if (c === '&') return '&amp;';
+      if (c === '<') return '&lt;';
+      if (c === '>') return '&gt;';
+      if (c === "'") return '&apos;';
+      return '&quot;';
+    });
+  }
+
+  // Letra de coluna do Excel a partir do índice 1-based (1->A, 27->AA).
+  function colLetra(n) {
+    var s = '';
+    while (n > 0) {
+      var m = (n - 1) % 26;
+      s = String.fromCharCode(65 + m) + s;
+      n = Math.floor((n - 1) / 26);
+    }
+    return s;
+  }
+
+  // ---------- CRC-32 (necessário mesmo em store — vai no cabeçalho) ----------
+
+  var CRC32_TABELA = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(bytes) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) {
+      c = CRC32_TABELA[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  // ---------- ZIP (método store — 0, sem DEFLATE) ----------
+
+  function dosHora(d) {
+    return ((d.getHours() & 0x1F) << 11) | ((d.getMinutes() & 0x3F) << 5) | ((d.getSeconds() >> 1) & 0x1F);
+  }
+  function dosData(d) {
+    var ano = d.getFullYear() - 1980;
+    if (ano < 0) ano = 0;
+    return ((ano & 0x7F) << 9) | (((d.getMonth() + 1) & 0xF) << 5) | (d.getDate() & 0x1F);
+  }
+
+  // arquivos: [{ nome: 'xl/workbook.xml', dados: Uint8Array }, ...]
+  function empacotarZip(arquivos) {
+    var agora = new Date();
+    var dTime = dosHora(agora), dDate = dosData(agora);
+    var locais = [];
+    var centrais = [];
+    var offset = 0;
+
+    for (var i = 0; i < arquivos.length; i++) {
+      var nomeBytes = utf8Bytes(arquivos[i].nome);
+      var dados = arquivos[i].dados;
+      var crc = crc32(dados);
+
+      var lfh = concatBytes([
+        u32LE(0x04034b50),
+        u16LE(20),      // version needed to extract
+        u16LE(0),       // flags
+        u16LE(0),       // método: 0 = store (sem compressão)
+        u16LE(dTime),
+        u16LE(dDate),
+        u32LE(crc),
+        u32LE(dados.length), // compressed size == uncompressed em store
+        u32LE(dados.length),
+        u16LE(nomeBytes.length),
+        u16LE(0),       // extra field length
+        nomeBytes,
+      ]);
+      locais.push(lfh, dados);
+
+      var cdh = concatBytes([
+        u32LE(0x02014b50),
+        u16LE(20),      // version made by
+        u16LE(20),      // version needed to extract
+        u16LE(0),       // flags
+        u16LE(0),       // método: store
+        u16LE(dTime),
+        u16LE(dDate),
+        u32LE(crc),
+        u32LE(dados.length),
+        u32LE(dados.length),
+        u16LE(nomeBytes.length),
+        u16LE(0),       // extra field length
+        u16LE(0),       // comment length
+        u16LE(0),       // disk number start
+        u16LE(0),       // internal file attrs
+        u32LE(0),       // external file attrs
+        u32LE(offset),  // offset do local header
+        nomeBytes,
+      ]);
+      centrais.push(cdh);
+
+      offset += lfh.length + dados.length;
+    }
+
+    var centralDirOffset = offset;
+    var centralDirBytes = concatBytes(centrais);
+    var eocd = concatBytes([
+      u32LE(0x06054b50),
+      u16LE(0), u16LE(0),               // nº do disco / disco do central dir
+      u16LE(arquivos.length),           // entradas neste disco
+      u16LE(arquivos.length),           // entradas totais
+      u32LE(centralDirBytes.length),    // tamanho do central directory
+      u32LE(centralDirOffset),          // offset de início do central directory
+      u16LE(0),                         // comment length
+    ]);
+
+    return concatBytes(locais.concat([centralDirBytes, eocd]));
+  }
+
+  // ---------- OOXML: partes fixas ----------
+
+  var RELS_RAIZ =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" ' +
+    'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" ' +
+    'Target="xl/workbook.xml"/>' +
+    '</Relationships>';
+
+  // numFmtId: builtins usados sem declarar (49=Texto "@", 2="0.00", 1="0").
+  // 164/165 são customizados (moeda/data), únicos que precisam de <numFmt>.
+  var STYLES_XML =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="2">' +
+    '<numFmt numFmtId="164" formatCode="&quot;R$&quot;\ #,##0.00"/>' +
+    '<numFmt numFmtId="165" formatCode="dd/mm/yyyy"/>' +
+    '</numFmts>' +
+    '<fonts count="2">' +
+    '<font><sz val="11"/><name val="Calibri"/></font>' +
+    '<font><b/><sz val="11"/><name val="Calibri"/></font>' +
+    '</fonts>' +
+    '<fills count="3">' +
+    '<fill><patternFill patternType="none"/></fill>' +
+    '<fill><patternFill patternType="gray125"/></fill>' +
+    '<fill><patternFill patternType="solid">' +
+    '<fgColor rgb="FFE8E1D0"/><bgColor indexed="64"/></patternFill></fill>' +
+    '</fills>' +
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="7">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +                              // 0 padrão
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>' +  // 1 cabeçalho
+    '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +       // 2 texto
+    '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +        // 3 número (0.00)
+    '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +        // 4 inteiro
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +      // 5 moeda
+    '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +      // 6 data
+    '</cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+    '</styleSheet>';
+
+  var ESTILO_POR_TIPO = { texto: 2, numero: 3, inteiro: 4, moeda: 5, data: 6 };
+  var ESTILO_CABECALHO = 1;
+  var ESTILO_AUSENTE = 2; // "—" sempre em célula de texto, nunca 0 fabricado
+
+  function montaContentTypes(nAbas) {
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+      '<Default Extension="xml" ContentType="application/xml"/>',
+      '<Override PartName="/xl/workbook.xml" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
+      '<Override PartName="/xl/styles.xml" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>',
+    ];
+    for (var i = 1; i <= nAbas; i++) {
+      partes.push(
+        '<Override PartName="/xl/worksheets/sheet' + i + '.xml" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+      );
+    }
+    partes.push('</Types>');
+    return partes.join('');
+  }
+
+  function montaWorkbookXml(nomesAbas) {
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
+      '<sheets>',
+    ];
+    for (var i = 0; i < nomesAbas.length; i++) {
+      partes.push(
+        '<sheet name="' + xmlEsc(nomesAbas[i]) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'
+      );
+    }
+    partes.push('</sheets>', '</workbook>');
+    return partes.join('');
+  }
+
+  function montaWorkbookRels(nAbas) {
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
+    ];
+    for (var i = 1; i <= nAbas; i++) {
+      partes.push(
+        '<Relationship Id="rId' + i + '" ' +
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" ' +
+        'Target="worksheets/sheet' + i + '.xml"/>'
+      );
+    }
+    partes.push(
+      '<Relationship Id="rId' + (nAbas + 1) + '" ' +
+      'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" ' +
+      'Target="styles.xml"/>'
+    );
+    partes.push('</Relationships>');
+    return partes.join('');
+  }
+
+  // Nome de aba: até 31 chars, sem \ / ? * [ ] : , único dentro do arquivo.
+  function nomeAbaSeguro(nome, usados) {
+    var s = String(nome == null ? 'Aba' : nome).replace(/[\\/\?\*\[\]:]/g, ' ').trim();
+    if (!s) s = 'Aba';
+    if (s.length > 31) s = s.substring(0, 31);
+    var base = s, i = 2;
+    while (usados[s]) {
+      var suf = '_' + i;
+      s = base.substring(0, Math.max(1, 31 - suf.length)) + suf;
+      i++;
+    }
+    usados[s] = true;
+    return s;
+  }
+
+  // Serial de data do Excel: dias desde 1899-12-30 (epoch deslocado que já
+  // absorve o bug histórico do "29/02/1900" do Lotus 1-2-3).
+  function dataParaSerial(valor) {
+    var d;
+    if (valor instanceof Date) {
+      d = valor;
+    } else {
+      var partes = String(valor).split('-');
+      d = new Date(Date.UTC(+partes[0], +partes[1] - 1, +partes[2]));
+    }
+    var epoch = Date.UTC(1899, 11, 30);
+    var ms = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - epoch;
+    return Math.round(ms / 86400000);
+  }
+
+  function celulaAusenteXml(ref) {
+    // Nunca 0 fabricado (regra do Controle de Doses): ausência vira "—",
+    // sempre em célula de TEXTO — não pode ser somada como se fosse zero.
+    return '<c r="' + ref + '" t="inlineStr" s="' + ESTILO_AUSENTE + '"><is><t>&#8212;</t></is></c>';
+  }
+
+  function celulaXml(ref, tipo, valor) {
+    var ausente = valor === null || valor === undefined || valor === '';
+    var s = ESTILO_POR_TIPO[tipo] != null ? ESTILO_POR_TIPO[tipo] : 0;
+
+    if (tipo === 'texto') {
+      var texto = ausente ? '' : String(valor);
+      return '<c r="' + ref + '" t="inlineStr" s="' + s + '">' +
+        '<is><t xml:space="preserve">' + xmlEsc(texto) + '</t></is></c>';
+    }
+
+    if (ausente) return celulaAusenteXml(ref);
+
+    if (tipo === 'data') {
+      return '<c r="' + ref + '" s="' + s + '"><v>' + dataParaSerial(valor) + '</v></c>';
+    }
+
+    var num = Number(valor);
+    if (!isFinite(num)) return celulaAusenteXml(ref);
+    return '<c r="' + ref + '" s="' + s + '"><v>' + num + '</v></c>';
+  }
+
+  function montaSheetXml(aba) {
+    var colunas = aba.colunas || [];
+    var linhas = aba.linhas || [];
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    ];
+
+    if (colunas.length) {
+      partes.push('<cols>');
+      for (var c = 0; c < colunas.length; c++) {
+        var largura = colunas[c].largura || Math.max(10, String(colunas[c].titulo || '').length + 4);
+        partes.push('<col min="' + (c + 1) + '" max="' + (c + 1) + '" width="' + largura + '" customWidth="1"/>');
+      }
+      partes.push('</cols>');
+    }
+
+    partes.push('<sheetData>');
+
+    partes.push('<row r="1">');
+    for (var ci = 0; ci < colunas.length; ci++) {
+      var refc = colLetra(ci + 1) + '1';
+      partes.push(
+        '<c r="' + refc + '" t="inlineStr" s="' + ESTILO_CABECALHO + '">' +
+        '<is><t xml:space="preserve">' + xmlEsc(colunas[ci].titulo || '') + '</t></is></c>'
+      );
+    }
+    partes.push('</row>');
+
+    for (var r = 0; r < linhas.length; r++) {
+      var linha = linhas[r] || [];
+      var rn = r + 2;
+      partes.push('<row r="' + rn + '">');
+      for (var cj = 0; cj < colunas.length; cj++) {
+        var ref = colLetra(cj + 1) + rn;
+        partes.push(celulaXml(ref, colunas[cj].tipo, linha[cj]));
+      }
+      partes.push('</row>');
+    }
+
+    partes.push('</sheetData>', '</worksheet>');
+    return partes.join('');
+  }
+
+  // ---------- API pública ----------
+
+  // abas: [{ nome, colunas: [{titulo, tipo, largura?}], linhas: [[...]] }]
+  function xlsxGerar(abas) {
+    if (!abas || !abas.length) throw new Error('xlsxGerar: nenhuma aba informada');
+
+    var usados = {};
+    var nomesSeguros = [];
+    var sheetsXml = [];
+    for (var i = 0; i < abas.length; i++) {
+      nomesSeguros.push(nomeAbaSeguro(abas[i].nome, usados));
+      sheetsXml.push(montaSheetXml(abas[i]));
+    }
+
+    var arquivos = [];
+    arquivos.push({ nome: '[Content_Types].xml', dados: utf8Bytes(montaContentTypes(abas.length)) });
+    arquivos.push({ nome: '_rels/.rels', dados: utf8Bytes(RELS_RAIZ) });
+    arquivos.push({ nome: 'xl/workbook.xml', dados: utf8Bytes(montaWorkbookXml(nomesSeguros)) });
+    arquivos.push({ nome: 'xl/_rels/workbook.xml.rels', dados: utf8Bytes(montaWorkbookRels(abas.length)) });
+    arquivos.push({ nome: 'xl/styles.xml', dados: utf8Bytes(STYLES_XML) });
+    for (var j = 0; j < sheetsXml.length; j++) {
+      arquivos.push({ nome: 'xl/worksheets/sheet' + (j + 1) + '.xml', dados: utf8Bytes(sheetsXml[j]) });
+    }
+
+    return empacotarZip(arquivos);
+  }
+
+  function xlsxBaixa(abas, nomeArquivo) {
+    var bytes = xlsxGerar(abas);
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (nomeArquivo || 'banco-horas') + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  window.xlsxGerar = xlsxGerar;
+  window.xlsxBaixa = xlsxBaixa;
+})(window);
+</script>
+
 
 
 <div class="sino-pop" id="sino-pop" role="dialog" aria-label="Notificações" hidden>
@@ -2073,7 +3087,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 03/08/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 04/08/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -3097,7 +4111,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'd2b19fe03bce';
+  var BUILD = 'bf5dfcac0c76';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Sessão Criativa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=d2b19fe03bce">
+<link rel="stylesheet" href="portal.css?v=bf5dfcac0c76">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -462,6 +462,25 @@ window.msgAcessoNegado = function (nomePagina) {
         color:#c3baa9;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
   .sc-w.on{background:#2a2419;color:#f3ede2;border-color:#3a3428;}
   .sc-w i{display:block;border-radius:50%;background:currentColor;}
+
+  /* ---------------- K2 (PLANO_CADERNO.md): 5 páginas por sessão ----------------
+     Borda ESQUERDA, espelhando as gavetas da borda direita (mockup_caderno_v2).
+     Fica ANTES de `.sc-barra` (ferramentas) na ordem do flex: página é a
+     pergunta "onde estou", ferramenta é "o que uso agora" — a primeira
+     pergunta é mais externa que a segunda. */
+  .sc-pgs{width:44px;flex:none;background:#211c15;border-right:1px solid #3a3428;
+          display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 0;}
+  .sc-pgs-cap{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#8f8672;
+             writing-mode:vertical-rl;transform:rotate(180deg);margin-bottom:1px;}
+  .sc-pgt{width:30px;height:34px;border:1px solid #3a3428;border-radius:7px;background:#16130f;
+         color:#8f8672;font-size:12px;display:flex;flex-direction:column;align-items:center;
+         justify-content:center;gap:3px;cursor:pointer;padding:0;font-family:inherit;}
+  .sc-pgt:hover{border-color:#5b5340;color:#c3baa9;}
+  .sc-pgt .pt{width:4px;height:4px;border-radius:50%;background:#5b5340;opacity:.6;}
+  .sc-pgt.tem .pt{background:#d0a352;opacity:1;}
+  .sc-pgt.on{border-color:#d0a352;background:#d0a352;color:#241a06;font-weight:700;}
+  .sc-pgt.on .pt{background:#241a06;}
+
   .sc-tela{flex:1;position:relative;min-width:0;}
   .sc-tela canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair;}
   .sc-zoom{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:5px;
@@ -472,14 +491,21 @@ window.msgAcessoNegado = function (nomePagina) {
            border-radius:7px;padding:5px 9px;font-size:11px;color:#c3baa9;pointer-events:none;
            opacity:0;transition:opacity .18s;}
   .sc-dica.on{opacity:1;}
+  /* z-index:6 é maior que o das 3 gavetas (.sc-preco/.sc-ideias/.sc-cons, todas
+     z-index:5) DE PROPÓSITO — achado real testando a tabela cheia (K4): sem
+     isso, a gaveta Consumo (aberta pra chegar aos botões novos) cobria o
+     próprio modal que ela abre, e o clique em "Fechar" ia parar numa célula
+     da tabela compacta por baixo. Vale pra QUALQUER `.sc-ed` aberto com uma
+     gaveta visível atrás — não só o K4. */
   .sc-ed{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(84%,340px);
-         background:#211c15;border:1px solid #d0a352;border-radius:11px;padding:12px;}
+         background:#211c15;border:1px solid #d0a352;border-radius:11px;padding:12px;z-index:6;}
   .sc-ed textarea{width:100%;min-height:76px;background:#16130f;border:1px solid #3a3428;border-radius:7px;
                   color:#f3ede2;font-size:14px;padding:8px;resize:vertical;font-family:Georgia,serif;}
   .sc-ed .lin{display:flex;gap:7px;margin-top:9px;justify-content:flex-end;}
-  .sc-gal{margin-top:16px;}
+  .sc-gal{margin-top:16px;position:relative;}
+  .sc-gal-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px;}
   .sc-gal h3{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#8f8672;
-             margin:0 0 9px;font-weight:600;}
+             margin:0;font-weight:600;}
   .sc-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;}
   .sc-tile{background:#211c15;border:1px solid #3a3428;border-radius:10px;overflow:hidden;
            cursor:pointer;text-align:left;padding:0;color:inherit;}
@@ -493,6 +519,104 @@ window.msgAcessoNegado = function (nomePagina) {
                overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sc-tile .qd{font-size:10px;color:#8f8672;margin-top:2px;}
   .sc-vazio{font-size:12.5px;color:#8f8672;border:1px dashed #3a3428;border-radius:9px;padding:14px;}
+
+  /* ---------------- K5 (PLANO_CADERNO.md): Caderno ----------------
+     Galeria MISTA (folhas soltas + cadernos, ver listaGaleria()) e, dentro
+     de um caderno, a galeria de cards das sessões dele. Reusa .sc-tile,
+     .sc-vazio, .sc-ed/.sc-conv-* (convite) e .sc-cad-* (campos de texto) já
+     existentes — nenhuma família de classe nova pra isso. */
+  .sc-tile.cdn .mini{color:#8f8672;}
+  .sc-cdn-view{position:relative;margin-top:16px;}
+  .sc-cdn-topo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .sc-cdn-titulo{flex:1;min-width:160px;}
+  .sc-cdn-casa{font-size:11px;color:#8f8672;white-space:nowrap;}
+  .sc-cdn-abas{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid #3a3428;margin-bottom:12px;padding-bottom:0;}
+  .sc-cdn-aba{background:none;border:0;border-bottom:2px solid transparent;color:#8f8672;
+              font-size:12px;padding:7px 3px;cursor:pointer;margin-bottom:-1px;}
+  .sc-cdn-aba:hover{color:#c3baa9;}
+  .sc-cdn-aba.on{color:#f3ede2;border-color:#d0a352;}
+  .sc-cdn-aba.futuro{opacity:.45;cursor:default;}
+  .sc-cdn-aba.futuro:hover{color:#8f8672;}
+  .sc-cdn-sessoes-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .sc-cdn-sel{width:auto;max-width:240px;}
+  .sc-cdn-conceito{width:100%;min-height:120px;resize:vertical;}
+
+  /* K7 (PLANO_CADERNO.md) — Prateleira (só FATO). Reusa os selos/itens de
+     .sc-id-* (gaveta Ideias, E5) — mesmo vocabulário visual de "do livro"
+     pra não criar um segundo símbolo de "isto é fato, não invenção". */
+  .sc-prat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+  .sc-prat-sec{background:#16130f;border:1px solid #3a3428;border-radius:10px;
+              padding:11px 12px;min-width:0;}
+  .sc-prat-h{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8f8672;
+            text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+  .sc-prat-corpo{max-height:280px;overflow-y:auto;}
+  .sc-prat-link{display:inline-block;margin-top:8px;font-size:11px;color:#d0a352;}
+  @media (max-width:640px){ .sc-prat{grid-template-columns:1fr;} }
+  /* K8 — as duas faixas largas embaixo do grid de 3: Livros (fato) e a parte
+     GERADA (sugestão). Largas porque as duas são texto corrido, não lista
+     curta: numa coluna de 1/3 a história ficaria com 4 palavras por linha. */
+  .sc-prat-larga{margin-top:12px;}
+  .sc-prat-larga .sc-prat-corpo{max-height:none;}
+  /* Estante: a lista curada à mão (BIBLIO_LIVROS), em colunas que quebram
+     sozinhas — 13 títulos em coluna única seriam um paredão. */
+  .sc-liv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px 14px;}
+  .sc-liv-i{font-size:11.5px;color:#c3baa9;padding:3px 0;}
+  .sc-liv-i b{color:#f3ede2;font-weight:600;}
+  .sc-liv-i .aa{color:#8f8672;}
+  .sc-liv-i.fonte b{color:#d0a352;}
+  .sc-prat-gerar{max-width:280px;}
+  .sc-prat-hist{font-size:11.5px;color:#c3baa9;line-height:1.55;margin-top:2px;}
+  .sc-prat-conf{display:block;font-size:10.5px;color:#c9a35c;line-height:1.45;margin-top:3px;}
+
+  /* K6 (PLANO_CADERNO.md) — Orçamento do caderno. Reusa .sc-cons-ru,
+     .sc-cons-parcial e .sc-cons-tb do K3 de PROPÓSITO: "sem preço" tem que
+     ter exatamente a mesma cara na gaveta da sessão e no orçamento do
+     caderno. Dois vocabulários visuais pro mesmo fato ensinariam que são
+     coisas diferentes — e não são: é a mesma linha, somada noutro recorte.
+     O que nasce aqui é só o que não existia (barra de teto, ritmo, detalhe
+     expansível). */
+  .sc-orc-sec{margin-top:20px;}
+  .sc-orc-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8f8672;
+           font-weight:600;margin-bottom:8px;}
+  .sc-orc-barra{height:10px;background:#16130f;border:1px solid #3a3428;border-radius:999px;
+               overflow:hidden;}
+  .sc-orc-barra i{display:block;height:100%;background:#9fe1cb;}
+  .sc-orc-barra.perto i{background:#e0b05c;}
+  .sc-orc-barra.estourou i{background:#e24b4a;}
+  .sc-orc-barra-l{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;
+                 color:#8f8672;margin-top:4px;font-variant-numeric:tabular-nums;}
+  .sc-orc-nota{font-size:11px;color:#8f8672;line-height:1.55;margin-top:7px;}
+  .sc-orc-nota b{color:#c3baa9;}
+  .sc-orc-ritmo{display:flex;align-items:flex-end;gap:8px;height:104px;}
+  .sc-orc-ritmo > div{flex:1;min-width:0;display:flex;flex-direction:column;
+                     justify-content:flex-end;align-items:center;gap:3px;}
+  .sc-orc-bar{width:100%;background:#2b2519;border-radius:4px 4px 0 0;min-height:3px;}
+  .sc-orc-bar.tem{background:#d0a352;}
+  .sc-orc-val{font-size:9.5px;color:#c3baa9;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .sc-orc-rot{font-size:9px;color:#5f5a4a;white-space:nowrap;}
+  .sc-orc-exp{cursor:pointer;}
+  .sc-orc-exp:hover td b{color:#d0a352;}
+  .sc-orc-seta{display:inline-block;width:10px;color:#5f5a4a;}
+  .sc-orc-det > td{background:#16130f;padding:0 0 9px 0;}
+  .sc-orc-det table{width:100%;border-collapse:collapse;font-size:10.5px;}
+  .sc-orc-det th{text-align:left;font-size:9px;letter-spacing:.05em;text-transform:uppercase;
+                color:#5f5a4a;padding:5px 6px;font-weight:600;}
+  .sc-orc-det td{padding:4px 6px;border-bottom:1px solid #211c15;color:#c3baa9;}
+  .sc-orc-det td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .sc-orc-det td.sem{color:#5f5a4a;}
+  /* `inline-block` não é enfeite: como INLINE puro, o selo era partido pelo
+     `.sc-cons-sub` (display:block) que vem logo depois na mesma célula, e o
+     pedaço órfão virava um borrão verde de 8px na linha de baixo — medido na
+     página renderizada a 375px, invisível em qualquer harness de estrutura. */
+  .sc-orc-tag{display:inline-block;vertical-align:middle;font-size:9px;letter-spacing:.05em;
+             text-transform:uppercase;border-radius:999px;padding:1px 7px;background:#2b2519;
+             color:#8f8672;margin-left:6px;white-space:nowrap;}
+  .sc-orc-tag.ficha{background:#163527;color:#9fe1cb;}
+  @media (max-width:640px){
+    .sc-orc-ritmo{height:86px;gap:5px;}
+    .sc-orc-val{font-size:8.5px;}
+    .sc-orc-tb .col-lan{display:none;}
+  }
   .sc-gate{background:#211c15;border:1px solid #3a3428;border-radius:11px;padding:16px;
            font-size:13px;color:#c3baa9;line-height:1.6;}
   .sc-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#211c15;
@@ -535,6 +659,26 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-farol.warn{background:#3a2f14;color:#e0b05c;}
   .sc-farol.bad{background:#3a1c1a;color:#e24b4a;}
 
+  /* ---------------- K9: contexto do bar por insumo ----------------
+     Selo tem/está-em-outra-casa/não-existe, mesmas cores e rótulos do
+     `mockups/mockup_caderno_v2.html` (.fl-tem/.fl-nao/.fl-outra), só com o
+     prefixo `sc-` do resto do arquivo. `grid-column:1/-1` deixa o selo
+     ocupar uma linha própria dentro de `.sc-cad-ins-row` (grid) SEM mexer
+     em `grid-template-columns` — a mesma classe de linha é reusada pelo
+     formulário de "virar ficha técnica" (E3), que não tem esse 6º filho e
+     por isso não ganha uma linha extra. */
+  .sc-cad-ins-fl{grid-column:1/-1;font-size:9.5px;padding:1px 6px;border-radius:99px;
+                margin:1px 0 3px;display:inline-flex;align-items:center;gap:4px;
+                width:fit-content;}
+  .sc-cad-ins-fl.tem{background:#163527;color:#9fe1cb;}
+  .sc-cad-ins-fl.nao{background:#3a1c1a;color:#e24b4a;}
+  .sc-cad-ins-fl.outra{background:#3a2f14;color:#e0b05c;}
+  .sc-preco-lin-fl{font-size:9px;padding:0 5px;border-radius:99px;white-space:nowrap;
+                   line-height:1.5;flex:none;}
+  .sc-preco-lin-fl.tem{background:#163527;color:#9fe1cb;}
+  .sc-preco-lin-fl.nao{background:#3a1c1a;color:#e24b4a;}
+  .sc-preco-lin-fl.outra{background:#3a2f14;color:#e0b05c;}
+
   /* Gaveta Preço — lingueta docada na borda direita de `.sc-tela`. Fechada,
      `right` deixa só a lingueta (26px) visível; puxar desliza o resto.
      `.sc-palco{overflow:hidden}` corta o excesso sozinho — não precisa de
@@ -555,9 +699,19 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-preco-vazio{font-size:11.5px;color:#8f8672;line-height:1.6;}
   .sc-preco-nome{font-family:Georgia,serif;font-size:14px;color:#f3ede2;margin-bottom:2px;}
   .sc-preco-copo{font-size:10.5px;color:#8f8672;margin-bottom:8px;}
-  .sc-preco-lin{display:flex;justify-content:space-between;gap:6px;font-size:11px;color:#c3baa9;
-               padding:3px 0;border-bottom:1px dashed #2f2819;}
-  .sc-preco-lin span:last-child{font-variant-numeric:tabular-nums;color:#f3ede2;white-space:nowrap;}
+  .sc-preco-lin{display:flex;align-items:center;justify-content:space-between;gap:6px;
+               font-size:11px;color:#c3baa9;padding:3px 0;border-bottom:1px dashed #2f2819;}
+  /* K9: nome trunca com reticências em vez de quebrar linha — a gaveta é
+     estreita (230px) e as OUTRAS gavetas (Ideias, e a de Consumo do K3) são
+     abas fixas dockadas na MESMA borda direita, em posição vertical fixa;
+     uma `.sc-preco-lin` que cresce pra 2 linhas empurra o conteúdo pra
+     dentro da faixa da aba vizinha, que tem o mesmo z-index e vence por
+     ordem no DOM (achado testando a 375px: o selo "outra casa" do 3º
+     insumo ficava coberto pela aba fechada de Ideias). Manter a linha
+     sempre com a MESMA altura de antes do K9 evita a colisão. */
+  .sc-preco-lin span:first-child{flex:1 1 auto;min-width:0;overflow:hidden;
+                                 text-overflow:ellipsis;white-space:nowrap;}
+  .sc-preco-lin span:last-child{font-variant-numeric:tabular-nums;color:#f3ede2;white-space:nowrap;flex:none;}
   .sc-preco-lin .sc-sem{color:#5f5a4a;}
   .sc-preco-tot{display:flex;justify-content:space-between;align-items:center;margin-top:9px;
                padding-top:8px;border-top:1px solid #3a3428;}
@@ -646,6 +800,121 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-id-conc{font-size:11.5px;color:#c3baa9;line-height:1.55;}
   .sc-id-aviso{font-size:10.5px;color:#c9a35c;line-height:1.45;margin-top:6px;}
 
+  /* ---------------- K3: gaveta Consumo (PLANO_CADERNO.md) ----------------
+     A TERCEIRA lingueta é VERDE de propósito: Preço e Ideias são douradas
+     porque CONSULTAM; Consumo REGISTRA — muda dado. Cor diferente pra gesto
+     diferente, a mesma separação que o portal já faz entre fato e sugestão.
+     Mais larga que as outras duas porque aqui mora tabela, e mais baixa na
+     borda (top:214px) pra as três linguetas não se sobreporem: 24-116,
+     126-218, 228-320. */
+  .sc-cons{position:absolute;top:214px;bottom:10px;right:-304px;width:330px;
+          background:#211c15;border:1px solid #2c5a44;border-radius:10px 0 0 10px;
+          transition:right .18s;display:flex;flex-direction:column;z-index:5;}
+  .sc-cons.on{right:0;}
+  .sc-cons-tab{position:absolute;left:-27px;top:14px;width:27px;height:92px;
+              background:#211c15;border:1px solid #2c5a44;border-right:0;
+              border-radius:8px 0 0 8px;color:#9fe1cb;font-size:10.5px;letter-spacing:.06em;
+              display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+              cursor:pointer;padding:0;writing-mode:vertical-rl;}
+  .sc-cons-tab:hover{color:#d6f4e8;}
+  .sc-cons.on .sc-cons-tab{background:#163527;}
+  .sc-cons-corpo{flex:1;overflow-y:auto;padding:12px 13px;min-width:0;}
+  .sc-cons-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#9fe1cb;
+            font-weight:700;margin-bottom:10px;}
+  .sc-cons-ru{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .sc-cons-ru > div{flex:1;min-width:88px;border:1px solid #3a3428;border-radius:8px;padding:5px 8px;}
+  .sc-cons-ru .l{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#8f8672;}
+  .sc-cons-ru .v{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:#f3ede2;}
+  .sc-cons-ru .v.verde{color:#9fe1cb;}
+  .sc-cons-ru .v.ama{color:#e0b05c;}
+  .sc-cons-parcial{font-size:10.5px;color:#e0b05c;line-height:1.45;margin:-4px 0 9px;}
+  .sc-cons-tb{width:100%;border-collapse:collapse;font-size:11px;}
+  .sc-cons-tb th{text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+                color:#5f5a4a;font-weight:600;padding:0 5px 5px 0;border-bottom:1px solid #3a3428;}
+  .sc-cons-tb td{padding:6px 5px 6px 0;border-bottom:1px solid #2b2519;color:#c3baa9;
+                vertical-align:top;}
+  .sc-cons-tb td b{color:#f3ede2;font-weight:600;}
+  .sc-cons-tb td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  /* `sc-cons-sub`, e não um `.sub` curto: o `portal.css` tem um `.sub` GLOBAL
+     com `margin-bottom:22px`, e ele vazava pra dentro desta tabela — cada
+     linha ficava ~23px mais alta por sub-linha (medido na página renderizada,
+     não no mockup, que não carrega o portal.css). Classe curta dentro do
+     chrome do portal é armadilha; prefixar é a regra. */
+  .sc-cons-tb .sc-cons-sub{display:block;font-size:9px;color:#5f5a4a;margin:1px 0 0;}
+  /* Ausência de preço é "—" cinza, nunca um zero em reais (A7 do plano). */
+  .sc-cons-tb .sem{color:#5f5a4a;}
+  .sc-cons-tb tr.tot td{border-bottom:0;padding-top:9px;color:#f3ede2;font-weight:700;font-size:12px;}
+  .sc-cons-x{background:none;border:0;color:#5f5a4a;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;}
+  .sc-cons-x:hover{color:#e24b4a;}
+  .sc-cons-vazio{font-size:11.5px;color:#8f8672;line-height:1.6;}
+  .sc-preco-reg{width:100%;margin-top:9px;border-color:#2c5a44;color:#9fe1cb;}
+  .sc-preco-reg:hover{background:#163527;color:#d6f4e8;}
+  .sc-preco-reg-nota{font-size:10px;color:#5f5a4a;line-height:1.45;margin-top:5px;}
+  /* O passo "quantas vezes" (D23) — mesma família de .sc-ed, borda verde. */
+  .sc-ed.sc-ed-cons{width:min(90%,320px);border-color:#2c5a44;text-align:left;}
+  .sc-cons-vezes{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+  .sc-cons-vz{background:#16130f;border:1px solid #3a3428;border-radius:999px;color:#c3baa9;
+             font-size:12px;padding:6px 13px;cursor:pointer;min-width:44px;}
+  .sc-cons-vz.on{background:#163527;border-color:#9fe1cb;color:#9fe1cb;font-weight:700;}
+  .sc-cons-vz-in{width:74px;background:#16130f;border:1px solid #3a3428;border-radius:7px;
+                color:#f3ede2;font-size:13px;padding:6px 8px;}
+  .sc-cons-previa{font-size:11px;color:#8f8672;line-height:1.5;margin-top:6px;}
+  .sc-cons-previa b{color:#f3ede2;}
+
+  /* ---------------- K4 (PLANO_CADERNO.md): tabela cheia + avulso ----------
+     Dois botões novos no rodapé da gaveta Consumo (compacta demais pra 9
+     colunas — mesma leitura do mockup_caderno_v3), abrindo modais na MESMA
+     família `.sc-ed` que o cartão/texto/convite já usam. */
+  .sc-cons-acoes{display:flex;gap:6px;margin-top:9px;}
+  .sc-cons-acoes .sc-b{flex:1;padding:7px 6px;font-size:11px;justify-content:center;}
+  .sc-ed.sc-ed-cheia{width:min(96%,900px);max-height:88%;overflow-y:auto;
+                     border-color:#2c5a44;text-align:left;}
+  .sc-cheia-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px;}
+  .sc-cheia-h .t{font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+                 color:#9fe1cb;font-weight:700;}
+  .sc-cheia-h .n{font-size:10.5px;color:#8f8672;margin-left:auto;}
+  .sc-cheia-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;}
+  .sc-cheia-chip{font-size:10.5px;border:1px solid #3a3428;border-radius:999px;
+                 padding:4px 10px;color:#8f8672;background:none;cursor:pointer;}
+  .sc-cheia-chip.on{border-color:#9fe1cb;background:#163527;color:#9fe1cb;font-weight:700;}
+  .sc-cheia-rolo{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:4px;}
+  .sc-cheia-tb{width:100%;border-collapse:collapse;font-size:11.5px;min-width:660px;}
+  .sc-cheia-tb th{text-align:left;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+                  color:#5f5a4a;font-weight:600;padding:0 8px 6px 0;border-bottom:1px solid #3a3428;
+                  white-space:nowrap;}
+  .sc-cheia-tb td{padding:6px 8px 6px 0;border-bottom:1px solid #2b2519;color:#c3baa9;
+                  vertical-align:top;white-space:nowrap;}
+  .sc-cheia-tb td.item{white-space:normal;min-width:140px;}
+  .sc-cheia-tb td b{color:#f3ede2;font-weight:600;}
+  .sc-cheia-tb td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .sc-cheia-tb .sem{color:#5f5a4a;}
+  .sc-cheia-tb tr.tot td{border-bottom:0;padding-top:9px;color:#f3ede2;font-weight:700;font-size:12.5px;}
+  .sc-cheia-op{font-size:8.5px;border-radius:999px;padding:1px 6px;font-weight:700;letter-spacing:.04em;}
+  .sc-cheia-op.ficha{background:#2a2317;color:#d0a352;}
+  .sc-cheia-op.avulso{background:#2b2438;color:#cbb8f0;}
+  .sc-cheia-x{background:none;border:0;color:#5f5a4a;cursor:pointer;font-size:14px;
+             line-height:1;padding:2px 4px;}
+  .sc-cheia-x:hover{color:#e24b4a;}
+  .sc-cheia-porh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#9fe1cb;
+                 font-weight:700;margin:14px 0 7px;}
+  .sc-cheia-pins{display:flex;flex-direction:column;gap:6px;}
+  .sc-cheia-pin{display:grid;grid-template-columns:150px 1fr 74px 40px;gap:8px;align-items:center;
+               font-size:11.5px;color:#c3baa9;}
+  .sc-cheia-pin b{color:#f3ede2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sc-cheia-pin .barra{height:7px;border-radius:99px;background:#2b2519;overflow:hidden;}
+  .sc-cheia-pin .barra i{display:block;height:100%;background:#9fe1cb;}
+  .sc-cheia-pin .num{text-align:right;font-variant-numeric:tabular-nums;}
+  .sc-cheia-rodape{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;}
+  @media (max-width:640px){
+    .sc-cheia-pin{grid-template-columns:96px 1fr 62px 34px;font-size:10.5px;}
+  }
+
+  /* Lançamento avulso — mesmos campos `.sc-cad-*` do cartão de receita
+     (nunca uma segunda família de input). */
+  .sc-ed.sc-ed-avulso{width:min(90%,340px);border-color:#2c5a44;text-align:left;}
+  .sc-cons-av-dica{font-size:10px;color:#8f8672;margin-top:3px;line-height:1.4;}
+  .sc-cons-av-dica.achou{color:#9fe1cb;}
+
   /* ---------------- E7: buscador de imagens (web + acervo) ---------------- */
   .sc-ed.sc-ed-img{width:min(94%,460px);max-height:82%;overflow-y:auto;text-align:left;}
   .sc-img-tabs{display:flex;gap:6px;margin-bottom:9px;}
@@ -708,6 +977,12 @@ window.msgAcessoNegado = function (nomePagina) {
 
   @media (max-width:640px){
     .sc-palco{flex-direction:column;min-height:0;}
+    /* Páginas viram uma fita horizontal ACIMA da barra de ferramentas —
+       mesma ordem de leitura do desktop (onde estou, antes de o que uso). */
+    .sc-pgs{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid #3a3428;
+            padding:6px;justify-content:center;}
+    .sc-pgs-cap{display:none;}
+    .sc-pgt{width:26px;height:24px;}
     .sc-barra{width:auto;flex-direction:row;flex-wrap:wrap;justify-content:center;
               border-right:0;border-bottom:1px solid #3a3428;padding:7px;}
     .sc-sep{width:1px;height:22px;margin:0 3px;}
@@ -719,6 +994,13 @@ window.msgAcessoNegado = function (nomePagina) {
     .sc-acoes{margin-left:0;width:100%;}
     .sc-preco{width:200px;right:-174px;}
     .sc-ideias{width:200px;right:-174px;top:120px;}
+    /* K3: no celular a tabela perde COLUNAS, não linhas — a gaveta ocupa
+       quase toda a folha porque o registro acontece no balcão, com a mão
+       suja, e essa é a leitura principal ali. */
+    .sc-cons{width:252px;right:-226px;top:230px;}
+    .sc-cons-tb .col-pg{display:none;}
+    /* Alvo de toque: no desktop o × é mira de mouse, no balcão é dedo. */
+    .sc-cons-x{padding:8px 6px;font-size:16px;}
     .sc-cad-ins-h,.sc-cad-ins-row{grid-template-columns:1fr 44px 52px 54px 20px;}
   }
 </style>
@@ -740,6 +1022,14 @@ window.msgAcessoNegado = function (nomePagina) {
     </div>
 
     <div class="sc-palco">
+      <div class="sc-pgs" id="sc-pgs">
+        <span class="sc-pgs-cap">páginas</span>
+        <button class="sc-pgt on" data-pg="1" type="button" title="Página 1">1<i class="pt"></i></button>
+        <button class="sc-pgt" data-pg="2" type="button" title="Página 2">2<i class="pt"></i></button>
+        <button class="sc-pgt" data-pg="3" type="button" title="Página 3">3<i class="pt"></i></button>
+        <button class="sc-pgt" data-pg="4" type="button" title="Página 4">4<i class="pt"></i></button>
+        <button class="sc-pgt" data-pg="5" type="button" title="Página 5">5<i class="pt"></i></button>
+      </div>
       <div class="sc-barra">
         <button class="sc-t on" data-tool="pen" type="button" title="Desenhar"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z"/><path d="M13 7l4 4"/></svg></button>
         <button class="sc-t" data-tool="borracha" type="button" title="Apagar"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16.5 12.5 8a2 2 0 0 1 2.8 0l3.7 3.7a2 2 0 0 1 0 2.8L15 18"/><path d="M7 21h12"/><path d="M9.5 13 15 18.5"/></svg></button>
@@ -778,7 +1068,7 @@ window.msgAcessoNegado = function (nomePagina) {
             <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg> Preço
           </button>
           <div class="sc-preco-corpo" id="sc-preco-corpo">
-            <div class="sc-preco-h">Precificação</div>
+            <div class="sc-preco-h" id="sc-preco-h">Precificação</div>
             <div class="sc-preco-vazio" id="sc-preco-conteudo">
               Toque num cartão de receita na folha para ver o custo.
               Sem cartão ainda? Use a ferramenta de cartão na barra à esquerda.
@@ -791,7 +1081,7 @@ window.msgAcessoNegado = function (nomePagina) {
             <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg> Ideias
           </button>
           <div class="sc-ideias-corpo">
-            <div class="sc-ideias-h">Ideias</div>
+            <div class="sc-ideias-h" id="sc-ideias-h">Ideias</div>
             <div class="sc-id-busca">
               <input id="sc-id-q" type="text" placeholder="drink ou sabor…">
               <button class="sc-b" id="sc-id-buscar" type="button">Buscar</button>
@@ -801,15 +1091,135 @@ window.msgAcessoNegado = function (nomePagina) {
             </div>
           </div>
         </div>
+
+        <div class="sc-cons" id="sc-cons">
+          <button class="sc-cons-tab" id="sc-cons-tab" type="button" aria-label="Abrir consumo">
+            <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg> Consumo
+          </button>
+          <div class="sc-cons-corpo">
+            <div class="sc-cons-h">Consumo · a sessão inteira</div>
+            <div id="sc-cons-conteudo" class="sc-cons-vazio">
+              Abra a folha pra ver o que já foi gasto testando.
+            </div>
+            <div class="sc-cons-acoes">
+              <button class="sc-b" id="sc-cons-cheia-btn" type="button">Tabela completa</button>
+              <button class="sc-b" id="sc-cons-avulso-btn" type="button">+ Custo avulso</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="sc-gal">
-      <h3>Minhas folhas</h3>
+    <div class="sc-gal" id="sc-gal">
+      <div class="sc-gal-h">
+        <h3>Minhas folhas e cadernos</h3>
+        <button class="sc-b" id="sc-cdn-novo" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Novo caderno</button>
+      </div>
       <div id="sc-tiles" class="sc-tiles"></div>
       <div id="sc-gvazio" class="sc-vazio" hidden>
         Nenhuma folha ainda. Toque em <b>Folha nova</b> e comece a rabiscar — ela se
         salva sozinha e você reabre daqui, de qualquer aparelho.
+      </div>
+    </div>
+
+    <!-- K5 (PLANO_CADERNO.md) — o caderno agrupa sessões; abrir um esconde a
+         galeria mista acima e mostra a dele. Nunca mexe no palco/canvas. -->
+    <div class="sc-cdn-view" id="sc-cdn-view" hidden>
+      <div class="sc-cdn-topo">
+        <button class="sc-b" id="sc-cdn-voltar" type="button"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg> Voltar</button>
+        <input id="sc-cdn-titulo" class="sc-tit sc-cdn-titulo" maxlength="90"
+               placeholder="Caderno sem título" aria-label="Título do caderno">
+        <span class="sc-cdn-casa" id="sc-cdn-casa"></span>
+        <div class="sc-acoes">
+          <button class="sc-b" id="sc-cdn-convite" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg> Convidar</button>
+          <button class="sc-b" id="sc-cdn-arquivar" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg> Arquivar</button>
+        </div>
+      </div>
+      <div class="sc-cdn-abas" id="sc-cdn-abas">
+        <button class="sc-cdn-aba on" data-aba="sessoes" type="button">Sessões</button>
+        <button class="sc-cdn-aba" data-aba="conceito" type="button">Conceito</button>
+        <button class="sc-cdn-aba" data-aba="prateleira" type="button">Prateleira</button>
+        <button class="sc-cdn-aba" data-aba="orcamento" type="button">Orçamento</button>
+      </div>
+      <div class="sc-cdn-corpo" id="sc-cdn-corpo-sessoes">
+        <div class="sc-cdn-sessoes-h">
+          <button class="sc-b pri" id="sc-cdn-sessao-nova" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nova sessão neste caderno</button>
+          <select class="sc-cad-in sc-cdn-sel" id="sc-cdn-sessao-add">
+            <option value="">+ trazer uma folha solta…</option>
+          </select>
+        </div>
+        <div id="sc-cdn-tiles" class="sc-tiles"></div>
+        <div id="sc-cdn-vazio" class="sc-vazio" hidden>
+          Nenhuma sessão neste caderno ainda. Crie uma nova ou traga uma folha solta acima.
+        </div>
+      </div>
+      <div class="sc-cdn-corpo" id="sc-cdn-corpo-conceito" hidden>
+        <label class="sc-cad-lb" for="sc-cdn-conceito">Conceito (escrito por você — a parte GERADA da Prateleira, quando existir, vai reagir a este texto; a de fato abaixo não depende dele)</label>
+        <textarea class="sc-cad-in sc-cdn-conceito" id="sc-cdn-conceito" maxlength="4000"
+                  placeholder="De que bar é, qual o tema, o que essa carta quer contar…"></textarea>
+        <label class="sc-cad-lb" for="sc-cdn-teto">Teto do orçamento (opcional)</label>
+        <input class="sc-cad-in" id="sc-cdn-teto" type="number" min="0" step="0.01" placeholder="sem teto definido">
+        <div class="sc-cad-nota">Sem teto, a aba Orçamento (quando existir) mostra só o gasto — nunca uma barra ou projeção inventada.</div>
+        <button class="sc-b pri" id="sc-cdn-salvar" type="button">Salvar</button>
+      </div>
+      <!-- K7 (PLANO_CADERNO.md) — Prateleira, só FATO: nada aqui chama IA
+           (custo zero). Três fontes já publicadas, lidas do drinks-lab-worker
+           pela casa DESTE caderno (A2: caderno tem uma casa só) — mesmo
+           acesso (coord/dev_cocktails) e mesmo padrão de cache/selo "do
+           livro" que a gaveta Ideias (E5) já usa; a parte GERADA (conceitos,
+           histórias, nomes a partir do texto do Conceito acima) é o K8. -->
+      <div class="sc-cdn-corpo" id="sc-cdn-corpo-prateleira" hidden>
+        <!-- K8 ajustou o alcance desta frase: com a faixa GERADA no fim da
+             aba, "nada aqui foi gerado" deixou de ser verdade sobre a aba
+             inteira. Ela agora diz onde começa e onde termina o fato. -->
+        <div class="sc-cad-nota" style="margin-bottom:10px">Tudo daqui até a estante é o que já está publicado — carta, clássicos, sabores e livros, nada gerado. Só o último bloco, com selo <b>sugestão</b>, sai de um modelo.</div>
+        <div class="sc-prat">
+          <div class="sc-prat-sec">
+            <div class="sc-prat-h">Carta da casa <span class="sc-id-selo">fato</span></div>
+            <div id="sc-prat-carta" class="sc-prat-corpo"><div class="sc-id-vazio">abra esta aba pra carregar</div></div>
+          </div>
+          <div class="sc-prat-sec">
+            <div class="sc-prat-h">Clássicos <span class="sc-id-selo">fato</span></div>
+            <div id="sc-prat-classicos" class="sc-prat-corpo"><div class="sc-id-vazio">abra esta aba pra carregar</div></div>
+          </div>
+          <div class="sc-prat-sec">
+            <div class="sc-prat-h">Grafo de sabores <span class="sc-id-selo">fato</span></div>
+            <div id="sc-prat-sabores" class="sc-prat-corpo"><div class="sc-id-vazio">abra esta aba pra carregar</div></div>
+          </div>
+        </div>
+
+        <!-- K8 — Livros. A regra do plano é "só a estante cadastrada, nunca
+             bibliografia inventada". A estante EXISTE e é curada à mão
+             (BIBLIO_LIVROS em portal_gen.py, as mesmas obras que já
+             fundamentam o Lab e a Constelação) — então a seção mostra ela,
+             não um aviso de ausência. Nada aqui vem de modelo: o gerador
+             abaixo é proibido, por prompt, de citar livro ou autor. -->
+        <div class="sc-prat-sec sc-prat-larga">
+          <div class="sc-prat-h">Livros <span class="sc-id-selo">fato</span></div>
+          <div class="sc-prat-corpo">
+            <div class="sc-liv"><div class="sc-liv-i"><b>The Craft of the Cocktail</b> <span class="aa">Dale DeGroff, 2002</span></div><div class="sc-liv-i fonte"><b>The Flavor Bible</b> <span class="aa">Page &amp; Dornenburg, 2008</span></div><div class="sc-liv-i"><b>Death &amp; Co</b> <span class="aa">David Kaplan et al., 2014</span></div><div class="sc-liv-i"><b>Liquid Intelligence</b> <span class="aa">Dave Arnold, 2014</span></div><div class="sc-liv-i"><b>The PDT Cocktail Book</b> <span class="aa">Jim Meehan, 2011</span></div><div class="sc-liv-i"><b>Punch</b> <span class="aa">David Wondrich, 2010</span></div><div class="sc-liv-i"><b>Smuggler&#x27;s Cove</b> <span class="aa">Martin Cate, 2016</span></div><div class="sc-liv-i"><b>Dead Rabbit Mixology &amp; Mayhem</b> <span class="aa">Muldoon &amp; McGarry, 2018</span></div><div class="sc-liv-i"><b>Cocktail Codex</b> <span class="aa">Alex Day et al., 2018</span></div><div class="sc-liv-i"><b>Meehan&#x27;s Bartender Manual</b> <span class="aa">Jim Meehan, 2017</span></div><div class="sc-liv-i"><b>Imbibe!</b> <span class="aa">David Wondrich, 2007</span></div><div class="sc-liv-i"><b>The Fine Art of Mixing Drinks</b> <span class="aa">David A. Embury, 1948</span></div><div class="sc-liv-i"><b>American Bar</b> <span class="aa">Charles Schumann, 1991</span></div></div>
+            <div class="sc-cad-nota" style="margin-top:9px">Estante de referência do portal, escolhida a dedo — a mesma que fundamenta o Lab de Drinks e a Constelação. Não é o que a casa tem na prateleira física, e nenhuma sugestão desta tela cita livro.</div>
+            <a class="sc-prat-link" href="constelacao.html" target="_blank" rel="noopener">Abrir o Dicionário de Sabores →</a>
+          </div>
+        </div>
+
+        <!-- K8 — a parte GERADA. Selo lilás e faixa própria: fato e sugestão
+             nunca se misturam (D4, mesma régua da gaveta Ideias). Nasce como
+             BOTÃO, nunca sozinha — cada toque custa uma chamada de modelo. -->
+        <div class="sc-prat-sec sc-prat-larga">
+          <div class="sc-prat-h">A partir do seu conceito <span class="sc-id-selo sug">sugestão</span></div>
+          <div id="sc-prat-gerado" class="sc-prat-corpo"></div>
+        </div>
+      </div>
+      <!-- K6 (PLANO_CADERNO.md) — Orçamento. CASCA VAZIA de propósito: nenhum
+           número mora neste HTML. Tudo vem somado do
+           `GET /api/caderno/:id/orcamento` (o servidor é a autoridade da soma
+           — é dinheiro) e é pintado por cdnPintaOrcamento(). Escrever aqui um
+           valor em reais de exemplo ABORTARIA a geração do portal inteiro:
+           `_checa_publica` varre o HTML final e esta página não está no
+           `PAGINAS_PRECO_OK`. -->
+      <div class="sc-cdn-corpo" id="sc-cdn-corpo-orcamento" hidden>
+        <div id="sc-orc-conteudo" class="sc-vazio">abra esta aba pra somar o que já foi gasto</div>
       </div>
     </div>
   </div>
@@ -822,6 +1232,10 @@ window.msgAcessoNegado = function (nomePagina) {
 (function(){
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
   var CASAS_RECEITA = [{"slug": "iz", "worker": "iz", "nome": "IZ"}, {"slug": "1929", "worker": "1929", "nome": "1929"}, {"slug": "gra", "worker": "gra-bistro", "nome": "Grá"}, {"slug": "famu", "worker": "famu", "nome": "FAMU"}, {"slug": "fulles", "worker": "fulles", "nome": "Fulles"}, {"slug": "nip", "worker": "nip", "nome": "NIP"}];
+  // K4 (PLANO_CADERNO.md): mesma lista/número que config/caderno.json
+  // declara — nunca hardcoded aqui (ver nota no topo de gera_sessao_criativa).
+  var CONSUMO_UNIDADES = ["ml", "L", "g", "kg", "un", "dose", "maço", "saco", "caixa", "garrafa"];
+  var CONSUMO_TOP_INSUMOS = 5;
   var SESSAO = (window.sessaoLer ? window.sessaoLer() : null);
 
   var gate = document.getElementById('sc-gate');
@@ -853,8 +1267,22 @@ window.msgAcessoNegado = function (nomePagina) {
   var ops = [], refeitos = [], objetos = new Map(), imgCache = new Map();
   var selecionado = null, tool = 'pen', cor = CORES[0], espessura = 5;
   var formaKind = 'rect';
+  // K2 (PLANO_CADERNO.md) — até 5 páginas por sessão. `pg` mora DENTRO do
+  // objeto (obj+) ou na própria op (traço/forma), nunca em coluna do D1 —
+  // o servidor não sabe nem precisa saber que páginas existem (ops.js
+  // permanece JSON opaco pra ele). Folha gravada antes do K2 não tem `pg`
+  // em nada: `pgDe()` trata ausência como página 1, então conteúdo antigo
+  // aparece inteiro na página 1 — nunca some.
+  var paginaAtual = 1;
+  function pgDe(o){ return o.pg || 1; }
   var view = {k:1, tx:0, ty:0}, K_MIN = .2, K_MAX = 6;
   var folhaId = null, versao = 0, sujo = false, salvando = false, conflito = false;
+  // K9 (PLANO_CADERNO.md): casa da folha ABERTA agora ("grupo" pra folha de
+  // coord/tier-compartilhada sem casa própria) — o selo de contexto do
+  // cartão de receita lê estoque/transferências dessa casa, nunca da casa
+  // da SESSÃO logada (que pra coord é '*'/"grupo" mesmo abrindo folha de
+  // outra pessoa).
+  var folhaCasa = null;
   /* E8 — folha a dois. `base` é quantas ops do log CANÔNICO (o do servidor)
      este cliente já tem; tudo a partir daí em `ops` é meu e ainda não subiu.
      `eu` é o meu sub ("<casa>|<pessoa>"), sempre vindo do servidor — é ele
@@ -992,8 +1420,10 @@ window.msgAcessoNegado = function (nomePagina) {
     cctx.setTransform(1,0,0,1,0,0); cctx.clearRect(0,0,camada.width,camada.height);
     var dpr = window.devicePixelRatio || 1; cctx.scale(dpr,dpr);
     // vivas() e não `ops`: um traço desfeito (suprimido por um `op!`) não
-    // pode continuar pintado na camada.
+    // pode continuar pintado na camada. K2: só a página aberta — traço e
+    // forma não são objeto, então o filtro de página é na PRÓPRIA op.
     vivas().forEach(function(op){
+      if (pgDe(op) !== paginaAtual) return;
       if (op.t === 'traco') pintaTraco(cctx, op);
       else if (op.t === 'forma') pintaForma(cctx, op);
     });
@@ -1062,7 +1492,11 @@ window.msgAcessoNegado = function (nomePagina) {
     ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle = PAPEL; ctx.fillRect(0,0,cv.width,cv.height);
     ctx.drawImage(camada, 0, 0);
     ctx.scale(dpr,dpr);
+    // K2: `objetos` guarda TODAS as páginas (reconstruir() não sabe de
+    // página) — só a atual é desenhada, pra trocar de tag não custar um
+    // fetch novo nem perder o que já estava reidratado.
     objetos.forEach(function(o){
+      if (pgDe(o) !== paginaAtual) return;
       var x = o.x*view.k+view.tx, y = o.y*view.k+view.ty;
       if (o.kind === 'img'){
         var im = imgCache.get(o.id);
@@ -1139,10 +1573,15 @@ window.msgAcessoNegado = function (nomePagina) {
   function reconstruir(){
     objetos.clear(); vivas().forEach(aplica);
     if (selecionado && !objetos.has(selecionado)) selecionado = null;
-    refazTracos(); desenha(); atualizaPreco();
+    refazTracos(); desenha(); atualizaPreco(); renderPaginas();
   }
   function pushBruto(op, manterRefeitos){
     if (!op.i) op.i = novoOpId();
+    // K2: todo objeto/traço/forma NASCE na página aberta no momento. Um
+    // único ponto de carimbo (aqui, não em cada ferramenta) — mesmo molde
+    // do carimbo de `i` logo acima.
+    if (op.t === 'obj+' && op.obj && op.obj.pg == null) op.obj.pg = paginaAtual;
+    if ((op.t === 'traco' || op.t === 'forma') && op.pg == null) op.pg = paginaAtual;
     ops.push(op);
     if (!manterRefeitos) refeitos.length = 0;
     if (op.t === 'op!') reconstruir();
@@ -1150,7 +1589,7 @@ window.msgAcessoNegado = function (nomePagina) {
       aplica(op);
       if (op.t === 'traco' || op.t === 'forma') refazTracos();
     }
-    botoes(); desenha(); agenda();
+    botoes(); desenha(); agenda(); renderPaginas();
   }
   function push(op){ pushBruto(op, false); }
   /* A última op MINHA que ainda está valendo — o alvo do desfazer. */
@@ -1350,6 +1789,7 @@ window.msgAcessoNegado = function (nomePagina) {
   function alvoEm(p){
     var achado = null;
     objetos.forEach(function(o){
+      if (pgDe(o) !== paginaAtual) return; // K2: não seleciona objeto de página escondida
       var m = medidas(o);
       if (p.x >= o.x-4 && p.x <= o.x+m.w+4 && p.y >= o.y-4 && p.y <= o.y+m.h+4) achado = o.id;
     });
@@ -1455,8 +1895,74 @@ window.msgAcessoNegado = function (nomePagina) {
   }
   function numBr(s){ return parseFloat(String(s).replace(/\./g,'').replace(',','.').trim()) || 0; }
 
+  /* ---------------- K9: contexto do bar por insumo (PLANO_CADERNO.md) ----------------
+     "tem / est\u00e1 em outra casa / n\u00e3o existe", por casa da FOLHA aberta (nunca
+     da casa da sess\u00e3o logada \u2014 coord abre folha de qualquer casa).
+     Casado por NOME NORMALIZADO com `normChave` acima (mesma r\u00e9gua de
+     `contagens/normaliza.py:normalizar_chave` \u2014 lowercase + sem acento +
+     espa\u00e7o colapsado; j\u00e1 \u00e9 o crit\u00e9rio usado pra casar com o B.D.1 logo
+     acima, n\u00e3o inventa heur\u00edstica nova).
+
+     Uma \u00daNICA fonte: `GET /api/transferencias` (mesma rota do
+     Buscador entre Casas, chefe/coord j\u00e1 autenticam nela). O payload j\u00e1 \u00e9
+     a UNI\u00c3O das 6 casas com `chave` pr\u00e9-normalizada e `casas[<slug>].guardado`
+     por casa \u2014 inclusive a PR\u00d3PRIA casa da folha, ent\u00e3o n\u00e3o precisa somar
+     `GET /api/estoque` tamb\u00e9m: seria uma segunda leitura pro mesmo dado
+     (os dois KVs nascem da mesma resolu\u00e7\u00e3o de coluna por semana, ver
+     CLAUDE.md "Estoque online"). */
+  var transferCache = null;
+  function buscaTransferencias(){
+    if (transferCache) return Promise.resolve(transferCache);
+    return fetch(WORKER + '/api/transferencias', {headers:cab()})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){ transferCache = j || null; return transferCache; })
+      .catch(function(){ transferCache = null; return null; });
+  }
+  var CASA_LABEL_POR_WORKER = (CASAS_RECEITA || []).reduce(function(m,c){ m[c.worker] = c.nome; return m; }, {});
+  // Devolve {estado:'tem'|'outra'|'nao', label} ou null quando n\u00e3o d\u00e1 pra
+  // afirmar nada (transfer\u00eancias ainda n\u00e3o carregou, ou a folha n\u00e3o tem
+  // casa concreta \u2014 folha de coord/tier-compartilhada fica "grupo", nunca
+  // vira uma casa por chute).
+  function statusInsumo(nome){
+    if (!transferCache || !folhaCasa || folhaCasa === 'grupo') return null;
+    var chave = normChave(nome);
+    if (!chave) return null;
+    var item = (transferCache.itens || []).filter(function(i){ return i.chave === chave; })[0];
+    var minha = item && item.casas && item.casas[folhaCasa];
+    if (minha && Number(minha.guardado) > 0) return {estado:'tem', label:'tem'};
+    if (item && item.casas){
+      var outraSlug = Object.keys(item.casas).filter(function(s){
+        return s !== folhaCasa && Number(item.casas[s].guardado) > 0;
+      })[0];
+      if (outraSlug) return {estado:'outra', label:'em ' + (CASA_LABEL_POR_WORKER[outraSlug] || outraSlug)};
+    }
+    // Sem estoque na pr\u00f3pria casa nem em nenhuma outra (item nunca visto em
+    // contagem nenhuma, ou visto e sempre zerado) \u2014 "n\u00e3o existe" no sentido
+    // do plano: n\u00e3o h\u00e1 estoque desse insumo em lugar nenhum agora.
+    return {estado:'nao', label:'n\u00e3o existe'};
+  }
+  function pintaSeloInsumo(elSpan, nome){
+    if (!elSpan) return;
+    buscaTransferencias().then(function(){
+      var st = statusInsumo(nome);
+      if (!st){ elSpan.hidden = true; return; }
+      elSpan.hidden = false;
+      elSpan.className = 'sc-cad-ins-fl ' + st.estado;
+      elSpan.textContent = st.label;
+      elSpan.title = st.estado === 'tem'
+        ? 'Guardado na pr\u00f3pria casa (contagem mais recente).'
+        : st.estado === 'outra'
+          ? 'Sem estoque na pr\u00f3pria casa \u2014 visto guardado em outra casa (Buscador entre Casas).'
+          : 'Sem estoque registrado em nenhuma casa (contagem mais recente).';
+    });
+  }
+
   function abreCartao(p, existente){
     buscaCatalogo();
+    // K9: dispara a leitura de transferências uma vez (fica em cache); cada
+    // `linhaInsumo` chama `pintaSeloInsumo`, que espera essa promise — não
+    // precisa esperar aqui antes de montar o formulário.
+    buscaTransferencias();
     var box = document.createElement('div');
     box.className = 'sc-ed sc-ed-cartao';
     box.innerHTML =
@@ -1465,7 +1971,7 @@ window.msgAcessoNegado = function (nomePagina) {
       '<label class="sc-cad-lb">Copo</label><input class="sc-cad-in" id="sc-cad-copo" placeholder="Ex.: Old fashioned">' +
       '<div class="sc-cad-nota">Preço do copo: banco ainda não integrado à Sessão Criativa — ' +
       'cadastro em Equipamentos &amp; Vidraria, quando existir. Não entra no CMV do drink de qualquer forma ' +
-      '(copo é patrimônio, não insumo).</div>' +
+      '(copo é patrimônio, não insumo). <a href="equipamentos.html" target="_blank" rel="noopener">Ver Equipamentos</a>.</div>' +
       '<label class="sc-cad-lb">Cenários (dose/receita variando — nome/copo continuam os mesmos)</label>' +
       '<div class="sc-vf-chips" id="sc-cad-cenarios"></div>' +
       '<div class="sc-cad-2">' +
@@ -1499,16 +2005,25 @@ window.msgAcessoNegado = function (nomePagina) {
         '<select class="sc-cad-i-un"><option value="ml">ml</option><option value="un">un</option>' +
           '<option value="g">g</option><option value="dose">dose</option></select>' +
         '<input class="sc-cad-i-custo" value="' + (vals.custo_unit != null ? String(vals.custo_unit).replace('.',',') : '') + '">' +
-        '<button class="sc-cad-del" type="button" aria-label="Remover">&times;</button>';
+        '<button class="sc-cad-del" type="button" aria-label="Remover">&times;</button>' +
+        // K9: 6º filho do grid — `grid-column:1/-1` (CSS) o joga numa linha
+        // própria sem mexer em `grid-template-columns`. Nasce hidden: só
+        // aparece quando há um veredito (buscaTransferencias resolvida).
+        '<span class="sc-cad-ins-fl" hidden></span>';
       if (vals.unidade) row.querySelector('.sc-cad-i-un').value = vals.unidade;
       row.querySelector('.sc-cad-del').onclick = function(){ row.remove(); recalc(); };
       row.querySelectorAll('input').forEach(function(i){ i.addEventListener('input', recalc); });
+      var elSelo = row.querySelector('.sc-cad-ins-fl');
       row.querySelector('.sc-cad-i-nome').addEventListener('change', function(){
-        if (!catalogoInsumos) return;
-        var kv = catalogoInsumos[normChave(row.querySelector('.sc-cad-i-nome').value)];
-        var elCusto = row.querySelector('.sc-cad-i-custo');
-        if (kv && kv.preco != null && !elCusto.value){ elCusto.value = String(kv.preco).replace('.',','); recalc(); }
+        var nomeAgora = row.querySelector('.sc-cad-i-nome').value;
+        if (catalogoInsumos){
+          var kv = catalogoInsumos[normChave(nomeAgora)];
+          var elCusto = row.querySelector('.sc-cad-i-custo');
+          if (kv && kv.preco != null && !elCusto.value){ elCusto.value = String(kv.preco).replace('.',','); recalc(); }
+        }
+        pintaSeloInsumo(elSelo, nomeAgora);
       });
+      if (vals.nome) pintaSeloInsumo(elSelo, vals.nome);
       elIns.appendChild(row);
     }
     function insumosForm(){
@@ -1660,6 +2175,7 @@ window.msgAcessoNegado = function (nomePagina) {
   document.getElementById('sc-preco-tab').onclick = function(){
     var abrindo = !elPreco.classList.contains('on');
     elIdeias.classList.remove('on');
+    elCons.classList.remove('on'); // K3: as três gavetas se fecham entre si
     elPreco.classList.toggle('on', abrindo);
   };
   function atualizaPreco(){
@@ -1669,6 +2185,16 @@ window.msgAcessoNegado = function (nomePagina) {
       elPrecoConteudo.innerHTML = 'Toque num cartão de receita na folha para ver o custo. ' +
         'Sem cartão ainda? Use a ferramenta de cartão na barra à esquerda.';
       return;
+    }
+    // K9: o selo de contexto depende de `/api/transferencias`, que ainda
+    // não pode estar em cache na primeira vez que a gaveta abre. Sem o
+    // dado, `statusInsumo` devolve null e a linha nasce sem selo — assim
+    // que resolver, repinta ESTA MESMA gaveta uma vez (guard `!transferCache`
+    // evita o loop: na segunda chamada o cache já existe).
+    if (!transferCache){
+      buscaTransferencias().then(function(){
+        if (selecionado && objetos.get(selecionado) === o) atualizaPreco();
+      });
     }
     var cs = listaCenarios(o), ativoIdx = Math.min(o.cenario_ativo||0, cs.length-1);
     var compHtml = '';
@@ -1688,8 +2214,12 @@ window.msgAcessoNegado = function (nomePagina) {
     var cmvReal = venda > 0 ? (custo/venda*100) : 0, f = farolDe(cmvReal);
     var linhas = ins.map(function(i){
       var temPreco = i.custo_unit != null && i.custo_unit !== '' && i.custo_unit > 0;
+      // K9: mesmo veredito do formulário de edição (tem/outra casa/não
+      // existe), lido da MESMA `statusInsumo` — nunca um segundo cálculo.
+      var st = statusInsumo(i.nome);
+      var seloHtml = st ? '<span class="sc-preco-lin-fl ' + st.estado + '" title="casa da folha">' + esc(st.label) + '</span>' : '';
       return '<div class="sc-preco-lin"><span>' + (i.qtde||'?') + (i.unidade||'') + ' ' +
-        esc(i.nome||'—') + '</span><span' + (temPreco?'':' class="sc-sem"') + '>' +
+        esc(i.nome||'—') + '</span>' + seloHtml + '<span' + (temPreco?'':' class="sc-sem"') + '>' +
         (temPreco ? 'R$ '+brl(i.qtde*i.custo_unit) : '—') + '</span></div>';
     }).join('');
     var semPreco = ins.filter(function(i){ return !(i.custo_unit > 0); }).length;
@@ -1706,6 +2236,10 @@ window.msgAcessoNegado = function (nomePagina) {
       '<div class="sc-preco-mini"><span>Venda sugerida</span><span>R$ ' + brl(venda) + '</span></div>' +
       '<div class="sc-preco-mini"><span>CMV real</span><span>' + (isFinite(cmvReal)?cmvReal.toFixed(1):'0,0') +
         '% <span class="sc-farol ' + f.cls + '">' + f.label + '</span></span></div>' +
+      // K3: o registro nasce AQUI porque é aqui que as quantidades já estão
+      // escritas — é o cenário que a pessoa acabou de montar.
+      '<button class="sc-b sc-preco-reg" id="sc-preco-reg" type="button">Registrar consumo</button>' +
+      '<div class="sc-preco-reg-nota">Manda as quantidades deste cenário para o Consumo da sessão.</div>' +
       '<button class="sc-b sc-preco-editar" id="sc-preco-editar" type="button">Editar cartão</button>' +
       '<button class="sc-b pri sc-preco-virar" id="sc-preco-virar" type="button">Virar ficha técnica</button>';
     box_bindEditar(o);
@@ -1715,6 +2249,8 @@ window.msgAcessoNegado = function (nomePagina) {
     if (btn) btn.onclick = function(){ abreCartao(null, o); };
     var btnVf = document.getElementById('sc-preco-virar');
     if (btnVf) btnVf.onclick = function(){ abreVirarFicha(o); };
+    var btnReg = document.getElementById('sc-preco-reg');
+    if (btnReg) btnReg.onclick = function(){ abreRegistrarConsumo(o); };
     Array.prototype.forEach.call(document.querySelectorAll('.sc-preco-cen-i'), function(b){
       b.onclick = function(){ trocaCenario(o, Number(b.dataset.i)); };
     });
@@ -1909,12 +2445,51 @@ window.msgAcessoNegado = function (nomePagina) {
       .catch(function(){ return null; });
   }
 
+  /* K7 (PLANO_CADERNO.md) — mesmas duas fontes acima + a carta autoral por
+     casa, todas leitura pura no LAB_KV (custo 0, sem IA). O 404 do Worker
+     ("grafo não publicado ou sabor desconhecido") é o mesmo pra "casa sem
+     carta publicada" e "clássicos ainda não publicados" — não é erro, é
+     lacuna declarada. */
+  var cartaCasaCache = {}, classicosCache = null;
+  function buscaCartaCasa(labSlug){
+    if (!labSlug) return Promise.resolve(null);
+    if (Object.prototype.hasOwnProperty.call(cartaCasaCache, labSlug)) return Promise.resolve(cartaCasaCache[labSlug]);
+    if (!LAB_WORKER || !SESSAO.token) return Promise.resolve(null);
+    return fetch(LAB_WORKER + '/carta/' + labSlug, {headers:{Authorization:'Bearer '+SESSAO.token}})
+      .then(function(r){
+        if (r.status === 401) return {semAcesso:true};
+        if (r.status === 404) return {semPublicar:true};
+        return r.ok ? r.json() : null;
+      })
+      .then(function(j){ cartaCasaCache[labSlug] = j; return j; })
+      .catch(function(){ return null; });
+  }
+  function buscaClassicos(){
+    if (classicosCache) return Promise.resolve(classicosCache);
+    if (!LAB_WORKER || !SESSAO.token) return Promise.resolve(null);
+    return fetch(LAB_WORKER + '/classicos', {headers:{Authorization:'Bearer '+SESSAO.token}})
+      .then(function(r){
+        if (r.status === 401) return {semAcesso:true};
+        if (r.status === 404) return {semPublicar:true};
+        return r.ok ? r.json() : null;
+      })
+      .then(function(j){ classicosCache = j; return j; })
+      .catch(function(){ return null; });
+  }
+  // casa do caderno (grafia do contagem-worker, ex.: "gra-bistro") -> slug
+  // do drinks-lab (ex.: "gra") — mesma divergência do Grá documentada em
+  // todo o resto do portal (CLAUDE.md), traduzida via CASAS_RECEITA (já
+  // injetada nesta página) em vez de uma tabela nova.
+  var LAB_SLUG_POR_WORKER = {};
+  CASAS_RECEITA.forEach(function(c){ LAB_SLUG_POR_WORKER[c.worker] = c.slug; });
+
   var elIdeias = document.getElementById('sc-ideias');
   var elIdeiasCorpo = document.getElementById('sc-ideias-conteudo');
   var elIdeiasBusca = document.getElementById('sc-id-q');
   document.getElementById('sc-ideias-tab').onclick = function(){
     var abrindo = !elIdeias.classList.contains('on');
     elPreco.classList.remove('on');
+    elCons.classList.remove('on'); // K3: as três gavetas se fecham entre si
     elIdeias.classList.toggle('on', abrindo);
     if (abrindo && !elIdeiasBusca.value){
       var o = (selecionado && objetos.get(selecionado));
@@ -2351,10 +2926,14 @@ window.msgAcessoNegado = function (nomePagina) {
     function inc(x,y){ if (!b) b = {x0:x,y0:y,x1:x,y1:y};
       else { b.x0=Math.min(b.x0,x); b.y0=Math.min(b.y0,y); b.x1=Math.max(b.x1,x); b.y1=Math.max(b.y1,y); } }
     ops.forEach(function(op){
+      if (pgDe(op) !== paginaAtual) return; // K2: enquadrar é da página aberta, não da sessão inteira
       if (op.t === 'traco') op.pts.forEach(function(p){ inc(p[0],p[1]); });
       else if (op.t === 'forma'){ inc(op.x0,op.y0); inc(op.x1,op.y1); }
     });
-    objetos.forEach(function(o){ var m = medidas(o); inc(o.x,o.y); inc(o.x+m.w, o.y+m.h); });
+    objetos.forEach(function(o){
+      if (pgDe(o) !== paginaAtual) return;
+      var m = medidas(o); inc(o.x,o.y); inc(o.x+m.w, o.y+m.h);
+    });
     return b;
   }
   function enquadra(){
@@ -2368,11 +2947,629 @@ window.msgAcessoNegado = function (nomePagina) {
     zpct(); refazTracos(); desenha();
   }
 
+  /* ---------------- K3: gaveta Consumo (PLANO_CADERNO.md) ----------------
+     Preço e Ideias são POR PÁGINA; Consumo é da SESSÃO INTEIRA (D22) — o
+     gasto do desenvolvimento é um número só, e a tabela apenas diz de qual
+     página veio cada linha. Por isso esta gaveta NÃO é limpa em
+     `trocaPagina()`.
+
+     Nada aqui calcula dinheiro: `gasto`, `sem_preco` e `total` de cada linha
+     vêm prontos do Worker (é ele a autoridade da soma). A tela só formata —
+     e formata ausência de preço como "—", nunca como um zero em reais (A7).
+
+     (Escrever aqui o literal "R$ zero-vírgula-zero-zero" ABORTA a geração do
+     portal inteiro: `_checa_publica` varre o HTML final e esta página não
+     está no `PAGINAS_PRECO_OK`. Todo R$ desta tela é montado no cliente.) */
+  var elCons = document.getElementById('sc-cons');
+  var elConsConteudo = document.getElementById('sc-cons-conteudo');
+  var consumoCache = null;
+
+  document.getElementById('sc-cons-tab').onclick = function(){
+    var abrindo = !elCons.classList.contains('on');
+    elPreco.classList.remove('on');
+    elIdeias.classList.remove('on');
+    elCons.classList.toggle('on', abrindo);
+    if (abrindo) carregaConsumo();
+  };
+
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+  function consQuando(iso){
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? '' : pad2(d.getDate()) + '/' + pad2(d.getMonth()+1);
+  }
+  function consVazio(msg){
+    elConsConteudo.className = 'sc-cons-vazio';
+    elConsConteudo.innerHTML = msg;
+  }
+  function carregaConsumo(){
+    if (!folhaId){
+      consumoCache = null;
+      consVazio('Abra ou crie uma folha para registrar o que foi gasto testando.');
+      return;
+    }
+    var alvo = folhaId;
+    fetch(WORKER + '/api/sessao/folha/' + alvo + '/consumo', {headers:cab()})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        // Trocar de folha enquanto a resposta estava em voo pintaria o
+        // consumo da folha errada — silenciosamente, e com número em R$.
+        if (alvo !== folhaId) return;
+        if (!j){ consVazio('Não consegui ler o consumo agora.'); return; }
+        consumoCache = j;
+        pintaConsumo();
+      })
+      .catch(function(){ if (alvo === folhaId) consVazio('Sem conexão para ler o consumo.'); });
+  }
+  function pintaConsumo(){
+    var j = consumoCache;
+    if (!j) return;
+    var ls = j.linhas || [], rs = j.resumo || {};
+    if (!ls.length){
+      consVazio('Nenhum consumo registrado nesta sessão ainda.<br><br>' +
+        'Abra a gaveta <b>Preço</b> com um cartão selecionado e toque em ' +
+        '<b>Registrar consumo</b> para lançar o que você acabou de fazer.');
+      return;
+    }
+    var corpo = ls.map(function(l){
+      var temPreco = l.total != null;
+      var sub = [
+        (l.pagina ? 'pg ' + l.pagina : 'sessão'),
+        l.origem === 'avulso' ? 'avulso' : 'ficha',
+        l.cenario || '',
+        (l.autor || '') + (l.quando ? ' · ' + consQuando(l.quando) : '')
+      ].filter(function(x){ return x; }).join(' · ');
+      return '<tr>' +
+        '<td class="col-pg">' + (l.pagina || '—') + '</td>' +
+        '<td><b>' + esc(l.item) + '</b><span class="sc-cons-sub">' + esc(sub) + '</span>' +
+          (l.nota ? '<span class="sc-cons-sub">' + esc(l.nota) + '</span>' : '') + '</td>' +
+        '<td class="num">' + brlQtde(l.qtde) + ' ' + esc(l.unidade) + '</td>' +
+        '<td class="num' + (temPreco ? '' : ' sem') + '">' + (temPreco ? brl(l.total) : '—') + '</td>' +
+        '<td>' + (l.pode_apagar
+          ? '<button class="sc-cons-x" type="button" data-del="' + esc(l.id) +
+            '" aria-label="Apagar lançamento" title="Apagar lançamento">&times;</button>'
+          : '') + '</td>' +
+      '</tr>';
+    }).join('');
+    elConsConteudo.className = '';
+    elConsConteudo.innerHTML =
+      '<div class="sc-cons-ru">' +
+        '<div><div class="l">gasto até agora</div><div class="v verde">R$ ' + brl(rs.gasto) + '</div></div>' +
+        '<div><div class="l">lançamentos</div><div class="v">' + (rs.lancamentos || 0) + '</div></div>' +
+        (rs.sem_preco ? '<div><div class="l">sem preço</div><div class="v ama">' + rs.sem_preco + '</div></div>' : '') +
+      '</div>' +
+      // Nunca afirmar que o gasto É o total quando há linha sem preço: o
+      // número é parcial e a tela diz isso (A7).
+      (rs.parcial ? '<div class="sc-cons-parcial">' + rs.sem_preco +
+        ' lançamento(s) sem preço no B.D.1 — o gasto acima é parcial.</div>' : '') +
+      '<table class="sc-cons-tb"><thead><tr>' +
+        '<th class="col-pg">Pg</th><th>Item</th><th class="num">Qtde</th><th class="num">R$</th><th></th>' +
+      '</tr></thead><tbody>' + corpo +
+      '<tr class="tot"><td colspan="3">Total da sessão</td>' +
+        '<td class="num" style="color:#9fe1cb">' + brl(rs.gasto) + '</td><td></td></tr>' +
+      '</tbody></table>';
+    Array.prototype.forEach.call(elConsConteudo.querySelectorAll('[data-del]'), function(b){
+      b.onclick = function(){ apagaConsumo(b.dataset.del); };
+    });
+  }
+  /* Quantidade não é dinheiro: 150 ml não vira "150,00". Mostra inteiro
+     quando é inteiro, e no máximo 2 casas quando não é. */
+  function brlQtde(v){
+    var n = Number(v) || 0;
+    return n % 1 === 0 ? String(n) : n.toLocaleString('pt-BR', {maximumFractionDigits:2});
+  }
+  /* `depois` (K4) é opcional: quem chama de dentro da tabela cheia passa o
+     próprio `render` pra o modal aberto se redesenhar com o dado novo, sem
+     duplicar a chamada nem a confirmação — a gaveta compacta (K3) segue
+     chamando sem o segundo argumento, comportamento intacto. */
+  function apagaConsumo(linhaId, depois){
+    if (!folhaId || !linhaId) return;
+    if (!confirm('Apagar este lançamento de consumo?')) return;
+    fetch(WORKER + '/api/sessao/folha/' + folhaId + '/consumo/' + encodeURIComponent(linhaId), {
+      method:'DELETE', headers:cab()
+    }).then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        if (!j){ toast('não consegui apagar', true); return; }
+        consumoCache = j; pintaConsumo(); toast('lançamento apagado');
+        if (depois) depois();
+      })
+      .catch(function(){ toast('sem conexão', true); });
+  }
+
+  /* O passo "quantas vezes" (D23) — ninguém testa uma dose só. Se o registro
+     assumisse 1, subestimaria o gasto TODA vez, e um total subestimado não
+     decide nada. Perguntar uma vez, na hora, é o que faz o número ser
+     verdade.
+
+     O que sobe pro Worker é a quantidade de UMA repetição mais o `vezes`;
+     quem multiplica é o servidor. E o preço que sobe é o do CARTÃO neste
+     instante — o mesmo que a gaveta Preço mostrou e que a prévia abaixo
+     soma. É esse congelamento que faz o registro ser carimbo e não espelho
+     (A9): editar a ficha amanhã não reescreve o gasto de hoje.
+
+     NÃO existe baixa no Estoque aqui (D25, decisão explícita do Rodrigo em
+     2026-08-02) — nem como caixinha desmarcada. */
+  function abreRegistrarConsumo(o){
+    if (!folhaId){ toast('salve a folha antes de registrar consumo', true); return; }
+    var cs = listaCenarios(o), idx = Math.min(o.cenario_ativo||0, cs.length-1);
+    var cen = cs[idx] || {};
+    var ins = (o.insumos || []).filter(function(i){ return i.nome && Number(i.qtde) > 0; });
+    if (!ins.length){ toast('este cartão não tem insumo com quantidade', true); return; }
+    var nomeCart = o.nome || 'Cartão sem nome';
+    // O rótulo de proveniência: "versão B" sozinha não diz de QUAL drink, e
+    // não há outra coluna pro nome do cartão.
+    var rotulo = cs.length > 1 ? nomeCart + ' · ' + (cen.nome || 'Padrão') : nomeCart;
+    var pagina = pgDe(o);
+    var vezes = 1, ids = null, enviando = false;
+
+    var box = document.createElement('div');
+    box.className = 'sc-ed sc-ed-cons';
+    box.innerHTML =
+      '<label class="sc-cad-lb" style="color:#9fe1cb;font-weight:700;letter-spacing:.08em;' +
+        'text-transform:uppercase">Registrar consumo</label>' +
+      '<div class="sc-cad-nota" style="font-size:12px;color:#c3baa9">Quantas vezes você fez ' +
+        '<b style="color:#f3ede2">' + esc(rotulo) + '</b> agora?</div>' +
+      '<div class="sc-cons-vezes" id="sc-cons-vz">' +
+        '<button class="sc-cons-vz on" type="button" data-v="1">1</button>' +
+        '<button class="sc-cons-vz" type="button" data-v="3">3</button>' +
+        '<button class="sc-cons-vz" type="button" data-v="5">5</button>' +
+        '<input class="sc-cons-vz-in" id="sc-cons-vz-out" type="number" min="1" max="200" ' +
+          'placeholder="outro" inputmode="numeric">' +
+      '</div>' +
+      '<div class="sc-cons-previa" id="sc-cons-previa"></div>' +
+      '<div class="lin">' +
+        '<button class="sc-b" data-x="c" type="button">Cancelar</button>' +
+        '<button class="sc-b pri" data-x="o" type="button" id="sc-cons-ok">Registrar</button>' +
+      '</div>';
+    tela.appendChild(box);
+
+    var elPrev = box.querySelector('#sc-cons-previa');
+    function previa(){
+      var partes = ins.slice(0, 3).map(function(i){
+        return brlQtde(Number(i.qtde) * vezes) + (i.unidade || '') + ' de ' + i.nome;
+      });
+      if (ins.length > 3) partes.push('e mais ' + (ins.length - 3));
+      var comPreco = ins.filter(function(i){ return Number(i.custo_unit) > 0; });
+      var soma = comPreco.reduce(function(s,i){
+        return s + Number(i.qtde) * vezes * Number(i.custo_unit);
+      }, 0);
+      var sem = ins.length - comPreco.length;
+      elPrev.innerHTML = 'Vai lançar ' + esc(partes.join(', ')) + '.<br>' +
+        (comPreco.length
+          ? '<b>≈ R$ ' + brl(soma) + '</b>' + (sem ? ' · ' + sem + ' item(ns) sem preço' : '')
+          : '<b>sem preço no B.D.1</b> — entra como “—”, nunca como zero');
+    }
+    previa();
+    var elOutro = box.querySelector('#sc-cons-vz-out');
+    Array.prototype.forEach.call(box.querySelectorAll('.sc-cons-vz'), function(b){
+      b.onclick = function(){
+        Array.prototype.forEach.call(box.querySelectorAll('.sc-cons-vz'), function(x){
+          x.classList.remove('on');
+        });
+        b.classList.add('on'); elOutro.value = ''; vezes = Number(b.dataset.v); previa();
+      };
+    });
+    elOutro.addEventListener('input', function(){
+      var n = Math.trunc(Number(elOutro.value));
+      if (!(n >= 1 && n <= 200)) return;
+      Array.prototype.forEach.call(box.querySelectorAll('.sc-cons-vz'), function(x){
+        x.classList.remove('on');
+      });
+      vezes = n; previa();
+    });
+
+    box.querySelector('[data-x="c"]').onclick = function(){ box.remove(); };
+    box.querySelector('[data-x="o"]').onclick = function(){
+      if (enviando) return;
+      enviando = true;
+      var btn = box.querySelector('#sc-cons-ok');
+      btn.disabled = true; btn.textContent = 'registrando…';
+      // Ids gerados UMA vez: numa rede ruim, tentar de novo com ids novos
+      // duplicaria gasto — o servidor é idempotente por id (mesmo precedente
+      // do `movId` do Estoque).
+      if (!ids) ids = ins.map(function(_, k){ return novoId() + '-' + k; });
+      var itens = ins.map(function(i, k){
+        var c = Number(i.custo_unit);
+        return {
+          id: ids[k],
+          item: String(i.nome).slice(0, 90),
+          qtde: Number(i.qtde),        // de UMA repetição — o Worker multiplica
+          unidade: i.unidade || 'un',
+          custo_unit: c > 0 ? c : null, // ausência é null, nunca 0 (A7)
+          origem: 'ficha',
+          pagina: pagina,
+          cenario: rotulo,
+          vezes: vezes
+        };
+      });
+      fetch(WORKER + '/api/sessao/folha/' + folhaId + '/consumo', {
+        method:'POST', headers:cab({'Content-Type':'application/json'}),
+        body:JSON.stringify({itens:itens})
+      }).then(function(r){
+        return r.json().then(function(j){ return {ok:r.ok, j:j}; });
+      }).then(function(res){
+        if (!res.ok){
+          enviando = false; btn.disabled = false; btn.textContent = 'Registrar';
+          toast((res.j && res.j.erro) || 'não consegui registrar', true);
+          return;
+        }
+        box.remove();
+        consumoCache = res.j; pintaConsumo();
+        // O registro só serve se a pessoa VÊ que aconteceu.
+        elPreco.classList.remove('on'); elIdeias.classList.remove('on');
+        elCons.classList.add('on');
+        toast(itens.length + ' lançamento(s) registrados');
+      }).catch(function(){
+        enviando = false; btn.disabled = false; btn.textContent = 'Registrar';
+        toast('sem conexão', true);
+      });
+    };
+  }
+
+  /* ---------------- K4 (PLANO_CADERNO.md): tabela cheia + avulso + CSV -----
+     Tudo aqui é FRONT-END puro sobre o que a K3 já expõe: o GET de consumo
+     já devolve a folha inteira (até CONSUMO_LISTA_MAX=500 linhas) com todo
+     campo que a tabela cheia mostra, e o POST já aceita origem='avulso' com
+     página nula — ou seja, nenhuma rota nova no Worker. Poucas dezenas de
+     lançamentos por sessão não pedem paginação nem um endpoint agregador:
+     filtrar e agrupar no cliente, sobre o `consumoCache` que a gaveta já
+     mantém, é suficiente e mais simples. */
+
+  /* As 9 colunas espelham exatamente a Vista 4 do mockup_caderno_v3.html
+     (Pg · Quando · Item · Qtde · Un · R$/un · Total · Origem · Quem) — a
+     gaveta compacta já usa uma leitura reduzida dessas mesmas colunas; a
+     tabela cheia é quem tinha espaço pra mostrar todas de uma vez. */
+  function abreTabelaCheia(){
+    if (!folhaId || !consumoCache){ toast('abra a folha primeiro', true); return; }
+    var filtroPg = 'tudo', filtroOrigem = 'tudo';
+    var box = document.createElement('div');
+    box.className = 'sc-ed sc-ed-cheia';
+    tela.appendChild(box);
+
+    function pgsPresentes(){
+      var s = {};
+      (consumoCache.linhas || []).forEach(function(l){ if (l.pagina) s[l.pagina] = true; });
+      return Object.keys(s).map(Number).sort(function(a,b){ return a-b; });
+    }
+    function temSemPagina(){
+      return (consumoCache.linhas || []).some(function(l){ return !l.pagina; });
+    }
+    /* Agrupamento "por insumo" — a leitura que muda decisão (onde o
+       dinheiro foi). Agrupa por `item` EXATO, nunca por nome normalizado
+       fundindo grafias: a mesma cautela do buscador entre casas
+       (transferencias.html) — "nada funde dois nomes sem evidência". Item
+       do MESMO cartão sai sempre com o mesmo texto (veio da ficha), então
+       agrupar por string exata já é correto pra esse caso; item avulso
+       digitado diferente vira uma linha própria de propósito. */
+    function renderPorInsumo(ls){
+      var mapa = {}, totalComPreco = 0;
+      ls.forEach(function(l){
+        if (l.total == null) return;
+        mapa[l.item] = (mapa[l.item] || 0) + l.total;
+        totalComPreco += l.total;
+      });
+      var itens = Object.keys(mapa).map(function(k){ return {item:k, total:mapa[k]}; })
+        .sort(function(a,b){ return b.total - a.total; });
+      if (!itens.length) return '';
+      var top = itens.slice(0, CONSUMO_TOP_INSUMOS);
+      var resto = itens.slice(CONSUMO_TOP_INSUMOS);
+      var restoTotal = resto.reduce(function(s,i){ return s + i.total; }, 0);
+      if (resto.length) top = top.concat([{item:'Outros (' + resto.length + ' item(ns))', total:restoTotal}]);
+      var max = top.reduce(function(m,i){ return Math.max(m, i.total); }, 0) || 1;
+      var linhas = top.map(function(i){
+        var pct = totalComPreco > 0 ? Math.round(i.total / totalComPreco * 100) : 0;
+        var largura = Math.max(4, Math.round(i.total / max * 100));
+        return '<div class="sc-cheia-pin"><b>' + esc(i.item) + '</b>' +
+          '<div class="barra"><i style="width:' + largura + '%"></i></div>' +
+          '<span class="num">' + brl(i.total) + '</span>' +
+          '<span class="num">' + pct + '%</span></div>';
+      }).join('');
+      return '<div class="sc-cheia-porh">Por insumo — onde o dinheiro foi</div>' +
+        '<div class="sc-cheia-pins">' + linhas + '</div>';
+    }
+
+    function render(){
+      var todas = consumoCache.linhas || [];
+      var ls = todas.filter(function(l){
+        if (filtroPg === 'sem' && l.pagina) return false;
+        if (filtroPg !== 'tudo' && filtroPg !== 'sem' && String(l.pagina) !== filtroPg) return false;
+        if (filtroOrigem !== 'tudo' && l.origem !== filtroOrigem) return false;
+        return true;
+      });
+      var pgs = pgsPresentes();
+      var chipsPg = '<button class="sc-cheia-chip' + (filtroPg==='tudo'?' on':'') + '" data-pg="tudo" type="button">Tudo</button>' +
+        pgs.map(function(n){
+          return '<button class="sc-cheia-chip' + (filtroPg===String(n)?' on':'') + '" data-pg="' + n + '" type="button">Pg ' + n + '</button>';
+        }).join('') +
+        (temSemPagina() ? '<button class="sc-cheia-chip' + (filtroPg==='sem'?' on':'') + '" data-pg="sem" type="button">Sem página</button>' : '');
+      var chipsOrig = ['tudo','ficha','avulso'].map(function(o){
+        var rot = o === 'tudo' ? 'Tudo' : (o === 'ficha' ? 'Ficha' : 'Avulso');
+        return '<button class="sc-cheia-chip' + (filtroOrigem===o?' on':'') + '" data-origem="' + o + '" type="button">' + rot + '</button>';
+      }).join('');
+
+      var corpo = ls.map(function(l){
+        var temPreco = l.total != null;
+        return '<tr>' +
+          '<td>' + (l.pagina || '—') + '</td>' +
+          '<td>' + esc(consQuando(l.quando)) + '</td>' +
+          '<td class="item"><b>' + esc(l.item) + '</b>' +
+            (l.nota ? '<br><span style="color:#5f5a4a">' + esc(l.nota) + '</span>' : '') + '</td>' +
+          '<td class="num">' + brlQtde(l.qtde) + '</td>' +
+          '<td>' + esc(l.unidade) + '</td>' +
+          '<td class="num' + (l.custo_unit != null ? '' : ' sem') + '">' + (l.custo_unit != null ? brl(l.custo_unit) : '—') + '</td>' +
+          '<td class="num' + (temPreco ? '' : ' sem') + '">' + (temPreco ? brl(l.total) : '—') + '</td>' +
+          '<td><span class="sc-cheia-op ' + (l.origem === 'avulso' ? 'avulso' : 'ficha') + '">' +
+            (l.origem === 'avulso' ? 'avulso' : 'ficha') + '</span></td>' +
+          '<td>' + esc(l.autor || '—') +
+            (l.pode_apagar ? '<button class="sc-cheia-x" type="button" data-del="' + esc(l.id) +
+              '" aria-label="Apagar lançamento" title="Apagar lançamento">&times;</button>' : '') +
+          '</td>' +
+        '</tr>';
+      }).join('');
+
+      // O total do rodapé é do FILTRO aplicado, não da sessão inteira — senão
+      // filtrar por página mostraria um total que não bate com as linhas
+      // visíveis (mesma régua do A7: número parcial é declarado, não escondido).
+      var gastoFiltrado = ls.reduce(function(s,l){ return s + (l.total || 0); }, 0);
+      var semPrecoFiltrado = ls.filter(function(l){ return l.total == null; }).length;
+
+      box.innerHTML =
+        '<div class="sc-cheia-h">' +
+          '<span class="t">Consumo · tabela completa</span>' +
+          '<span class="n">' + ls.length + ' de ' + todas.length + ' lançamento(s)</span>' +
+        '</div>' +
+        '<div class="sc-cheia-chips">' + chipsPg + '</div>' +
+        '<div class="sc-cheia-chips">' + chipsOrig + '</div>' +
+        '<div class="sc-cheia-rolo"><table class="sc-cheia-tb"><thead><tr>' +
+          '<th>Pg</th><th>Quando</th><th>Item</th><th class="num">Qtde</th><th>Un</th>' +
+          '<th class="num">R$/un</th><th class="num">Total</th><th>Origem</th><th>Quem</th>' +
+        '</tr></thead><tbody>' +
+          (corpo || '<tr><td colspan="9" style="color:#5f5a4a">nenhum lançamento com este filtro</td></tr>') +
+          '<tr class="tot"><td colspan="6">Total do filtro</td>' +
+            '<td class="num" style="color:#9fe1cb">' + brl(gastoFiltrado) + '</td><td colspan="2"></td></tr>' +
+        '</tbody></table></div>' +
+        (semPrecoFiltrado ? '<div class="sc-cons-parcial">' + semPrecoFiltrado +
+          ' lançamento(s) sem preço no B.D.1 — o total do filtro é parcial.</div>' : '') +
+        renderPorInsumo(ls) +
+        '<div class="sc-cheia-rodape">' +
+          '<button class="sc-b" id="sc-cheia-csv" type="button">Exportar CSV</button>' +
+          '<button class="sc-b" data-x="c" type="button">Fechar</button>' +
+        '</div>';
+
+      Array.prototype.forEach.call(box.querySelectorAll('[data-pg]'), function(b){
+        b.onclick = function(){ filtroPg = b.dataset.pg; render(); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-origem]'), function(b){
+        b.onclick = function(){ filtroOrigem = b.dataset.origem; render(); };
+      });
+      // Reusa o apagaConsumo da gaveta compacta (mesma regra de quem pode:
+      // quem lançou, ou o dono da folha) — o segundo argumento só pede pra
+      // esta tabela aberta se redesenhar depois, sem duplicar a lógica de
+      // apagar nem a confirmação.
+      Array.prototype.forEach.call(box.querySelectorAll('[data-del]'), function(b){
+        b.onclick = function(){ apagaConsumo(b.dataset.del, render); };
+      });
+      var btnClose = box.querySelector('[data-x="c"]');
+      if (btnClose) btnClose.onclick = function(){ box.remove(); };
+      var btnCsv = box.querySelector('#sc-cheia-csv');
+      if (btnCsv) btnCsv.onclick = function(){ exportaConsumoCsv(ls); };
+    }
+    render();
+  }
+
+  /* CSV pt-BR: separador `;` (não `,`) porque a vírgula já é o separador
+     decimal daqui — um CSV com `,` entre campos E como decimal abriria
+     errado no Excel em pt-BR. O CSV leva MAIS colunas que a tela (cenário,
+     nota, id) porque aqui não há limite de largura de tela — é exportado
+     pra auditoria, não pra caber numa gaveta. Exporta o que está FILTRADO
+     na tela no momento do clique, não a sessão inteira: é o que a pessoa
+     está olhando. */
+  function csvCampo(v){
+    var s = String(v == null ? '' : v);
+    if (/["\n;]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+  function exportaConsumoCsv(ls){
+    if (!ls || !ls.length){ toast('nada para exportar com este filtro', true); return; }
+    var cabecalho = ['Pagina','Quando','Item','Quantidade','Unidade','Custo unitario',
+      'Total','Origem','Cenario','Nota','Autor'];
+    var linhas = [cabecalho.join(';')];
+    ls.forEach(function(l){
+      linhas.push([
+        l.pagina || '',
+        l.quando || '',
+        l.item || '',
+        l.qtde != null ? String(l.qtde).replace('.', ',') : '',
+        l.unidade || '',
+        l.custo_unit != null ? String(l.custo_unit).replace('.', ',') : '',
+        l.total != null ? String(l.total).replace('.', ',') : '',
+        l.origem || '',
+        l.cenario || '',
+        l.nota || '',
+        l.autor || '',
+      ].map(csvCampo).join(';'));
+    });
+    var blob = new Blob(['﻿' + linhas.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'consumo_' + (folhaId || 'sessao') + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  /* Lançamento avulso — o item busca no MESMO catálogo (B.D.1) que o
+     cartão de receita já usa (`buscaCatalogo`/`normChave`, nenhuma segunda
+     via de busca). Item fora do catálogo é ACEITO (D26): a dica só
+     informa, nunca bloqueia o botão Lançar. `vezes` fica de fora do corpo
+     de propósito — avulso não "aconteceu N vezes" (mesma A7 que a K3 já
+     aplicou: ausência de dado não é 1 nem 0). Sem baixa no Estoque (D25) —
+     nem como caixinha desmarcada, a mesma regra da gaveta Preço. */
+  function abreCustoAvulso(){
+    if (!folhaId){ toast('salve a folha antes de registrar consumo', true); return; }
+    buscaCatalogo();
+    var box = document.createElement('div');
+    box.className = 'sc-ed sc-ed-avulso';
+    var opUn = CONSUMO_UNIDADES.map(function(u){
+      return '<option value="' + esc(u) + '">' + esc(u) + '</option>';
+    }).join('');
+    var opPg = '<option value="">sessão inteira</option>' +
+      [1,2,3,4,5].map(function(n){ return '<option value="' + n + '">página ' + n + '</option>'; }).join('');
+    box.innerHTML =
+      '<label class="sc-cad-lb" style="color:#9fe1cb;font-weight:700;letter-spacing:.08em;' +
+        'text-transform:uppercase">Custo avulso</label>' +
+      '<div class="sc-cad-nota">Gelo, a garrafa aberta só pra provar, o maço que estragou — ' +
+        'coisas que se gastam sem estar numa ficha.</div>' +
+      '<label class="sc-cad-lb">Item</label>' +
+      '<input class="sc-cad-in" id="sc-av-item" placeholder="ex.: gelo em cubo" autocomplete="off">' +
+      '<div class="sc-cons-av-dica" id="sc-av-dica"></div>' +
+      '<div class="sc-cad-2">' +
+        '<div><label class="sc-cad-lb">Quantidade</label>' +
+          '<input class="sc-cad-in" id="sc-av-qtde" inputmode="decimal" placeholder="1"></div>' +
+        '<div><label class="sc-cad-lb">Unidade</label>' +
+          '<select class="sc-cad-in" id="sc-av-un">' + opUn + '</select></div>' +
+      '</div>' +
+      '<label class="sc-cad-lb">Custo unitário (R$, opcional)</label>' +
+      '<input class="sc-cad-in" id="sc-av-custo" inputmode="decimal" placeholder="deixe em branco se não souber">' +
+      '<label class="sc-cad-lb">Página (opcional)</label>' +
+      '<select class="sc-cad-in" id="sc-av-pg">' + opPg + '</select>' +
+      '<label class="sc-cad-lb">Nota (opcional)</label>' +
+      '<input class="sc-cad-in" id="sc-av-nota" maxlength="240" placeholder="ex.: estragou antes de usar">' +
+      '<div class="lin"><button class="sc-b" data-x="c" type="button">Cancelar</button>' +
+      '<button class="sc-b pri" data-x="o" type="button" id="sc-av-ok">Lançar</button></div>';
+    tela.appendChild(box);
+
+    var elItem = box.querySelector('#sc-av-item');
+    var elDica = box.querySelector('#sc-av-dica');
+    var elCusto = box.querySelector('#sc-av-custo');
+
+    function confereCatalogo(){
+      var termo = elItem.value.trim();
+      if (!termo){ elDica.className = 'sc-cons-av-dica'; elDica.textContent = ''; return; }
+      var kv = catalogoInsumos && catalogoInsumos[normChave(termo)];
+      if (kv && kv.preco != null && kv.preco > 0){
+        elDica.className = 'sc-cons-av-dica achou';
+        elDica.textContent = 'achado no catálogo · R$ ' + brl(kv.preco);
+        if (!elCusto.value) elCusto.value = String(kv.preco).replace('.', ',');
+      } else if (kv){
+        elDica.className = 'sc-cons-av-dica';
+        elDica.textContent = 'está no catálogo, mas sem preço cadastrado — informe abaixo, ou deixe em branco.';
+      } else {
+        elDica.className = 'sc-cons-av-dica';
+        elDica.textContent = 'não encontrado no catálogo — pode lançar assim mesmo (com ou sem custo).';
+      }
+    }
+    elItem.addEventListener('input', function(){ buscaCatalogo().then(confereCatalogo); });
+
+    var enviando = false;
+    box.querySelector('[data-x="c"]').onclick = function(){ box.remove(); };
+    box.querySelector('[data-x="o"]').onclick = function(){
+      if (enviando) return;
+      var item = elItem.value.trim();
+      if (!item){ toast('dê um nome pro item', true); return; }
+      var qtde = numBr(box.querySelector('#sc-av-qtde').value);
+      if (!(qtde > 0)){ toast('quantidade inválida', true); return; }
+      var unidade = box.querySelector('#sc-av-un').value || 'un';
+      var custoStr = elCusto.value.trim();
+      var custo = custoStr ? numBr(custoStr) : null;
+      var pgVal = box.querySelector('#sc-av-pg').value;
+      var pagina = pgVal ? Number(pgVal) : null;
+      var nota = box.querySelector('#sc-av-nota').value.trim();
+
+      enviando = true;
+      var btn = box.querySelector('#sc-av-ok');
+      btn.disabled = true; btn.textContent = 'lançando…';
+      var payload = {
+        id: novoId(),
+        item: item.slice(0, 90),
+        qtde: qtde,
+        unidade: unidade,
+        custo_unit: (custo != null && custo > 0) ? custo : null, // ausência é null, nunca 0 (A7/D26)
+        origem: 'avulso',
+        pagina: pagina,
+        nota: nota || null,
+      };
+      fetch(WORKER + '/api/sessao/folha/' + folhaId + '/consumo', {
+        method:'POST', headers:cab({'Content-Type':'application/json'}),
+        body: JSON.stringify({itens:[payload]})
+      }).then(function(r){
+        return r.json().then(function(j){ return {ok:r.ok, j:j}; });
+      }).then(function(res){
+        if (!res.ok){
+          enviando = false; btn.disabled = false; btn.textContent = 'Lançar';
+          toast((res.j && res.j.erro) || 'não consegui lançar', true);
+          return;
+        }
+        box.remove();
+        consumoCache = res.j; pintaConsumo();
+        elPreco.classList.remove('on'); elIdeias.classList.remove('on');
+        elCons.classList.add('on');
+        toast('custo avulso lançado');
+      }).catch(function(){
+        enviando = false; btn.disabled = false; btn.textContent = 'Lançar';
+        toast('sem conexão', true);
+      });
+    };
+  }
+
+  document.getElementById('sc-cons-cheia-btn').onclick = function(){ abreTabelaCheia(); };
+  document.getElementById('sc-cons-avulso-btn').onclick = function(){ abreCustoAvulso(); };
+
+  /* ---------------- K2: páginas ----------------
+     Uma página "existe" quando tem conteúdo vivo nela — não há criar/apagar
+     página, só tags que acendem sozinhas (D17 do PLANO_CADERNO.md). A
+     gaveta Preço/Ideias é por página só porque a SELEÇÃO e a busca de
+     ideias são por página (limpas na troca) — elas continuam sendo os
+     mesmos componentes de sempre, sem um estado paralelo "por página". */
+  function paginaTemConteudo(n){
+    var achou = false;
+    objetos.forEach(function(o){ if (pgDe(o) === n) achou = true; });
+    if (achou) return true;
+    return vivas().some(function(op){
+      return (op.t === 'traco' || op.t === 'forma') && pgDe(op) === n;
+    });
+  }
+  function renderPaginas(){
+    Array.prototype.forEach.call(document.querySelectorAll('.sc-pgt'), function(b){
+      var n = Number(b.dataset.pg);
+      b.classList.toggle('on', n === paginaAtual);
+      b.classList.toggle('tem', paginaTemConteudo(n));
+    });
+  }
+  function atualizaCabecalhosGaveta(){
+    var hp = document.getElementById('sc-preco-h'), hi = document.getElementById('sc-ideias-h');
+    if (hp) hp.textContent = 'Precificação · página ' + paginaAtual;
+    if (hi) hi.textContent = 'Ideias · página ' + paginaAtual;
+  }
+  function trocaPagina(n){
+    if (n === paginaAtual) return;
+    paginaAtual = n;
+    // A seleção (e o que a gaveta Preço mostra) é de UM cartão — trocar de
+    // página sem limpar mostraria o preço de um cartão que sumiu da tela.
+    selecionado = null;
+    // Mesma lógica pra Ideias: a busca de fato é sobre o que está na tela;
+    // manter a busca da página anterior confundiria fato com a página nova.
+    elIdeiasBusca.value = '';
+    ctxIdeias = {q:'', carta:[], pares:[]};
+    elIdeiasCorpo.innerHTML = '<div class="sc-id-vazio">Digite um nome de drink ou de um sabor pra ver o que já existe.</div>';
+    renderPaginas();
+    atualizaCabecalhosGaveta();
+    atualizaPreco();
+    enquadra(); // decisão K2: cada página enquadra sozinha ao entrar, em vez de guardar zoom/pan por página
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.sc-pgt'), function(b){
+    b.onclick = function(){ trocaPagina(Number(b.dataset.pg)); };
+  });
+
   /* ---------------- folhas ---------------- */
   function limpa(){
     ops = []; refeitos = []; objetos.clear(); imgCache.clear();
     selecionado = null; conflito = false; sujo = false;
     base = 0; souDono = true; convidados = []; paraPoll(); pintaConvite();
+    folhaCasa = null; // K9: cada folha aberta pode ser de outra casa.
+    // K2: toda folha (nova ou reaberta) começa mostrando a página 1.
+    paginaAtual = 1; renderPaginas(); atualizaCabecalhosGaveta();
+    // K3: consumo é da folha — não pode sobrar da anterior nem por um frame.
+    consumoCache = null;
+    consVazio('Abra ou crie uma folha para registrar o que foi gasto testando.');
     view = {k:1, tx:0, ty:0}; zpct(); botoes(); refazTracos(); desenha();
   }
   function abre(id){
@@ -2384,6 +3581,7 @@ window.msgAcessoNegado = function (nomePagina) {
         limpa();
         folhaId = j.folha.id; versao = j.folha.versao;
         elTitulo.value = j.folha.titulo;
+        folhaCasa = j.folha.casa || null;
         ops = (j.conteudo && j.conteudo.ops) || [];
         // Tudo que veio do servidor já é canônico — o que passar daqui é meu
         // e ainda não subiu.
@@ -2393,7 +3591,7 @@ window.msgAcessoNegado = function (nomePagina) {
         reconstruir(); botoes();
         return reidrata();
       })
-      .then(function(){ enquadra(); marca('salvo'); listaGaleria(); })
+      .then(function(){ enquadra(); marca('salvo'); listaGaleria(); carregaConsumo(); })
       .catch(function(){ marca('não consegui abrir', true); });
   }
   function nova(){
@@ -2405,7 +3603,12 @@ window.msgAcessoNegado = function (nomePagina) {
     }).then(function(r){ if (!r.ok) throw new Error('criar'); return r.json(); })
       .then(function(j){
         limpa(); folhaId = j.id; versao = j.versao; elTitulo.value = j.titulo;
+        folhaCasa = j.casa || null;
         base = 0; souDono = true; pintaConvite();
+        // Folha nova nasce sem consumo — dizer isso é diferente de deixar a
+        // gaveta com a frase de "abra uma folha".
+        consumoCache = {linhas:[], resumo:{gasto:0, lancamentos:0, sem_preco:0, parcial:false}};
+        pintaConsumo();
         marca('salvo'); listaGaleria(); ferramenta('pen'); elTitulo.focus(); elTitulo.select();
       })
       .catch(function(){ marca('não consegui criar', true); });
@@ -2525,46 +3728,807 @@ window.msgAcessoNegado = function (nomePagina) {
   };
   elTitulo.addEventListener('input', function(){ if (folhaId) agenda(); });
 
-  function listaGaleria(){
-    fetch(WORKER + '/api/sessao/folhas', {headers:cab()})
-      .then(function(r){ return r.ok ? r.json() : {folhas:[]}; })
-      .then(function(j){
-        var box = document.getElementById('sc-tiles');
-        box.textContent = '';
-        var fs = j.folhas || [];
-        document.getElementById('sc-gvazio').hidden = fs.length > 0;
-        fs.forEach(function(f){
-          var b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'sc-tile' + (f.id === folhaId ? ' atual' : '');
-          var mini = document.createElement('div'); mini.className = 'mini';
-          if (f.tem_thumb){
-            fetch(WORKER + '/api/sessao/folha/' + f.id + '/thumb', {headers:cab()})
-              .then(function(r){ return r.ok ? r.blob() : null; })
-              .then(function(bl){ if (bl){ var i = document.createElement('img'); i.src = URL.createObjectURL(bl); i.alt = ''; mini.textContent = ''; mini.appendChild(i); } });
-          }
-          var meta = document.createElement('div'); meta.className = 'meta';
-          var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = f.titulo;
-          var qd = document.createElement('div'); qd.className = 'qd';
-          var d = new Date(f.atualizado);
-          qd.textContent = (f.estado === 'ficha' ? 'virou ficha · ' : '') +
-            d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' ' +
-            d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-          meta.appendChild(nm); meta.appendChild(qd);
-          // E8: a galeria passou a misturar folha minha com folha de outra
-          // pessoa. Sem dizer de quem é, a pessoa abriria a folha do colega
-          // achando que é dela e estranharia não poder arquivar.
-          if (f.meu === false){
-            var dn = document.createElement('div'); dn.className = 'dono';
-            dn.textContent = 'de ' + (f.dono || 'outra pessoa');
-            meta.appendChild(dn);
-          }
-          b.appendChild(mini); b.appendChild(meta);
-          b.onclick = function(){ if (f.id !== folhaId) abre(f.id); };
-          box.appendChild(b);
-        });
-      }).catch(function(){});
+  // K5 (PLANO_CADERNO.md): tile de UMA folha — extraído de listaGaleria()
+  // pra virar reusável (a galeria mista e a galeria de dentro do caderno
+  // desenham o mesmo tile de folha).
+  function tileFolha(f){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sc-tile' + (f.id === folhaId ? ' atual' : '');
+    var mini = document.createElement('div'); mini.className = 'mini';
+    if (f.tem_thumb){
+      fetch(WORKER + '/api/sessao/folha/' + f.id + '/thumb', {headers:cab()})
+        .then(function(r){ return r.ok ? r.blob() : null; })
+        .then(function(bl){ if (bl){ var i = document.createElement('img'); i.src = URL.createObjectURL(bl); i.alt = ''; mini.textContent = ''; mini.appendChild(i); } });
+    }
+    var meta = document.createElement('div'); meta.className = 'meta';
+    var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = f.titulo;
+    var qd = document.createElement('div'); qd.className = 'qd';
+    var d = new Date(f.atualizado);
+    var pags = (f.paginas_usadas && f.paginas_usadas.length > 1) ? ' · pág. ' + f.paginas_usadas.join(',') : '';
+    qd.textContent = (f.estado === 'ficha' ? 'virou ficha · ' : '') +
+      d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' ' +
+      d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) + pags;
+    meta.appendChild(nm); meta.appendChild(qd);
+    // E8: a galeria passou a misturar folha minha com folha de outra
+    // pessoa. Sem dizer de quem é, a pessoa abriria a folha do colega
+    // achando que é dela e estranharia não poder arquivar.
+    if (f.meu === false){
+      var dn = document.createElement('div'); dn.className = 'dono';
+      dn.textContent = 'de ' + (f.dono || 'outra pessoa');
+      meta.appendChild(dn);
+    }
+    b.appendChild(mini); b.appendChild(meta);
+    b.onclick = function(){ if (f.id !== folhaId) abre(f.id); };
+    return b;
   }
+
+  // K5 — tile de um CADERNO na galeria mista. Sem miniatura própria (a foto
+  // é de sessão, não de agrupador); o ícone + a contagem já dizem "isto
+  // reúne sessões".
+  function tileCaderno(c){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sc-tile cdn';
+    var mini = document.createElement('div'); mini.className = 'mini'; mini.innerHTML = '<svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+    var meta = document.createElement('div'); meta.className = 'meta';
+    var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = c.titulo;
+    var qd = document.createElement('div'); qd.className = 'qd';
+    qd.textContent = (c.casa_label || c.casa) + ' · ' + c.sessoes + (c.sessoes === 1 ? ' sessão' : ' sessões') +
+      (c.estado === 'arquivado' ? ' · arquivado' : '');
+    meta.appendChild(nm); meta.appendChild(qd);
+    if (c.meu === false){
+      var dn = document.createElement('div'); dn.className = 'dono';
+      dn.textContent = 'de ' + (c.dono || 'outra pessoa');
+      meta.appendChild(dn);
+    }
+    b.appendChild(mini); b.appendChild(meta);
+    b.onclick = function(){ abreCaderno(c.id); };
+    return b;
+  }
+
+  // K5 — galeria MISTA: folhas soltas (o Worker já filtra caderno_id nulo em
+  // /api/sessao/folhas) e cadernos juntos, mais recente primeiro. Sessão
+  // dentro de um caderno não aparece aqui de novo — ela mora na galeria de
+  // dentro do caderno (abreCaderno), pra não listar a mesma coisa 2x.
+  function listaGaleria(){
+    Promise.all([
+      fetch(WORKER + '/api/sessao/folhas', {headers:cab()})
+        .then(function(r){ return r.ok ? r.json() : {folhas:[]}; }).catch(function(){ return {folhas:[]}; }),
+      fetch(WORKER + '/api/caderno', {headers:cab()})
+        .then(function(r){ return r.ok ? r.json() : {cadernos:[]}; }).catch(function(){ return {cadernos:[]}; }),
+    ]).then(function(res){
+      var fs = res[0].folhas || [], cds = res[1].cadernos || [];
+      var box = document.getElementById('sc-tiles');
+      box.textContent = '';
+      document.getElementById('sc-gvazio').hidden = (fs.length + cds.length) > 0;
+      var itens = fs.map(function(f){ return {c:'folha', d:f}; })
+        .concat(cds.map(function(c){ return {c:'caderno', d:c}; }));
+      itens.sort(function(a,b){ return new Date(b.d.atualizado) - new Date(a.d.atualizado); });
+      itens.forEach(function(it){
+        box.appendChild(it.c === 'caderno' ? tileCaderno(it.d) : tileFolha(it.d));
+      });
+    });
+  }
+
+  /* ---------------- K5 (PLANO_CADERNO.md): Caderno ----------------
+     Agrupador de sessões, com conceito/teto e convite próprio (mesmo molde
+     do convite de folha, A4). Abrir um caderno TROCA a galeria mista pela
+     galeria de dentro dele — nunca mexe no palco/canvas acima. */
+  var cdnGal = document.getElementById('sc-gal');
+  var cdnView = document.getElementById('sc-cdn-view');
+  var cdnId = null, cdnSouDono = true, cdnConvidados = [], cdnCasa = '';
+  var cdnTitulo = document.getElementById('sc-cdn-titulo');
+  var cdnCasaEl = document.getElementById('sc-cdn-casa');
+  var cdnConceito = document.getElementById('sc-cdn-conceito');
+  var cdnTeto = document.getElementById('sc-cdn-teto');
+  // K8: o que o SERVIDOR tem hoje como conceito. Só existe pra saber se
+  // precisa salvar antes de gerar — nunca vira fonte de exibição.
+  var cdnConceitoSalvo = '';
+
+  function cadCab(){ return cab({'Content-Type':'application/json'}); }
+
+  function fechaCaderno(){
+    cdnId = null;
+    cdnView.hidden = true; cdnGal.hidden = false;
+    listaGaleria();
+  }
+  document.getElementById('sc-cdn-voltar').onclick = fechaCaderno;
+
+  function cdnAba(nome){
+    ['sessoes','conceito','prateleira','orcamento'].forEach(function(k){
+      document.getElementById('sc-cdn-corpo-' + k).hidden = (k !== nome);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.sc-cdn-aba'), function(b){
+      b.classList.toggle('on', b.getAttribute('data-aba') === nome);
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.sc-cdn-aba'), function(b){
+    b.onclick = function(){
+      var nome = b.getAttribute('data-aba');
+      cdnAba(nome);
+      // K7: a Prateleira só busca ao ser aberta (nunca no abreCaderno) —
+      // 3 fetches por sessão criativa aberta seria custo sem uso na maioria
+      // das visitas, que ficam na aba Sessões.
+      if (nome === 'prateleira') cdnCarregaPrateleira();
+      // K6: mesma postura — a agregação do Orçamento é a query mais cara da
+      // leva (e pode ir ao Notion buscar margem), então só roda quando alguém
+      // realmente quer ver o dinheiro.
+      if (nome === 'orcamento') cdnCarregaOrcamento();
+    };
+  });
+
+  function cdnRenderSessoes(sessoes, soltas){
+    var box = document.getElementById('sc-cdn-tiles');
+    box.textContent = '';
+    document.getElementById('sc-cdn-vazio').hidden = sessoes.length > 0;
+    sessoes.forEach(function(f){ box.appendChild(tileFolha(f)); });
+    var sel = document.getElementById('sc-cdn-sessao-add');
+    sel.innerHTML = '<option value="">+ trazer uma folha solta…</option>';
+    soltas.forEach(function(f){
+      var o = document.createElement('option'); o.value = f.id; o.textContent = f.titulo;
+      sel.appendChild(o);
+    });
+  }
+
+  /* ---------------- K7 (PLANO_CADERNO.md): Prateleira (só FATO) ----------------
+     Três seções, cada uma com um estado próprio (nunca uma mensagem única
+     pras três) — a casa pode ter carta publicada e clássicos, mas o grafo de
+     sabores estar fora do acesso da sessão, e as três coisas são fatos
+     independentes. Nada aqui é sugestão nem chama modelo; a parte GERADA
+     (histórias, nomes, conceitos a partir do texto do Conceito) é o K8. */
+  function pratMsg(motivo){
+    if (!LAB_WORKER) return 'A Prateleira depende do Lab de Drinks, que não está configurado neste portal.';
+    if (motivo && motivo.semAcesso) return 'Acesso ao Lab de Drinks hoje é só da coordenação — o chefe vê esta lacuna, não um erro.';
+    if (motivo && motivo.semPublicar) return 'Ainda não foi publicado pra esta casa.';
+    if (!motivo) return 'Não consegui buscar agora — tente reabrir a aba.';
+    return null;
+  }
+  function rendCartaCasa(j){
+    var el = document.getElementById('sc-prat-carta');
+    var msg = (!j || j.semAcesso || j.semPublicar) ? pratMsg(j) : null;
+    if (msg === null && (!Array.isArray(j) || !j.length)) msg = 'Sem itens publicados pra esta casa.';
+    if (msg){ el.innerHTML = '<div class="sc-id-vazio">' + esc(msg) + '</div>'; return; }
+    el.innerHTML = j.map(function(d){
+      return '<div class="sc-id-item"><b>' + esc(d.nome || '—') + '</b>' +
+        (d.categoria ? '<span class="qd">' + esc(d.categoria) + '</span>' : '') +
+        '<span class="qd">' + esc((d.ingredientes || []).join(', ')) + '</span></div>';
+    }).join('');
+  }
+  function rendClassicos(j){
+    var el = document.getElementById('sc-prat-classicos');
+    var msg = (!j || j.semAcesso || j.semPublicar) ? pratMsg(j) : null;
+    if (msg === null && (!j.raizes || !j.raizes.length)) msg = 'Grade de clássicos ainda não publicada.';
+    if (msg){ el.innerHTML = '<div class="sc-id-vazio">' + esc(msg) + '</div>'; return; }
+    el.innerHTML = j.raizes.map(function(r){
+      return '<div class="sc-id-item"><b>' + esc(r.nome || '—') + '</b>' +
+        (r.esqueleto ? '<span class="qd">' + esc(r.esqueleto) + '</span>' : '') +
+        '<span class="qd">' + esc((r.membros || []).map(function(m){ return m.nome; }).join(', ')) + '</span></div>';
+    }).join('');
+  }
+  function rendGrafoSabores(j){
+    var el = document.getElementById('sc-prat-sabores');
+    var msg = (!j || j.semAcesso) ? pratMsg(j) : null;
+    if (msg === null && (!j.familias || !j.familias.length)) msg = 'Grafo de sabores ainda não publicado.';
+    if (msg){ el.innerHTML = '<div class="sc-id-vazio">' + esc(msg) + '</div>'; return; }
+    var fams = j.familias, sabs = j.sabores || [];
+    var deBar = sabs.filter(function(s){ return s.bar; }).length;
+    el.innerHTML = '<div class="sc-id-item">' + fams.length + ' famílias · ' + sabs.length +
+      ' sabores (' + deBar + ' de bar)' +
+      '<span class="qd">' + esc(fams.map(function(f){ return f.nome; }).join(', ')) + '</span></div>' +
+      '<a class="sc-prat-link" href="constelacao.html" target="_blank" rel="noopener">Explorar o grafo inteiro →</a>';
+  }
+  var cdnPratCasaCarregada = null;
+  function cdnCarregaPrateleira(){
+    if (!cdnId) return;
+    // casa não muda dentro do mesmo caderno (A2) — não refaz os 3 fetches
+    // ao reabrir a aba, só ao trocar de caderno (as promises internas de
+    // buscaCartaCasa/buscaClassicos/buscaSaboresIdx já cacheiam por si,
+    // este guard só evita reescrever "buscando…" por cima de dado já pintado.
+    if (cdnPratCasaCarregada === cdnId) return;
+    cdnPratCasaCarregada = cdnId;
+    var labSlug = LAB_SLUG_POR_WORKER[cdnCasa] || cdnCasa;
+    ['sc-prat-carta', 'sc-prat-classicos', 'sc-prat-sabores'].forEach(function(id){
+      document.getElementById(id).innerHTML = '<div class="sc-id-vazio">buscando…</div>';
+    });
+    cdnPratFato = {carta:[], classicos:[], sabores:[]};
+    // K8: o mesmo fetch alimenta a tela E o resumo que sobe pro gerador —
+    // sem uma segunda ida à rede só pra montar contexto.
+    buscaCartaCasa(labSlug).then(function(j){
+      if (Array.isArray(j)) cdnPratFato.carta = j.map(function(d){ return d.nome; }).filter(Boolean);
+      rendCartaCasa(j);
+    });
+    buscaClassicos().then(function(j){
+      if (j && Array.isArray(j.raizes)) cdnPratFato.classicos = j.raizes.map(function(r){ return r.nome; }).filter(Boolean);
+      rendClassicos(j);
+    });
+    buscaSaboresIdx().then(function(j){
+      if (j && Array.isArray(j.familias)) cdnPratFato.sabores = j.familias.map(function(f){ return f.nome; }).filter(Boolean);
+      rendGrafoSabores(j);
+    });
+    cdnGerarBotao();
+  }
+
+  /* ---------------- K8 (PLANO_CADERNO.md): a Prateleira GERADA ----------------
+     Conceitos (eixos), histórias e nomes a partir do texto do Conceito.
+     Botão, nunca automático — mesma razão do E6: chamada de modelo custa por
+     vez, e a Prateleira é reaberta o tempo todo. Falhar aqui não derruba
+     nada: as três seções de FATO acima já estão pintadas e são de outro
+     Worker.
+
+     A tela SALVA o conceito antes de gerar quando ele mudou. O servidor lê o
+     conceito do banco (ele é a autoridade), então gerar sem salvar produziria
+     sugestão sobre um texto que não está mais na tela — o pior tipo de erro
+     aqui, porque parece certo. */
+  var cdnPratFato = {carta:[], classicos:[], sabores:[]};
+  function cdnGerado(){ return document.getElementById('sc-prat-gerado'); }
+  function cdnGerarBotao(msg){
+    var el = cdnGerado(); if (!el) return;
+    el.innerHTML =
+      (msg ? '<div class="sc-id-vazio" style="margin-bottom:8px">' + esc(msg) + '</div>' : '') +
+      '<button class="sc-id-sugb sc-prat-gerar" id="sc-prat-gerar-b" type="button">' +
+        (msg ? 'Tentar de novo' : 'Gerar a partir do conceito') + '</button>' +
+      '<div class="sc-id-vazio" style="margin-top:6px">Eixos de carta, nomes e histórias. ' +
+      'Texto gerado — confira antes de usar. Livro nenhum sai daqui.</div>';
+    document.getElementById('sc-prat-gerar-b').onclick = cdnPedeConceitos;
+  }
+  function cdnPedeConceitos(){
+    var el = cdnGerado(); if (!el || !cdnId) return;
+    var conceito = (cdnConceito.value || '').trim();
+    if (conceito.length < 20){
+      cdnGerarBotao('Escreva o conceito do caderno primeiro (aba Conceito) — é dele que isto sai.');
+      return;
+    }
+    el.innerHTML = '<div class="sc-id-vazio">pensando… isso leva alguns segundos.</div>';
+    var precisaSalvar = conceito !== (cdnConceitoSalvo || '').trim();
+    var antes = precisaSalvar
+      ? fetch(WORKER + '/api/caderno/' + cdnId, {
+          method:'PATCH', headers:cadCab(),
+          body:JSON.stringify({conceito: cdnConceito.value}),
+        }).then(function(r){
+          if (!r.ok) throw new Error('salvar');
+          cdnConceitoSalvo = cdnConceito.value;
+        })
+      : Promise.resolve();
+
+    antes.then(function(){
+      return fetch(WORKER + '/api/caderno/' + cdnId + '/prateleira/gerar', {
+        method:'POST', headers:cadCab(),
+        body:JSON.stringify({
+          carta: cdnPratFato.carta, classicos: cdnPratFato.classicos, sabores: cdnPratFato.sabores,
+        }),
+      });
+    }).then(function(r){
+      return r.json().then(function(j){ return {ok:r.ok, j:j}; });
+    }).then(function(res){
+      if (!res.ok){
+        cdnGerarBotao((res.j && res.j.sem_config)
+          ? 'A parte gerada ainda não está ligada neste Worker. Os fatos acima continuam valendo.'
+          : ((res.j && res.j.erro) || 'não consegui gerar agora'));
+        return;
+      }
+      cdnRenderConceitos(res.j);
+    }).catch(function(){
+      cdnGerarBotao('sem conexão pra gerar agora.');
+    });
+  }
+  function cdnRenderConceitos(s){
+    var el = cdnGerado(); if (!el) return;
+    var h = '';
+    function bloco(titulo, itens){ if (itens) h += '<div class="sc-id-sec-h" style="margin-top:10px">' + titulo + '</div>' + itens; }
+
+    if (s.nomes && s.nomes.length){
+      bloco('Nomes', s.nomes.map(function(n){
+        return '<div class="sc-id-sugi"><b>' + esc(n.nome) + '</b>' +
+          (n.de_onde ? '<span class="pq">' + esc(n.de_onde) + '</span>' : '') + '</div>';
+      }).join(''));
+    }
+    if (s.eixos && s.eixos.length){
+      bloco('Eixos possíveis', s.eixos.map(function(e){
+        return '<div class="sc-id-sugi"><b>' + esc(e.eixo) + '</b>' +
+          (e.no_copo ? '<span class="tr">' + esc(e.no_copo) + '</span>' : '') + '</div>';
+      }).join(''));
+    }
+    if (s.historias && s.historias.length){
+      // `conferir` é obrigatório no schema e aparece SEMPRE: história de bar
+      // é onde um modelo afirma origem/data/autoria com cara de fato, e
+      // contar isso a um cliente é a única saída daqui pro mundo real.
+      bloco('Histórias', s.historias.map(function(x){
+        return '<div class="sc-id-sugi"><b>' + esc(x.titulo) + '</b>' +
+          (x.historia ? '<div class="sc-prat-hist">' + esc(x.historia) + '</div>' : '') +
+          '<span class="sc-prat-conf">Antes de contar, confira: ' +
+            esc(x.conferir || 'a origem e qualquer data ou autoria citada.') + '</span></div>';
+      }).join(''));
+    }
+    if (s.cortado){
+      h += '<div class="sc-id-aviso">A resposta foi cortada antes do fim — pode ter faltado seção. ' +
+           'Peça de novo se precisar do resto.</div>';
+    }
+    h += '<button class="sc-id-sugb sc-prat-gerar" id="sc-prat-gerar-b" type="button" style="margin-top:10px">Gerar outra vez</button>';
+    el.innerHTML = h;
+    document.getElementById('sc-prat-gerar-b').onclick = cdnPedeConceitos;
+  }
+
+  /* ---------------- K6 (PLANO_CADERNO.md): Orçamento do caderno ----------------
+     NADA AQUI SOMA DINHEIRO. Gasto, teto, ritmo, projeção, "por insumo" e "se
+     paga em" chegam prontos de `GET /api/caderno/:id/orcamento`, porque o
+     cliente não pode ser a autoridade da soma — é dinheiro, e esta tela decide
+     manter ou matar uma criação. A única aritmética daqui é altura de barra em
+     pixels.
+
+     As três regras do plano viram três comportamentos visíveis:
+       A6 — sem teto, a barra e a projeção NÃO SÃO renderizadas (não é uma
+            barra vazia nem "0% de nada": os elementos não existem no DOM).
+       A7 — `null` vira "—" ou "sem registro", jamais um zero em reais. O
+            aviso de parcial é o MESMO texto e a MESMA classe da gaveta
+            Consumo (K3): é o mesmo fato, então tem que ter a mesma cara.
+       A8 — "se paga em" só aparece com ficha E margem reais; o motivo do "—"
+            vai no `title` da célula, nunca um número chutado no lugar. */
+  var orcCache = null, orcCarregado = null, orcAbertas = {};
+
+  function orcRs(v){ return v == null ? '—' : 'R$ ' + brl(v); }
+  function orcPct(v){
+    return v == null ? '—' : (Math.round(v * 10) / 10).toLocaleString('pt-BR', {maximumFractionDigits:1}) + '%';
+  }
+  /* Data pura se fatia como texto. `new Date('2026-08-04')` é meia-noite UTC e
+     vira dia 3 em UTC-3 — a lição que já mordeu as férias no sino. */
+  function orcDataBr(iso){
+    var p = String(iso || '').split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : '—';
+  }
+  function orcDiaMes(iso){
+    var p = String(iso || '').split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] : '';
+  }
+  /* Por que uma sessão não tem "se paga em". Sempre um motivo escrito — a
+     alternativa seria um traço mudo, que a pessoa leria como "deu zero". */
+  function orcMotivo(m){
+    if (m === 'sem_ficha') return 'ainda não virou ficha técnica';
+    if (m === 'sem_gasto') return 'nenhum gasto com preço registrado';
+    if (m === 'ficha_sem_preco') return 'a ficha não tem custo e preço de venda preenchidos';
+    if (m === 'margem_nao_positiva') return 'a ficha não tem margem positiva';
+    if (m === 'ficha_ilegivel') return 'não consegui ler a ficha agora';
+    if (m === 'sem_notion') return 'as fichas não estão acessíveis por aqui';
+    if (m === 'nao_consultada') return 'ficha fora do limite de consulta desta chamada';
+    return '';
+  }
+
+  function orcAviso(msg){
+    var el = document.getElementById('sc-orc-conteudo');
+    el.className = 'sc-vazio';
+    el.textContent = msg;
+  }
+
+  function cdnCarregaOrcamento(forcar){
+    if (!cdnId) return;
+    if (!forcar && orcCarregado === cdnId && orcCache){ cdnPintaOrcamento(); return; }
+    orcAviso('somando…');
+    var alvo = cdnId;
+    fetch(WORKER + '/api/caderno/' + alvo + '/orcamento', {headers:cab()})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        // Trocar de caderno com a resposta em voo pintaria o dinheiro do
+        // caderno errado — em silêncio (mesma guarda do carregaConsumo).
+        if (alvo !== cdnId) return;
+        if (!j){ orcAviso('Não consegui somar o orçamento agora.'); return; }
+        orcCache = j; orcCarregado = alvo; orcAbertas = {};
+        cdnPintaOrcamento();
+      })
+      .catch(function(){ if (alvo === cdnId) orcAviso('Sem conexão para somar o orçamento.'); });
+  }
+
+  function orcDetalhe(s){
+    var ls = s.linhas || [];
+    if (!ls.length){
+      return '<div class="sc-orc-nota" style="padding:8px 8px 0">Nenhum lançamento desta sessão neste caderno.</div>';
+    }
+    return '<table><thead><tr><th>Item</th><th class="num">Qtde</th><th class="num">R$</th></tr></thead><tbody>' +
+      ls.map(function(l){
+        var meta = [
+          (l.pagina ? 'pg ' + l.pagina : 'sessão'),
+          l.origem === 'avulso' ? 'avulso' : 'ficha',
+          l.cenario || '',
+          (l.autor || '') + (l.quando ? ' · ' + consQuando(l.quando) : '')
+        ].filter(function(x){ return x; }).join(' · ');
+        return '<tr><td><b>' + esc(l.item) + '</b><span class="sc-cons-sub">' + esc(meta) + '</span>' +
+            (l.nota ? '<span class="sc-cons-sub">' + esc(l.nota) + '</span>' : '') + '</td>' +
+          '<td class="num">' + brlQtde(l.qtde) + ' ' + esc(l.unidade) + '</td>' +
+          '<td class="num' + (l.total == null ? ' sem' : '') + '">' +
+            (l.total == null ? '—' : brl(l.total)) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  function cdnPintaOrcamento(){
+    var j = orcCache;
+    if (!j) return;
+    var el = document.getElementById('sc-orc-conteudo');
+    var r = j.resumo || {}, ret = j.retorno || {}, pr = j.projecao, rt = j.ritmo || {};
+    var h = '';
+
+    h += '<div class="sc-cdn-sessoes-h">' +
+      '<button class="sc-b" id="sc-orc-atualizar" type="button">Atualizar</button>' +
+      '<span class="sc-cdn-casa">' + (r.sessoes || 0) + ' sessão(ões) · ' +
+        (r.lancamentos || 0) + ' lançamento(s)</span></div>';
+
+    // KPIs — o MESMO bloco .sc-cons-ru da gaveta Consumo, de propósito.
+    h += '<div class="sc-cons-ru">' +
+      '<div><div class="l">gasto no caderno</div><div class="v verde">' + orcRs(r.gasto) + '</div></div>' +
+      // A6: o tile do teto só existe quando existe teto.
+      (r.teto != null ? '<div><div class="l">teto</div><div class="v">' + orcRs(r.teto) + '</div></div>' : '') +
+      '<div><div class="l">sem preço</div><div class="v' + (r.sem_preco ? ' ama' : '') + '">' +
+        (r.sem_preco || 0) + '</div></div>' +
+      '<div><div class="l">se paga em</div><div class="v">' +
+        (ret.usos != null ? ret.usos + ' usos' : '—') + '</div></div>' +
+      '</div>';
+
+    // Texto igual ao da gaveta Consumo (K3): o gasto é PARCIAL, e a tela diz.
+    if (r.parcial){
+      h += '<div class="sc-cons-parcial">' + r.sem_preco +
+        ' lançamento(s) sem preço no B.D.1 — o gasto acima é parcial.</div>';
+    }
+
+    // --- Contra o teto (A6).
+    if (r.teto != null && r.gasto != null){
+      var pctBarra = Math.max(0, Math.min(100, r.pct == null ? 0 : r.pct));
+      var cls = (r.pct != null && r.pct > 100) ? ' estourou' : ((r.pct != null && r.pct >= 80) ? ' perto' : '');
+      h += '<div class="sc-orc-sec"><div class="sc-orc-h">Contra o teto</div>' +
+        '<div class="sc-orc-barra' + cls + '"><i style="width:' + pctBarra + '%"></i></div>' +
+        '<div class="sc-orc-barra-l"><span>' + orcRs(r.gasto) + ' · ' + orcPct(r.pct) + '</span><span>' +
+          (r.restante >= 0 ? 'faltam ' + orcRs(r.restante) : 'passou ' + orcRs(-r.restante)) +
+        '</span></div></div>';
+    } else if (r.teto == null){
+      h += '<div class="sc-orc-nota">Este caderno não tem <b>teto de orçamento</b>. Defina um na aba ' +
+        'Conceito para ver a barra e a projeção de ritmo — sem teto, não há barra nem previsão a mostrar.</div>';
+    } else {
+      h += '<div class="sc-orc-nota">Há teto definido, mas ainda nenhum gasto <b>com preço</b> ' +
+        'registrado — não há o que medir contra ele.</div>';
+    }
+
+    // --- Projeção de ritmo (só existe com teto; ver A6).
+    if (pr){
+      if (pr.possivel){
+        h += '<div class="sc-orc-nota">No ritmo das últimas <b>' + pr.semanas_consideradas +
+          '</b> semana(s) — ' + orcRs(pr.ritmo_semanal) + ' por semana —, o teto seria atingido ' +
+          (pr.distante ? '<b>daqui a mais de dois anos</b>' : 'por volta de <b>' + orcDataBr(pr.data_prevista) + '</b>') +
+          '. Isso responde <b>quando o teto acaba neste ritmo</b>, não quanto falta para a carta ficar pronta.</div>';
+      } else if (pr.motivo === 'dado_insuficiente'){
+        h += '<div class="sc-orc-nota">Ainda não dá para projetar ritmo: o gasto aparece em <b>' +
+          (pr.semanas_ativas || 0) + '</b> semana(s). Com menos de duas, a previsão seria um ponto ' +
+          'só fingindo ser uma tendência.</div>';
+      } else if (pr.motivo === 'ritmo_zero'){
+        h += '<div class="sc-orc-nota">Nas últimas semanas não houve gasto <b>com preço</b>, ' +
+          'então não há ritmo para projetar.</div>';
+      } else if (pr.motivo === 'estourado'){
+        h += '<div class="sc-orc-nota">O gasto já passou do teto — não há mais o que projetar.</div>';
+      }
+    }
+
+    // --- Ritmo semanal.
+    var sem = rt.semanas || [];
+    if (sem.length){
+      var maxG = sem.reduce(function(a, s){ return Math.max(a, s.gasto || 0); }, 0);
+      h += '<div class="sc-orc-sec"><div class="sc-orc-h">Ritmo · últimas ' + sem.length + ' semanas</div>' +
+        '<div class="sc-orc-ritmo">' + sem.map(function(s){
+          var alt = (maxG > 0 && s.gasto) ? Math.max(5, Math.round((s.gasto / maxG) * 72)) : 3;
+          // Semana com lançamento mas sem preço nenhum mostra "—", não zero.
+          var rot = s.gasto != null ? brl(s.gasto) : (s.lancamentos ? '—' : '');
+          return '<div><div class="sc-orc-val">' + rot + '</div>' +
+            '<div class="sc-orc-bar' + (s.gasto ? ' tem' : '') + '" style="height:' + alt + 'px"></div>' +
+            '<div class="sc-orc-rot">' + orcDiaMes(s.ini) + '</div></div>';
+        }).join('') + '</div>' +
+        '<div class="sc-orc-nota">Semanas de 7 dias contadas a partir de hoje, não semana de ' +
+        'calendário — assim a última barra tem sempre a mesma largura das outras.</div></div>';
+    }
+
+    // --- Por sessão, com detalhe expansível.
+    h += '<div class="sc-orc-sec"><div class="sc-orc-h">Por sessão</div>' +
+      '<table class="sc-cons-tb sc-orc-tb"><thead><tr>' +
+        '<th>Sessão</th><th class="num col-lan">Lanç.</th><th class="num">R$</th><th class="num">Se paga em</th>' +
+      '</tr></thead><tbody>';
+    var linhasSess = '';
+    (j.sessoes || []).forEach(function(s, i){
+      var aberta = !!orcAbertas['s' + i];
+      var semReg = !s.lancamentos;
+      var sub = [];
+      if (semReg) sub.push('sem registro de consumo');
+      else {
+        sub.push(s.lancamentos + ' lançamento(s)');
+        if (s.sem_preco) sub.push(s.sem_preco + ' sem preço');
+        if (s.ultimo) sub.push('último em ' + consQuando(s.ultimo));
+      }
+      // O congelamento de `caderno_id` (K1) é invisível até alguém comparar
+      // este total com o da gaveta Consumo da sessão. Dito em voz alta.
+      if (s.fora_do_caderno){
+        sub.push(s.fora_do_caderno + ' lançamento(s) de antes de entrar no caderno ficam fora desta soma');
+      }
+      linhasSess +=
+        '<tr class="sc-orc-exp" data-s="s' + i + '">' +
+          '<td><b>' + esc(s.titulo || 'Sem título') + '</b>' +
+            (s.virou_ficha ? '<span class="sc-orc-tag ficha">ficha</span>' : '') +
+            '<span class="sc-cons-sub"><span class="sc-orc-seta">' + (aberta ? '−' : '+') + '</span> ' +
+              esc(sub.join(' · ')) + '</span></td>' +
+          '<td class="num col-lan">' + (s.lancamentos || '—') + '</td>' +
+          // A7 — sessão sem registro NUNCA aparece como um valor em reais.
+          '<td class="num' + (s.gasto == null ? ' sem' : '') + '">' +
+            (semReg ? 'sem registro' : orcRs(s.gasto)) + '</td>' +
+          '<td class="num' + (s.se_paga_em == null ? ' sem' : '') + '"' +
+            (s.se_paga_em == null && orcMotivo(s.motivo_retorno)
+              ? ' title="' + esc(orcMotivo(s.motivo_retorno)) + '"' : '') + '>' +
+            (s.se_paga_em != null ? s.se_paga_em + ' usos' : '—') + '</td>' +
+        '</tr>' +
+        (aberta ? '<tr class="sc-orc-det"><td colspan="4">' + orcDetalhe(s) + '</td></tr>' : '');
+    });
+    if (j.avulso){
+      var av = j.avulso, avAberta = !!orcAbertas.avulso;
+      linhasSess +=
+        '<tr class="sc-orc-exp" data-s="avulso">' +
+          '<td><b>Avulso do caderno</b><span class="sc-orc-tag">sem sessão</span>' +
+            '<span class="sc-cons-sub"><span class="sc-orc-seta">' + (avAberta ? '−' : '+') + '</span> ' +
+            av.lancamentos + ' lançamento(s)' + (av.sem_preco ? ' · ' + av.sem_preco + ' sem preço' : '') +
+            '</span></td>' +
+          '<td class="num col-lan">' + av.lancamentos + '</td>' +
+          '<td class="num' + (av.gasto == null ? ' sem' : '') + '">' + orcRs(av.gasto) + '</td>' +
+          '<td class="num sem">—</td>' +
+        '</tr>' +
+        (avAberta ? '<tr class="sc-orc-det"><td colspan="4">' + orcDetalhe(av) + '</td></tr>' : '');
+    }
+    h += (linhasSess || '<tr><td colspan="4" class="sem">Nenhuma sessão neste caderno ainda.</td></tr>') +
+      '<tr class="tot"><td colspan="2">Total do caderno</td>' +
+      '<td class="num" style="color:#9fe1cb">' + orcRs(r.gasto) + '</td><td></td></tr>' +
+      '</tbody></table>';
+    h += '<div class="sc-orc-nota">' +
+      (ret.usos != null
+        ? '<b>Se paga em ' + ret.usos + ' usos</b> — a soma de quantas vendas cada ficha precisa para ' +
+          'cobrir o que ELA custou. Cobre ' + ret.sessoes_com_retorno + ' de ' + ret.sessoes_com_gasto +
+          ' sessão(ões) com gasto; nas outras, o retorno ainda não é calculável.'
+        : 'Nenhuma sessão tem retorno calculável ainda: <b>se paga em</b> só aparece quando a sessão ' +
+          'virou ficha técnica <b>e</b> a ficha tem custo e preço de venda de verdade. Nada aqui é estimado.') +
+      '</div>';
+    if (j.detalhe_truncado){
+      h += '<div class="sc-cons-parcial">O detalhe por sessão está truncado — este caderno tem mais ' +
+        'lançamentos do que uma tela comporta. Os totais acima continuam completos.</div>';
+    }
+    h += '</div>';
+
+    // --- Por insumo.
+    var ins = j.insumos || {}, topo = ins.topo || [];
+    h += '<div class="sc-orc-sec"><div class="sc-orc-h">Por insumo · onde o dinheiro foi</div>';
+    if (!topo.length){
+      h += '<div class="sc-orc-nota">Nenhum insumo lançado neste caderno ainda.</div>';
+    } else {
+      h += '<table class="sc-cons-tb sc-orc-tb"><thead><tr>' +
+          '<th>Insumo</th><th class="num">Qtde</th><th class="num">R$</th>' +
+        '</tr></thead><tbody>' +
+        topo.map(function(x){
+          var meta = x.lancamentos + ' lançamento(s)' +
+            (x.sem_preco ? ' · ' + x.sem_preco + ' sem preço' : '') +
+            (x.unidades_diferentes ? ' · lançado em unidades diferentes' : '');
+          return '<tr><td><b>' + esc(x.item) + '</b><span class="sc-cons-sub">' + esc(meta) + '</span></td>' +
+            // Somar 150 ml com 2 un daria um número que não existe: quando há
+            // mais de uma unidade a quantidade some, o dinheiro fica.
+            '<td class="num' + (x.qtde == null ? ' sem' : '') + '">' +
+              (x.qtde == null ? '—' : brlQtde(x.qtde) + ' ' + esc(x.unidade || '')) + '</td>' +
+            '<td class="num' + (x.gasto == null ? ' sem' : '') + '">' +
+              (x.gasto == null ? '—' : brl(x.gasto)) + '</td></tr>';
+        }).join('') +
+        (ins.outros
+          ? '<tr><td><b>Outros</b><span class="sc-cons-sub">' + ins.outros.itens + ' insumo(s) · ' +
+              ins.outros.lancamentos + ' lançamento(s)' +
+              (ins.outros.sem_preco ? ' · ' + ins.outros.sem_preco + ' sem preço' : '') + '</span></td>' +
+            '<td class="num sem">—</td>' +
+            '<td class="num' + (ins.outros.gasto == null ? ' sem' : '') + '">' +
+              (ins.outros.gasto == null ? '—' : brl(ins.outros.gasto)) + '</td></tr>'
+          : '') +
+        '</tbody></table>';
+    }
+    h += '</div>';
+
+    el.className = '';
+    el.innerHTML = h;
+    var bAt = document.getElementById('sc-orc-atualizar');
+    if (bAt) bAt.onclick = function(){ cdnCarregaOrcamento(true); };
+    // Expandir/recolher REPINTA em vez de alternar `hidden`: um `<tr>` com
+    // display vindo de classe é exatamente a armadilha de CSS que este projeto
+    // já documentou duas vezes. Repintar é barato e não tem estado escondido.
+    Array.prototype.forEach.call(el.querySelectorAll('.sc-orc-exp'), function(tr){
+      tr.onclick = function(){
+        var k = tr.getAttribute('data-s');
+        orcAbertas[k] = !orcAbertas[k];
+        cdnPintaOrcamento();
+      };
+    });
+  }
+
+  function abreCaderno(id){
+    marca('abrindo caderno…');
+    fetch(WORKER + '/api/caderno/' + id, {headers:cab()})
+      .then(function(r){ if (!r.ok) throw new Error('abrir'); return r.json(); })
+      .then(function(j){
+        cdnId = j.caderno.id; cdnSouDono = j.dono !== false; cdnConvidados = j.convidados || [];
+        cdnCasa = j.caderno.casa;
+        // K6: dinheiro não se serve de cache velho. Reabrir o caderno joga
+        // fora o orçamento somado antes (pode ter entrado consumo no meio).
+        orcCarregado = null; orcCache = null;
+        cdnTitulo.value = j.caderno.titulo;
+        cdnCasaEl.textContent = j.caderno.casa_label || j.caderno.casa;
+        cdnConceito.value = j.caderno.conceito || '';
+        cdnConceitoSalvo = cdnConceito.value;
+        cdnTeto.value = j.caderno.teto != null ? j.caderno.teto : '';
+        document.getElementById('sc-cdn-arquivar').hidden = !cdnSouDono;
+        document.getElementById('sc-cdn-arquivar').innerHTML =
+          (j.caderno.estado === 'arquivado' ? '<svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg> Reabrir' : '<svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg> Arquivar');
+        cdnAba('sessoes');
+        cdnGal.hidden = true; cdnView.hidden = false;
+        marca('salvo');
+        // Folhas soltas MINHAS pra oferecer no seletor "trazer" — reusa
+        // /api/sessao/folhas (já filtrado a soltas) em vez de outra rota.
+        fetch(WORKER + '/api/sessao/folhas', {headers:cab()})
+          .then(function(r){ return r.ok ? r.json() : {folhas:[]}; })
+          .then(function(jf){
+            cdnRenderSessoes(j.sessoes || [], (jf.folhas || []).filter(function(f){ return f.meu !== false; }));
+          });
+      })
+      .catch(function(){ marca('não consegui abrir o caderno', true); });
+  }
+
+  document.getElementById('sc-cdn-novo').onclick = function(){
+    var casaFixa = (SESSAO.casa && SESSAO.casa !== '*') ? SESSAO.casa : '';
+    var box = document.createElement('div');
+    box.className = 'sc-ed sc-ed-conv';
+    box.innerHTML =
+      '<label class="sc-cad-lb">Título do caderno</label>' +
+      '<input class="sc-cad-in" id="sc-cdn-novo-titulo" maxlength="90" placeholder="Caderno sem título">' +
+      (casaFixa ? '' :
+        '<label class="sc-cad-lb">Casa</label>' +
+        '<select class="sc-cad-in" id="sc-cdn-novo-casa">' +
+          // c.worker (não c.slug): o contagem-worker espera "gra-bistro",
+          // não "gra" — mesma divergência já documentada no resto do portal.
+          CASAS_RECEITA.map(function(c){ return '<option value="' + esc(c.worker) + '">' + esc(c.nome) + '</option>'; }).join('') +
+        '</select>') +
+      '<div class="lin"><button class="sc-b" data-x="c" type="button">Cancelar</button>' +
+      '<button class="sc-b pri" data-x="ok" type="button">Criar</button></div>';
+    cdnGal.appendChild(box);
+    box.querySelector('[data-x="c"]').onclick = function(){ box.remove(); };
+    box.querySelector('[data-x="ok"]').onclick = function(){
+      var titulo = box.querySelector('#sc-cdn-novo-titulo').value;
+      var elCasa = box.querySelector('#sc-cdn-novo-casa');
+      var casa = casaFixa || (elCasa ? elCasa.value : '');
+      fetch(WORKER + '/api/caderno', {
+        method:'POST', headers:cadCab(), body:JSON.stringify({titulo:titulo, casa:casa}),
+      }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+        .then(function(res){
+          if (!res.ok){ toast((res.j && res.j.erro) || 'não consegui criar o caderno', true); return; }
+          box.remove(); listaGaleria(); abreCaderno(res.j.caderno.id);
+        }).catch(function(){ toast('sem conexão', true); });
+    };
+  };
+
+  document.getElementById('sc-cdn-sessao-nova').onclick = function(){
+    if (!cdnId) return;
+    fetch(WORKER + '/api/sessao/folha', {
+      method:'POST', headers:cadCab(), body:JSON.stringify({titulo:'Folha sem título'}),
+    }).then(function(r){ if (!r.ok) throw new Error('criar'); return r.json(); })
+      .then(function(j){
+        return fetch(WORKER + '/api/sessao/folha/' + j.id, {
+          method:'PATCH', headers:cadCab(), body:JSON.stringify({caderno_id: cdnId}),
+        }).then(function(){ return j.id; });
+      })
+      .then(function(id){ abre(id); toast('sessão criada neste caderno'); abreCaderno(cdnId); })
+      .catch(function(){ toast('não consegui criar a sessão', true); });
+  };
+
+  document.getElementById('sc-cdn-sessao-add').onchange = function(){
+    var id = this.value; this.value = '';
+    if (!id || !cdnId) return;
+    fetch(WORKER + '/api/sessao/folha/' + id, {
+      method:'PATCH', headers:cadCab(), body:JSON.stringify({caderno_id: cdnId}),
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+      .then(function(res){
+        if (!res.ok){ toast((res.j && res.j.erro) || 'não consegui trazer a folha', true); return; }
+        abreCaderno(cdnId);
+      }).catch(function(){ toast('sem conexão', true); });
+  };
+
+  document.getElementById('sc-cdn-salvar').onclick = function(){
+    if (!cdnId) return;
+    var teto = cdnTeto.value === '' ? null : Number(cdnTeto.value);
+    fetch(WORKER + '/api/caderno/' + cdnId, {
+      method:'PATCH', headers:cadCab(),
+      body:JSON.stringify({titulo: cdnTitulo.value, conceito: cdnConceito.value, teto: teto}),
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+      .then(function(res){
+        if (!res.ok){ toast((res.j && res.j.erro) || 'não consegui salvar', true); return; }
+        cdnConceitoSalvo = cdnConceito.value;
+        toast('salvo'); listaGaleria();
+      }).catch(function(){ toast('sem conexão', true); });
+  };
+
+  document.getElementById('sc-cdn-arquivar').onclick = function(){
+    if (!cdnId) return;
+    var arquivar = document.getElementById('sc-cdn-arquivar').textContent.indexOf('Reabrir') < 0;
+    fetch(WORKER + '/api/caderno/' + cdnId, {
+      method:'PATCH', headers:cadCab(),
+      body:JSON.stringify({estado: arquivar ? 'arquivado' : 'aberto'}),
+    }).then(function(r){
+      if (!r.ok) throw new Error('x');
+      toast(arquivar ? 'caderno arquivado — nada foi apagado' : 'caderno reaberto');
+      fechaCaderno();
+    }).catch(function(){ toast('não consegui salvar', true); });
+  };
+
+  // Convite do caderno — MESMO molde do convite de folha (A4): nominal,
+  // só o dono convida/desconvida, convidado vê a lista sem poder mexer.
+  var cdnPessoasCache = null;
+  function cdnBuscaPessoas(){
+    if (cdnPessoasCache) return Promise.resolve(cdnPessoasCache);
+    return fetch(WORKER + '/api/caderno/pessoas', {headers:cab()})
+      .then(function(r){ return r.ok ? r.json() : {pessoas:[]}; })
+      .then(function(j){ cdnPessoasCache = j.pessoas || []; return cdnPessoasCache; })
+      .catch(function(){ return []; });
+  }
+  document.getElementById('sc-cdn-convite').onclick = function(){
+    if (!cdnId) return;
+    var box = document.createElement('div');
+    box.className = 'sc-ed sc-ed-conv';
+    box.innerHTML = '<div id="sc-cdn-conv-corpo"><div class="sc-conv-msg">carregando…</div></div>' +
+      '<div class="lin"><button class="sc-b" data-x="c" type="button">Fechar</button></div>';
+    cdnView.appendChild(box);
+    box.querySelector('[data-x="c"]').onclick = function(){ box.remove(); };
+    var corpo = box.querySelector('#sc-cdn-conv-corpo');
+
+    function chama(rota, sub){
+      fetch(WORKER + '/api/caderno/' + cdnId + '/' + rota, {
+        method:'POST', headers:cadCab(), body:JSON.stringify({sub:sub}),
+      }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+        .then(function(res){
+          if (!res.ok){ toast((res.j && res.j.erro) || 'não consegui', true); return; }
+          cdnConvidados = res.j.convidados || []; pinta();
+        })
+        .catch(function(){ toast('sem conexão', true); });
+    }
+    function pinta(){
+      if (!cdnSouDono){
+        corpo.innerHTML = '<div class="sc-conv-msg">Você foi convidado para este caderno — vê todas as ' +
+          'sessões dele. Quem convida e arquiva é o dono.</div>' +
+          '<div class="sc-conv-h">No caderno</div>' +
+          cdnConvidados.map(function(c){
+            return '<div class="sc-conv-lin"><span class="nm">' + esc(c.nome) + '</span>' +
+              '<span class="cs">' + esc(c.casa) + '</span></div>';
+          }).join('');
+        return;
+      }
+      cdnBuscaPessoas().then(function(pessoas){
+        var jaSub = {}; cdnConvidados.forEach(function(c){ jaSub[c.sub] = true; });
+        var livres = pessoas.filter(function(p){ return !jaSub[p.sub]; });
+        var h = '<div class="sc-conv-h">Neste caderno</div>';
+        h += cdnConvidados.length
+          ? cdnConvidados.map(function(c){
+              return '<div class="sc-conv-lin"><span class="nm">' + esc(c.nome) + '</span>' +
+                '<span class="cs">' + esc(c.casa) + '</span>' +
+                '<button class="sc-conv-b tira" type="button" data-tira="' + esc(c.sub) + '">tirar</button></div>';
+            }).join('')
+          : '<div class="sc-conv-msg">Só você, por enquanto.</div>';
+        h += '<div class="sc-conv-h">Convidar</div>';
+        h += livres.length
+          ? livres.map(function(p){
+              return '<div class="sc-conv-lin"><span class="nm">' + esc(p.nome) + '</span>' +
+                '<span class="cs">' + esc(p.casa) + '</span>' +
+                '<button class="sc-conv-b" type="button" data-conv="' + esc(p.sub) + '">convidar</button></div>';
+            }).join('')
+          : '<div class="sc-conv-msg">Ninguém mais pra convidar.</div>';
+        h += '<div class="sc-conv-h">Como funciona</div>' +
+             '<div class="sc-conv-msg">Quem você convidar vê TODAS as sessões deste caderno, não só uma.</div>';
+        corpo.innerHTML = h;
+        Array.prototype.forEach.call(corpo.querySelectorAll('[data-conv]'), function(b){
+          b.onclick = function(){ chama('convidar', b.getAttribute('data-conv')); };
+        });
+        Array.prototype.forEach.call(corpo.querySelectorAll('[data-tira]'), function(b){
+          b.onclick = function(){ chama('desconvidar', b.getAttribute('data-tira')); };
+        });
+      });
+    }
+    pinta();
+  };
 
   /* ---------------- boot ---------------- */
   window.addEventListener('resize', function(){ dimensiona(); });
@@ -2608,12 +4572,22 @@ window.msgAcessoNegado = function (nomePagina) {
       })
       .catch(function(){ marca('não consegui criar', true); });
   } else {
-    fetch(WORKER + '/api/sessao/folhas', {headers:cab()})
-      .then(function(r){ return r.ok ? r.json() : {folhas:[]}; })
-      .then(function(j){
-        var fs = (j.folhas || []).filter(function(f){ return f.estado !== 'arquivada'; });
-        if (fs.length) abre(fs[0].id); else nova();
-      }).catch(function(){ marca('sem conexão', true); });
+    // K5 (PLANO_CADERNO.md): /api/sessao/folhas só devolve SOLTA agora — sem
+    // nenhuma, não significa "nunca usou a Sessão Criativa", pode ser gente
+    // que só trabalha dentro de cadernos. Criar uma folha em branco a cada
+    // carga pra essa pessoa poluiria a galeria com rascunho vazio atrás de
+    // rascunho vazio. Só cria de fato quando não há folha solta NEM caderno.
+    Promise.all([
+      fetch(WORKER + '/api/sessao/folhas', {headers:cab()})
+        .then(function(r){ return r.ok ? r.json() : {folhas:[]}; }).catch(function(){ return {folhas:[]}; }),
+      fetch(WORKER + '/api/caderno', {headers:cab()})
+        .then(function(r){ return r.ok ? r.json() : {cadernos:[]}; }).catch(function(){ return {cadernos:[]}; }),
+    ]).then(function(res){
+      var fs = (res[0].folhas || []).filter(function(f){ return f.estado !== 'arquivada'; });
+      if (fs.length) { abre(fs[0].id); return; }
+      if ((res[1].cadernos || []).length) { listaGaleria(); marca('salvo'); return; }
+      nova();
+    }).catch(function(){ marca('sem conexão', true); });
   }
 })();
 </script>
@@ -2708,7 +4682,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 03/08/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 04/08/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -3732,7 +5706,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'd2b19fe03bce';
+  var BUILD = 'bf5dfcac0c76';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
