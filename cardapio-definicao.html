@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Cardápio em definição · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=f887cda9488c">
+<link rel="stylesheet" href="portal.css?v=15c84a4f9a83">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -508,6 +508,59 @@ window.msgAcessoNegado = function (nomePagina) {
       box-sizing:border-box; margin-bottom:11px; }
   .cd-sel-status { padding:8px 11px; font-size:13px; border-radius:9px; border:1px solid var(--border);
       background:var(--card); color:var(--text); font-family:inherit; }
+
+  /* ---- Cardápio atual lado a lado (D9 do PLANO_CARDAPIO_DEFINICAO.md) ----
+     Um mesmo painel, dois comportamentos: ATÉ 1099px ele é sobreposto (em
+     375px duas colunas dariam ~180px cada, ilegível pra página de cardápio);
+     de 1100px pra cima ele entra na grade, ao lado da lista. O padrão da
+     largura larga é ABERTO — é o uso principal. */
+  .cd-obra { display:block; }
+  .cd-carta { position:fixed; inset:0; z-index:90; background:var(--bg);
+      overflow:auto; padding:12px 14px 26px; -webkit-overflow-scrolling:touch; }
+  /* Sem esta linha o painel nasce visível e vazio: regra de classe com
+     `position/display` ganha do [hidden] nativo (lição de CSS do Mural v3). */
+  .cd-carta[hidden] { display:none !important; }
+  .cd-carta-topo { display:flex; align-items:flex-start; gap:10px; justify-content:space-between;
+      margin-bottom:8px; }
+  .cd-carta-tit { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--acc); }
+  .cd-carta-sub { font-size:11.5px; color:var(--text-3); margin-top:3px; }
+  .cd-carta-x { background:none; border:1px solid var(--border); border-radius:8px; color:var(--text-3);
+      cursor:pointer; padding:5px 7px; font-family:inherit; line-height:0; flex-shrink:0; }
+  .cd-carta-nav { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin:9px 0; }
+  .cd-carta-nav button { font-size:11.5px; min-width:26px; padding:4px 7px; border-radius:6px;
+      border:1px solid var(--border); background:var(--card); color:var(--text-2); cursor:pointer;
+      font-family:inherit; line-height:1.2; }
+  .cd-carta-nav button.on { background:var(--acc); color:var(--acc-txt); border-color:transparent; }
+  .cd-carta-nav button:disabled { opacity:.4; cursor:default; }
+  .cd-carta-nav .cd-carta-pos { font-size:11.5px; color:var(--text-3); margin-left:auto; }
+  .cd-carta-folha { background:var(--card); border:1px solid var(--border); border-radius:9px;
+      min-height:180px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .cd-carta-folha img { display:block; width:100%; height:auto; }
+  .cd-carta-estado { font-size:12.5px; color:var(--text-3); padding:26px 14px; text-align:center; }
+  .cd-pagref { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:5px; }
+  .cd-pagref button { font-size:11px; padding:3px 9px; border-radius:999px; border:1px solid var(--border);
+      background:none; color:var(--text-2); cursor:pointer; font-family:inherit; }
+  .cd-pagref button:hover { border-color:var(--acc); color:var(--acc); }
+  .cd-pagref .cd-difpreco { font-size:11px; color:var(--amarelo); }
+  @media (min-width:1100px) {
+    .cd-obra.aberto { display:grid; grid-template-columns:minmax(0,1fr) minmax(330px,470px);
+        gap:16px; align-items:start; }
+    .cd-carta { position:sticky; inset:auto; top:14px; z-index:1; background:var(--card);
+        border:1px solid var(--border); border-radius:12px; padding:13px 14px 16px;
+        max-height:calc(100vh - 30px); }
+    /* Medido: a coluna de conteúdo do portal trava em 940px, então o painel
+       lado a lado fica com 470px em QUALQUER tela (1100, 1280 ou 1440 dão o
+       mesmo). Dá pra ler, mas conferir letra miúda de cardápio pede mais —
+       clicar na folha amplia pra tela cheia sem sair da página. */
+    .cd-carta-folha img { cursor:zoom-in; }
+    .cd-obra.aberto.ampliada { display:block; }
+    .cd-obra.ampliada .cd-carta { position:fixed; inset:0; z-index:90; max-height:none;
+        border:none; border-radius:0; background:var(--bg); padding:12px 16px 26px; }
+    .cd-obra.ampliada .cd-carta-topo,
+    .cd-obra.ampliada .cd-carta-nav,
+    .cd-obra.ampliada .cd-carta-folha { max-width:860px; margin-left:auto; margin-right:auto; }
+    .cd-obra.ampliada .cd-carta-folha img { cursor:zoom-out; }
+  }
   @media (max-width:640px) {
     .cd-item { flex-wrap:wrap; }
     .cd-dec { width:100%; }
@@ -536,6 +589,8 @@ window.msgAcessoNegado = function (nomePagina) {
   <div class="cd-barra">
     <button class="cd-btn sec" id="cd-voltar"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg> Todos os cardápios</button>
     <div style="display:flex; gap:7px; align-items:center; flex-wrap:wrap">
+      <button class="cd-btn sec" id="cd-carta-abrir" aria-expanded="false" aria-controls="cd-carta"
+              disabled><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Cardápio atual</button>
       <select class="cd-sel-status" id="cd-status"></select>
       <button class="cd-btn" id="cd-pdf"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg> Exportar PDF</button>
     </div>
@@ -545,9 +600,27 @@ window.msgAcessoNegado = function (nomePagina) {
   <div id="cd-p-avisos"></div>
   <div class="cd-chips" id="cd-p-chips"></div>
   <p class="cd-msg" id="cd-p-msg" role="status" aria-live="polite"></p>
-  <div id="cd-itens"></div>
-  <div id="cd-add" style="display:none; margin-top:6px">
-    <button class="cd-btn sec" id="cd-add-btn"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Adicionar item</button>
+  <div class="cd-obra" id="cd-obra">
+    <div>
+      <div id="cd-itens"></div>
+      <div id="cd-add" style="display:none; margin-top:6px">
+        <button class="cd-btn sec" id="cd-add-btn"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Adicionar item</button>
+      </div>
+    </div>
+    <aside class="cd-carta" id="cd-carta" hidden aria-label="Cardápio atual impresso">
+      <div class="cd-carta-topo">
+        <div>
+          <div class="cd-carta-tit">Cardápio atual impresso</div>
+          <div class="cd-carta-sub" id="cd-carta-sub"></div>
+        </div>
+        <button type="button" class="cd-carta-x" id="cd-carta-fechar" aria-label="Fechar o cardápio atual"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div id="cd-carta-avisos"></div>
+      <div class="cd-carta-nav" id="cd-carta-nav"></div>
+      <div class="cd-carta-folha" id="cd-carta-folha">
+        <div class="cd-carta-estado" id="cd-carta-estado">Carregando…</div>
+      </div>
+    </aside>
   </div>
 </div>
 </div>
@@ -761,6 +834,14 @@ function nomeArquivoSeguro(base) {
   var wrap = document.getElementById('cd-corpo');
   var TOKEN = '', PODE = false, PROJ = null, ITENS = [], CASA_TRAVADA = null;
 
+  // Painel "Cardápio atual" (D9). CARTA.idx é o índice publicado da casa;
+  // CARTA.urls guarda os object URLs das páginas JÁ baixadas (cache) e é
+  // esvaziado com revokeObjectURL ao fechar/trocar de projeto — blob de
+  // imagem não é coletado sozinho enquanto a URL existir.
+  var CARTA = { casa: null, idx: null, estado: 'vazio', pagina: 1, urls: {}, aberto: false };
+  var CARTA_LS = 'carddef_carta_aberta';
+  var CARTA_LARGO = '(min-width:1100px)';
+
   function api(caminho, opcoes) {
     opcoes = opcoes || {};
     opcoes.headers = Object.assign({ 'X-Token': TOKEN }, opcoes.headers || {});
@@ -804,6 +885,242 @@ function nomeArquivoSeguro(base) {
     return dias === 1 ? 'ontem' : 'há ' + dias + ' dias';
   }
   function txt(el, s) { el.textContent = s == null ? '' : String(s); }
+
+  // Mesma régua do `_norm` do servidor (NFKD -> descarta o que não é ASCII ->
+  // colapsa espaço -> maiúscula). Trava 2: o casamento item↔página é EXATO
+  // normalizado, nunca fuzzy — e os DOIS lados da comparação passam por aqui,
+  // pra uma diferença de régua não virar link errado.
+  function normChave(s) {
+    return String(s == null ? '' : s)
+      .normalize('NFKD')
+      .replace(/[^\x00-\x7F]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+
+  // ---------- cardápio atual impresso (D9) ----------
+  function cartaLibera() {
+    Object.keys(CARTA.urls).forEach(function (n) {
+      try { URL.revokeObjectURL(CARTA.urls[n]); } catch (e) {}
+    });
+    CARTA.urls = {};
+  }
+
+  function cartaReset(casa) {
+    cartaLibera();
+    CARTA.casa = casa;
+    CARTA.idx = null;
+    CARTA.estado = 'carregando';
+    CARTA.pagina = 1;
+    cartaFecha(true);
+    var btn = document.getElementById('cd-carta-abrir');
+    btn.disabled = true;
+    btn.title = '';
+    fetch(WORKER + '/api/cardapio-atual?casa=' + encodeURIComponent(casa), {
+      headers: { 'X-Token': TOKEN },
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        return { ok: r.ok, status: r.status, corpo: j };
+      });
+    }).then(function (res) {
+      if (CARTA.casa !== casa) return;   // trocou de projeto no meio do caminho
+      if (res.ok && res.corpo && res.corpo.paginas) {
+        CARTA.idx = res.corpo;
+        CARTA.estado = 'ok';
+        btn.disabled = false;
+        desenhaItens();
+        if (deveAbrirPorPadrao()) cartaAbre(null);
+        return;
+      }
+      CARTA.estado = (res.corpo && res.corpo.sem_cardapio) || res.status === 404
+        ? 'sem_cardapio' : 'erro';
+      btn.disabled = true;
+      btn.title = CARTA.estado === 'sem_cardapio'
+        ? 'Esta casa ainda não tem o cardápio impresso publicado.'
+        : 'Não consegui carregar o cardápio impresso desta casa.';
+    }).catch(function () {
+      if (CARTA.casa !== casa) return;
+      CARTA.estado = 'erro';
+      btn.disabled = true;
+      btn.title = 'Não consegui carregar o cardápio impresso desta casa.';
+    });
+  }
+
+  // Só a largura larga abre sozinha: no celular o painel é SOBREPOSTO, e abrir
+  // por conta própria taparia a lista que a pessoa veio ver. A preferência
+  // guardada por isso também só vale a partir de 1100px.
+  function deveAbrirPorPadrao() {
+    if (!window.matchMedia || !window.matchMedia(CARTA_LARGO).matches) return false;
+    var v = null;
+    try { v = localStorage.getItem(CARTA_LS); } catch (e) {}
+    return v === null ? true : v === '1';
+  }
+
+  function cartaLembra(aberto) {
+    try { localStorage.setItem(CARTA_LS, aberto ? '1' : '0'); } catch (e) {}
+  }
+
+  function cartaAbre(pagina) {
+    if (CARTA.estado !== 'ok') return;
+    CARTA.aberto = true;
+    document.getElementById('cd-carta').hidden = false;
+    document.getElementById('cd-obra').classList.add('aberto');
+    document.getElementById('cd-carta-abrir').setAttribute('aria-expanded', 'true');
+    cartaLembra(true);
+    cartaCabecalho();
+    cartaVai(pagina || CARTA.pagina);
+  }
+
+  function cartaFecha(silencioso) {
+    CARTA.aberto = false;
+    var el = document.getElementById('cd-carta');
+    if (el) el.hidden = true;
+    var obra = document.getElementById('cd-obra');
+    if (obra) { obra.classList.remove('aberto'); obra.classList.remove('ampliada'); }
+    var btn = document.getElementById('cd-carta-abrir');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    if (!silencioso) cartaLembra(false);
+  }
+
+  // O cabeçalho DECLARA quantos itens do projeto não têm par no impresso
+  // (52% casaram na medição real do FAMU) — a tela nunca finge 100%.
+  function cartaCabecalho() {
+    var idx = CARTA.idx;
+    if (!idx) return;
+    var partes = [];
+    if (idx.data_impresso) {
+      var p = String(idx.data_impresso).split('-');
+      if (p.length === 3) partes.push('impresso de ' + p[2] + '/' + p[1] + '/' + p[0]);
+    }
+    partes.push(idx.paginas + (idx.paginas === 1 ? ' página' : ' páginas'));
+    var sem = ITENS.length - ITENS.filter(function (i) { return paginaDoItem(i) !== null; }).length;
+    if (ITENS.length) {
+      partes.push(sem === 0
+        ? 'todos os itens têm par no impresso'
+        : sem + ' de ' + ITENS.length + (sem === 1 ? ' item sem par' : ' itens sem par') + ' no impresso');
+    }
+    txt(document.getElementById('cd-carta-sub'), partes.join(' · '));
+
+    // O gerador já produz idx.avisos (linhas descartadas, nomes ambíguos no
+    // próprio impresso) — a tela precisa exibir, não só carregar em silêncio.
+    var alvoAv = document.getElementById('cd-carta-avisos');
+    alvoAv.innerHTML = '';
+    (idx.avisos || []).forEach(function (texto) {
+      var a = document.createElement('div');
+      a.className = 'cd-aviso';
+      a.textContent = texto;
+      alvoAv.appendChild(a);
+    });
+  }
+
+  function cartaNav() {
+    var alvo = document.getElementById('cd-carta-nav');
+    alvo.innerHTML = '';
+    if (!CARTA.idx) return;
+    var total = CARTA.idx.paginas;
+    function bt(rotulo, html, acao, ligado, desligado) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      if (html) b.innerHTML = html; else b.textContent = rotulo;
+      b.setAttribute('aria-label', rotulo);
+      if (ligado) b.className = 'on';
+      if (desligado) b.disabled = true; else b.onclick = acao;
+      alvo.appendChild(b);
+      return b;
+    }
+    bt('Página anterior', "<svg class=\"ic\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 6l-6 6 6 6\"/></svg>", function () { cartaVai(CARTA.pagina - 1); },
+       false, CARTA.pagina <= 1);
+    for (var n = 1; n <= total; n++) {
+      (function (p) {
+        bt(String(p), '', function () { cartaVai(p); }, p === CARTA.pagina, false);
+      })(n);
+    }
+    bt('Próxima página', "<svg class=\"ic\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6l6 6-6 6\"/></svg>", function () { cartaVai(CARTA.pagina + 1); },
+       false, CARTA.pagina >= total);
+    var pos = document.createElement('span');
+    pos.className = 'cd-carta-pos';
+    txt(pos, 'pág. ' + CARTA.pagina + ' de ' + total);
+    alvo.appendChild(pos);
+  }
+
+  function cartaVai(n) {
+    if (!CARTA.idx) return;
+    n = Math.min(Math.max(1, Number(n) || 1), CARTA.idx.paginas);
+    CARTA.pagina = n;
+    cartaNav();
+    var folha = document.getElementById('cd-carta-folha');
+    if (CARTA.urls[n]) { cartaPinta(CARTA.urls[n], n); return; }
+    folha.innerHTML = '';
+    var e = document.createElement('div');
+    e.className = 'cd-carta-estado';
+    e.textContent = 'Carregando a página ' + n + '…';
+    folha.appendChild(e);
+    // A imagem exige X-Token: <img src> direto não manda header nenhum, então
+    // ela vem por fetch + blob e vira object URL (liberado em cartaLibera).
+    var casa = CARTA.casa;
+    fetch(WORKER + '/api/cardapio-atual/pagina/' + n + '?casa=' + encodeURIComponent(casa), {
+      headers: { 'X-Token': TOKEN },
+    }).then(function (r) {
+      if (!r.ok) throw new Error('falha ' + r.status);
+      return r.blob();
+    }).then(function (b) {
+      if (CARTA.casa !== casa) return;
+      if (!CARTA.urls[n]) CARTA.urls[n] = URL.createObjectURL(b);
+      if (CARTA.pagina === n) cartaPinta(CARTA.urls[n], n);
+    }).catch(function (err) {
+      if (CARTA.casa !== casa || CARTA.pagina !== n) return;
+      folha.innerHTML = '';
+      var x = document.createElement('div');
+      x.className = 'cd-carta-estado';
+      x.textContent = 'Não consegui carregar a página ' + n + ' (' + err.message + ').';
+      folha.appendChild(x);
+    });
+  }
+
+  function cartaPinta(url, n) {
+    var folha = document.getElementById('cd-carta-folha');
+    folha.innerHTML = '';
+    var img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Página ' + n + ' do cardápio impresso';
+    // Ampliar só faz sentido lado a lado (embaixo de 1100px o painel já ocupa
+    // a tela inteira) — o CSS gateia o cursor e o efeito pela mesma media query.
+    img.onclick = function () {
+      if (!window.matchMedia || !window.matchMedia(CARTA_LARGO).matches) return;
+      document.getElementById('cd-obra').classList.toggle('ampliada');
+    };
+    folha.appendChild(img);
+  }
+
+  // Trava 2: só casamento exato normalizado. Sem par -> null, e o item não
+  // ganha link nenhum (nunca um link "mais ou menos certo"). Ambíguo (par:true)
+  // também não vira link — conta separado, nunca escolhe o primeiro no chute.
+  function paginaDoItem(it) {
+    var par = parDoItem(it);
+    return (par && !par.ambiguo) ? par.pagina : null;
+  }
+  function parDoItem(it) {
+    if (!CARTA.idx || !CARTA.idx.itens) return null;
+    var chave = normChave(it.nome);
+    if (!chave) return null;
+    var achados = [];
+    for (var i = 0; i < CARTA.idx.itens.length; i++) {
+      var c = CARTA.idx.itens[i];
+      if (normChave(c.chave || c.nome) === chave) achados.push(c);
+    }
+    if (!achados.length) return null;
+    if (achados.length === 1) return achados[0];
+    // O gerador já preserva as duas entradas de propósito quando o mesmo nome
+    // normalizado casa com preço/página diferentes (ex.: "Atum" no sashimi x
+    // no niguiri) — escolher a primeira aqui reintroduziria exatamente o chute
+    // que a trava 2 proíbe. Só colapsa se todas concordarem em página e preço.
+    var primeiro = achados[0];
+    var divergem = achados.some(function (c) {
+      return c.pagina !== primeiro.pagina || Number(c.preco) !== Number(primeiro.preco);
+    });
+    return divergem ? { ambiguo: true } : primeiro;
+  }
 
   // ---------- galeria ----------
   function carregaGaleria() {
@@ -936,6 +1253,10 @@ function nomeArquivoSeguro(base) {
       montaAvisos(d.resumo);
       document.getElementById('cd-add').style.display = PODE ? '' : 'none';
       desenhaItens();
+      // O impresso é POR CASA: trocar de projeto pode trocar de carta, então
+      // o índice é buscado de novo e os blobs da anterior são liberados.
+      if (CARTA.casa !== d.projeto.casa || CARTA.estado !== 'ok') cartaReset(d.projeto.casa);
+      else { cartaCabecalho(); if (CARTA.aberto) cartaNav(); }
     }).catch(function (e) {
       alvo.innerHTML = '';
       var v = document.createElement('p');
@@ -1097,6 +1418,39 @@ function nomeArquivoSeguro(base) {
       m.className = 'cd-motivo' + (it.cerebro_grupo === 'sair' ? ' aten' : '');
       m.textContent = linhaMotivo;
       meio.appendChild(m);
+    }
+
+    // Ponte com o impresso: item com par ganha "pág. N" (abre o painel já
+    // naquela página); item sem par não ganha link NENHUM — é o que faz o
+    // cabeçalho poder declarar quantos ficaram de fora (trava 2). Preço
+    // diferente do impresso é AVISO, nunca correção automática (trava 3).
+    var par = parDoItem(it);
+    if (par && par.ambiguo) {
+      var refAmb = document.createElement('div');
+      refAmb.className = 'cd-pagref';
+      var amb = document.createElement('span');
+      amb.className = 'cd-difpreco';
+      amb.textContent = 'mais de um item chamado assim no impresso — sem link único de página';
+      refAmb.appendChild(amb);
+      meio.appendChild(refAmb);
+    } else if (par) {
+      var ref = document.createElement('div');
+      ref.className = 'cd-pagref';
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = 'pág. ' + par.pagina;
+      b.title = 'Ver esta página do cardápio atual impresso';
+      b.onclick = function () { cartaAbre(par.pagina); };
+      ref.appendChild(b);
+      var pi = par.preco, pp = it.preco;
+      if (pi !== null && pi !== undefined && pp !== null && pp !== undefined
+          && Math.abs(Number(pi) - Number(pp)) >= 0.01) {
+        var d = document.createElement('span');
+        d.className = 'cd-difpreco';
+        d.textContent = 'impresso está ' + rs(pi);
+        ref.appendChild(d);
+      }
+      meio.appendChild(ref);
     }
     row.appendChild(meio);
 
@@ -1331,12 +1685,39 @@ function nomeArquivoSeguro(base) {
       document.getElementById('cd-form-novo').style.display = 'none';
     };
     document.getElementById('cd-voltar').onclick = function () {
+      cartaFecha(true);          // silencioso: sair do projeto não é "fechei o painel"
+      cartaLibera();
+      CARTA.casa = null; CARTA.idx = null; CARTA.estado = 'vazio';
       document.getElementById('cd-projeto').style.display = 'none';
       document.getElementById('cd-galeria').style.display = '';
       carregaGaleria();
     };
     document.getElementById('cd-pdf').onclick = exportaPDF;
     document.getElementById('cd-add-btn').onclick = adicionaItem;
+    document.getElementById('cd-carta-abrir').onclick = function () {
+      if (CARTA.aberto) cartaFecha(false); else cartaAbre(null);
+    };
+    document.getElementById('cd-carta-fechar').onclick = function () {
+      // Ampliado, o X desfaz a ampliação e devolve o lado a lado — fechar o
+      // painel inteiro tiraria da tela algo que a pessoa acabou de abrir.
+      var obra = document.getElementById('cd-obra');
+      if (obra && obra.classList.contains('ampliada')) { obra.classList.remove('ampliada'); return; }
+      cartaFecha(false);
+    };
+    document.addEventListener('keydown', function (e) {
+      // Esc só fecha quando ele está SOBREPOSTO — lado a lado o painel é parte
+      // da tela, e fechá-lo com Esc surpreenderia quem só quis sair de um campo.
+      if (e.key !== 'Escape' || !CARTA.aberto) return;
+      var obra = document.getElementById('cd-obra');
+      if (window.matchMedia && window.matchMedia(CARTA_LARGO).matches) {
+        // Lado a lado o Esc só desfaz a ampliação — fechar o painel inteiro
+        // com Esc surpreenderia quem só quis sair de um campo de texto.
+        if (obra) obra.classList.remove('ampliada');
+        return;
+      }
+      cartaFecha(false);
+    });
+    window.addEventListener('pagehide', cartaLibera);
 
     gate.style.display = 'none';
     wrap.style.display = '';
@@ -2463,7 +2844,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'f887cda9488c';
+  var BUILD = '15c84a4f9a83';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

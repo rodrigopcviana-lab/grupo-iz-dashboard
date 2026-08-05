@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Banco de Horas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=f887cda9488c">
+<link rel="stylesheet" href="portal.css?v=15c84a4f9a83">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -473,7 +473,7 @@ window.msgAcessoNegado = function (nomePagina) {
   /* Hero: o custo total grande e imediato no topo (pedido do Rodrigo). */
   .bh-hero { display:flex; flex-wrap:wrap; gap:14px 30px; align-items:flex-end;
       background:var(--card); border:1px solid var(--border); border-left:4px solid var(--amarelo);
-      border-radius:14px; padding:16px 20px; margin-bottom:14px; }
+      border-radius:14px; padding:14px 20px; margin-bottom:10px; }
   .bh-hero-cost { flex:1; min-width:220px; }
   .bh-hero-lbl { font-size:11.5px; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em; }
   .bh-hero-escopo { color:var(--amarelo); margin-left:6px; text-transform:none; letter-spacing:0; font-weight:700; }
@@ -483,8 +483,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-mini { display:flex; flex-direction:column; gap:2px; }
   .bh-mini .v { font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }
   .bh-mini .l { font-size:10px; color:var(--text-3); text-transform:uppercase; letter-spacing:.05em; }
-  table.bh-porcasa .bh-casa { font-weight:600; }
-  table.bh-porcasa .bh-extremo { display:block; font-size:11px; color:var(--text-3); font-weight:400; margin-top:2px; }
+  table.bh-porcasa .bh-casa { font-weight:600; line-height:1.15; }
+  table.bh-porcasa .bh-extremo { display:block; font-size:11px; color:var(--text-3); font-weight:400; margin-top:1px; line-height:1.2; }
   table.bh-porcasa .bh-extremo b { font-weight:600; color:var(--text-2); }
   table.bh-porcasa .bh-cont-neg { color:var(--verm); }
   table.bh-porcasa .bh-cont-pos { color:var(--verde); }
@@ -497,12 +497,17 @@ window.msgAcessoNegado = function (nomePagina) {
   table.bh { width:100%; border-collapse:collapse; font-size:13px; }
   table.bh th { text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
       color:var(--text-3); padding:8px 8px; border-bottom:1px solid var(--border); }
-  table.bh td { padding:10px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  /* Linha de ~44px (E1/E9, PLANO_BH_V2.md): 7px de padding vertical + o botão
+     de ação de 30px = 44px de piso real — não é o container que capa a
+     lista, é a linha que ficou do tamanho certo. line-height apertado em
+     .bh-nome/.bh-sub (abaixo) garante que casa/setor/matrícula na 2ª linha
+     não estourem esse piso. */
+  table.bh td { padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
   table.bh tbody tr:hover { background:rgba(255,255,255,.03); }
   table.bh tbody tr:last-child td { border-bottom:none; }
   table.bh td.n, table.bh th.n { text-align:right; font-variant-numeric:tabular-nums; }
-  .bh-nome { font-weight:600; }
-  .bh-sub { color:var(--text-3); font-size:12px; }
+  .bh-nome { font-weight:600; line-height:1.15; }
+  .bh-sub { color:var(--text-3); font-size:12px; line-height:1.15; margin-top:1px; }
   .bh-saldo { font-variant-numeric:tabular-nums; font-weight:700; }
   /* Semântica de cor invertida (PLANO_BH_V2.md E1): do ponto de vista do
      caixa, saldo positivo é passivo (vira despesa no fechamento) — âmbar,
@@ -525,9 +530,9 @@ window.msgAcessoNegado = function (nomePagina) {
      ("o que este selo não garante") vêm junto do detalhe de propósito:
      um selo verde sem a ressalva convida a ler "os saldos foram auditados",
      que é justamente o que ele NÃO faz. */
-  .bh-selo { margin:0 0 12px; border:1px solid var(--border); border-radius:10px;
+  .bh-selo { margin:0 0 8px; border:1px solid var(--border); border-radius:10px;
     background:var(--card); overflow:hidden; }
-  .bh-selo-cab { display:flex; align-items:center; gap:9px; width:100%; padding:9px 12px;
+  .bh-selo-cab { display:flex; align-items:center; gap:9px; width:100%; padding:7px 12px;
     background:transparent; border:0; color:var(--text-2); font-size:12.5px;
     text-align:left; cursor:pointer; font-family:inherit; }
   .bh-selo-cab:hover { background:rgba(255,255,255,.03); }
@@ -560,7 +565,7 @@ window.msgAcessoNegado = function (nomePagina) {
      CLASSE com display:none não volta com style.display='' — ver a "Lição de
      CSS" do Mural v3 no CLAUDE.md). */
   .bh-atipico { border:1px solid #4a3568; background:#241a33; border-radius:10px;
-    padding:10px 12px; margin:14px 0 0; font-size:12.5px; color:var(--text-2); }
+    padding:8px 12px; margin:10px 0 0; font-size:12.5px; color:var(--text-2); }
   .bh-atipico b { color:#c9a6f2; }
   .bh-atipico .bh-atipico-quem { display:block; margin-top:4px; color:var(--text-3); }
   table.bh-portime tr.bh-time-linha { cursor:pointer; }
@@ -570,11 +575,11 @@ window.msgAcessoNegado = function (nomePagina) {
   table.bh-portime .bh-cont-neg { color:var(--verm); }
   table.bh-portime .bh-cont-pos { color:var(--verde); }
   table.bh-portime td.tot { border-top:2px solid var(--border); font-weight:700; }
-  .bh-nome-wrap { display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
-  .bh-tend { font-size:12px; }
+  .bh-nome-wrap { display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; line-height:1.15; }
+  .bh-tend { font-size:12px; line-height:1.15; }
   .bh-tend.melhorando { color:var(--verde); }
   .bh-tend.piorando { color:var(--verm); }
-  .bh-spark { display:block; color:var(--text-3); margin-bottom:2px; }
+  .bh-spark { display:block; color:var(--text-3); margin-bottom:1px; }
   .bh-spark.melhorando { color:var(--verde); }
   .bh-spark.piorando { color:var(--verm); }
   .bh-vazio { text-align:center; color:var(--text-3); padding:30px 10px; }
@@ -582,13 +587,16 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-fechamento { background:var(--card); border:1px solid var(--border); border-radius:12px;
       padding:12px 14px; margin-bottom:14px; font-size:13.5px; display:none; }
   .bh-fechamento b { color:var(--text); }
-  .bh-plano { margin:22px 0 14px; }
+  .bh-plano { margin:12px 0 8px; }
   .bh-plano h2 { font-size:16px; margin:0 0 4px; }
-  .bh-plano .sub { margin:0 0 12px; }
+  .bh-plano .sub { margin:0 0 8px; }
   table.bh-plano-tb { width:100%; border-collapse:collapse; font-size:13px; }
   table.bh-plano-tb th { text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
       color:var(--text-3); padding:8px 8px; border-bottom:1px solid var(--border); }
-  table.bh-plano-tb td { padding:10px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  /* Mesmo piso de ~44px da tabela.bh (E9): 6px de padding vertical (esta
+     tabela não tem botão de 30px pautando a altura em toda linha — só a
+     "Ação" das Desativadas tem — então pode ser 1px mais justa). */
+  table.bh-plano-tb td { padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
   table.bh-plano-tb tbody tr:last-child td { border-bottom:none; }
   table.bh-plano-tb td.n, table.bh-plano-tb th.n { text-align:right; font-variant-numeric:tabular-nums; }
   .bh-plano-acao { font-weight:600; color:var(--acc); }
@@ -603,7 +611,12 @@ window.msgAcessoNegado = function (nomePagina) {
   /* Lista de pessoas tem 2 botões (desativar + sinalizar RH); as demais
      tabelas (desativadas) têm só 1 — override mais específico só onde tem
      os dois, pra não alargar a coluna nas outras. */
-  table.bh td.bh-acao-col { width:76px; }
+  /* 88px, não 76px (achado do E9): com padding:7px 8px a área de conteúdo
+     de 76px sobra só 60px pros 2 botões de 30px + gap de 4px (64px) — 4px
+     de menos já empurrava o par pra 2 linhas e sozinho respondia por boa
+     parte da altura da linha (64px de botão em vez de 30px). 88px dá
+     folga de verdade (72px de conteúdo). */
+  table.bh td.bh-acao-col { width:88px; }
   .bh-acao-grupo { display:inline-flex; gap:4px; flex-wrap:wrap; justify-content:center; }
   #bh-desativadas-wrap { opacity:.85; }
   #bh-desativadas-wrap h2 { color:var(--text-2); }
@@ -647,7 +660,7 @@ window.msgAcessoNegado = function (nomePagina) {
      97 pessoas, 4.690h, o que a leitura de hoje realmente pesa — porque foi
      justamente um hero "scoped" mostrando 10% da exposição real que
      motivou a reforma (PLANO_BH_V2.md §1). */
-  .bh-pan-herois { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+  .bh-pan-herois { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px; }
   .bh-pan-heroi { flex:1; min-width:230px; padding-left:14px; border-left:3px solid var(--border); }
   .bh-pan-heroi.deve { border-left-color:var(--amarelo); }
   .bh-pan-heroi .v { font-size:30px; font-weight:800; line-height:1.1;
@@ -658,7 +671,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-pan-heroi .n { font-size:11.5px; color:var(--text-3); margin-top:3px; }
   .bh-pan-lbl { font-size:10.5px; color:var(--text-3); text-transform:uppercase;
       letter-spacing:.06em; display:block; margin-bottom:6px; }
-  .bh-pan-barra { display:flex; height:24px; border-radius:8px; overflow:hidden; margin:2px 0 6px; }
+  .bh-pan-barra { display:flex; height:24px; border-radius:8px; overflow:hidden; margin:2px 0 4px; }
   .bh-pan-barra i { display:block; height:100%; }
   .bh-pan-leg { display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px;
       color:var(--text-2); margin-bottom:18px; }
@@ -666,16 +679,16 @@ window.msgAcessoNegado = function (nomePagina) {
       background:rgba(224,176,92,.12); color:var(--amarelo); font-weight:600; }
   table.bh-matriz td.tot { border-top:2px solid var(--border); font-weight:700; }
   table.bh-matriz td.bh-sem-cobertura { color:var(--text-3); font-size:11.5px; text-align:center; }
-  .bh-pan-cards { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
-  .bh-pan-card { flex:1; min-width:170px; border:1px solid var(--border); border-radius:10px; padding:10px 13px; }
+  .bh-pan-cards { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
+  .bh-pan-card { flex:1; min-width:170px; border:1px solid var(--border); border-radius:10px; padding:8px 13px; }
   .bh-pan-card.alerta { border-color:#4a3d22; background:#221c10; }
   .bh-pan-card .v { font-size:21px; font-weight:700; }
   .bh-pan-card.alerta .v { color:var(--amarelo); }
   .bh-pan-card .l { font-size:11.5px; color:var(--text-2); line-height:1.45; }
 
   /* Exportação em PDF/Excel (E4, E5) — presente em todas as vistas */
-  .bh-exp { display:flex; gap:9px; align-items:center; flex-wrap:wrap; padding:13px 18px 0;
-      border-top:1px solid var(--border); margin-top:4px; }
+  .bh-exp { display:flex; gap:9px; align-items:center; flex-wrap:wrap; padding:10px 18px 0;
+      border-top:1px solid var(--border); margin-top:2px; }
   .bh-btn { font-size:12.5px; border:1px solid var(--border); border-radius:9px; padding:7px 13px;
       color:var(--text-2); display:inline-flex; align-items:center; gap:6px; background:transparent;
       cursor:pointer; }
@@ -683,6 +696,16 @@ window.msgAcessoNegado = function (nomePagina) {
   .bh-btn.forte { border-color:var(--acc); color:var(--acc); }
   .bh-btn.forte:hover { background:rgba(208,163,82,.10); }
   .bh-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+  /* Teto + rolagem própria da lista de Pessoas em QUALQUER largura (E9,
+     PLANO_BH_V2.md — achado do harness: sem isto a vista inteira crescia
+     com o número de pessoas, 8.317px pra 96 gente da Cozinha, empurrando a
+     página igual ao número pré-reforma). O conteúdo continua todo lá —
+     rola por dentro, não é lista truncada. A regra mobile abaixo (44vh)
+     vem DEPOIS no arquivo e por isso ganha em <=640px, sem precisar de
+     mais especificidade. */
+  .bh-panel-lista { max-height:60vh; overflow-y:auto; }
+  .bh-panel-lista thead th { position:sticky; top:0; background:var(--card); z-index:1; }
 
   @media (max-width: 640px) {
     .bh-pan-heroi .v { font-size:26px; }
@@ -831,7 +854,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
   <div id="bh-pan-matriz-wrap" style="display:none">
     <span class="bh-pan-lbl">Horas a pagar por casa e setor</span>
-    <div class="panel" style="padding:8px 10px;overflow-x:auto;margin-bottom:18px">
+    <div class="panel" style="padding:6px 8px;overflow-x:auto;margin-bottom:12px">
     <table class="bh-matriz"><thead><tr>
       <th>Casa</th><th class="n">Bar</th><th class="n">Salão</th><th class="n">Cozinha</th><th class="n">Total</th>
     </tr></thead>
@@ -870,7 +893,7 @@ window.msgAcessoNegado = function (nomePagina) {
   <div class="bh-plano" id="bh-portime-wrap" style="display:none">
     <h2>Por time</h2>
     <p class="sub">Bar, salão e cozinha lado a lado — para ver de onde vem o problema sem trocar de aba e perder a comparação. Respeita o filtro de casa acima; clicar numa linha troca o time selecionado.</p>
-    <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <div class="panel" style="padding:6px 8px;overflow-x:auto">
     <table class="bh-plano-tb bh-portime"><thead><tr>
       <th>Time</th>
       <th class="n">Pessoas</th>
@@ -886,7 +909,7 @@ window.msgAcessoNegado = function (nomePagina) {
   <div class="bh-plano" id="bh-porcasa-wrap" style="display:none">
     <h2>Por casa</h2>
     <p class="sub">Cada casa no time selecionado. "Horas extras a pagar" é a soma do que a empresa desembolsaria pagando as horas positivas em dinheiro; "saldo líquido" soma tudo (positivos − negativos) e diz se, no geral, a casa deve horas ou tem horas a favor.</p>
-    <div class="panel" style="padding:8px 10px;overflow-x:auto">
+    <div class="panel" style="padding:6px 8px;overflow-x:auto">
     <table class="bh-plano-tb bh-porcasa"><thead><tr>
       <th>Casa</th>
       <th class="n">Pessoas</th>
@@ -1483,15 +1506,14 @@ window.msgAcessoNegado = function (nomePagina) {
   // Resumo "Por casa" — uma linha por casa do time atual, + linha de total
   // quando há mais de uma. Não respeita filtro de casa/busca de propósito:
   // é a visão por casa, filtrar seria contraditório.
-  function extremoLinha(rotulo, ex) {
-    var s = document.createElement('span');
-    s.className = 'bh-extremo';
-    s.appendChild(document.createTextNode(rotulo + ': '));
+  function extremoTrecho(rotulo, ex) {
+    var f = document.createDocumentFragment();
+    f.appendChild(document.createTextNode(rotulo + ': '));
     var b = document.createElement('b');
     b.textContent = ex.nome;
-    s.appendChild(b);
-    s.appendChild(document.createTextNode(' (' + (ex.saldo_texto || fmtSaldoAgg(ex.saldo_minutos)) + ')'));
-    return s;
+    f.appendChild(b);
+    f.appendChild(document.createTextNode(' (' + (ex.saldo_texto || fmtSaldoAgg(ex.saldo_minutos)) + ')'));
+    return f;
   }
   function celContagem(neg, pos, classePos) {
     var t = document.createElement('td');
@@ -1524,8 +1546,18 @@ window.msgAcessoNegado = function (nomePagina) {
       if (ehTotal) tdCasa.className = 'tot';
       var nomeEl = document.createElement('span'); nomeEl.className = 'bh-casa'; nomeEl.textContent = c.casa;
       tdCasa.appendChild(nomeEl);
-      if (!ehTotal && c.maiorDev) tdCasa.appendChild(extremoLinha('maior devedor', c.maiorDev));
-      if (!ehTotal && c.maiorCred) tdCasa.appendChild(extremoLinha('maior a favor', c.maiorCred));
+      // Os dois extremos (maior devedor + maior a favor) iam em 2 linhas
+      // fixas (2 elementos block), mesmo quando cabiam numa só — 3 linhas
+      // garantidas por linha da tabela. Uma linha só (com " · " no meio),
+      // que quebra sozinha se precisar — mesmo dado, menos altura forçada
+      // (achado do E9, PLANO_BH_V2.md).
+      if (!ehTotal && (c.maiorDev || c.maiorCred)) {
+        var extEl = document.createElement('span'); extEl.className = 'bh-extremo';
+        if (c.maiorDev) extEl.appendChild(extremoTrecho('maior devedor', c.maiorDev));
+        if (c.maiorDev && c.maiorCred) extEl.appendChild(document.createTextNode(' · '));
+        if (c.maiorCred) extEl.appendChild(extremoTrecho('maior a favor', c.maiorCred));
+        tdCasa.appendChild(extEl);
+      }
       tr.appendChild(tdCasa);
       tr.appendChild(td(String(c.n), 'n' + (ehTotal ? ' tot' : '')));
       var tdS = document.createElement('td'); tdS.className = 'n' + (ehTotal ? ' tot' : '');
@@ -4454,7 +4486,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'f887cda9488c';
+  var BUILD = '15c84a4f9a83';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

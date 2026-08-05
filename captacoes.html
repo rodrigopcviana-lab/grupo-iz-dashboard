@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
-<title>Adedonha de cocktails · Bar.IZ — Grupo IZ</title>
+<title>Captações · Bar.IZ — Grupo IZ</title>
 <link rel="stylesheet" href="portal.css?v=15c84a4f9a83">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
@@ -425,246 +425,1989 @@ window.msgAcessoNegado = function (nomePagina) {
 })();</script>
 
 
-<h1>Adedonha de cocktails</h1>
-<p class="sub" id="adh-sub">Uma letra, 90 segundos, 5 categorias — no tablet do bar.</p>
-
-<div class="panel" id="adh-gate">
-  <h2>Acesso restrito</h2>
-  <p class="sub" id="adh-msg" style="margin:4px 0 0" role="status" aria-live="polite">Verificando seu acesso…</p>
-</div>
+<h1>Captações</h1>
+<p class="sub">Roteiro, execução e volume de cada sessão de foto e vídeo — nas 7 casas.</p>
 
 <style>
-  .adh-letra { text-align:center; padding:26px 12px; background:var(--card); border:1.5px solid var(--border); border-radius:16px; margin-bottom:16px; }
-  .adh-letra .grande { font-family:var(--serif); font-size:72px; line-height:1; }
-  .adh-letra .crono { font-size:13px; color:var(--text-2); margin-top:6px; }
-  .adh-btn { border:none; border-radius:99px; padding:13px 28px; font-size:14px; font-weight:700; cursor:pointer; }
-  .adh-btn.ir { background:var(--acc); color:var(--acc-txt); }
-  .adh-btn.enviar { background:var(--verde); color:#0a1a10; width:100%; padding:13px; margin-top:10px; }
-  .adh-btn.revisar { background:var(--lilas); color:#1a1420; width:100%; padding:13px; margin-top:14px; }
-  .adh-form { background:var(--card); border:1.5px solid var(--border); border-radius:15px; padding:14px; margin-bottom:14px; }
-  .adh-campo { margin-bottom:10px; }
-  .adh-campo label { display:block; font-size:12px; color:var(--text-2); margin-bottom:4px; }
-  .adh-campo input[type=text] { width:100%; padding:10px 11px; font-size:14px; border-radius:9px; border:1px solid var(--border); background:var(--card); color:var(--text); }
-  .adh-jogaram { font-size:12.5px; color:var(--text-2); margin-bottom:14px; }
-  .adh-jogaram b { color:var(--verde); }
-  .adh-tabela { overflow-x:auto; margin-bottom:14px; }
-  .adh-tabela table { border-collapse:collapse; width:100%; font-size:12.5px; }
-  .adh-tabela th, .adh-tabela td { border:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
-  .adh-tabela th { background:var(--card2,#2a2419); color:var(--text-2); font-weight:600; white-space:nowrap; }
-  .adh-resp { margin-bottom:4px; }
-  .adh-resp.dup { color:var(--amarelo); }
-  .adh-resp.vazia { color:var(--text-3); font-style:italic; }
-  .adh-pts { display:flex; gap:3px; margin-top:3px; }
-  .adh-pts button { flex:1; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--text-2); font-size:11px; padding:3px; cursor:pointer; }
-  .adh-pts button.on { background:var(--acc); color:var(--acc-txt); border-color:var(--acc); }
-  .adh-bonus { display:flex; align-items:center; gap:6px; font-size:12px; margin-top:6px; }
-  .adh-total { font-family:var(--serif); font-size:18px; text-align:center; }
-  .adh-ok { text-align:center; padding:22px; background:var(--card); border:1.5px solid var(--verde); border-radius:15px; }
+  #cap-wrap[hidden] { display: none !important; }
+  .cap-chips { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; }
+  .cap-chip { font-size:12.5px; padding:6px 13px; border-radius:999px; cursor:pointer;
+    background:var(--card); color:var(--text-2); border:1px solid var(--border); }
+  .cap-chip.on { background:var(--chip-cor,var(--acc)); color:#171310; border-color:var(--chip-cor,var(--acc)); font-weight:600; }
+  .cap-chip.travada { cursor:default; }
+  .cap-chip.travada:not(.on) { opacity:.4; }
+  .cap-vsel { display:flex; gap:6px; margin:0 0 14px; flex-wrap:wrap; }
+  .cap-vsel button { flex:1 1 auto; min-width:104px; display:flex; align-items:center; justify-content:center;
+    gap:6px; padding:9px 8px; font:inherit; font-size:12.5px; cursor:pointer; border-radius:10px;
+    border:1px solid var(--border); background:var(--card); color:var(--text-3); }
+  .cap-vsel button.on { border-color:var(--setor-marketing); color:var(--text); }
+  .cap-vsel svg { width:14px; height:14px; flex:none; }
+  .cap-card { background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:14px; margin:0 0 12px; }
+  .cap-card h3 { font-size:13px; font-weight:600; margin:0 0 8px; }
+  .cap-cab-linha { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 8px; }
+  .cap-cab-linha .nome { font-family:Georgia,serif; font-size:17px; flex:1 1 180px; min-width:0; }
+  .cap-rel { font-variant-numeric:tabular-nums; color:var(--acc); font-family:Georgia,serif; font-size:17px; }
+  .cap-tag { display:inline-block; font-size:10.5px; padding:2px 8px; border-radius:999px;
+    border:1px solid var(--border); color:var(--text-2); white-space:nowrap; }
+  .cap-tag.casa { border:0; color:#16130f; font-weight:600; background:var(--chip-cor,var(--acc)); }
+  .cap-tag.ok { color:#9fe1cb; border-color:#3c5a4f; }
+  .cap-tag.pend { color:var(--amarelo); border-color:#5a4a2a; }
+  .cap-meta { font-size:12px; color:var(--text-3); margin:0 0 8px; }
+  .cap-roteiro { font-size:12.5px; color:var(--text-2); border-left:2px solid var(--border);
+    padding-left:11px; margin:8px 0 0; white-space:pre-wrap; }
+  /* 120px e não 96px: "APROVEITAMENTO" em caixa alta com letter-spacing não
+     cabe em 96 e vazava o cartão a 375px (medido na página renderizada, não
+     no mockup). `overflow-wrap` é o cinto: palavra longa nova quebra em vez
+     de vazar de novo. */
+  .cap-resumo { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin:0 0 12px; }
+  .cap-kpi { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:11px 12px; }
+  .cap-kpi .v { font-size:20px; font-family:Georgia,serif; line-height:1.15; }
+  .cap-kpi .d { font-size:10.5px; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em;
+    margin-top:4px; overflow-wrap:anywhere; }
+  .cap-rol { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%; }
+  table.cap-tb { width:100%; border-collapse:collapse; font-size:12.5px; min-width:560px; }
+  table.cap-tb th { text-align:left; font-weight:400; color:var(--text-3); font-size:10.5px;
+    letter-spacing:.06em; text-transform:uppercase; padding:0 8px 7px 0; border-bottom:1px solid var(--border); }
+  table.cap-tb td { padding:8px 8px 8px 0; border-bottom:1px solid var(--border); vertical-align:top; }
+  table.cap-tb tr:last-child td { border-bottom:0; }
+  table.cap-tb .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  table.cap-tb .fraco { color:var(--text-3); }
+  .cap-acao { font:inherit; font-size:11.5px; padding:4px 10px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--border); background:var(--bg); color:var(--text-2); margin:0 4px 4px 0; }
+  .cap-acao:hover { border-color:var(--setor-marketing); }
+  .cap-acao:disabled { opacity:.45; cursor:default; }
+  .cap-acao.perigo { color:#ff9aa8; }
+  .cap-acao svg { width:12px; height:12px; vertical-align:-2px; }
+  .cap-linha { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .cap-go { background:var(--setor-marketing); color:#10201e; border:0; border-radius:8px;
+    padding:10px 18px; font-size:13px; font-weight:600; cursor:pointer; }
+  .cap-go:disabled { opacity:.5; cursor:default; }
+  .cap-campo { display:flex; flex-direction:column; gap:4px; margin:0 0 10px; }
+  .cap-campo label { font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em; }
+  .cap-campo input, .cap-campo select, .cap-campo textarea { width:100%; box-sizing:border-box;
+    padding:9px 11px; font:inherit; font-size:16px; background:var(--bg); color:var(--text);
+    border:1px solid var(--border); border-radius:9px; }
+  .cap-campo textarea { min-height:74px; resize:vertical; font-size:14px; }
+  .cap-g2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0 10px; }
+  .cap-msg { font-size:12.5px; margin:9px 0 0; min-height:16px; }
+  .cap-msg.erro { color:#ff9aa8; }
+  .cap-msg.bom { color:#8fd6a8; }
+  .cap-vazio { color:var(--text-3); font-size:13px; padding:18px 2px; text-align:center; }
+  .cap-nota { font-size:11.5px; color:var(--text-3); margin-top:10px;
+    border-top:1px solid var(--border); padding-top:8px; }
+  .cap-hist-l { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; margin:0 0 12px; }
+  .cap-hist-l .cap-campo { flex:1 1 130px; margin:0; }
+  /* Terceira linha do KPI: é onde mora "parcial — falta preço de N insumos".
+     Um total que inclui insumo sem preço TEM que dizer isso na própria caixa
+     (§4.6 do contrato): a contagem ao lado é a diferença entre um número
+     completo e um número que finge estar completo. */
+  .cap-kpi .x { font-size:10.5px; color:var(--amarelo); margin-top:4px; line-height:1.3; }
+  .cap-kpi .x.neutro { color:var(--text-3); }
+  .cap-barra { display:flex; align-items:center; gap:9px; margin:0 0 8px; font-size:12px; }
+  .cap-barra .rot { flex:0 0 78px; min-width:0; }
+  .cap-barra .tr { flex:1 1 auto; height:8px; border-radius:999px; background:var(--border); overflow:hidden; }
+  .cap-barra .tr i { display:block; height:100%; background:var(--setor-marketing); }
+  .cap-barra .v { flex:0 0 52px; text-align:right; font-variant-numeric:tabular-nums; }
+  .cap-barra.sem .v { color:var(--text-3); }
+  .cap-pl { display:flex; gap:9px; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--border); }
+  .cap-pl:last-child { border-bottom:0; padding-bottom:0; }
+  .cap-pl input[type=checkbox] { margin:2px 0 0; width:17px; height:17px; flex:none; }
+  .cap-pl .corpo { flex:1 1 auto; min-width:0; }
+  .cap-pl .tit { font-size:13px; overflow-wrap:anywhere; }
+  .cap-pl .meta { font-size:11.5px; color:var(--text-3); margin-top:2px; overflow-wrap:anywhere; }
+  .cap-ul { margin:0; padding-left:18px; color:var(--text-2); font-size:12.5px; }
+  .cap-ul li { margin:0 0 6px; }
+  .cap-declara { font-size:12.5px; color:var(--text-2); padding:7px 0; border-bottom:1px solid var(--border); }
+  .cap-declara:last-child { border-bottom:0; }
+  /* A sub-linha só existe no celular: ela CARREGA o conteúdo das colunas que
+     somem abaixo, nunca some com informação. Toggle 100% por media query —
+     nenhum JS mexe neste display (a Lição 1 é sobre JS limpando inline). */
+  .cap-sub { display:none; font-size:11px; color:var(--text-3); margin-top:3px; }
+  @media (max-width:560px) {
+    .cap-sub { display:block; }
+    table.cap-tb { min-width:0; }
+    /* Roteiro: Tipo/Alvo/Direção descem pra sub-linha, e as AÇÕES passam a
+       caber sem rolagem lateral — marcar item é a ação do meio da sessão,
+       feita no celular, e escondê-la atrás de um scroll horizontal seria
+       esconder a própria função da tela. */
+    #cap-itens th:nth-child(2), #cap-itens td:nth-child(2),
+    #cap-itens th:nth-child(3), #cap-itens td:nth-child(3),
+    #cap-itens th:nth-child(5), #cap-itens td:nth-child(5) { display:none; }
+    /* Histórico: Casa/Peças/Tempo descem pra sub-linha. */
+    #cap-h-tb th:nth-child(2), #cap-h-tb td:nth-child(2),
+    #cap-h-tb th:nth-child(4), #cap-h-tb td:nth-child(4),
+    #cap-h-tb th:nth-child(5), #cap-h-tb td:nth-child(5) { display:none; }
+    /* Custos: Item/Fonte/Unitário descem pra sub-linha. Insumo, quantidade e
+       TOTAL ficam — o total é a razão de a tabela existir, e o travessão de
+       "sem preço" é informação, não coluna decorativa: some junto do unitário
+       só porque a sub-linha o repete por extenso. */
+    #cap-cu-tb th:nth-child(2), #cap-cu-tb td:nth-child(2),
+    #cap-cu-tb th:nth-child(3), #cap-cu-tb td:nth-child(3),
+    #cap-cu-tb th:nth-child(5), #cap-cu-tb td:nth-child(5) { display:none; }
+    /* Ritmo por mês: peças de foto e de vídeo descem pra sub-linha (contadas
+       separadas lá, nunca somadas — §9.5 do plano). */
+    #cap-me-mes th:nth-child(3), #cap-me-mes td:nth-child(3),
+    #cap-me-mes th:nth-child(4), #cap-me-mes td:nth-child(4) { display:none; }
+  }
+  /* KPI de destaque: o número que a aba existe pra responder (custo da
+     captação, aproveitamento, itens pendentes). Só a escala muda — a régua de
+     "—" para ausência é a mesma dos outros. */
+  .cap-kpi.hero .v { font-size:27px; color:var(--acc); }
+  .cap-barra .rot .cap-tag.casa { font-size:10px; }
+  .cap-pl .cap-tag { flex:none; }
+  .cap-pa-grupo { font-size:11px; color:var(--text-3); text-transform:uppercase;
+    letter-spacing:.06em; margin:12px 0 2px; }
+  .cap-pa-grupo:first-child { margin-top:0; }
+  @media (max-width:430px) { .cap-cab-linha .nome { font-size:15.5px; } }
 </style>
 
-<div id="adh-corpo" style="display:none">
+<div class="panel" id="cap-gate">
+  <h2>Acesso restrito</h2>
+  <p class="sub" id="cap-msg" style="margin:4px 0 0" role="status" aria-live="polite">Verificando seu acesso…</p>
+</div>
 
-  <div id="adh-view-inicio">
-    <div class="adh-letra"><div class="grande">?</div><div class="crono">Toque em sortear pra começar a rodada.</div></div>
-    <button class="adh-btn ir" id="adh-sortear" style="width:100%">Sortear letra</button>
-  </div>
+<div id="cap-wrap" hidden>
+  <div class="cap-chips" id="cap-chips"></div>
+  <div class="cap-vsel" id="cap-vsel"></div>
 
-  <div id="adh-view-rodada" style="display:none">
-    <div class="adh-letra"><div class="grande" id="adh-letra-atual"></div><div class="crono" id="adh-crono"></div></div>
-    <p class="adh-jogaram" id="adh-jogaram"></p>
-    <div class="adh-form">
-      <div class="adh-campo"><label for="adh-nome">Seu nome</label><input type="text" id="adh-nome" placeholder="Nome completo" autocomplete="off"></div>
-      <div id="adh-categorias"></div>
-      <div id="adh-aviso-envio"></div>
-      <button class="adh-btn enviar" id="adh-enviar">Enviar respostas</button>
+  <!-- VISTA · Captação ---------------------------------------------------- -->
+  <div id="cap-v-captacao">
+    <div class="cap-card">
+      <div class="cap-linha" style="margin-top:0">
+        <div class="cap-campo" style="flex:1 1 200px;margin:0">
+          <label for="cap-sel">Captação</label>
+          <select id="cap-sel"></select>
+        </div>
+        <button type="button" class="cap-acao" id="cap-bt-nova" style="display:none"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nova captação</button>
+        <button type="button" class="cap-acao" id="cap-bt-recarrega"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3.5V9h-5.5"/></svg> Atualizar</button>
+      </div>
+      <p class="cap-msg" id="cap-sel-msg" role="status" aria-live="polite"></p>
     </div>
-    <button class="adh-btn revisar" id="adh-encerrar" style="display:none">Encerrar e revisar (chefe/coord)</button>
+
+    <div class="cap-card" id="cap-nova-form" style="display:none">
+      <h3>Nova captação</h3>
+      <div class="cap-g2">
+        <div class="cap-campo"><label for="cap-nv-casa">Casa</label><select id="cap-nv-casa"></select></div>
+        <div class="cap-campo"><label for="cap-nv-data">Data</label><input type="date" id="cap-nv-data"></div>
+      </div>
+      <div class="cap-campo"><label for="cap-nv-titulo">Título</label><input type="text" id="cap-nv-titulo" maxlength="120" placeholder="Carta de verão — autorais"></div>
+      <div class="cap-campo"><label for="cap-nv-part">Participantes (separados por vírgula)</label><input type="text" id="cap-nv-part" placeholder="Raphael, Fabio"></div>
+      <div class="cap-campo"><label for="cap-nv-roteiro">Roteiro (a ideia da sessão)</label><textarea id="cap-nv-roteiro" maxlength="4000" placeholder="Noite caindo, luz quente lateral, foco no gelo."></textarea></div>
+      <div class="cap-linha">
+        <button type="button" class="cap-go" id="cap-nv-salvar">Criar em Rascunho</button>
+        <button type="button" class="cap-acao" id="cap-nv-cancelar">Cancelar</button>
+      </div>
+      <p class="cap-msg" id="cap-nv-msg" role="status" aria-live="polite"></p>
+    </div>
+
+    <div id="cap-detalhe" style="display:none">
+      <div class="cap-card" id="cap-cab"></div>
+      <div class="cap-resumo" id="cap-resumo"></div>
+
+      <div class="cap-card">
+        <h3>Roteiro</h3>
+        <div class="cap-rol"><table class="cap-tb" id="cap-itens"><tbody></tbody></table></div>
+        <div class="cap-linha" id="cap-itens-acoes"></div>
+        <p class="cap-msg" id="cap-itens-msg" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="cap-card" id="cap-painel-item" style="display:none">
+        <h3 id="cap-pi-tit">Item</h3>
+        <div class="cap-campo" id="cap-pi-motivo-cx" style="display:none">
+          <label for="cap-pi-motivo">Motivo (obrigatório para “Não captado”)</label>
+          <input type="text" id="cap-pi-motivo" maxlength="400" placeholder="acabou o Campari no bar">
+        </div>
+        <div class="cap-g2">
+          <div class="cap-campo"><label for="cap-pi-pecas">Peças que saíram (opcional)</label><input type="number" id="cap-pi-pecas" min="0" step="1" inputmode="numeric"></div>
+          <div class="cap-campo"><label for="cap-pi-un">Unidades preparadas (opcional)</label><input type="number" id="cap-pi-un" min="0" step="1" inputmode="numeric"></div>
+        </div>
+        <div class="cap-linha">
+          <button type="button" class="cap-go" id="cap-pi-salvar">Salvar</button>
+          <button type="button" class="cap-acao" id="cap-pi-cancelar">Cancelar</button>
+        </div>
+        <p class="cap-msg" id="cap-pi-msg" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="cap-card" id="cap-add-form" style="display:none">
+        <h3>Adicionar item ao roteiro</h3>
+        <div class="cap-campo"><label for="cap-ad-item">Item</label><input type="text" id="cap-ad-item" maxlength="120" placeholder="Negroni"></div>
+        <div class="cap-g2">
+          <div class="cap-campo"><label for="cap-ad-tipo">Tipo</label><select id="cap-ad-tipo"></select></div>
+          <div class="cap-campo"><label for="cap-ad-alvo">Alvo</label><select id="cap-ad-alvo"></select></div>
+        </div>
+        <div class="cap-campo"><label for="cap-ad-ref">Referência na carta (opcional)</label><input type="text" id="cap-ad-ref" maxlength="120" placeholder="Negroni"></div>
+        <div class="cap-campo"><label for="cap-ad-dir">Direção (opcional)</label><input type="text" id="cap-ad-dir" maxlength="600" placeholder="close no gelo, fundo escuro"></div>
+        <div class="cap-linha">
+          <button type="button" class="cap-go" id="cap-ad-salvar">Adicionar</button>
+          <button type="button" class="cap-acao" id="cap-ad-cancelar">Cancelar</button>
+        </div>
+        <p class="cap-msg" id="cap-ad-msg" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="cap-card" id="cap-entrega" style="display:none">
+        <h3>Entrega</h3>
+        <div class="cap-g2">
+          <div class="cap-campo"><label for="cap-en-foto">Peças de foto</label><input type="number" id="cap-en-foto" min="0" step="1" inputmode="numeric"></div>
+          <div class="cap-campo"><label for="cap-en-video">Peças de vídeo</label><input type="number" id="cap-en-video" min="0" step="1" inputmode="numeric"></div>
+        </div>
+        <div class="cap-campo"><label for="cap-en-link">Link do material (Drive)</label><input type="url" id="cap-en-link" placeholder="https://"></div>
+        <div class="cap-linha"><button type="button" class="cap-go" id="cap-en-salvar">Salvar entrega</button></div>
+        <p class="cap-msg" id="cap-en-msg" role="status" aria-live="polite"></p>
+        <p class="cap-nota">Foto e vídeo são contados <b>separados</b>, e ficam vazios até alguém informar —
+        vazio não é zero. O material bruto nunca sobe para o portal: aqui vai o link da pasta final.</p>
+      </div>
+    </div>
   </div>
 
-  <div id="adh-view-revisao" style="display:none">
-    <h2 style="font-size:16px;margin:0 0 8px">Revisão — letra <span id="adh-rev-letra"></span></h2>
-    <p class="cpt-sub2">Marque cada resposta como 10 (única), 5 (repetida) ou 0 (errada/em branco). Sugestão automática já vem marcada — confira antes de fechar.</p>
-    <div class="adh-tabela"><table><thead><tr><th>Pessoa</th><th>Clássico</th><th>Destilado</th><th>Técnica</th><th>Guarnição</th><th>Cristaleria</th><th>1º a terminar</th><th>Total</th></tr></thead>
-      <tbody id="adh-rev-corpo"></tbody></table></div>
-    <div id="adh-aviso-fechar"></div>
-    <button class="adh-btn revisar" id="adh-fechar">Fechar rodada</button>
+  <!-- VISTA · Histórico --------------------------------------------------- -->
+  <div id="cap-v-historico" style="display:none">
+    <div class="cap-card">
+      <div class="cap-hist-l">
+        <div class="cap-campo"><label for="cap-h-de">De</label><input type="date" id="cap-h-de"></div>
+        <div class="cap-campo"><label for="cap-h-ate">Até</label><input type="date" id="cap-h-ate"></div>
+        <div class="cap-campo"><label for="cap-h-status">Status</label><select id="cap-h-status"></select></div>
+      </div>
+      <div class="cap-linha" style="margin-top:0">
+        <button type="button" class="cap-go" id="cap-h-filtrar">Filtrar</button>
+        <button type="button" class="cap-acao" id="cap-h-limpar">Limpar</button>
+        <button type="button" class="cap-acao" id="cap-h-csv">Exportar CSV</button>
+      </div>
+      <p class="cap-msg" id="cap-h-msg" role="status" aria-live="polite"></p>
+    </div>
+    <div class="cap-card">
+      <div class="cap-rol"><table class="cap-tb" id="cap-h-tb"><tbody></tbody></table></div>
+      <p class="cap-nota" id="cap-h-nota"></p>
+    </div>
   </div>
 
-  <div id="adh-view-fechado" style="display:none">
-    <div class="adh-ok"><h2 style="margin:0 0 6px">Rodada fechada</h2>
-      <p class="sub" style="margin:0" id="adh-fechado-msg"></p></div>
+  <!-- VISTA · Custos ------------------------------------------------------ -->
+  <div id="cap-v-custos" style="display:none">
+    <div class="cap-card">
+      <div class="cap-linha" style="margin-top:0">
+        <div class="cap-campo" style="flex:1 1 200px;margin:0">
+          <label for="cap-cu-sel">Captação</label>
+          <select id="cap-cu-sel"></select>
+        </div>
+      </div>
+      <p class="cap-msg" id="cap-cu-msg" role="status" aria-live="polite"></p>
+    </div>
+
+    <div id="cap-cu-corpo" style="display:none">
+      <div class="cap-resumo" id="cap-cu-kpis"></div>
+
+      <div class="cap-card">
+        <h3>Lançamentos</h3>
+        <div class="cap-rol"><table class="cap-tb" id="cap-cu-tb"><tbody></tbody></table></div>
+        <p class="cap-msg" id="cap-cu-tb-msg" role="status" aria-live="polite"></p>
+        <p class="cap-nota">Insumo sem preço aparece como travessão e é <b>contado</b> ao lado do total —
+        nunca como zero: preço zero no catálogo é falta de cadastro, não insumo de graça.
+        Corrigir um lançamento é apagar e lançar de novo — o custo unitário é o carimbo do instante,
+        não um espelho da ficha. E hora de equipe nunca vira dinheiro: sai em horas-pessoa, na aba Métricas.</p>
+      </div>
+
+      <div class="cap-card" id="cap-cu-form" style="display:none">
+        <h3>Lançar consumo</h3>
+        <div class="cap-campo"><label for="cap-cu-insumo">Insumo</label><input type="text" id="cap-cu-insumo" maxlength="90" placeholder="Campari"></div>
+        <div class="cap-g2">
+          <div class="cap-campo"><label for="cap-cu-qtde">Quantidade</label><input type="number" id="cap-cu-qtde" min="0" step="any" inputmode="decimal"></div>
+          <div class="cap-campo"><label for="cap-cu-unidade">Unidade</label><select id="cap-cu-unidade"></select></div>
+        </div>
+        <div class="cap-g2">
+          <div class="cap-campo"><label for="cap-cu-item">Item do roteiro</label><select id="cap-cu-item"></select></div>
+          <div class="cap-campo"><label for="cap-cu-fonte">Fonte do custo</label><select id="cap-cu-fonte"></select></div>
+        </div>
+        <div class="cap-campo"><label for="cap-cu-unit">Custo unitário (deixe vazio se não souber)</label><input type="number" id="cap-cu-unit" min="0" step="any" inputmode="decimal"></div>
+        <div class="cap-linha">
+          <button type="button" class="cap-go" id="cap-cu-salvar">Lançar</button>
+        </div>
+        <p class="cap-msg" id="cap-cu-form-msg" role="status" aria-live="polite"></p>
+        <p class="cap-nota">Campo de custo vazio grava o lançamento <b>sem preço</b>, e ele passa a
+        aparecer na contagem ao lado do total. Isso é melhor que inventar um número: o total sabe dizer
+        que está incompleto. O valor total é calculado no servidor, nunca aqui.</p>
+      </div>
+
+      <div class="cap-card" id="cap-cu-terc" style="display:none">
+        <h3>Custo de terceiros</h3>
+        <div class="cap-campo">
+          <label for="cap-cu-terc-v">Fotógrafo, edição, locação (deixe vazio se não houve)</label>
+          <input type="number" id="cap-cu-terc-v" min="0" step="any" inputmode="decimal">
+        </div>
+        <div class="cap-linha"><button type="button" class="cap-go" id="cap-cu-terc-salvar">Salvar terceiros</button></div>
+        <p class="cap-msg" id="cap-cu-terc-msg" role="status" aria-live="polite"></p>
+      </div>
+    </div>
   </div>
+
+  <!-- VISTA · Pauta ------------------------------------------------------- -->
+  <div id="cap-v-pauta" style="display:none">
+    <div class="cap-resumo" id="cap-pa-kpis"></div>
+
+    <div class="cap-card">
+      <div class="cap-linha" style="margin-top:0">
+        <button type="button" class="cap-acao" id="cap-pa-recarrega"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3.5V9h-5.5"/></svg> Atualizar pauta</button>
+      </div>
+      <p class="cap-msg" id="cap-pa-msg" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="cap-card">
+      <h3>Ficou para trás — não captados em aberto</h3>
+      <div id="cap-pa-pend"></div>
+    </div>
+
+    <div class="cap-card">
+      <h3>Da carta, ainda sem imagem</h3>
+      <div id="cap-pa-lac"></div>
+      <p class="cap-nota" id="cap-pa-cob"></p>
+    </div>
+
+    <div class="cap-card" id="cap-pa-semcob" style="display:none">
+      <h3>Casas sem fonte de cobertura</h3>
+      <div id="cap-pa-semcob-l"></div>
+      <p class="cap-nota">Sem cardápio digital não há como saber o que falta fotografar — a casa
+      aparece <b>declarada</b>, nunca zerada. Zero seria "medi e não falta nada".</p>
+    </div>
+
+    <div class="cap-card" id="cap-pa-levar" style="display:none">
+      <h3>Levar para uma captação</h3>
+      <div class="cap-campo">
+        <label for="cap-pa-alvo">Captação de destino</label>
+        <select id="cap-pa-alvo"></select>
+      </div>
+      <div class="cap-linha">
+        <button type="button" class="cap-go" id="cap-pa-enviar">Levar selecionados</button>
+        <button type="button" class="cap-acao" id="cap-pa-limpar">Limpar seleção</button>
+      </div>
+      <p class="cap-msg" id="cap-pa-envio-msg" role="status" aria-live="polite"></p>
+      <p class="cap-nota">Até 40 de uma vez — é o teto do servidor. O envio é online e o botão trava
+      enquanto está em voo: criar item não é idempotente, então nada é reenviado sozinho.</p>
+    </div>
+  </div>
+
+  <!-- VISTA · Métricas ---------------------------------------------------- -->
+  <div id="cap-v-metricas" style="display:none">
+    <div class="cap-card">
+      <div class="cap-linha" style="margin-top:0">
+        <button type="button" class="cap-acao" id="cap-me-recarrega"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3.5V9h-5.5"/></svg> Atualizar</button>
+      </div>
+      <p class="cap-msg" id="cap-me-msg" role="status" aria-live="polite"></p>
+    </div>
+
+    <div id="cap-me-corpo" style="display:none">
+      <div class="cap-resumo" id="cap-me-kpis"></div>
+
+      <div class="cap-card" id="cap-me-mes-cx" style="display:none">
+        <h3>Ritmo por mês</h3>
+        <div class="cap-rol"><table class="cap-tb" id="cap-me-mes"><tbody></tbody></table></div>
+      </div>
+
+      <div class="cap-card">
+        <h3>Cobertura da carta — itens com imagem</h3>
+        <div id="cap-me-cob"></div>
+        <p class="cap-nota" id="cap-me-cob-nota"></p>
+      </div>
+
+      <div class="cap-card" id="cap-me-ns" style="display:none">
+        <h3>O que esta página ainda não sabe</h3>
+        <ul class="cap-ul" id="cap-me-ns-l"></ul>
+        <p class="cap-nota" style="margin-bottom:0">Uma página que mede marketing e não diz o que
+        <i>não</i> mede vira instrumento de injustiça.</p>
+      </div>
+
+      <!-- Redes sociais: fase 2 dormente (§10 do plano). Fica escondido e SÓ
+           aparece se o payload trouxer número lido de uma fonte. Nenhuma barra
+           zerada, nenhuma estimativa. Hoje o contrato não devolve o campo, então
+           este bloco nunca é mostrado — e é isso que se quer. -->
+      <div class="cap-card" id="cap-me-redes" style="display:none">
+        <h3>Redes sociais</h3>
+        <div id="cap-me-redes-l"></div>
+      </div>
+
+      <p class="cap-nota" id="cap-me-quando"></p>
+    </div>
+  </div>
+
+  <p id="cap-fila-status" style="font-size:11.5px;color:var(--text-3);margin:0" role="status" aria-live="polite"></p>
 </div>
 
 <script>
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
-  var IC = {"trophy": "<path d=\"M7 4h10v5a5 5 0 0 1-10 0z\"/><path d=\"M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3\"/><path d=\"M12 14v3M9 20h6M9 17h6v3H9z\"/>", "relogio": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M12 7.5V12l3.2 2\"/>", "check-circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M8 12.5l2.5 2.5L16 9\"/>", "alert": "<path d=\"M12 3.5l9 15.5H3z\"/><path d=\"M12 10v4M12 16.5h.01\"/>", "users": "<circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2\"/><circle cx=\"17.2\" cy=\"9\" r=\"2.2\"/><path d=\"M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2\"/>"};
-  var CATEGORIAS = ["Clássico", "Destilado", "Técnica", "Guarnição", "Cristaleria"];
-  var DURACAO_SEG = 90;
-  var PONTOS_UNICA = 10, PONTOS_REPETIDA = 5;
-  var SLUG = 'competicao-adedonha.html';
-  var NIVEIS_OK = ['equipe', 'bartender', 'chefe', 'coord'];
-  var msg = document.getElementById('adh-msg');
-  var gate = document.getElementById('adh-gate');
-  var wrap = document.getElementById('adh-corpo');
-  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function norm(s) { return String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  // `marketing` é acesso LATERAL (fora da escada) — por isso está listado por
+  // extenso, igual a 'chefe'/'coord'. `equipe`/`bartender` NÃO entram (decisão
+  // A3 do plano, pendente do Rodrigo): a página mostra custo em R$ na aba
+  // Custos (E6). O gate do Worker é o que garante; este é o gate do CLIENTE,
+  // e os dois têm que existir (armadilha 14 / §2.1 do contrato).
+  var NIVEIS_OK = ['chefe', 'coord', 'marketing'];
+  var SLUG = 'captacoes.html';
+  var gate = document.getElementById('cap-gate');
+  var wrap = document.getElementById('cap-wrap');
 
-  if (!WORKER) { gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">A página ainda não foi ativada.</p>'; return; }
+  if (!WORKER) {
+    gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">As captações ainda não foram ativadas.</p>';
+    return;
+  }
 
-  var TOKEN = null, EH_CHEFE = false, RODADA = null, LETRA = null, JA_JOGARAM = [];
+  // Espelho de config/captacoes.json (o worker.js espelha as MESMAS listas
+  // inline). Mexeu no config: mexer nos dois e `npx wrangler deploy`.
+  var STATUS_CAPTACAO = ['Rascunho', 'Agendada', 'Em captação', 'Captada', 'Entregue', 'Cancelada'];
+  var TIPOS_ITEM = ['Foto', 'Vídeo', 'Foto+Vídeo'];
+  var ALVOS_ITEM = ['Drink', 'Prato', 'Ambiente', 'Equipe', 'Detalhe', 'Evento', 'Outro'];
+  // Cor por casa é COSMÉTICA: a lista de casas que a tela oferece vem do
+  // `casas` do R1, nunca daqui. Slug sem cor cai no dourado e continua
+  // aparecendo — esconder uma casa por falta de cor seria perder dado.
+  var COR_CASA = {
+    'iz': '--casa-iz', '1929': '--casa-1929', 'gra-bistro': '--casa-gra',
+    'famu': '--casa-famu', 'fulles': '--casa-fulles', 'nip': '--casa-nip',
+    'enttres': '--casa-enttres'
+  };
 
-  function mostraView(v) {
-    ['inicio', 'rodada', 'revisao', 'fechado'].forEach(function (n) {
-      document.getElementById('adh-view-' + n).style.display = n === v ? '' : 'none';
+  // A barra de vistas nasce daqui. Enquanto `pronta` for false o botão NÃO é
+  // desenhado — aba que abre vazia é a versão em miniatura do item de menu
+  // que dá 404. As cinco entraram na E6a; a ordem segue a do plano §9 lida de
+  // trás pra frente (a Captação é o que se abre todo dia, a Pauta é o que se
+  // consulta antes de marcar a próxima).
+  var VISTAS = [
+    { id: 'captacao', rot: 'Captação', ic: '<svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg>', pronta: true },
+    { id: 'custos', rot: 'Custos', ic: '__IC_CALCULADORA__', pronta: true },
+    { id: 'pauta', rot: 'Pauta', ic: '__IC_CLIPBOARD__', pronta: true },
+    { id: 'historico', rot: 'Histórico', ic: '<svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg>', pronta: true },
+    { id: 'metricas', rot: 'Métricas', ic: '__IC_CHART__', pronta: true }
+  ];
+
+  var SESSAO = null, GESTAO = false;
+  var CASAS_DISP = [], CASA_ATUAL = null, CASA_TRAVADA = false;
+  var LISTA = [], DETALHE = null, VISTA_ATUAL = 'captacao';
+  var itemAberto = null, itemAlvoStatus = null;
+  var relogioTimer = null;
+
+  var LS_FILA = 'captacoes_fila';
+  var fila = [];
+  var filaRodando = false;
+
+  // --- E6a: estado das três abas novas --------------------------------------
+  // Espelho de config/captacoes.json, igual às listas acima.
+  var UNIDADES_CONSUMO = ['ml', 'L', 'g', 'kg', 'un', 'dose', 'maço', 'saco', 'caixa', 'garrafa'];
+  var FONTES_CUSTO = ['Ficha técnica', 'B.D.1', 'Manual'];
+  var LOTE_MAX = 40;                 // teto do R5 por chamada (§6 do contrato)
+  var PAUTA = null, PAUTA_CARREGANDO = false;
+  var METRICAS = null, METRICAS_CARREGANDO = false;
+  var COB_CASAS = null;              // cobertura por casa (fan-out do R10)
+  var SEL_PAUTA = {};                // o que está marcado para virar roteiro
+  // `id` do lançamento de consumo: gerado UMA vez por formulário preenchido e
+  // só zerado quando o lançamento ENTRA. Um "tentar de novo" depois de timeout
+  // reenvia o MESMO id, e o servidor responde `duplicado` em vez de cobrar
+  // duas vezes o mesmo insumo (§4.5 do contrato).
+  var consumoId = null;
+
+  function el(tag, classe, texto) {
+    var e = document.createElement(tag);
+    if (classe) e.className = classe;
+    if (texto !== undefined && texto !== null) e.textContent = texto;
+    return e;
+  }
+  function txt(id, s) { document.getElementById(id).textContent = s || ''; }
+  function msg(id, s, tipo) {
+    var e = document.getElementById(id);
+    e.textContent = s || '';
+    e.className = 'cap-msg' + (tipo ? ' ' + tipo : '');
+  }
+  // Data PURA (AAAA-MM-DD) se fatia como texto — `new Date("2026-08-14")` é
+  // meia-noite UTC e vira dia 13 em UTC-3 (armadilha 8 do plano).
+  function diaMes(iso) {
+    if (!iso) return '—';
+    var p = String(iso).split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] : String(iso);
+  }
+  function diaMesAno(iso) {
+    if (!iso) return '—';
+    var p = String(iso).split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : String(iso);
+  }
+  // Carimbo ISO COM hora (…Z) — esse sim pode virar Date.
+  var FMT_HORA = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
+  function hora(iso) { try { return FMT_HORA.format(new Date(iso)); } catch (e) { return '--:--'; } }
+  function dur(min) {
+    if (typeof min !== 'number' || !isFinite(min) || min < 0) return '—';
+    var h = Math.floor(min / 60), m = Math.round(min % 60);
+    return h ? (h + 'h' + (m < 10 ? '0' : '') + m) : (m + 'min');
+  }
+  function durEntre(ini, fim) {
+    if (!ini) return null;
+    var a = Date.parse(ini), b = fim ? Date.parse(fim) : Date.now();
+    if (!isFinite(a) || !isFinite(b) || b < a) return null;
+    return Math.floor((b - a) / 60000);
+  }
+  function n0(v) { return (typeof v === 'number' && isFinite(v)) ? v : null; }
+  function pecasDe(o) {
+    var f = n0(o.pecas_foto), v = n0(o.pecas_video);
+    if (f === null && v === null) return null;   // vazio NÃO é zero
+    return (f || 0) + (v || 0);
+  }
+  function fetchComTimeout(url, opts, ms) {
+    var ctrl = new AbortController();
+    var t = setTimeout(function () { ctrl.abort(); }, ms || 15000);
+    return fetch(url, Object.assign({}, opts, { signal: ctrl.signal })).finally(function () { clearTimeout(t); });
+  }
+  function cab() { return { 'Content-Type': 'application/json', 'X-Token': SESSAO.token }; }
+  function encChave(c) { return encodeURIComponent(c); }
+  // Toda resposta de erro do contrato é `{erro, detalhe?}` — `detalhe` é texto
+  // em português e PODE mudar sem quebrar contrato, então é ele que a tela
+  // mostra quando existe; o slug só serve pra ramificar.
+  function erroTexto(dados, status) {
+    if (dados && dados.detalhe) return dados.detalhe;
+    var e = dados && dados.erro;
+    if (e === 'nivel_insuficiente') return 'Seu acesso não edita captação — só a coordenação e o marketing.';
+    if (e === 'sem_casa') return 'Entre com a sua senha individual: esta senha não diz de qual casa você é.';
+    if (e === 'casa_negada') return 'Essa captação é de outra casa.';
+    if (e === 'sem_config') return 'As captações ainda não foram configuradas no servidor.';
+    if (e === 'muitas_tentativas') return 'Muitas tentativas seguidas. Espere um instante.';
+    if (e === 'motivo_obrigatorio') return 'Um item “Não captado” precisa de motivo.';
+    if (e === 'nao_encontrado') return 'Não encontrado.';
+    if (e) return 'Não deu certo (' + e + ').';
+    return 'Falhou com erro ' + status + '.';
+  }
+  async function leJson(r) { try { return await r.json(); } catch (e) { return null; } }
+
+  // --- fila offline ---------------------------------------------------------
+  // SÓ o PATCH de status de item entra aqui. É a ação do meio da sessão, com
+  // sinal ruim, e é idempotente por natureza (mesma ordem, mesmo status alvo).
+  // POST de item e DELETE de item NUNCA são enfileirados: apagar REORDENA os
+  // posteriores (§8 do contrato), então repetir um DELETE que já deu certo
+  // apagaria o item seguinte. Retry cego ali é que seria o bug.
+  function carregaFila() {
+    try { fila = JSON.parse(localStorage.getItem(LS_FILA) || '[]'); } catch (e) { fila = []; }
+    if (!Array.isArray(fila)) fila = [];
+  }
+  function salvaFila() {
+    try { localStorage.setItem(LS_FILA, JSON.stringify(fila)); } catch (e) {}
+  }
+  function statusFila() {
+    txt('cap-fila-status', fila.length ? (fila.length + ' alteração(ões) aguardando envio…') : '');
+  }
+  function enfileira(entrada) {
+    fila.push(entrada); salvaFila(); statusFila(); tentaEsvaziarFila();
+  }
+  function tentaEsvaziarFila() {
+    if (!SESSAO || !fila.length || filaRodando) return;
+    filaRodando = true;
+    (async function () {
+      var descartados = 0;
+      try {
+        while (fila.length) {
+          var it = fila[0];
+          var r;
+          try {
+            r = await fetchComTimeout(WORKER + '/api/captacao/' + encChave(it.chave) + '/item/' + it.ordem, {
+              method: 'PATCH', headers: cab(), body: JSON.stringify(it.corpo)
+            });
+          } catch (e) { break; }                       // rede: tenta de novo depois
+          if (r.status === 401) break;                 // sessão expirada: fica na fila
+          if (!r.ok && r.status >= 500) break;         // servidor: tenta de novo depois
+          var d = await leJson(r);
+          fila.shift(); salvaFila(); statusFila();
+          if (!r.ok) { descartados++; continue; }      // 4xx: reenviar não resolve
+          if (DETALHE && DETALHE.captacao && DETALHE.captacao.chave === it.chave && d && d.itens) {
+            DETALHE.itens = d.itens;
+            if (d.resumo) DETALHE.resumo = d.resumo;
+            renderDetalhe();
+          }
+        }
+      } finally { filaRodando = false; }
+      if (descartados) {
+        msg('cap-itens-msg', descartados + ' alteração(ões) foram recusadas pelo servidor e não valeram. Atualize para ver o estado real.', 'erro');
+      }
+    })();
+  }
+  window.addEventListener('online', tentaEsvaziarFila);
+  setInterval(tentaEsvaziarFila, 8000);
+
+  // --- casas / vistas -------------------------------------------------------
+  function corDe(slug) { return 'var(' + (COR_CASA[slug] || '--acc') + ')'; }
+  function montaChips() {
+    var cx = document.getElementById('cap-chips');
+    cx.innerHTML = '';
+    if (CASAS_DISP.length <= 1) return;   // chefe: uma casa só, chip é ruído
+    var todas = el('button', 'cap-chip' + (CASA_ATUAL ? '' : ' on'), 'Todas');
+    todas.type = 'button';
+    todas.addEventListener('click', function () { selecionaCasa(null); });
+    cx.appendChild(todas);
+    CASAS_DISP.forEach(function (c) {
+      var b = el('button', 'cap-chip' + (c.slug === CASA_ATUAL ? ' on' : ''), c.label);
+      b.type = 'button';
+      b.style.setProperty('--chip-cor', corDe(c.slug));
+      b.addEventListener('click', function () { selecionaCasa(c.slug); });
+      cx.appendChild(b);
+    });
+  }
+  function selecionaCasa(slug) {
+    if (CASA_TRAVADA) return;
+    CASA_ATUAL = slug;
+    montaChips();
+    carregaLista();
+  }
+  function montaVistas() {
+    var cx = document.getElementById('cap-vsel');
+    cx.innerHTML = '';
+    VISTAS.forEach(function (v) {
+      if (!v.pronta) return;
+      var b = el('button', v.id === VISTA_ATUAL ? 'on' : null);
+      b.type = 'button';
+      b.dataset.vista = v.id;
+      b.innerHTML = v.ic + '<span></span>';
+      b.lastChild.textContent = v.rot;
+      cx.appendChild(b);
+    });
+  }
+  function abreVista(v) {
+    VISTA_ATUAL = v;
+    VISTAS.forEach(function (x) {
+      if (!x.pronta) return;
+      var p = document.getElementById('cap-v-' + x.id);
+      // `display` explícito (nunca string vazia): o painel nasce escondido por
+      // style INLINE, então limpar bastaria — mas um dia alguém move isso pro
+      // CSS de classe e a Lição 1 volta a morder. Valor explícito é imune.
+      if (p) p.style.display = (x.id === v) ? 'block' : 'none';
+    });
+    Array.prototype.slice.call(document.querySelectorAll('#cap-vsel button')).forEach(function (b) {
+      b.classList.toggle('on', b.dataset.vista === v);
     });
   }
 
-  function renderCategorias() {
-    document.getElementById('adh-categorias').innerHTML = CATEGORIAS.map(function (c, i) {
-      return '<div class="adh-campo"><label>' + esc(c) + '</label><input type="text" data-i="' + i + '" autocomplete="off"></div>';
-    }).join('');
+  // --- R1 · listagem --------------------------------------------------------
+  function queryLista(extra) {
+    var q = [];
+    // Credencial de uma casa só: NÃO manda `casa=`. Mandar igual seria aceito,
+    // mas o §2.2.2 responde 403 a qualquer divergência e omitir não diverge.
+    if (!CASA_TRAVADA && CASA_ATUAL) q.push('casa=' + encodeURIComponent(CASA_ATUAL));
+    (extra || []).forEach(function (p) { q.push(p); });
+    return q.length ? ('?' + q.join('&')) : '';
   }
-
-  document.getElementById('adh-sortear').addEventListener('click', function () {
-    fetch(WORKER + '/api/competicao/adedonha/rodada', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN }, body: '{}' })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (!d.rodada) { return; }
-        RODADA = d.rodada; LETRA = d.letra; JA_JOGARAM = [];
-        document.getElementById('adh-letra-atual').textContent = LETRA;
-        renderCategorias();
-        atualizaJogaram();
-        document.getElementById('adh-encerrar').style.display = EH_CHEFE ? '' : 'none';
-        mostraView('rodada');
-        var fim = Date.now() + DURACAO_SEG * 1000;
-        var elCrono = document.getElementById('adh-crono');
-        var t = setInterval(function () {
-          var rest = Math.round((fim - Date.now()) / 1000);
-          if (rest <= 0) { elCrono.textContent = 'Tempo esgotado — pode continuar respondendo, o chefe decide quando encerrar.'; clearInterval(t); return; }
-          elCrono.textContent = rest + 's restantes nesta letra';
-        }, 1000);
-      });
-  });
-
-  function atualizaJogaram() {
-    document.getElementById('adh-jogaram').innerHTML = JA_JOGARAM.length
-      ? 'Já responderam: <b>' + JA_JOGARAM.map(esc).join('</b>, <b>') + '</b>'
-      : 'Ninguém respondeu ainda nesta rodada.';
-  }
-
-  document.getElementById('adh-enviar').addEventListener('click', function () {
-    var nome = document.getElementById('adh-nome').value.trim();
-    var avisoEl = document.getElementById('adh-aviso-envio');
-    if (!nome) { avisoEl.innerHTML = '<p class="crf-aviso-incompleto">Digite seu nome.</p>'; return; }
-    var respostas = Array.from(document.querySelectorAll('#adh-categorias input')).map(function (i) { return i.value.trim(); });
-    avisoEl.textContent = 'Enviando…';
-    fetch(WORKER + '/api/competicao/adedonha/submissao', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
-      body: JSON.stringify({ rodada: RODADA, letra: LETRA, pessoa: nome, respostas: respostas }),
-    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
-      .then(function (res) {
-        if (!res.ok) { avisoEl.innerHTML = '<p class="crf-aviso-incompleto">' + esc(res.d.erro || 'erro') + '</p>'; return; }
-        avisoEl.textContent = '';
-        if (JA_JOGARAM.indexOf(nome) < 0) JA_JOGARAM.push(nome);
-        atualizaJogaram();
-        document.getElementById('adh-nome').value = '';
-        renderCategorias();
+  function carregaLista(extra, alvoMsg) {
+    var idMsg = alvoMsg || 'cap-sel-msg';
+    msg(idMsg, 'Carregando…');
+    return fetchComTimeout(WORKER + '/api/captacoes' + queryLista(extra), { headers: { 'X-Token': SESSAO.token } })
+      .then(async function (r) {
+        var d = await leJson(r);
+        if (!r.ok) { msg(idMsg, erroTexto(d, r.status), 'erro'); return; }
+        LISTA = (d && d.captacoes) || [];
+        if (d && Array.isArray(d.casas) && d.casas.length) {
+          CASAS_DISP = d.casas;
+          CASA_TRAVADA = d.casas.length === 1 && !!(SESSAO.casa && SESSAO.casa !== '*');
+          montaChips();
+          montaSelectCasaNova();
+        }
+        if (d && d.aviso === 'sem_casa') {
+          msg(idMsg, 'A sua senha não diz de qual casa você é, então não há captação para mostrar. Entre com a senha individual.', 'erro');
+        } else if (d && d.sem_config) {
+          msg(idMsg, 'As captações ainda não foram configuradas no servidor — a página abre, mas não há onde gravar.', 'erro');
+        } else {
+          msg(idMsg, LISTA.length ? (LISTA.length + ' captação(ões) carregada(s).') : 'Nenhuma captação neste recorte.');
+        }
+        montaSelectCaptacao();
+        renderHistorico(d || {});
       })
-      .catch(function () { avisoEl.innerHTML = '<p class="crf-aviso-incompleto">Sem conexão — tente de novo.</p>'; });
-  });
-
-  function pontoSugerido(resposta, todasRespostasDaCategoria) {
-    if (!resposta) return 0;
-    var n = norm(resposta);
-    var iguais = todasRespostasDaCategoria.filter(function (r) { return norm(r) === n; }).length;
-    return iguais > 1 ? PONTOS_REPETIDA : PONTOS_UNICA;
+      .catch(function () { msg(idMsg, 'Não deu para falar com o servidor agora.', 'erro'); });
+  }
+  function montaSelectCaptacao() {
+    var s = document.getElementById('cap-sel');
+    var atual = DETALHE && DETALHE.captacao ? DETALHE.captacao.chave : s.value;
+    s.innerHTML = '';
+    var vazio = el('option', null, LISTA.length ? '— escolha uma captação —' : '— nenhuma captação —');
+    vazio.value = '';
+    s.appendChild(vazio);
+    LISTA.forEach(function (c) {
+      var o = el('option', null, diaMes(c.data) + ' · ' + (c.casa_label || c.casa) + ' · ' + (c.titulo || 'sem título') + ' · ' + c.status);
+      o.value = c.chave;
+      s.appendChild(o);
+    });
+    if (atual) s.value = atual;
+  }
+  function montaSelectCasaNova() {
+    var s = document.getElementById('cap-nv-casa');
+    s.innerHTML = '';
+    CASAS_DISP.forEach(function (c) {
+      var o = el('option', null, c.label); o.value = c.slug; s.appendChild(o);
+    });
   }
 
-  document.getElementById('adh-encerrar').addEventListener('click', function () {
-    fetch(WORKER + '/api/competicao/adedonha/rodada/' + RODADA, { headers: { 'X-Token': TOKEN } })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        document.getElementById('adh-rev-letra').textContent = d.letra || LETRA;
-        var participantes = d.participantes || [];
-        var corpo = document.getElementById('adh-rev-corpo');
-        corpo.innerHTML = participantes.map(function (p, pi) {
-          var cels = CATEGORIAS.map(function (_, ci) {
-            var resposta = p.respostas[ci] || '';
-            var todasDaCategoria = participantes.map(function (x) { return x.respostas[ci]; });
-            var sugestao = pontoSugerido(resposta, todasDaCategoria);
-            var classe = resposta ? (sugestao === PONTOS_REPETIDA ? 'dup' : '') : 'vazia';
-            var opts = [0, PONTOS_REPETIDA, PONTOS_UNICA].filter(function (v, i, arr) { return arr.indexOf(v) === i; });
-            return '<td><div class="adh-resp ' + classe + '">' + esc(resposta || '(em branco)') + '</div>' +
-              '<div class="adh-pts" data-pessoa="' + pi + '" data-cat="' + ci + '">' +
-              opts.map(function (v) { return '<button data-v="' + v + '" class="' + (v === sugestao ? 'on' : '') + '">' + v + '</button>'; }).join('') +
-              '</div></td>';
-          }).join('');
-          return '<tr data-pessoa="' + pi + '"><td><b>' + esc(p.pessoa) + '</b></td>' + cels +
-            '<td style="text-align:center"><input type="checkbox" class="adh-bonus-chk"' + (pi === 0 ? ' checked' : '') + '></td>' +
-            '<td class="adh-total" data-total="' + pi + '">—</td></tr>';
-        }).join('');
-        corpo.querySelectorAll('.adh-pts button').forEach(function (b) {
-          b.addEventListener('click', function () {
-            b.closest('.adh-pts').querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); });
-            b.classList.add('on');
-            atualizaTotais();
-          });
+  // --- R4 · detalhe ---------------------------------------------------------
+  function abreCaptacao(chave) {
+    if (!chave) {
+      DETALHE = null;
+      document.getElementById('cap-detalhe').style.display = 'none';
+      pararRelogio();
+      return;
+    }
+    msg('cap-sel-msg', 'Abrindo…');
+    fetchComTimeout(WORKER + '/api/captacao/' + encChave(chave), { headers: { 'X-Token': SESSAO.token } })
+      .then(async function (r) {
+        var d = await leJson(r);
+        if (!r.ok) { msg('cap-sel-msg', erroTexto(d, r.status), 'erro'); return; }
+        DETALHE = d;
+        msg('cap-sel-msg', '');
+        document.getElementById('cap-detalhe').style.display = 'block';
+        renderDetalhe();
+      })
+      .catch(function () { msg('cap-sel-msg', 'Não deu para abrir a captação agora.', 'erro'); });
+  }
+
+  function pararRelogio() {
+    if (relogioTimer) { clearInterval(relogioTimer); relogioTimer = null; }
+  }
+  function renderRelogio() {
+    var e = document.getElementById('cap-rel');
+    if (!e || !DETALHE) return;
+    var m = durEntre(DETALHE.captacao.inicio, DETALHE.captacao.fim);
+    e.textContent = m === null ? '' : dur(m);
+  }
+
+  function renderDetalhe() {
+    if (!DETALHE) return;
+    var c = DETALHE.captacao, podeEditar = !!DETALHE.pode_editar;
+
+    // Cabeçalho  (`cabEl`, não `cab`: `cab()` é a função dos headers HTTP —
+    // uma `var cab` aqui a sombraria no escopo inteiro desta função.)
+    var cabEl = document.getElementById('cap-cab');
+    cabEl.innerHTML = '';
+    var l1 = el('div', 'cap-cab-linha');
+    var chipCasa = el('span', 'cap-tag casa', c.casa_label || c.casa);
+    chipCasa.style.setProperty('--chip-cor', corDe(c.casa));
+    l1.appendChild(chipCasa);
+    l1.appendChild(el('span', 'nome', c.titulo || 'sem título'));
+    l1.appendChild(el('span', 'cap-tag ' + (c.status === 'Em captação' ? 'ok' : (c.status === 'Cancelada' ? 'pend' : '')), c.status));
+    var rel = el('span', 'cap-rel'); rel.id = 'cap-rel';
+    l1.appendChild(rel);
+    cabEl.appendChild(l1);
+
+    var partes = [diaMesAno(c.data)];
+    if (c.inicio) partes.push('início ' + hora(c.inicio));
+    if (c.fim) partes.push('fim ' + hora(c.fim));
+    if (c.entregue_em) partes.push('entregue ' + hora(c.entregue_em));
+    if (c.participantes && c.participantes.length) partes.push(c.participantes.join(', '));
+    if (c.responsavel) partes.push('responsável: ' + c.responsavel);
+    else partes.push('sem autoria declarada');
+    if (c.link_material) partes.push('material entregue');
+    cabEl.appendChild(el('p', 'cap-meta', partes.join(' · ')));
+
+    if (c.roteiro) cabEl.appendChild(el('p', 'cap-roteiro', c.roteiro));
+
+    if (podeEditar) {
+      var acoes = el('div', 'cap-linha');
+      var prox = null;
+      if (c.status === 'Rascunho' || c.status === 'Agendada') prox = { alvo: 'Em captação', rot: 'Iniciar captação' };
+      else if (c.status === 'Em captação') prox = { alvo: 'Captada', rot: 'Encerrar captação' };
+      else if (c.status === 'Captada') prox = { alvo: 'Entregue', rot: 'Marcar entregue' };
+      if (prox) {
+        var bp = el('button', 'cap-go', prox.rot);
+        bp.type = 'button';
+        bp.addEventListener('click', function () { mudaStatus(prox.alvo, bp); });
+        acoes.appendChild(bp);
+      }
+      var sel = el('select');
+      sel.id = 'cap-status-sel';
+      sel.style.maxWidth = '190px';
+      sel.style.padding = '8px 10px';
+      sel.style.background = 'var(--bg)';
+      sel.style.color = 'var(--text)';
+      sel.style.border = '1px solid var(--border)';
+      sel.style.borderRadius = '9px';
+      sel.style.font = 'inherit';
+      STATUS_CAPTACAO.forEach(function (s) {
+        var o = el('option', null, s); o.value = s; sel.appendChild(o);
+      });
+      sel.value = c.status;
+      sel.addEventListener('change', function () { mudaStatus(sel.value, sel); });
+      acoes.appendChild(sel);
+      cabEl.appendChild(acoes);
+      cabEl.appendChild(el('p', 'cap-nota', 'Início, fim e entrega são carimbos do servidor, nunca campos digitados. Voltar para “Em captação” limpa o fim; voltar para Rascunho/Agendada limpa os três.'));
+    } else {
+      cabEl.appendChild(el('p', 'cap-nota', 'Seu acesso vê esta captação e não a edita. Quem roteiriza e entrega é o marketing; o bar registra o insumo que saiu (aba Custos, em preparo).'));
+    }
+    var msgSt = el('p', 'cap-msg'); msgSt.id = 'cap-status-msg';
+    cabEl.appendChild(msgSt);
+
+    renderRelogio();
+    pararRelogio();
+    if (c.status === 'Em captação' && c.inicio && !c.fim) relogioTimer = setInterval(renderRelogio, 20000);
+
+    // Resumo (só o que NÃO é dinheiro — custo é a aba Custos, da E6)
+    var res = DETALHE.resumo || {};
+    var cxr = document.getElementById('cap-resumo');
+    cxr.innerHTML = '';
+    [
+      [(res.itens_captados != null ? res.itens_captados : 0) + '/' + (res.itens_planejados != null ? res.itens_planejados : 0), 'itens captados'],
+      [res.aproveitamento == null ? '—' : Math.round(res.aproveitamento * 100) + '%', 'aproveitamento'],
+      [res.pecas == null ? '—' : String(res.pecas), 'peças entregues'],
+      [res.duracao_min == null ? '—' : dur(res.duracao_min), 'tempo em captação'],
+      [res.horas_pessoa == null ? '—' : (String(res.horas_pessoa).replace('.', ',') + ' h'), 'horas-pessoa']
+    ].forEach(function (par) {
+      var k = el('div', 'cap-kpi');
+      k.appendChild(el('div', 'v', par[0]));
+      k.appendChild(el('div', 'd', par[1]));
+      cxr.appendChild(k);
+    });
+
+    renderItens(podeEditar);
+
+    // Entrega (peças + link) — só a partir de "Captada", e só para quem edita.
+    var ent = document.getElementById('cap-entrega');
+    var mostraEnt = podeEditar && (c.status === 'Captada' || c.status === 'Entregue');
+    ent.style.display = mostraEnt ? 'block' : 'none';
+    if (mostraEnt) {
+      document.getElementById('cap-en-foto').value = c.pecas_foto == null ? '' : c.pecas_foto;
+      document.getElementById('cap-en-video').value = c.pecas_video == null ? '' : c.pecas_video;
+      document.getElementById('cap-en-link').value = c.link_material || '';
+    }
+  }
+
+  function renderItens(podeEditar) {
+    var tb = document.getElementById('cap-itens').querySelector('tbody');
+    tb.innerHTML = '';
+    var itens = DETALHE.itens || [];
+    var cabecalho = ['#', 'Tipo', 'Alvo', 'Item', 'Direção', 'Status'];
+    if (podeEditar) cabecalho.push('');
+    var trh = el('tr');
+    cabecalho.forEach(function (t, i) {
+      var th = el('th', i === 0 ? 'num' : null, t); trh.appendChild(th);
+    });
+    tb.appendChild(trh);
+
+    if (!itens.length) {
+      var trv = el('tr');
+      var tdv = el('td', 'fraco', 'Roteiro vazio — nada planejado ainda.');
+      tdv.colSpan = cabecalho.length;
+      trv.appendChild(tdv); tb.appendChild(trv);
+    }
+
+    // A `ordem` desenhada é SEMPRE a que o servidor mandou. A tela nunca a
+    // recalcula — nem depois de apagar (o R11 devolve a lista reordenada).
+    itens.forEach(function (it) {
+      var tr = el('tr');
+      tr.appendChild(el('td', 'num', String(it.ordem)));
+      tr.appendChild(el('td', null, it.tipo || '—'));
+      tr.appendChild(el('td', null, it.alvo || '—'));
+      var tdItem = el('td');
+      tdItem.appendChild(el('div', null, it.item || '—'));
+      if (it.referencia && it.referencia !== it.item) tdItem.appendChild(el('div', 'fraco', 'carta: ' + it.referencia));
+      // Sub-linha do celular: carrega Tipo/Alvo/Direção, que somem como coluna
+      // abaixo de 560px. Nada de informação se perde na estreita.
+      tdItem.appendChild(el('div', 'cap-sub',
+        [it.tipo, it.alvo, it.direcao].filter(Boolean).join(' · ')));
+      tr.appendChild(tdItem);
+      tr.appendChild(el('td', 'fraco', it.direcao || '—'));
+
+      var tdSt = el('td');
+      var classe = it.status === 'Captado' ? 'cap-tag ok' : (it.status === 'Não captado' ? 'cap-tag pend' : 'cap-tag');
+      var rot = it.status + (it.pecas != null ? (' · ' + it.pecas + ' peça' + (it.pecas === 1 ? '' : 's')) : '');
+      tdSt.appendChild(el('span', classe, rot));
+      if (it.motivo) tdSt.appendChild(el('div', 'fraco', it.motivo));
+      if (it.status === 'Planejado' && it.pecas == null && it.unidades_preparadas != null) {
+        tdSt.appendChild(el('div', 'fraco', it.unidades_preparadas + ' un preparadas'));
+      }
+      tr.appendChild(tdSt);
+
+      if (podeEditar) {
+        var tdA = el('td');
+        var bOk = el('button', 'cap-acao', 'Captado');
+        bOk.type = 'button';
+        bOk.addEventListener('click', function () { abrePainelItem(it, 'Captado'); });
+        var bNao = el('button', 'cap-acao', 'Não captado');
+        bNao.type = 'button';
+        bNao.addEventListener('click', function () { abrePainelItem(it, 'Não captado'); });
+        var bDel = el('button', 'cap-acao perigo');
+        bDel.type = 'button';
+        bDel.title = 'Apagar esta linha do roteiro';
+        bDel.setAttribute('aria-label', 'Apagar a linha ' + it.ordem);
+        bDel.innerHTML = '<svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
+        bDel.addEventListener('click', function () { apagaItem(it, bDel); });
+        tdA.appendChild(bOk); tdA.appendChild(bNao); tdA.appendChild(bDel);
+        tr.appendChild(tdA);
+      }
+      tb.appendChild(tr);
+    });
+
+    var cxa = document.getElementById('cap-itens-acoes');
+    cxa.innerHTML = '';
+    if (podeEditar) {
+      var bAdd = el('button', 'cap-acao', 'Adicionar item');
+      bAdd.type = 'button';
+      bAdd.addEventListener('click', function () {
+        var f = document.getElementById('cap-add-form');
+        f.style.display = f.style.display === 'block' ? 'none' : 'block';
+        msg('cap-ad-msg', '');
+      });
+      cxa.appendChild(bAdd);
+    }
+  }
+
+  // --- R3 · status da captação (online-only) --------------------------------
+  function mudaStatus(alvo, botao) {
+    if (!DETALHE) return;
+    botao.disabled = true;
+    msg('cap-status-msg', 'Salvando…');
+    fetchComTimeout(WORKER + '/api/captacao/' + encChave(DETALHE.captacao.chave), {
+      method: 'PATCH', headers: cab(), body: JSON.stringify({ status: alvo })
+    }).then(async function (r) {
+      var d = await leJson(r);
+      botao.disabled = false;
+      if (!r.ok) { msg('cap-status-msg', erroTexto(d, r.status), 'erro'); return; }
+      DETALHE.captacao = d.captacao;
+      msg('cap-status-msg', 'Status agora é “' + d.captacao.status + '”.', 'bom');
+      renderDetalhe();
+      carregaLista();
+    }).catch(function () {
+      botao.disabled = false;
+      msg('cap-status-msg', 'Não deu para salvar agora. Tente de novo.', 'erro');
+    });
+  }
+
+  // --- R6 · status do item (vai pela FILA) ----------------------------------
+  function abrePainelItem(it, alvo) {
+    itemAberto = it; itemAlvoStatus = alvo;
+    document.getElementById('cap-painel-item').style.display = 'block';
+    txt('cap-pi-tit', 'Item ' + it.ordem + ' — ' + (it.item || '') + ' → ' + alvo);
+    document.getElementById('cap-pi-motivo-cx').style.display = (alvo === 'Não captado') ? 'flex' : 'none';
+    document.getElementById('cap-pi-motivo').value = it.motivo || '';
+    document.getElementById('cap-pi-pecas').value = it.pecas == null ? '' : it.pecas;
+    document.getElementById('cap-pi-un').value = it.unidades_preparadas == null ? '' : it.unidades_preparadas;
+    msg('cap-pi-msg', '');
+  }
+  function fechaPainelItem() {
+    document.getElementById('cap-painel-item').style.display = 'none';
+    itemAberto = null; itemAlvoStatus = null;
+  }
+  function inteiroOuNulo(v) {
+    var s = String(v == null ? '' : v).trim();
+    if (!s) return null;
+    var n = Number(s);
+    return (isFinite(n) && n >= 0) ? Math.round(n) : undefined;   // undefined = inválido
+  }
+  function salvaItem() {
+    if (!itemAberto || !DETALHE) return;
+    var corpo = { status: itemAlvoStatus };
+    if (itemAlvoStatus === 'Não captado') {
+      var m = document.getElementById('cap-pi-motivo').value.trim();
+      if (!m) { msg('cap-pi-msg', 'Um item “Não captado” precisa de motivo — é o que faz ele voltar para a Pauta.', 'erro'); return; }
+      corpo.motivo = m;
+    }
+    var p = inteiroOuNulo(document.getElementById('cap-pi-pecas').value);
+    var u = inteiroOuNulo(document.getElementById('cap-pi-un').value);
+    if (p === undefined || u === undefined) { msg('cap-pi-msg', 'Peças e unidades precisam ser números inteiros, ou ficar em branco.', 'erro'); return; }
+    if (p !== null) corpo.pecas = p;
+    if (u !== null) corpo.unidades_preparadas = u;
+
+    // Otimista: a linha muda na hora e a fila garante a entrega. `ordem` não é
+    // recalculada — só o estado da própria linha.
+    var alvoOrdem = itemAberto.ordem;
+    (DETALHE.itens || []).forEach(function (x) {
+      if (x.ordem !== alvoOrdem) return;
+      x.status = corpo.status;
+      if (corpo.status !== 'Não captado') x.motivo = null;
+      else x.motivo = corpo.motivo;
+      if (corpo.pecas !== undefined) x.pecas = corpo.pecas;
+      if (corpo.unidades_preparadas !== undefined) x.unidades_preparadas = corpo.unidades_preparadas;
+    });
+    enfileira({ chave: DETALHE.captacao.chave, ordem: alvoOrdem, corpo: corpo });
+    fechaPainelItem();
+    renderItens(!!DETALHE.pode_editar);
+    msg('cap-itens-msg', 'Item ' + alvoOrdem + ' marcado como ' + corpo.status + '.', 'bom');
+  }
+
+  // --- R5 · adicionar item (online-only: POST não é idempotente) ------------
+  function adicionaItem() {
+    if (!DETALHE) return;
+    var bt = document.getElementById('cap-ad-salvar');
+    var nome = document.getElementById('cap-ad-item').value.trim();
+    if (!nome) { msg('cap-ad-msg', 'Diga o que é o item.', 'erro'); return; }
+    var corpo = {
+      item: nome,
+      tipo: document.getElementById('cap-ad-tipo').value,
+      alvo: document.getElementById('cap-ad-alvo').value
+    };
+    var ref = document.getElementById('cap-ad-ref').value.trim();
+    var dir = document.getElementById('cap-ad-dir').value.trim();
+    if (ref) corpo.referencia = ref;
+    if (dir) corpo.direcao = dir;
+    bt.disabled = true;
+    msg('cap-ad-msg', 'Adicionando…');
+    fetchComTimeout(WORKER + '/api/captacao/' + encChave(DETALHE.captacao.chave) + '/item', {
+      method: 'POST', headers: cab(), body: JSON.stringify(corpo)
+    }).then(async function (r) {
+      var d = await leJson(r);
+      bt.disabled = false;
+      if (!r.ok) { msg('cap-ad-msg', erroTexto(d, r.status), 'erro'); return; }
+      DETALHE.itens = d.itens || DETALHE.itens;      // lista inteira, do servidor
+      document.getElementById('cap-ad-item').value = '';
+      document.getElementById('cap-ad-ref').value = '';
+      document.getElementById('cap-ad-dir').value = '';
+      msg('cap-ad-msg', 'Item adicionado ao fim do roteiro.', 'bom');
+      renderItens(!!DETALHE.pode_editar);
+    }).catch(function () {
+      bt.disabled = false;
+      msg('cap-ad-msg', 'Não deu para adicionar agora. Tente de novo.', 'erro');
+    });
+  }
+
+  // --- R11 · apagar item (online-only, NUNCA na fila) -----------------------
+  // Apagar reordena as linhas seguintes: um retry cego apagaria a linha
+  // ERRADA. Por isso o botão trava em voo e nada aqui entra na fila offline.
+  function ordensPresas(ordem) {
+    // A tela já tem o `consumo` do R4 — dá pra NOMEAR as linhas que travam,
+    // que o `detalhe` do Worker hoje só conta.
+    var os = {};
+    ((DETALHE && DETALHE.consumo) || []).forEach(function (l) {
+      if (l.item_ordem != null && l.item_ordem >= ordem) os[l.item_ordem] = true;
+    });
+    return Object.keys(os).map(Number).sort(function (a, b) { return a - b; });
+  }
+  function apagaItem(it, botao) {
+    if (!DETALHE) return;
+    if (!window.confirm('Apagar a linha ' + it.ordem + ' (' + (it.item || '') + ') do roteiro? As linhas seguintes são renumeradas.')) return;
+    botao.disabled = true;
+    msg('cap-itens-msg', 'Apagando…');
+    fetchComTimeout(WORKER + '/api/captacao/' + encChave(DETALHE.captacao.chave) + '/item/' + it.ordem, {
+      method: 'DELETE', headers: cab()
+    }).then(async function (r) {
+      var d = await leJson(r);
+      botao.disabled = false;
+      if (r.status === 409) {
+        var presas = ordensPresas(it.ordem);
+        var frase;
+        if (presas.length === 1) frase = 'Apague antes os lançamentos de custo da linha ' + presas[0] + '.';
+        else if (presas.length) frase = 'Apague antes os lançamentos de custo das linhas ' +
+          presas.slice(0, -1).join(', ') + ' e ' + presas[presas.length - 1] + '.';
+        else frase = 'Apague antes os lançamentos de custo desta linha e das seguintes.';
+        msg('cap-itens-msg', 'Não dá para apagar: ' + ((d && d.detalhe) ? d.detalhe + '. ' : '') + frase +
+          ' Renumerar com custo lançado faria uma linha de gasto apontar para o drink errado.', 'erro');
+        return;
+      }
+      if (!r.ok) { msg('cap-itens-msg', erroTexto(d, r.status), 'erro'); return; }
+      // A lista devolvida pelo servidor já vem reordenada — é ela que a tela
+      // desenha. Nada de recalcular `ordem` aqui.
+      DETALHE.itens = d.itens || [];
+      if (d.resumo) DETALHE.resumo = d.resumo;
+      msg('cap-itens-msg', 'Linha apagada e roteiro renumerado.', 'bom');
+      renderDetalhe();
+    }).catch(function () {
+      botao.disabled = false;
+      msg('cap-itens-msg', 'Não deu para apagar agora. Tente de novo.', 'erro');
+    });
+  }
+
+  // --- R3 · entrega ---------------------------------------------------------
+  function salvaEntrega() {
+    if (!DETALHE) return;
+    var bt = document.getElementById('cap-en-salvar');
+    var f = inteiroOuNulo(document.getElementById('cap-en-foto').value);
+    var v = inteiroOuNulo(document.getElementById('cap-en-video').value);
+    if (f === undefined || v === undefined) { msg('cap-en-msg', 'Peças precisam ser números inteiros, ou ficar em branco.', 'erro'); return; }
+    var link = document.getElementById('cap-en-link').value.trim();
+    // `null` explícito LIMPA o campo; ausente não mexe (§ R3). Campo em branco
+    // aqui é intenção de limpar — a pessoa apagou o que estava lá.
+    var corpo = { pecas_foto: f, pecas_video: v, link_material: link || null };
+    bt.disabled = true;
+    msg('cap-en-msg', 'Salvando…');
+    fetchComTimeout(WORKER + '/api/captacao/' + encChave(DETALHE.captacao.chave), {
+      method: 'PATCH', headers: cab(), body: JSON.stringify(corpo)
+    }).then(async function (r) {
+      var d = await leJson(r);
+      bt.disabled = false;
+      if (!r.ok) { msg('cap-en-msg', erroTexto(d, r.status), 'erro'); return; }
+      DETALHE.captacao = d.captacao;
+      msg('cap-en-msg', 'Entrega salva.', 'bom');
+      renderDetalhe();
+      carregaLista();
+    }).catch(function () {
+      bt.disabled = false;
+      msg('cap-en-msg', 'Não deu para salvar agora.', 'erro');
+    });
+  }
+
+  // --- R2 · nova captação ---------------------------------------------------
+  function criaCaptacao() {
+    var bt = document.getElementById('cap-nv-salvar');
+    var titulo = document.getElementById('cap-nv-titulo').value.trim();
+    var data = document.getElementById('cap-nv-data').value;
+    var casa = document.getElementById('cap-nv-casa').value;
+    if (!titulo) { msg('cap-nv-msg', 'Dê um título à captação.', 'erro'); return; }
+    if (!data) { msg('cap-nv-msg', 'Escolha a data.', 'erro'); return; }
+    if (!casa) { msg('cap-nv-msg', 'Escolha a casa.', 'erro'); return; }
+    var corpo = { casa: casa, titulo: titulo, data: data };
+    var part = document.getElementById('cap-nv-part').value.trim();
+    if (part) corpo.participantes = part.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    var rot = document.getElementById('cap-nv-roteiro').value.trim();
+    if (rot) corpo.roteiro = rot;
+    // Sem idempotência no POST (§R2): duplo clique criaria duas. O botão trava
+    // enquanto está em voo — é essa a trava contratada.
+    bt.disabled = true;
+    msg('cap-nv-msg', 'Criando…');
+    fetchComTimeout(WORKER + '/api/captacao', { method: 'POST', headers: cab(), body: JSON.stringify(corpo) })
+      .then(async function (r) {
+        var d = await leJson(r);
+        bt.disabled = false;
+        if (!r.ok) { msg('cap-nv-msg', erroTexto(d, r.status), 'erro'); return; }
+        msg('cap-nv-msg', 'Criada em Rascunho.', 'bom');
+        document.getElementById('cap-nv-titulo').value = '';
+        document.getElementById('cap-nv-roteiro').value = '';
+        document.getElementById('cap-nova-form').style.display = 'none';
+        var chave = d.captacao.chave;
+        carregaLista().then(function () {
+          document.getElementById('cap-sel').value = chave;
+          abreCaptacao(chave);
         });
-        corpo.querySelectorAll('.adh-bonus-chk').forEach(function (c) { c.addEventListener('change', atualizaTotais); });
-        window._adhParticipantes = participantes;
-        atualizaTotais();
-        mostraView('revisao');
+      }).catch(function () {
+        bt.disabled = false;
+        msg('cap-nv-msg', 'Não deu para criar agora.', 'erro');
       });
-  });
+  }
 
-  function atualizaTotais() {
-    var corpo = document.getElementById('adh-rev-corpo');
-    (window._adhParticipantes || []).forEach(function (p, pi) {
-      var soma = 0;
-      corpo.querySelectorAll('.adh-pts[data-pessoa="' + pi + '"]').forEach(function (grupo) {
-        var on = grupo.querySelector('button.on');
-        soma += on ? Number(on.dataset.v) : 0;
+  // --- Histórico ------------------------------------------------------------
+  function renderHistorico(resp) {
+    var tb = document.getElementById('cap-h-tb').querySelector('tbody');
+    tb.innerHTML = '';
+    var cols = ['Data', 'Casa', 'Captação', 'Peças', 'Tempo', 'Status', ''];
+    var trh = el('tr');
+    cols.forEach(function (t, i) { trh.appendChild(el('th', (i === 3 || i === 4) ? 'num' : null, t)); });
+    tb.appendChild(trh);
+    if (!LISTA.length) {
+      var tr0 = el('tr');
+      var td0 = el('td', 'fraco', 'Nenhuma captação neste recorte.');
+      td0.colSpan = cols.length; tr0.appendChild(td0); tb.appendChild(tr0);
+    }
+    LISTA.forEach(function (c) {
+      var tr = el('tr');
+      tr.appendChild(el('td', null, diaMes(c.data)));
+      var tdC = el('td');
+      var ch = el('span', 'cap-tag casa', c.casa_label || c.casa);
+      ch.style.setProperty('--chip-cor', corDe(c.casa));
+      tdC.appendChild(ch);
+      tr.appendChild(tdC);
+      var pc = pecasDe(c);
+      var dm = durEntre(c.inicio, c.fim);
+      var tdT = el('td');
+      tdT.appendChild(el('div', null, c.titulo || 'sem título'));
+      // Sub-linha do celular: Casa/Peças/Tempo, que somem como coluna abaixo
+      // de 560px. "—" é ausência declarada (vazio não é zero), não some.
+      tdT.appendChild(el('div', 'cap-sub', [
+        c.casa_label || c.casa,
+        (pc === null ? 'peças: —' : pc + ' peça' + (pc === 1 ? '' : 's')),
+        (dm === null ? 'tempo: —' : dur(dm))
+      ].join(' · ')));
+      tr.appendChild(tdT);
+      tr.appendChild(el('td', 'num' + (pc === null ? ' fraco' : ''), pc === null ? '—' : String(pc)));
+      tr.appendChild(el('td', 'num' + (dm === null ? ' fraco' : ''), dm === null ? '—' : dur(dm)));
+      tr.appendChild(el('td', null, c.status));
+      var tdA = el('td');
+      var b = el('button', 'cap-acao', 'Abrir');
+      b.type = 'button';
+      b.addEventListener('click', function () {
+        document.getElementById('cap-sel').value = c.chave;
+        abreVista('captacao');
+        abreCaptacao(c.chave);
+        window.scrollTo(0, 0);
       });
-      var bonusChk = corpo.querySelector('tr[data-pessoa="' + pi + '"] .adh-bonus-chk');
-      if (bonusChk && bonusChk.checked) soma += 5;
-      corpo.querySelector('[data-total="' + pi + '"]').textContent = soma;
+      tdA.appendChild(b);
+      tr.appendChild(tdA);
+      tb.appendChild(tr);
+    });
+    // "total" do contrato é o total DEVOLVIDO, não o do banco (a API do Notion
+    // não devolve total) — a frase diz isso em vez de afirmar o que não sabe.
+    var t = (resp && typeof resp.total === 'number') ? resp.total : LISTA.length;
+    txt('cap-h-nota', t + ' captação(ões) neste recorte — é o que a consulta trouxe, não necessariamente tudo o que existe. ' +
+      'Itens captados e custo não aparecem aqui de propósito: a listagem não paga as três bases; abra a captação para vê-los.');
+  }
+  function filtraHistorico() {
+    var extra = [];
+    var de = document.getElementById('cap-h-de').value;
+    var ate = document.getElementById('cap-h-ate').value;
+    var st = document.getElementById('cap-h-status').value;
+    if (de) extra.push('de=' + encodeURIComponent(de));
+    if (ate) extra.push('ate=' + encodeURIComponent(ate));
+    if (st) extra.push('status=' + encodeURIComponent(st));
+    carregaLista(extra, 'cap-h-msg');
+  }
+  function csvCampo(v) {
+    var s = (v === null || v === undefined) ? '' : String(v);
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function exportaCsv() {
+    var linhas = [['data', 'casa', 'titulo', 'status', 'responsavel', 'participantes',
+                   'inicio', 'fim', 'entregue_em', 'pecas_foto', 'pecas_video', 'link_material']
+                  .map(csvCampo).join(';')];
+    LISTA.forEach(function (c) {
+      linhas.push([c.data, c.casa_label || c.casa, c.titulo, c.status, c.responsavel,
+                   (c.participantes || []).join(' / '), c.inicio, c.fim, c.entregue_em,
+                   c.pecas_foto, c.pecas_video, c.link_material].map(csvCampo).join(';'));
+    });
+    var blob = new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'captacoes.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+
+  // ==========================================================================
+  // E6a · Custos (§9.3) · Pauta (§9.1) · Métricas (§9.5)
+  // ==========================================================================
+  // Decisões desta raia — o §10 do contrato deixa layout, formatação e estados
+  // por conta da página. As que mereciam ficar escritas:
+  //
+  //   - **A tela NUNCA soma dinheiro.** Todo total, custo por peça e contagem
+  //     de "sem preço" vem do `resumo` do servidor (§4.6) ou de `metricas`
+  //     (R10); aqui só se formata. Não existe um `+` sobre R$ em lugar nenhum
+  //     deste bloco, e isso é de propósito — a conta tem um dono só.
+  //   - **Sem preço é travessão E contagem, juntos.** `custo_unit` e `total`
+  //     vêm `null` em par (§4.5) e viram "—"; o KPI de custo carrega uma
+  //     terceira linha em âmbar dizendo que o total é PARCIAL e quantos
+  //     insumos faltam. Um total sozinho fingiria estar completo.
+  //   - **Custos é POR CAPTAÇÃO**, porque R7/R8 são por captação e o `resumo`
+  //     do R4 é o único lugar do contrato onde esses totais existem. O seletor
+  //     daqui é espelho do da aba Captação e escreve no MESMO `DETALHE` —
+  //     dois estados de "qual captação está aberta" divergiriam no 1º clique.
+  //   - **Lançar consumo é online-only nesta etapa**, embora o contrato
+  //     permita fila (o `id` do cliente torna o POST idempotente). O `id` é
+  //     gerado uma vez por formulário e só zera quando o lançamento ENTRA, de
+  //     modo que um "tentar de novo" reenvia o mesmo id. Fila de verdade fica
+  //     declarada como pendência em vez de improvisada.
+  //   - **Terceiros recarrega a captação inteira depois de salvar.** O R3
+  //     devolve `captacao` e **não** devolve `resumo`, mas `custo_terceiros`
+  //     entra no `resumo.total` — reaproveitar o resumo velho mostraria um
+  //     total desatualizado com cara de atual. Uma ida a mais na rede é o
+  //     preço de não mentir.
+  //   - **Cobertura por casa exige uma chamada por casa.** O R10 devolve UMA
+  //     `cobertura` (a do recorte), não um mapa por casa — então a barra por
+  //     casa do mockup é um fan-out de GETs ao KV, tolerante a falha
+  //     individual (casa que falha vira "—", nunca 0%). Casa listada em
+  //     `sem_cobertura` não é consultada: ela é declarada.
+  //   - **Redes sociais nasce escondida e assim continua.** O contrato não
+  //     devolve alcance/interações; o bloco só apareceria se o payload um dia
+  //     trouxesse número lido de fonte. Nunca uma barra zerada, nunca uma
+  //     estimativa (§10 do plano).
+
+  var FMT_RS = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Ausência (null) vira travessão — jamais um zero. O servidor manda number;
+  // string com cifrão nunca vem de lá e nunca é montada fora daqui.
+  function rs(v) { return (typeof v === 'number' && isFinite(v)) ? ('R$ ' + FMT_RS.format(v)) : '—'; }
+  function numBr(v, casas) {
+    if (typeof v !== 'number' || !isFinite(v)) return '—';
+    return v.toLocaleString('pt-BR', { minimumFractionDigits: casas || 0, maximumFractionDigits: casas || 0 });
+  }
+  function pct(a, b) {
+    if (typeof a !== 'number' || typeof b !== 'number' || !isFinite(a) || !isFinite(b) || b <= 0) return null;
+    return a / b;
+  }
+  // Duração longa: acima de um dia, "N dias" diz mais que "72h00" — é o tempo
+  // de pós-produção, que se conta em dias na conversa real.
+  function durLonga(min) {
+    if (typeof min !== 'number' || !isFinite(min) || min < 0) return '—';
+    if (min >= 1440) { var d = Math.round(min / 1440); return d + (d === 1 ? ' dia' : ' dias'); }
+    return dur(min);
+  }
+  function kpiEl(valor, rot, extra, hero) {
+    var k = el('div', 'cap-kpi' + (hero ? ' hero' : ''));
+    k.appendChild(el('div', 'v', valor));
+    k.appendChild(el('div', 'd', rot));
+    if (extra && extra.txt) k.appendChild(el('div', 'x' + (extra.neutro ? ' neutro' : ''), extra.txt));
+    return k;
+  }
+  function uuidCliente() {
+    try {
+      if (window.crypto && crypto.getRandomValues) {
+        var a = new Uint8Array(16), s = '';
+        crypto.getRandomValues(a);
+        for (var i = 0; i < a.length; i++) s += ('0' + a[i].toString(16)).slice(-2);
+        return s;
+      }
+    } catch (e) {}
+    return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+  }
+  function chipCasaEl(slug, label) {
+    var c = el('span', 'cap-tag casa', label || slug || '—');
+    c.style.setProperty('--chip-cor', corDe(slug));
+    return c;
+  }
+  function vazioEl(txtS) { return el('p', 'cap-vazio', txtS); }
+
+  // --- Custos (§9.3) --------------------------------------------------------
+  function montaSelectCustos() {
+    var s = document.getElementById('cap-cu-sel');
+    var atual = DETALHE && DETALHE.captacao ? DETALHE.captacao.chave : s.value;
+    s.innerHTML = '';
+    var vazio = el('option', null, LISTA.length ? '— escolha uma captação —' : '— nenhuma captação —');
+    vazio.value = ''; s.appendChild(vazio);
+    LISTA.forEach(function (c) {
+      var o = el('option', null, diaMes(c.data) + ' · ' + (c.casa_label || c.casa) + ' · ' + (c.titulo || 'sem título'));
+      o.value = c.chave; s.appendChild(o);
+    });
+    if (atual) s.value = atual;
+  }
+  function montaSelectItemConsumo() {
+    var s = document.getElementById('cap-cu-item');
+    s.innerHTML = '';
+    // `item_ordem` é OPCIONAL no contrato: vazio = consumo da sessão inteira,
+    // não de um item. É o caso do gelo e das flores, que não são de um drink.
+    var o0 = el('option', null, 'A sessão inteira'); o0.value = ''; s.appendChild(o0);
+    ((DETALHE && DETALHE.itens) || []).forEach(function (it) {
+      var o = el('option', null, '#' + it.ordem + ' · ' + it.item);
+      o.value = String(it.ordem); s.appendChild(o);
+    });
+  }
+  function renderCustos() {
+    var cx = document.getElementById('cap-cu-corpo');
+    var sel = document.getElementById('cap-cu-sel');
+    if (DETALHE && DETALHE.captacao) sel.value = DETALHE.captacao.chave;
+    if (!DETALHE || !DETALHE.captacao) {
+      cx.style.display = 'none';
+      msg('cap-cu-msg', LISTA.length
+        ? 'Escolha uma captação para ver o custo e lançar consumo.'
+        : 'Nenhuma captação neste recorte.');
+      return;
+    }
+    cx.style.display = 'block';
+    var c = DETALHE.captacao, res = DETALHE.resumo || {};
+    msg('cap-cu-msg', (c.casa_label || c.casa) + ' · ' + diaMesAno(c.data) + ' · ' + (c.titulo || 'sem título'));
+
+    var semPreco = n0(res.sem_preco) || 0;
+    var parcial = !!res.parcial;
+    var k = document.getElementById('cap-cu-kpis');
+    k.innerHTML = '';
+    k.appendChild(kpiEl(rs(n0(res.total)), 'custo da captação',
+      parcial
+        ? { txt: 'parcial — falta o preço de ' + semPreco + ' insumo' + (semPreco === 1 ? '' : 's') + '; o total é o piso' }
+        : { txt: 'todo insumo lançado tem preço', neutro: true },
+      true));
+    k.appendChild(kpiEl(rs(n0(res.custo_por_peca)), 'por peça entregue',
+      n0(res.custo_por_peca) === null ? { txt: 'peças ainda não informadas', neutro: true } : null));
+    k.appendChild(kpiEl(String(semPreco), 'insumos sem preço',
+      semPreco ? { txt: 'ficam fora do total' } : { txt: 'nenhum', neutro: true }));
+    k.appendChild(kpiEl(rs(n0(res.insumos)), 'em insumo',
+      { txt: (n0(res.lancamentos) || 0) + ' lançamento(s)', neutro: true }));
+    k.appendChild(kpiEl(n0(res.terceiros) === null ? '—' : rs(res.terceiros), 'terceiros',
+      n0(res.terceiros) === null ? { txt: 'nada lançado', neutro: true } : null));
+
+    var tb = document.getElementById('cap-cu-tb').querySelector('tbody');
+    tb.innerHTML = '';
+    var cols = ['Insumo', 'Item', 'Fonte', 'Qtde', 'Unit.', 'Total', ''];
+    var trh = el('tr');
+    cols.forEach(function (t, i) { trh.appendChild(el('th', (i >= 3 && i <= 5) ? 'num' : null, t)); });
+    tb.appendChild(trh);
+    var linhas = (DETALHE.consumo || []);
+    if (!linhas.length) {
+      var tr0 = el('tr');
+      var td0 = el('td', 'fraco', 'Nenhum insumo lançado nesta captação.');
+      td0.colSpan = cols.length; tr0.appendChild(td0); tb.appendChild(tr0);
+    }
+    linhas.forEach(function (l) {
+      var unit = n0(l.custo_unit), tot = n0(l.total);
+      var tr = el('tr');
+      var tdI = el('td');
+      tdI.appendChild(el('div', null, l.insumo || '—'));
+      tdI.appendChild(el('div', 'cap-sub', [
+        (l.item_ordem == null ? 'sessão inteira' : 'item #' + l.item_ordem),
+        (l.fonte || 'Manual'),
+        (unit === null ? 'unitário: —' : 'unitário ' + rs(unit)),
+        (l.quem || 'sem autoria')
+      ].join(' · ')));
+      tr.appendChild(tdI);
+      tr.appendChild(el('td', 'fraco', l.item_ordem == null ? 'sessão' : '#' + l.item_ordem));
+      var tdF = el('td'); tdF.appendChild(el('span', 'cap-tag', l.fonte || 'Manual')); tr.appendChild(tdF);
+      tr.appendChild(el('td', 'num', (typeof l.qtde === 'number' ? numBr(l.qtde, (l.qtde % 1 ? 2 : 0)) : '—') + ' ' + (l.unidade || '')));
+      tr.appendChild(el('td', 'num' + (unit === null ? ' fraco' : ''), rs(unit)));
+      tr.appendChild(el('td', 'num' + (tot === null ? ' fraco' : ''), rs(tot)));
+      var tdA = el('td');
+      // `pode_apagar` é do servidor, calculado com a MESMA função do DELETE
+      // (§4.5) — a tela não oferece botão que a rota recusaria.
+      if (l.pode_apagar) {
+        var b = el('button', 'cap-acao perigo', 'Apagar');
+        b.type = 'button';
+        b.addEventListener('click', function () { apagaConsumo(l, b); });
+        tdA.appendChild(b);
+      }
+      tr.appendChild(tdA);
+      tb.appendChild(tr);
+    });
+
+    var form = document.getElementById('cap-cu-form');
+    form.style.display = DETALHE.pode_lancar_consumo ? 'block' : 'none';
+    if (DETALHE.pode_lancar_consumo) montaSelectItemConsumo();
+    var terc = document.getElementById('cap-cu-terc');
+    terc.style.display = DETALHE.pode_editar ? 'block' : 'none';
+    if (DETALHE.pode_editar) {
+      document.getElementById('cap-cu-terc-v').value = n0(c.custo_terceiros) === null ? '' : c.custo_terceiros;
+    }
+  }
+  function lancaConsumo() {
+    if (!DETALHE || !DETALHE.captacao) return;
+    var b = document.getElementById('cap-cu-salvar');
+    var insumo = document.getElementById('cap-cu-insumo').value.trim();
+    var qtdeTxt = document.getElementById('cap-cu-qtde').value;
+    var unitTxt = document.getElementById('cap-cu-unit').value;
+    var ordem = document.getElementById('cap-cu-item').value;
+    if (!insumo) { msg('cap-cu-form-msg', 'Falta o nome do insumo.', 'erro'); return; }
+    var qtde = parseFloat(String(qtdeTxt).replace(',', '.'));
+    if (!isFinite(qtde) || qtde <= 0) { msg('cap-cu-form-msg', 'A quantidade precisa ser um número maior que zero.', 'erro'); return; }
+    if (!consumoId) consumoId = uuidCliente();
+    var corpo = {
+      id: consumoId, insumo: insumo, qtde: qtde,
+      unidade: document.getElementById('cap-cu-unidade').value,
+      fonte: document.getElementById('cap-cu-fonte').value
+    };
+    if (ordem) corpo.item_ordem = parseInt(ordem, 10);
+    // Campo VAZIO grava sem preço (custo_unit e total voltam null juntos).
+    // Campo preenchido com lixo NÃO vira "sem preço": vira erro, aqui e no
+    // servidor (§4.5) — engolir esconderia um preço que existe.
+    if (String(unitTxt).trim() !== '') {
+      var u = parseFloat(String(unitTxt).replace(',', '.'));
+      if (!isFinite(u) || u < 0) {
+        msg('cap-cu-form-msg', 'O custo unitário não é um número válido. Deixe o campo vazio se não souber o preço.', 'erro');
+        return;
+      }
+      corpo.custo_unit = u;
+    }
+    b.disabled = true;
+    msg('cap-cu-form-msg', 'Lançando…');
+    fetchComTimeout(WORKER + '/api/captacao/' + encChave(DETALHE.captacao.chave) + '/consumo', {
+      method: 'POST', headers: cab(), body: JSON.stringify(corpo)
+    }).then(async function (r) {
+      var d = await leJson(r);
+      b.disabled = false;
+      if (!r.ok) { msg('cap-cu-form-msg', erroTexto(d, r.status), 'erro'); return; }
+      consumoId = null;                       // entrou: o próximo é outro lançamento
+      if (d && d.linha) {
+        DETALHE.consumo = (DETALHE.consumo || []).filter(function (x) { return x.id !== d.linha.id; }).concat([d.linha]);
+      }
+      if (d && d.resumo) DETALHE.resumo = d.resumo;
+      document.getElementById('cap-cu-insumo').value = '';
+      document.getElementById('cap-cu-qtde').value = '';
+      document.getElementById('cap-cu-unit').value = '';
+      msg('cap-cu-form-msg', (d && d.duplicado)
+        ? 'Esse lançamento já tinha entrado — nada foi cobrado duas vezes.'
+        : ((d && d.linha && n0(d.linha.total) === null)
+            ? 'Lançado sem preço: entra na contagem de insumos sem preço e não no total.'
+            : 'Lançado.'), 'bom');
+      renderCustos();
+      renderDetalhe();
+    }).catch(function () {
+      b.disabled = false;
+      msg('cap-cu-form-msg', 'Não deu para falar com o servidor. Tentar de novo reenvia o mesmo lançamento — não cobra em dobro.', 'erro');
+    });
+  }
+  function apagaConsumo(l, botao) {
+    if (!DETALHE || !window.confirm('Apagar o lançamento de “' + (l.insumo || '') + '”? Corrigir um custo é apagar e lançar de novo — o valor é carimbo, não campo editável.')) return;
+    botao.disabled = true;
+    msg('cap-cu-tb-msg', 'Apagando…');
+    fetchComTimeout(WORKER + '/api/captacao/' + encChave(DETALHE.captacao.chave) + '/consumo/' + encodeURIComponent(l.id), {
+      method: 'DELETE', headers: cab()
+    }).then(async function (r) {
+      var d = await leJson(r);
+      // 404 é sucesso na segunda tentativa: a linha já não existe (§6 R8).
+      if (!r.ok && r.status !== 404) {
+        botao.disabled = false;
+        msg('cap-cu-tb-msg', erroTexto(d, r.status), 'erro');
+        return;
+      }
+      DETALHE.consumo = (DETALHE.consumo || []).filter(function (x) { return x.id !== l.id; });
+      if (d && d.resumo) DETALHE.resumo = d.resumo;
+      msg('cap-cu-tb-msg', (r.status === 404)
+        ? 'Esse lançamento já não existia. Atualize a captação para ver o total real.'
+        : 'Lançamento apagado.', r.status === 404 ? 'erro' : 'bom');
+      renderCustos();
+      renderDetalhe();
+    }).catch(function () {
+      botao.disabled = false;
+      msg('cap-cu-tb-msg', 'Não deu para falar com o servidor agora.', 'erro');
+    });
+  }
+  function salvaTerceiros() {
+    if (!DETALHE || !DETALHE.captacao) return;
+    var b = document.getElementById('cap-cu-terc-salvar');
+    var v = String(document.getElementById('cap-cu-terc-v').value).trim();
+    var corpo = {};
+    if (v === '') { corpo.custo_terceiros = null; }     // null explícito LIMPA (§6 R3)
+    else {
+      var n = parseFloat(v.replace(',', '.'));
+      if (!isFinite(n) || n < 0) { msg('cap-cu-terc-msg', 'Valor inválido. Deixe vazio se não houve custo de terceiros.', 'erro'); return; }
+      corpo.custo_terceiros = n;
+    }
+    b.disabled = true;
+    msg('cap-cu-terc-msg', 'Salvando…');
+    fetchComTimeout(WORKER + '/api/captacao/' + encChave(DETALHE.captacao.chave), {
+      method: 'PATCH', headers: cab(), body: JSON.stringify(corpo)
+    }).then(async function (r) {
+      var d = await leJson(r);
+      b.disabled = false;
+      if (!r.ok) { msg('cap-cu-terc-msg', erroTexto(d, r.status), 'erro'); return; }
+      // O R3 devolve `captacao` e NÃO devolve `resumo` — mas terceiros entra no
+      // total. Reabrir a captação é o que mantém o KPI verdadeiro.
+      msg('cap-cu-terc-msg', 'Salvo.', 'bom');
+      abreCaptacao(DETALHE.captacao.chave);
+    }).catch(function () {
+      b.disabled = false;
+      msg('cap-cu-terc-msg', 'Não deu para falar com o servidor agora.', 'erro');
     });
   }
 
-  document.getElementById('adh-fechar').addEventListener('click', function () {
-    var corpo = document.getElementById('adh-rev-corpo');
-    var pontuacoes = {};
-    (window._adhParticipantes || []).forEach(function (p, pi) {
-      var pontos = CATEGORIAS.map(function (_, ci) {
-        var on = corpo.querySelector('.adh-pts[data-pessoa="' + pi + '"][data-cat="' + ci + '"] button.on');
-        return on ? Number(on.dataset.v) : 0;
+  // --- Pauta (§9.1 · R9) ----------------------------------------------------
+  function carregaPauta(forcar) {
+    if (PAUTA_CARREGANDO || (PAUTA && !forcar)) return;
+    PAUTA_CARREGANDO = true;
+    msg('cap-pa-msg', 'Carregando…');
+    fetchComTimeout(WORKER + '/api/captacoes/pauta' + queryLista(), { headers: { 'X-Token': SESSAO.token } })
+      .then(async function (r) {
+        var d = await leJson(r);
+        PAUTA_CARREGANDO = false;
+        if (!r.ok) { msg('cap-pa-msg', erroTexto(d, r.status), 'erro'); return; }
+        PAUTA = d || {};
+        SEL_PAUTA = {};
+        // `sem_config` aqui é PARCIAL de propósito (§5 do contrato): sem a base
+        // de itens não há pendência para ler, mas a cobertura da carta vem do
+        // KV e continua valendo. Dizer isso evita ler a tela como "não falta
+        // nada".
+        msg('cap-pa-msg', PAUTA.sem_config
+          ? 'A base de itens ainda não foi configurada no servidor: os não captados não podem ser lidos. A cobertura da carta abaixo continua valendo.'
+          : '', PAUTA.sem_config ? 'erro' : '');
+        renderPauta();
+      })
+      .catch(function () {
+        PAUTA_CARREGANDO = false;
+        msg('cap-pa-msg', 'Não deu para falar com o servidor agora.', 'erro');
       });
-      var bonusChk = corpo.querySelector('tr[data-pessoa="' + pi + '"] .adh-bonus-chk');
-      pontuacoes[p.pessoa] = { pontos: pontos, bonus: !!(bonusChk && bonusChk.checked) };
+  }
+  function chaveSel(tipo, o) {
+    return tipo === 'p' ? ('p|' + o.captacao + '|' + o.ordem) : ('l|' + (o.casa || '') + '|' + o.item);
+  }
+  // Uma pendência/lacuna vira o corpo de item do R5. `direcao` carrega a
+  // PROCEDÊNCIA — quem for fotografar precisa saber por que aquilo voltou.
+  function itemDePendencia(p) {
+    return {
+      item: p.item, tipo: p.tipo || 'Foto', alvo: p.alvo || 'Outro',
+      referencia: p.referencia || null,
+      direcao: 'Refazer: não captado em ' + diaMesAno(p.data) + (p.motivo ? (' — ' + p.motivo) : '')
+    };
+  }
+  function itemDeLacuna(l) {
+    return {
+      item: l.item, tipo: 'Foto', alvo: l.alvo || 'Drink', referencia: l.item,
+      direcao: 'Da carta' + (l.secao ? (' · ' + l.secao) : '') + ' — ainda sem imagem'
+    };
+  }
+  function linhaPauta(chave, corpoItem, titulo, meta, casaSlug, casaLabel, etiqueta, etiquetaClasse) {
+    var d = el('div', 'cap-pl');
+    if (GESTAO) {
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!SEL_PAUTA[chave];
+      cb.addEventListener('change', function () {
+        if (cb.checked) SEL_PAUTA[chave] = corpoItem; else delete SEL_PAUTA[chave];
+        atualizaSelPauta();
+      });
+      d.appendChild(cb);
+    }
+    if (casaSlug || casaLabel) d.appendChild(chipCasaEl(casaSlug, casaLabel));
+    var c = el('div', 'corpo');
+    c.appendChild(el('div', 'tit', titulo));
+    c.appendChild(el('div', 'meta', meta));
+    d.appendChild(c);
+    if (etiqueta) d.appendChild(el('span', 'cap-tag' + (etiquetaClasse ? ' ' + etiquetaClasse : ''), etiqueta));
+    return d;
+  }
+  function renderPauta() {
+    var p = PAUTA || {};
+    var pend = p.pendencias || [];
+    var lac = (p.cobertura && p.cobertura.lacunas) || p.lacunas || [];
+    var cob = p.cobertura || null;
+
+    var maisAntiga = null;
+    pend.forEach(function (x) {
+      var dd = n0(x.dias_em_aberto);
+      if (dd !== null && (maisAntiga === null || dd > maisAntiga)) maisAntiga = dd;
     });
-    var avisoEl = document.getElementById('adh-aviso-fechar');
-    avisoEl.textContent = 'Fechando…';
-    fetch(WORKER + '/api/competicao/adedonha/rodada/' + RODADA + '/fechar', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
-      body: JSON.stringify({ pontuacoes: pontuacoes }),
-    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
-      .then(function (res) {
-        if (!res.ok) { avisoEl.innerHTML = '<p class="crf-aviso-incompleto">' + esc(res.d.erro || 'erro') + '</p>'; return; }
-        document.getElementById('adh-fechado-msg').textContent = res.d.fechados + ' pessoa(s) pontuada(s) e salvas.';
-        mostraView('fechado');
+    var casasComPauta = {};
+    pend.forEach(function (x) { if (x.casa) casasComPauta[x.casa] = 1; });
+    lac.forEach(function (x) { if (x.casa) casasComPauta[x.casa] = 1; });
+    var nCasas = Object.keys(casasComPauta).length;
+
+    var k = document.getElementById('cap-pa-kpis');
+    k.innerHTML = '';
+    k.appendChild(kpiEl(String(pend.length), 'itens pendentes',
+      pend.length ? { txt: 'ficaram sem captar e não voltaram' } : { txt: 'nada em aberto', neutro: true }, true));
+    k.appendChild(kpiEl(cob && n0(cob.sem_foto) !== null ? String(cob.sem_foto) : String(lac.length), 'da carta sem imagem',
+      cob && n0(cob.carta_itens) ? { txt: 'de ' + cob.carta_itens + ' itens da carta', neutro: true } : null));
+    k.appendChild(kpiEl(maisAntiga === null ? '—' : (maisAntiga + (maisAntiga === 1 ? ' dia' : ' dias')), 'mais antiga em aberto',
+      maisAntiga === null ? { txt: 'sem pendência datada', neutro: true } : null));
+    if (nCasas) k.appendChild(kpiEl(String(nCasas), 'casas com pauta'));
+
+    var cxP = document.getElementById('cap-pa-pend');
+    cxP.innerHTML = '';
+    if (!pend.length) {
+      cxP.appendChild(vazioEl(p.sem_config
+        ? 'Não dá para ler os itens não captados agora.'
+        : 'Nenhum item ficou para trás neste recorte.'));
+    }
+    pend.forEach(function (x) {
+      var meta = 'Não captado em ' + diaMesAno(x.data)
+        + (x.motivo ? (' · motivo: ' + x.motivo) : ' · sem motivo registrado')
+        + (n0(x.dias_em_aberto) !== null ? (' · ' + x.dias_em_aberto + ' dia(s) em aberto') : '')
+        + (x.captacao_titulo ? (' · ' + x.captacao_titulo) : '');
+      cxP.appendChild(linhaPauta(chaveSel('p', x), itemDePendencia(x),
+        x.item + (x.tipo ? (' — ' + x.tipo.toLowerCase()) : ''), meta,
+        x.casa, x.casa_label, 'pendente', 'pend'));
+    });
+
+    var cxL = document.getElementById('cap-pa-lac');
+    cxL.innerHTML = '';
+    if (!lac.length) {
+      cxL.appendChild(vazioEl(cob
+        ? 'Todo item da carta com cobertura medida já tem imagem.'
+        : 'Sem fonte de cobertura da carta neste recorte.'));
+    }
+    lac.forEach(function (x) {
+      cxL.appendChild(linhaPauta(chaveSel('l', x), itemDeLacuna(x), x.item,
+        'Está na carta e ainda não foi captado' + (x.secao ? (' · ' + x.secao) : ''),
+        x.casa, x.casa_label, 'carta sem imagem', null));
+    });
+    // As duas datas de fonte são de leituras DIFERENTES (a carta e as fotos) e
+    // aparecem separadas: uma carta de ontem cruzada com fotos de três semanas
+    // atrás é uma comparação com defeito, e quem lê tem que poder ver isso.
+    txt('cap-pa-cob', cob
+      ? ((n0(cob.com_foto) || 0) + ' de ' + (n0(cob.carta_itens) || 0) + ' itens da carta já têm imagem'
+         + (cob.fonte_carta ? (' · carta lida em ' + diaMesAno(cob.fonte_carta)) : '')
+         + (cob.fonte_fotos ? (' · fotos lidas em ' + diaMesAno(cob.fonte_fotos)) : ''))
+      : 'Sem fonte de cobertura para este recorte.');
+
+    var semCob = p.sem_cobertura || [];
+    var cxS = document.getElementById('cap-pa-semcob');
+    cxS.style.display = semCob.length ? 'block' : 'none';
+    var cxSl = document.getElementById('cap-pa-semcob-l');
+    cxSl.innerHTML = '';
+    semCob.forEach(function (s) {
+      var lbl = null;
+      CASAS_DISP.forEach(function (c) { if (c.slug === s.casa) lbl = c.label; });
+      var d = el('div', 'cap-declara');
+      d.appendChild(chipCasaEl(s.casa, lbl || s.casa));
+      d.appendChild(el('span', null, ' ' + (s.motivo || 'sem fonte declarada')));
+      cxSl.appendChild(d);
+    });
+
+    document.getElementById('cap-pa-levar').style.display = GESTAO ? 'block' : 'none';
+    if (GESTAO) montaSelectPautaAlvo();
+    atualizaSelPauta();
+  }
+  function montaSelectPautaAlvo() {
+    var s = document.getElementById('cap-pa-alvo');
+    var atual = s.value;
+    s.innerHTML = '';
+    var vazio = el('option', null, LISTA.length ? '— escolha a captação de destino —' : '— crie uma captação primeiro —');
+    vazio.value = ''; s.appendChild(vazio);
+    LISTA.forEach(function (c) {
+      var o = el('option', null, diaMes(c.data) + ' · ' + (c.casa_label || c.casa) + ' · ' + (c.titulo || 'sem título') + ' · ' + c.status);
+      o.value = c.chave; s.appendChild(o);
+    });
+    if (atual) s.value = atual;
+  }
+  function atualizaSelPauta() {
+    var n = Object.keys(SEL_PAUTA).length;
+    var b = document.getElementById('cap-pa-enviar');
+    if (!b) return;
+    b.disabled = (n === 0 || n > LOTE_MAX);
+    b.textContent = n ? ('Levar ' + n + ' selecionado(s)') : 'Levar selecionados';
+    if (n > LOTE_MAX) {
+      msg('cap-pa-envio-msg', 'São ' + n + ' selecionados e o servidor aceita ' + LOTE_MAX + ' por vez. Desmarque ' + (n - LOTE_MAX) + ' e mande em duas levas.', 'erro');
+    } else {
+      msg('cap-pa-envio-msg', '');
+    }
+  }
+  function levaParaCaptacao() {
+    var alvo = document.getElementById('cap-pa-alvo').value;
+    if (!alvo) { msg('cap-pa-envio-msg', 'Escolha a captação de destino.', 'erro'); return; }
+    var itens = [];
+    Object.keys(SEL_PAUTA).forEach(function (kk) { itens.push(SEL_PAUTA[kk]); });
+    if (!itens.length) return;
+    if (itens.length > LOTE_MAX) return;
+    var b = document.getElementById('cap-pa-enviar');
+    b.disabled = true;                                   // online-only: R5 não é idempotente
+    msg('cap-pa-envio-msg', 'Levando ' + itens.length + ' item(ns)…');
+    fetchComTimeout(WORKER + '/api/captacao/' + encChave(alvo) + '/item', {
+      method: 'POST', headers: cab(), body: JSON.stringify({ itens: itens })
+    }, 30000).then(async function (r) {
+      var d = await leJson(r);
+      if (!r.ok) { b.disabled = false; msg('cap-pa-envio-msg', erroTexto(d, r.status), 'erro'); return; }
+      // O R5 devolve a lista INTEIRA já reordenada; `ordem` nunca é recalculada
+      // aqui. Se o destino é a captação aberta, a tela adota a do servidor.
+      if (DETALHE && DETALHE.captacao && DETALHE.captacao.chave === alvo && d && d.itens) {
+        DETALHE.itens = d.itens;
+        renderDetalhe();
+      }
+      SEL_PAUTA = {};
+      renderPauta();
+      msg('cap-pa-envio-msg', itens.length + ' item(ns) no roteiro. A pendência original continua aberta até alguém marcar aquele item como captado — ela é o registro do que faltou, não uma tarefa que some sozinha.', 'bom');
+    }).catch(function () {
+      b.disabled = false;
+      msg('cap-pa-envio-msg', 'Não deu para falar com o servidor. Nada foi enviado de novo sozinho — confira o roteiro antes de tentar outra vez.', 'erro');
+    });
+  }
+
+  // --- Métricas (§9.5 · R10) ------------------------------------------------
+  function carregaMetricas(forcar) {
+    if (METRICAS_CARREGANDO || (METRICAS && !forcar)) return;
+    METRICAS_CARREGANDO = true;
+    msg('cap-me-msg', 'Carregando…');
+    fetchComTimeout(WORKER + '/api/captacoes/metricas' + queryLista(), { headers: { 'X-Token': SESSAO.token } })
+      .then(async function (r) {
+        var d = await leJson(r);
+        METRICAS_CARREGANDO = false;
+        if (!r.ok) { msg('cap-me-msg', erroTexto(d, r.status), 'erro'); return; }
+        METRICAS = d || {};
+        msg('cap-me-msg', METRICAS.sem_dado
+          ? 'O consolidado ainda não foi gerado — os números aparecem depois da primeira rodada do robô.'
+          : '', METRICAS.sem_dado ? 'erro' : '');
+        document.getElementById('cap-me-corpo').style.display = 'block';
+        renderMetricas();
+        carregaCoberturaCasas();
+      })
+      .catch(function () {
+        METRICAS_CARREGANDO = false;
+        msg('cap-me-msg', 'Não deu para falar com o servidor agora.', 'erro');
       });
+  }
+  function renderMetricas() {
+    var d = METRICAS || {}, m = d.metricas || {};
+    var semPreco = n0(m.sem_preco) || 0;
+    var k = document.getElementById('cap-me-kpis');
+    k.innerHTML = '';
+    k.appendChild(kpiEl(m.aproveitamento == null ? '—' : (Math.round(m.aproveitamento * 100) + '%'), 'aproveitamento',
+      (n0(m.itens_planejados) !== null)
+        ? { txt: (n0(m.itens_captados) || 0) + ' de ' + m.itens_planejados + ' itens', neutro: true }
+        : { txt: 'sem item planejado ainda', neutro: true }, true));
+    // Foto e vídeo NUNCA são somados numa caixa só: são trabalhos diferentes,
+    // com custo e tempo diferentes (§9.5 do plano).
+    k.appendChild(kpiEl(n0(m.pecas_foto) === null ? '—' : String(m.pecas_foto), 'peças de foto',
+      n0(m.pecas_foto) === null ? { txt: 'não informadas', neutro: true } : null));
+    k.appendChild(kpiEl(n0(m.pecas_video) === null ? '—' : String(m.pecas_video), 'peças de vídeo',
+      n0(m.pecas_video) === null ? { txt: 'não informadas', neutro: true } : null));
+    k.appendChild(kpiEl(n0(m.minutos_por_peca) === null ? '—' : (numBr(m.minutos_por_peca, 1) + ' min'), 'por peça'));
+    k.appendChild(kpiEl(durLonga(n0(m.minutos_ate_entrega)), 'até a entrega',
+      n0(m.minutos_ate_entrega) === null ? { txt: 'nenhuma entrega fechada', neutro: true } : { txt: 'da última captação ao material', neutro: true }));
+    k.appendChild(kpiEl(rs(n0(m.custo_total)), 'custo total',
+      m.parcial
+        ? { txt: 'parcial — falta o preço de ' + semPreco + ' insumo' + (semPreco === 1 ? '' : 's') }
+        : null));
+    k.appendChild(kpiEl(rs(n0(m.custo_por_peca)), 'por peça',
+      n0(m.custo_por_peca) === null ? { txt: 'peças ou custo ainda não informados', neutro: true } : null));
+    // Horas-pessoa é NÚMERO e nunca vira dinheiro: o portal não tem salário
+    // confiável fora do bar (§7.4 do plano).
+    k.appendChild(kpiEl(n0(m.horas_pessoa) === null ? '—' : (numBr(m.horas_pessoa, 1) + ' h'), 'horas-pessoa',
+      { txt: 'nunca convertidas em reais', neutro: true }));
+    k.appendChild(kpiEl(n0(m.captacoes) === null ? '—' : String(m.captacoes), 'captações',
+      n0(m.itens_nao_captados) ? { txt: m.itens_nao_captados + ' item(ns) não captado(s)' } : null));
+
+    var meses = m.por_mes || [];
+    document.getElementById('cap-me-mes-cx').style.display = meses.length ? 'block' : 'none';
+    if (meses.length) {
+      var tb = document.getElementById('cap-me-mes').querySelector('tbody');
+      tb.innerHTML = '';
+      var cols = ['Mês', 'Captações', 'Foto', 'Vídeo', 'Custo'];
+      var trh = el('tr');
+      cols.forEach(function (t, i) { trh.appendChild(el('th', i ? 'num' : null, t)); });
+      tb.appendChild(trh);
+      meses.forEach(function (x) {
+        var tr = el('tr');
+        // `mes` é AAAA-MM texto — fatiado, nunca `new Date()` (armadilha 8).
+        var s = String(x.mes || '');
+        tr.appendChild(el('td', null, s.length >= 7 ? (s.slice(5, 7) + '/' + s.slice(0, 4)) : (s || '—')));
+        var tdC = el('td', 'num', n0(x.captacoes) === null ? '—' : String(x.captacoes));
+        tdC.appendChild(el('div', 'cap-sub', 'foto ' + (n0(x.pecas_foto) === null ? '—' : x.pecas_foto)
+          + ' · vídeo ' + (n0(x.pecas_video) === null ? '—' : x.pecas_video)));
+        tr.appendChild(tdC);
+        tr.appendChild(el('td', 'num', n0(x.pecas_foto) === null ? '—' : String(x.pecas_foto)));
+        tr.appendChild(el('td', 'num', n0(x.pecas_video) === null ? '—' : String(x.pecas_video)));
+        tr.appendChild(el('td', 'num' + (n0(x.custo_total) === null ? ' fraco' : ''), rs(n0(x.custo_total))));
+        tb.appendChild(tr);
+      });
+    }
+
+    // "O que esta página ainda não sabe": vem do payload e é renderizado como
+    // está — a tela não redige essa lista. Vazia, o bloco não aparece.
+    var ns = d.nao_sabemos || [];
+    document.getElementById('cap-me-ns').style.display = ns.length ? 'block' : 'none';
+    var ul = document.getElementById('cap-me-ns-l');
+    ul.innerHTML = '';
+    ns.forEach(function (s) { ul.appendChild(el('li', null, s)); });
+
+    // Redes sociais (fase 2, dormente): só existe se vier número LIDO de uma
+    // fonte. Hoje o contrato não devolve o campo, então o bloco não aparece —
+    // e é isso que se quer. Nunca uma barra zerada, nunca uma estimativa.
+    var redes = (m.redes && m.redes.length) ? m.redes : [];
+    document.getElementById('cap-me-redes').style.display = redes.length ? 'block' : 'none';
+    if (redes.length) {
+      var cxR = document.getElementById('cap-me-redes-l');
+      cxR.innerHTML = '';
+      redes.forEach(function (x) {
+        var l = el('div', 'cap-declara');
+        l.appendChild(el('span', null, (x.rotulo || x.rede || '—') + ': '
+          + (n0(x.alcance) === null ? '—' : numBr(x.alcance, 0)) + ' alcançados · '
+          + (n0(x.interacoes) === null ? '—' : numBr(x.interacoes, 0)) + ' interações'));
+        cxR.appendChild(l);
+      });
+    }
+
+    txt('cap-me-quando', (d.gerado_em ? ('Consolidado gerado em ' + diaMesAno(String(d.gerado_em).slice(0, 10)) + ' às ' + hora(d.gerado_em) + '. ') : '')
+      + 'Estes números vêm do consolidado do dia, não do Notion ao vivo — uma captação registrada hoje entra na próxima rodada. '
+      + 'Alcance de rede social não aparece aqui porque não é estimado: ou é lido da fonte, ou não existe.');
+  }
+  // O R10 devolve UMA `cobertura` — a do recorte —, não um mapa por casa. Para
+  // desenhar uma barra por casa é preciso perguntar casa a casa. É leitura de
+  // KV, barata, e tolerante a falha individual: casa que não responde vira "—",
+  // nunca 0%. Casa declarada em `sem_cobertura` não é consultada.
+  function carregaCoberturaCasas() {
+    var semCob = {};
+    ((METRICAS && METRICAS.sem_cobertura) || []).forEach(function (s) { semCob[s.casa] = 1; });
+    var alvos = CASAS_DISP.filter(function (c) { return !semCob[c.slug]; });
+    if (CASA_ATUAL || CASA_TRAVADA || alvos.length <= 1) { COB_CASAS = null; renderCobertura(); return; }
+    var acc = {};
+    Promise.all(alvos.map(function (c) {
+      return fetchComTimeout(WORKER + '/api/captacoes/metricas?casa=' + encodeURIComponent(c.slug), { headers: { 'X-Token': SESSAO.token } })
+        .then(async function (r) {
+          var d = await leJson(r);
+          if (r.ok && d && d.cobertura) acc[c.slug] = d.cobertura;
+        })
+        .catch(function () {});
+    })).then(function () { COB_CASAS = acc; renderCobertura(); });
+  }
+  function barraCobertura(slug, label, cob) {
+    var p = cob ? pct(n0(cob.com_foto), n0(cob.carta_itens)) : null;
+    var d = el('div', 'cap-barra' + (p === null ? ' sem' : ''));
+    var rot = el('div', 'rot');
+    rot.appendChild(chipCasaEl(slug, label));
+    d.appendChild(rot);
+    var tr = el('div', 'tr');
+    var i = el('i');
+    i.style.width = (p === null ? 0 : Math.round(p * 100)) + '%';
+    tr.appendChild(i);
+    d.appendChild(tr);
+    d.appendChild(el('div', 'v', p === null ? '—' : (Math.round(p * 100) + '%')));
+    return d;
+  }
+  function renderCobertura() {
+    var d = METRICAS || {};
+    var cx = document.getElementById('cap-me-cob');
+    cx.innerHTML = '';
+    var semCob = d.sem_cobertura || [];
+    var declarada = {};
+    semCob.forEach(function (s) { declarada[s.casa] = s.motivo || 'sem fonte declarada'; });
+
+    if (COB_CASAS && Object.keys(COB_CASAS).length) {
+      CASAS_DISP.forEach(function (c) {
+        if (declarada[c.slug]) return;
+        cx.appendChild(barraCobertura(c.slug, c.label, COB_CASAS[c.slug]));
+      });
+    } else {
+      var lbl = null;
+      CASAS_DISP.forEach(function (c) { if (c.slug === d.casa) lbl = c.label; });
+      cx.appendChild(barraCobertura(d.casa, lbl || (d.casa ? d.casa : 'Todas as casas'), d.cobertura));
+    }
+    // Casa sem fonte aparece DECLARADA, com o motivo, e nunca como 0% — zero
+    // seria "medi e não tem foto nenhuma", que é outra afirmação.
+    semCob.forEach(function (s) {
+      var lbl2 = null;
+      CASAS_DISP.forEach(function (c) { if (c.slug === s.casa) lbl2 = c.label; });
+      var linha = el('div', 'cap-declara');
+      linha.appendChild(chipCasaEl(s.casa, lbl2 || s.casa));
+      linha.appendChild(el('span', null, ' ' + (s.motivo || 'sem fonte declarada') + ' — sem cobertura medida, não zero.'));
+      cx.appendChild(linha);
+    });
+    txt('cap-me-cob-nota', semCob.length
+      ? 'Casa sem cardápio digital com coquetelaria não tem como ter cobertura medida: ela aparece declarada acima, nunca com barra zerada.'
+      : 'Cobertura é o quanto da carta já tem imagem — não diz nada sobre a qualidade da imagem.');
+  }
+
+  // --- boot -----------------------------------------------------------------
+  function preencheSelects() {
+    var t = document.getElementById('cap-ad-tipo');
+    TIPOS_ITEM.forEach(function (s) { var o = el('option', null, s); o.value = s; t.appendChild(o); });
+    var a = document.getElementById('cap-ad-alvo');
+    ALVOS_ITEM.forEach(function (s) { var o = el('option', null, s); o.value = s; a.appendChild(o); });
+    var h = document.getElementById('cap-h-status');
+    var vazio = el('option', null, 'Todos'); vazio.value = ''; h.appendChild(vazio);
+    STATUS_CAPTACAO.forEach(function (s) { var o = el('option', null, s); o.value = s; h.appendChild(o); });
+    var u = document.getElementById('cap-cu-unidade');
+    UNIDADES_CONSUMO.forEach(function (s) { var o = el('option', null, s); o.value = s; u.appendChild(o); });
+    var f = document.getElementById('cap-cu-fonte');
+    FONTES_CUSTO.forEach(function (s) { var o = el('option', null, s); o.value = s; f.appendChild(o); });
+    f.value = 'Manual';   // o que o servidor assume quando `fonte` não vem
+  }
+
+  document.getElementById('cap-vsel').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-vista]');
+    if (b) abreVista(b.dataset.vista);
   });
+  document.getElementById('cap-sel').addEventListener('change', function (e) { abreCaptacao(e.target.value); });
+  document.getElementById('cap-bt-recarrega').addEventListener('click', function () {
+    carregaLista().then(function () { if (DETALHE) abreCaptacao(DETALHE.captacao.chave); });
+  });
+  document.getElementById('cap-bt-nova').addEventListener('click', function () {
+    var f = document.getElementById('cap-nova-form');
+    f.style.display = f.style.display === 'block' ? 'none' : 'block';
+    msg('cap-nv-msg', '');
+  });
+  document.getElementById('cap-nv-salvar').addEventListener('click', criaCaptacao);
+  document.getElementById('cap-nv-cancelar').addEventListener('click', function () {
+    document.getElementById('cap-nova-form').style.display = 'none';
+  });
+  document.getElementById('cap-pi-salvar').addEventListener('click', salvaItem);
+  document.getElementById('cap-pi-cancelar').addEventListener('click', fechaPainelItem);
+  document.getElementById('cap-ad-salvar').addEventListener('click', adicionaItem);
+  document.getElementById('cap-ad-cancelar').addEventListener('click', function () {
+    document.getElementById('cap-add-form').style.display = 'none';
+  });
+  document.getElementById('cap-en-salvar').addEventListener('click', salvaEntrega);
+  document.getElementById('cap-h-filtrar').addEventListener('click', filtraHistorico);
+  document.getElementById('cap-h-limpar').addEventListener('click', function () {
+    document.getElementById('cap-h-de').value = '';
+    document.getElementById('cap-h-ate').value = '';
+    document.getElementById('cap-h-status').value = '';
+    carregaLista([], 'cap-h-msg');
+  });
+  document.getElementById('cap-h-csv').addEventListener('click', exportaCsv);
+  // E6a
+  document.getElementById('cap-cu-sel').addEventListener('change', function (e) {
+    document.getElementById('cap-sel').value = e.target.value;   // um estado só
+    abreCaptacao(e.target.value);
+    if (!e.target.value) renderCustos();
+  });
+  document.getElementById('cap-cu-salvar').addEventListener('click', lancaConsumo);
+  document.getElementById('cap-cu-terc-salvar').addEventListener('click', salvaTerceiros);
+  document.getElementById('cap-pa-recarrega').addEventListener('click', function () { carregaPauta(true); });
+  document.getElementById('cap-pa-enviar').addEventListener('click', levaParaCaptacao);
+  document.getElementById('cap-pa-limpar').addEventListener('click', function () {
+    SEL_PAUTA = {}; renderPauta();
+  });
+  document.getElementById('cap-me-recarrega').addEventListener('click', function () {
+    METRICAS = null; COB_CASAS = null; carregaMetricas(true);
+  });
+
+  function inicia(sessao) {
+    SESSAO = sessao;
+    // Palpite de UI: o contrato não devolve capacidade GLOBAL de escrita (só
+    // `pode_editar`, por captação, no R4). A garantia é o 403 do Worker, que a
+    // tela mostra por extenso — este flag só decide se o botão aparece.
+    GESTAO = ['marketing', 'coord'].indexOf(SESSAO.nivel) >= 0;
+    CASA_TRAVADA = !!(SESSAO.casa && SESSAO.casa !== '*');
+    gate.style.display = 'none';
+    wrap.hidden = false;
+    document.getElementById('cap-bt-nova').style.display = GESTAO ? 'inline-block' : 'none';
+    preencheSelects();
+    montaVistas();
+    abreVista('captacao');
+    carregaFila(); statusFila();
+    carregaLista().then(tentaEsvaziarFila);
+  }
 
   var r = window.exigirNivel(NIVEIS_OK, SLUG);
-  if (r.ok) {
-    TOKEN = r.sessao.token;
-    EH_CHEFE = ['chefe', 'coord'].indexOf(r.sessao.nivel) >= 0;
-    gate.style.display = 'none'; wrap.style.display = '';
-  } else if (!r.redirecionou) {
-    msg.innerHTML = window.msgAcessoNegado('a Adedonha de cocktails');
-  }
+  if (r.ok) inicia(r.sessao);
+  else if (!r.redirecionou) document.getElementById('cap-msg').innerHTML = window.msgAcessoNegado('as captações');
 })();
 </script>
 
