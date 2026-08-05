@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Cardápio em definição · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=01685f61b64b">
+<link rel="stylesheet" href="portal.css?v=876c9aec33c6">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -468,32 +468,10 @@ window.msgAcessoNegado = function (nomePagina) {
       overflow:hidden; margin-bottom:14px; }
   .cd-secao-tit { padding:9px 13px; border-bottom:1px solid var(--border); font-size:11px;
       letter-spacing:.12em; text-transform:uppercase; color:var(--acc); }
-  .cd-item { display:flex; gap:10px; padding:11px 13px; border-bottom:1px solid var(--border);
-      align-items:flex-start; }
-  .cd-item:last-child { border-bottom:none; }
-  .cd-item.arrastando { opacity:.4; }
-  .cd-item.alvo { border-top:2px solid var(--acc); }
-  .cd-item.sai .cd-nome-txt { text-decoration:line-through; color:var(--text-3); }
-  .cd-punho { color:var(--text-3); cursor:grab; padding-top:3px; flex-shrink:0; }
-  .cd-meio { flex:1; min-width:0; }
-  .cd-linha1 { display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; }
-  .cd-nome { font-size:14.5px; background:none; border:none; color:var(--text); font-family:inherit;
-      padding:2px 3px; border-radius:5px; min-width:90px; }
-  .cd-preco { font-size:12.5px; color:var(--text-2); background:none; border:none;
-      font-family:inherit; width:72px; padding:2px 3px; border-radius:5px; }
-  .cd-desc { display:block; width:100%; font-size:12.5px; color:var(--text-2); font-style:italic;
-      background:none; border:none; font-family:inherit; margin-top:4px; padding:3px 4px; border-radius:5px; }
-  .cd-nome:focus, .cd-preco:focus, .cd-desc:focus { outline:none; background:var(--bg);
-      box-shadow:0 0 0 1px var(--border); }
-  .cd-desc.falta { border:1px dashed var(--border); color:var(--text-3); font-style:normal; }
-  .cd-motivo { font-size:11px; color:var(--text-3); margin-top:5px; }
-  .cd-motivo.aten { color:#e08f6a; }
-  .cd-dec { display:flex; gap:3px; flex-shrink:0; flex-wrap:wrap; }
-  .cd-dec button { font-size:11px; padding:4px 9px; border-radius:6px; border:1px solid var(--border);
-      background:none; color:var(--text-3); cursor:pointer; font-family:inherit; }
-  .cd-dec button.on { border-color:transparent; color:var(--acc-txt); font-weight:500; }
-  .cd-novo { font-size:9.5px; padding:2px 7px; border-radius:999px; background:var(--acc);
-      color:var(--acc-txt); }
+  /* A linha de largura cheia que existia aqui (.cd-item em flex-row, .cd-meio)
+     foi substituída pelas duas vistas mais abaixo — Cards e Tabela. Manter as
+     regras antigas só faria a borda inferior e o padding delas vazarem pro
+     cartão, porque nem toda propriedade é sobrescrita. */
   .cd-aviso { font-size:12.5px; color:var(--amarelo); background:var(--card);
       border:1px solid var(--border); border-left:3px solid var(--amarelo); padding:9px 12px;
       margin-bottom:12px; }
@@ -508,6 +486,96 @@ window.msgAcessoNegado = function (nomePagina) {
       box-sizing:border-box; margin-bottom:11px; }
   .cd-sel-status { padding:8px 11px; font-size:13px; border-radius:9px; border:1px solid var(--border);
       background:var(--card); color:var(--text); font-family:inherit; }
+
+  /* ---- Filtro por seção (multi-seleção) + seletor Cards/Tabela (2026-08-04,
+     pedido do Rodrigo: a linha larga de antes obrigava rolar item a item). ---- */
+  .cd-filtros-linha { display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .cd-filtros { display:flex; gap:6px; flex-wrap:wrap; }
+  .cd-filtro-chip { font-size:11.5px; padding:5px 12px; border-radius:999px; border:1px solid var(--border);
+      background:var(--card); color:var(--text-2); cursor:pointer; font-family:inherit; }
+  .cd-filtro-chip.on { background:var(--acc); color:var(--acc-txt); border-color:transparent; }
+  .cd-vista-sel { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; flex-shrink:0; }
+  .cd-vista-sel button { display:flex; align-items:center; gap:6px; padding:6px 12px; font-size:12px;
+      border:none; background:none; color:var(--text-3); cursor:pointer; font-family:inherit; }
+  .cd-vista-sel button + button { border-left:1px solid var(--border); }
+  .cd-vista-sel button.on { background:var(--acc); color:var(--acc-txt); }
+
+  /* Vista Cards: grade de cards estreitos — cada item é uma caixa própria,
+     não mais uma linha de largura cheia. */
+  .cd-secao-grade { display:grid; grid-template-columns:repeat(auto-fill, minmax(206px,1fr)); gap:8px; padding:10px; }
+  .cd-item { display:flex; flex-direction:column; gap:5px; border:1px solid var(--border); border-radius:8px;
+      background:var(--bg); padding:9px; }
+  .cd-item.arrastando { opacity:.4; }
+  .cd-item.alvo { outline:2px solid var(--acc); outline-offset:-2px; }
+  .cd-item.sai .cd-nome-txt { text-decoration:line-through; color:var(--text-3); }
+  .cd-cartao-topo { display:flex; align-items:center; gap:5px; }
+  .cd-punho { color:var(--text-3); cursor:grab; flex-shrink:0; display:flex; }
+  .cd-del { background:none; border:none; cursor:pointer; color:var(--text-3); flex-shrink:0;
+      margin-left:auto; display:flex; padding:2px; }
+  .cd-del:hover { color:#e08585; }
+  .cd-nome { font-size:13.5px; background:none; border:none; color:var(--text); font-family:inherit;
+      padding:1px 2px; border-radius:5px; min-width:0; flex:1; }
+  .cd-preco { font-size:11.5px; color:var(--text-2); background:none; border:none;
+      font-family:inherit; width:58px; padding:1px 2px; border-radius:5px; flex-shrink:0; }
+  .cd-desc { display:block; width:100%; font-size:11.5px; color:var(--text-2); font-style:italic;
+      background:none; border:none; font-family:inherit; padding:2px; border-radius:5px; }
+  .cd-nome:focus, .cd-preco:focus, .cd-desc:focus { outline:none; background:var(--card);
+      box-shadow:0 0 0 1px var(--border); }
+  .cd-desc.falta { border:1px dashed var(--border); color:var(--text-3); font-style:normal; }
+  .cd-motivo { font-size:10.5px; color:var(--text-3); line-height:1.3; }
+  .cd-motivo.aten { color:#e08f6a; }
+  .cd-pagref { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .cd-pagref button { font-size:10.5px; padding:2px 8px; border-radius:999px; border:1px solid var(--border);
+      background:none; color:var(--text-2); cursor:pointer; font-family:inherit; }
+  .cd-pagref button:hover { border-color:var(--acc); color:var(--acc); }
+  .cd-pagref .cd-difpreco { font-size:10.5px; color:var(--amarelo); }
+  .cd-novo { font-size:9px; padding:1px 6px; border-radius:999px; background:var(--acc); color:var(--acc-txt); }
+  .cd-dec { display:flex; gap:2px; margin-top:2px; }
+  .cd-dec button { flex:1; font-size:10px; padding:4px 0; border-radius:5px; border:1px solid var(--border);
+      background:none; color:var(--text-3); cursor:pointer; font-family:inherit; }
+  .cd-dec button.on { border-color:transparent; color:var(--acc-txt); font-weight:500; }
+
+  /* Vista Tabela: densa, decisão vira <select> (4 botões não cabem numa
+     coluna estreita), sem arrastar pra reordenar — isso continua só em Cards. */
+  .cd-tabela-wrap { overflow-x:auto; }
+  table.cd-tabela { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.cd-tabela th, table.cd-tabela td { padding:6px 9px; border-bottom:1px solid var(--border); text-align:left; }
+  table.cd-tabela th { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-3);
+      font-weight:400; white-space:nowrap; }
+  table.cd-tabela tr:last-child td { border-bottom:none; }
+  table.cd-tabela tr.sai .cd-nome-txt { text-decoration:line-through; color:var(--text-3); }
+  table.cd-tabela .cd-nome, table.cd-tabela .cd-desc { background:none; border:none; color:var(--text);
+      font-family:inherit; font-size:inherit; width:100%; padding:2px; border-radius:5px; }
+  table.cd-tabela .cd-preco { background:none; border:none; color:var(--text); font-family:inherit;
+      font-size:inherit; width:64px; padding:2px; border-radius:5px; text-align:right; }
+  table.cd-tabela .cd-nome:focus, table.cd-tabela .cd-desc:focus, table.cd-tabela .cd-preco:focus {
+      outline:none; background:var(--card); box-shadow:0 0 0 1px var(--border); }
+  table.cd-tabela select.cd-dec-sel { font-size:11.5px; padding:4px 6px; border-radius:6px;
+      border:1px solid var(--border); background:var(--card); color:var(--text); font-family:inherit; }
+  td.cd-tab-nota { font-size:11px; color:var(--text-3); max-width:200px; }
+  td.cd-tab-nota .aten { color:#e08f6a; }
+  table.cd-tabela .cd-del { background:none; border:none; cursor:pointer; color:var(--text-3); display:flex; padding:2px; }
+  table.cd-tabela .cd-del:hover { color:#e08585; }
+
+  /* Celular: SEMPRE a tabela fina, e ela cabe em 375px sem rolar pro lado —
+     duas colunas somem (mesmo recurso do Banco de Horas). Card com respiro
+     dá 1 por linha no celular, que é justamente o rolar item a item que se
+     quis resolver; por isso o seletor some nesta largura, em vez de oferecer
+     uma escolha que a tela não honra (quem decide é vistaEfetiva()). */
+  @media (max-width: 640px) {
+    .cd-vista-sel { display:none; }
+    table.cd-tabela { table-layout:fixed; font-size:12px; }
+    table.cd-tabela th, table.cd-tabela td { padding:5px 4px; }
+    table.cd-tabela .cd-col-desc, table.cd-tabela .cd-col-nota { display:none; }
+    table.cd-tabela .cd-col-item { width:46%; }
+    table.cd-tabela .cd-col-preco { width:20%; }
+    table.cd-tabela .cd-col-dec { width:26%; }
+    table.cd-tabela .cd-col-del { width:8%; }
+    table.cd-tabela .cd-preco { width:100%; }
+    table.cd-tabela select.cd-dec-sel { width:100%; font-size:11px; padding:3px 2px; }
+    .cd-secao-grade { grid-template-columns:1fr; padding:8px; }
+  }
 
   /* ---- Cardápio atual lado a lado (D9 do PLANO_CARDAPIO_DEFINICAO.md) ----
      Um mesmo painel, dois comportamentos: ATÉ 1099px ele é sobreposto (em
@@ -537,11 +605,8 @@ window.msgAcessoNegado = function (nomePagina) {
       min-height:180px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .cd-carta-folha img { display:block; width:100%; height:auto; }
   .cd-carta-estado { font-size:12.5px; color:var(--text-3); padding:26px 14px; text-align:center; }
-  .cd-pagref { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:5px; }
-  .cd-pagref button { font-size:11px; padding:3px 9px; border-radius:999px; border:1px solid var(--border);
-      background:none; color:var(--text-2); cursor:pointer; font-family:inherit; }
-  .cd-pagref button:hover { border-color:var(--acc); color:var(--acc); }
-  .cd-pagref .cd-difpreco { font-size:11px; color:var(--amarelo); }
+  /* .cd-pagref está definido junto das vistas acima — a cópia que vivia aqui
+     era da linha larga e, por vir depois, vencia a nova em silêncio. */
   @media (min-width:1100px) {
     .cd-obra.aberto { display:grid; grid-template-columns:minmax(0,1fr) minmax(330px,470px);
         gap:16px; align-items:start; }
@@ -602,6 +667,13 @@ window.msgAcessoNegado = function (nomePagina) {
   <p class="cd-msg" id="cd-p-msg" role="status" aria-live="polite"></p>
   <div class="cd-obra" id="cd-obra">
     <div>
+      <div class="cd-filtros-linha">
+        <div class="cd-filtros" id="cd-filtros"></div>
+        <div class="cd-vista-sel" id="cd-vista-sel">
+          <button type="button" data-v="cards"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg> Cards</button>
+          <button type="button" data-v="tabela"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M9 9.5v10"/></svg> Tabela</button>
+        </div>
+      </div>
       <div id="cd-itens"></div>
       <div id="cd-add" style="display:none; margin-top:6px">
         <button class="cd-btn sec" id="cd-add-btn"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Adicionar item</button>
@@ -1315,19 +1387,100 @@ function nomeArquivoSeguro(base) {
     }
   }
 
+  // ---- Filtro por seção + vista Cards/Tabela (2026-08-04, pedido do Rodrigo:
+  // a linha de largura cheia obrigava rolar item a item pra decidir). A vista
+  // é preferência do APARELHO (localStorage), não do projeto — quem está
+  // sentado no celular não herda a escolha de quem abriu no desktop. O filtro
+  // é multi-seleção e mora só na memória da tela: ele é o recorte "do que eu
+  // quero olhar AGORA", não um estado do cardápio.
+  var VISTA = 'cards';
+  try { if (localStorage.getItem('cd_vista') === 'tabela') VISTA = 'tabela'; } catch (e) {}
+  var SECOES_OFF = {};
+  var vistaAplicada = null;
+
+  function vistaEfetiva() {
+    // No celular é SEMPRE a tabela fina: card com respiro cabe um por linha e
+    // devolve exatamente o rolar item a item que se quis resolver. O seletor
+    // some nessa largura (CSS) em vez de oferecer uma escolha não honrada.
+    return (window.innerWidth <= 640) ? 'tabela' : VISTA;
+  }
+
+  window.addEventListener('resize', function () {
+    if (vistaAplicada && vistaEfetiva() !== vistaAplicada) desenhaItens();
+  });
+
+  function desenhaFiltros(secoes) {
+    var cx = document.getElementById('cd-filtros');
+    if (!cx) return;
+    cx.innerHTML = '';
+    if (secoes.length < 2) return;   // uma seção só: filtrar não decide nada
+    var algumOff = secoes.some(function (s) { return SECOES_OFF[s]; });
+    var todas = document.createElement('button');
+    todas.type = 'button';
+    todas.className = 'cd-filtro-chip' + (algumOff ? '' : ' on');
+    todas.textContent = 'Todas';
+    todas.onclick = function () { SECOES_OFF = {}; desenhaItens(); };
+    cx.appendChild(todas);
+    secoes.forEach(function (sec) {
+      var n = ITENS.filter(function (i) { return i.secao === sec; }).length;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cd-filtro-chip' + (SECOES_OFF[sec] ? '' : ' on');
+      b.textContent = sec + ' (' + n + ')';
+      b.setAttribute('aria-pressed', SECOES_OFF[sec] ? 'false' : 'true');
+      b.onclick = function () {
+        if (SECOES_OFF[sec]) delete SECOES_OFF[sec]; else SECOES_OFF[sec] = true;
+        desenhaItens();
+      };
+      cx.appendChild(b);
+    });
+  }
+
+  function desenhaVistaSel() {
+    var sel = document.getElementById('cd-vista-sel');
+    if (!sel) return;
+    Array.prototype.forEach.call(sel.querySelectorAll('button'), function (b) {
+      var meu = b.getAttribute('data-v');
+      b.className = (meu === VISTA) ? 'on' : '';
+      b.setAttribute('aria-pressed', meu === VISTA ? 'true' : 'false');
+      b.onclick = function () {
+        VISTA = meu;
+        try { localStorage.setItem('cd_vista', meu); } catch (e) {}
+        desenhaItens();
+      };
+    });
+  }
+
   function desenhaItens() {
     var alvo = document.getElementById('cd-itens');
+    var barra = document.querySelector('.cd-filtros-linha');
     alvo.innerHTML = '';
     if (!ITENS.length) {
+      if (barra) barra.style.display = 'none';
       var v = document.createElement('p');
       v.className = 'cd-vazio';
       v.textContent = 'Este cardápio ainda não tem itens. Adicione o primeiro abaixo.';
       alvo.appendChild(v);
       return;
     }
+    if (barra) barra.style.display = '';
     var secoes = [];
     ITENS.forEach(function (i) { if (secoes.indexOf(i.secao) < 0) secoes.push(i.secao); });
-    secoes.forEach(function (sec) {
+    desenhaFiltros(secoes);
+    desenhaVistaSel();
+
+    var vista = vistaEfetiva();
+    vistaAplicada = vista;
+    var visiveis = secoes.filter(function (s) { return !SECOES_OFF[s]; });
+    if (!visiveis.length) {
+      var nada = document.createElement('p');
+      nada.className = 'cd-vazio';
+      nada.textContent = 'Nenhuma seção selecionada. Escolha uma acima (ou "Todas") para ver os itens.';
+      alvo.appendChild(nada);
+      return;
+    }
+
+    visiveis.forEach(function (sec) {
       var itens = ITENS.filter(function (i) { return i.secao === sec; })
         .sort(function (a, b) { return a.ordem - b.ordem; });
       var box = document.createElement('div');
@@ -1348,36 +1501,29 @@ function nomeArquivoSeguro(base) {
         t.onclick = function () { renomeiaSecao(sec, itens); };
       }
       box.appendChild(t);
-      itens.forEach(function (it) { box.appendChild(linhaItem(it, sec)); });
+      if (vista === 'tabela') {
+        box.appendChild(tabelaSecao(itens, sec));
+      } else {
+        var grade = document.createElement('div');
+        grade.className = 'cd-secao-grade';
+        itens.forEach(function (it) { grade.appendChild(linhaItem(it, sec)); });
+        box.appendChild(grade);
+      }
       alvo.appendChild(box);
     });
   }
 
-  function linhaItem(it, sec) {
-    var row = document.createElement('div');
-    row.className = 'cd-item' + (it.decisao === 'sai' ? ' sai' : '');
-    row.dataset.id = it.id;
-    row.dataset.secao = sec;
-
-    if (PODE) {
-      var punho = document.createElement('span');
-      punho.className = 'cd-punho';
-      punho.innerHTML = "<svg class=\"ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v18\"/><path d=\"M3 12h18\"/><path d=\"M9 6l3-3 3 3\"/><path d=\"M9 18l3 3 3-3\"/><path d=\"M6 9l-3 3 3 3\"/><path d=\"M18 9l3 3-3 3\"/></svg>";
-      punho.title = 'Arraste para mudar a ordem no cardápio impresso';
-      row.appendChild(punho);
-      row.draggable = true;
-      ligaArraste(row);
-    }
-
-    var meio = document.createElement('div');
-    meio.className = 'cd-meio';
-
-    var l1 = document.createElement('div');
-    l1.className = 'cd-linha1';
+  // Campos que as duas vistas compartilham — nome, preço e descrição gravam
+  // pelo MESMO salvaItem nos dois lugares. Duplicar o onchange por vista era
+  // como uma delas ia divergir em silêncio.
+  function campoNome(it) {
     var nome = document.createElement('input');
     nome.className = 'cd-nome cd-nome-txt';
-    nome.value = it.nome; nome.readOnly = !PODE; nome.size = Math.max(10, it.nome.length);
+    nome.value = it.nome; nome.readOnly = !PODE;
     nome.onchange = function () { salvaItem(it, { nome: nome.value }); };
+    return nome;
+  }
+  function campoPreco(it) {
     var preco = document.createElement('input');
     preco.className = 'cd-preco';
     preco.value = soNumero(it.preco);
@@ -1387,14 +1533,9 @@ function nomeArquivoSeguro(base) {
       var v = preco.value.trim().replace(/\./g, '').replace(',', '.');
       salvaItem(it, { preco: v === '' ? null : v });
     };
-    l1.appendChild(nome); l1.appendChild(preco);
-    if (it.decisao === 'entra') {
-      var tag = document.createElement('span');
-      tag.className = 'cd-novo'; tag.textContent = 'novo';
-      l1.appendChild(tag);
-    }
-    meio.appendChild(l1);
-
+    return preco;
+  }
+  function campoDesc(it) {
     var desc = document.createElement('input');
     desc.className = 'cd-desc' + (it.descricao ? '' : ' falta');
     desc.value = it.descricao || '';
@@ -1405,54 +1546,111 @@ function nomeArquivoSeguro(base) {
         desc.className = 'cd-desc' + (desc.value.trim() ? '' : ' falta');
       });
     };
-    meio.appendChild(desc);
-
+    return desc;
+  }
+  function textoMotivo(it) {
+    if (it.cerebro_motivo) return it.cerebro_motivo;
     var motivo = [];
     if (it.qtde_mes !== null && it.qtde_mes !== undefined) motivo.push(Math.round(it.qtde_mes) + ' un/mês');
     if (it.margem_un !== null && it.margem_un !== undefined) motivo.push('margem ' + rs(it.margem_un));
     if (it.sem_cmv) motivo.push('sem CMV na ficha');
-    var linhaMotivo = motivo.join(' · ');
-    if (it.cerebro_motivo) linhaMotivo = it.cerebro_motivo;
+    return motivo.join(' · ');
+  }
+  function botaoApagar(it) {
+    var del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'cd-del';
+    del.innerHTML = "<svg class=\"ic\" width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13\"/></svg>";
+    del.title = 'Tirar da mesa (diferente de "sai", que fica registrado)';
+    del.onclick = function () {
+      if (!confirm('Tirar "' + it.nome + '" desta mesa? Isso não registra que ele saiu da carta — para isso use "Sai".')) return;
+      api('/api/cardapio-projeto/' + PROJ.id + '/item/' + it.id, { method: 'DELETE' })
+        .then(function () { abreProjeto(PROJ.id); })
+        .catch(function (e) { aviso(e.message, true); });
+    };
+    return del;
+  }
+  // Ponte com o impresso: item com par ganha "pág. N" (abre o painel já
+  // naquela página); item sem par não ganha link NENHUM — é o que faz o
+  // cabeçalho poder declarar quantos ficaram de fora (trava 2). Preço
+  // diferente do impresso é AVISO, nunca correção automática (trava 3).
+  function refImpresso(it) {
+    var par = parDoItem(it);
+    if (!par) return null;
+    var ref = document.createElement('div');
+    ref.className = 'cd-pagref';
+    if (par.ambiguo) {
+      var amb = document.createElement('span');
+      amb.className = 'cd-difpreco';
+      amb.textContent = 'mais de um item chamado assim no impresso — sem link único de página';
+      ref.appendChild(amb);
+      return ref;
+    }
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = 'pág. ' + par.pagina;
+    b.title = 'Ver esta página do cardápio atual impresso';
+    b.onclick = function () { cartaAbre(par.pagina); };
+    ref.appendChild(b);
+    var pi = par.preco, pp = it.preco;
+    if (pi !== null && pi !== undefined && pp !== null && pp !== undefined
+        && Math.abs(Number(pi) - Number(pp)) >= 0.01) {
+      var d = document.createElement('span');
+      d.className = 'cd-difpreco';
+      d.textContent = 'impresso está ' + rs(pi);
+      ref.appendChild(d);
+    }
+    return ref;
+  }
+
+  // Vista Cards: cartão estreito, um item por caixa. É a única que arrasta
+  // pra reordenar — a ordem no impresso é decisão de venda (D5), e arrastar
+  // linha de tabela dentro de <tbody> não sobrevive à troca de vista.
+  function linhaItem(it, sec) {
+    var row = document.createElement('div');
+    row.className = 'cd-item' + (it.decisao === 'sai' ? ' sai' : '');
+    row.dataset.id = it.id;
+    row.dataset.secao = sec;
+
+    // O NOME leva a linha inteira: é o que se lê pra decidir, e dividir a
+    // linha com o preço truncava "Limonada Suíça" no meio (medido na página
+    // renderizada a 1280px — o cartão tem ~224px). Preço desce pra linha do
+    // "pág. N", onde já mora o preço do impresso: os dois lado a lado é
+    // exatamente a comparação que a linha serve pra fazer.
+    var topo = document.createElement('div');
+    topo.className = 'cd-cartao-topo';
+    if (PODE) {
+      var punho = document.createElement('span');
+      punho.className = 'cd-punho';
+      punho.innerHTML = "<svg class=\"ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v18\"/><path d=\"M3 12h18\"/><path d=\"M9 6l3-3 3 3\"/><path d=\"M9 18l3 3 3-3\"/><path d=\"M6 9l-3 3 3 3\"/><path d=\"M18 9l3 3-3 3\"/></svg>";
+      punho.title = 'Arraste para mudar a ordem no cardápio impresso';
+      topo.appendChild(punho);
+      row.draggable = true;
+      ligaArraste(row);
+    }
+    topo.appendChild(campoNome(it));
+    if (it.decisao === 'entra') {
+      var tag = document.createElement('span');
+      tag.className = 'cd-novo'; tag.textContent = 'novo';
+      topo.appendChild(tag);
+    }
+    if (PODE) topo.appendChild(botaoApagar(it));
+    row.appendChild(topo);
+
+    row.appendChild(campoDesc(it));
+
+    var linhaPreco = refImpresso(it) || document.createElement('div');
+    linhaPreco.className = 'cd-pagref';
+    linhaPreco.insertBefore(campoPreco(it), linhaPreco.firstChild);
+    row.appendChild(linhaPreco);
+
+    var linhaMotivo = textoMotivo(it);
     if (linhaMotivo) {
       var m = document.createElement('div');
       m.className = 'cd-motivo' + (it.cerebro_grupo === 'sair' ? ' aten' : '');
       m.textContent = linhaMotivo;
-      meio.appendChild(m);
+      row.appendChild(m);
     }
-
-    // Ponte com o impresso: item com par ganha "pág. N" (abre o painel já
-    // naquela página); item sem par não ganha link NENHUM — é o que faz o
-    // cabeçalho poder declarar quantos ficaram de fora (trava 2). Preço
-    // diferente do impresso é AVISO, nunca correção automática (trava 3).
-    var par = parDoItem(it);
-    if (par && par.ambiguo) {
-      var refAmb = document.createElement('div');
-      refAmb.className = 'cd-pagref';
-      var amb = document.createElement('span');
-      amb.className = 'cd-difpreco';
-      amb.textContent = 'mais de um item chamado assim no impresso — sem link único de página';
-      refAmb.appendChild(amb);
-      meio.appendChild(refAmb);
-    } else if (par) {
-      var ref = document.createElement('div');
-      ref.className = 'cd-pagref';
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = 'pág. ' + par.pagina;
-      b.title = 'Ver esta página do cardápio atual impresso';
-      b.onclick = function () { cartaAbre(par.pagina); };
-      ref.appendChild(b);
-      var pi = par.preco, pp = it.preco;
-      if (pi !== null && pi !== undefined && pp !== null && pp !== undefined
-          && Math.abs(Number(pi) - Number(pp)) >= 0.01) {
-        var d = document.createElement('span');
-        d.className = 'cd-difpreco';
-        d.textContent = 'impresso está ' + rs(pi);
-        ref.appendChild(d);
-      }
-      meio.appendChild(ref);
-    }
-    row.appendChild(meio);
 
     var dec = document.createElement('div');
     dec.className = 'cd-dec';
@@ -1469,22 +1667,98 @@ function nomeArquivoSeguro(base) {
       dec.appendChild(b);
     });
     row.appendChild(dec);
-
-    if (PODE) {
-      var del = document.createElement('button');
-      del.className = 'cd-punho';
-      del.style.cssText = 'background:none;border:none;cursor:pointer';
-      del.innerHTML = "<svg class=\"ic\" width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13\"/></svg>";
-      del.title = 'Tirar da mesa (diferente de "sai", que fica registrado)';
-      del.onclick = function () {
-        if (!confirm('Tirar "' + it.nome + '" desta mesa? Isso não registra que ele saiu da carta — para isso use "Sai".')) return;
-        api('/api/cardapio-projeto/' + PROJ.id + '/item/' + it.id, { method: 'DELETE' })
-          .then(function () { abreProjeto(PROJ.id); })
-          .catch(function (e) { aviso(e.message, true); });
-      };
-      row.appendChild(del);
-    }
     return row;
+  }
+
+  // Vista Tabela: mesma decisão, densidade maior. A decisão vira <select>
+  // porque 4 botões não cabem numa coluna estreita — e no celular (onde esta
+  // vista é a única) as colunas Descrição e Nota somem por CSS.
+  function tabelaSecao(itens, sec) {
+    var wrap = document.createElement('div');
+    wrap.className = 'cd-tabela-wrap';
+    var tb = document.createElement('table');
+    tb.className = 'cd-tabela';
+    var thead = document.createElement('thead');
+    var trh = document.createElement('tr');
+    var cols = [['Item', 'cd-col-item'], ['Preço', 'cd-col-preco'],
+                ['Descrição', 'cd-col-desc'], ['Decisão', 'cd-col-dec'],
+                ['Por quê', 'cd-col-nota']];
+    if (PODE) cols.push(['', 'cd-col-del']);
+    cols.forEach(function (c) {
+      var th = document.createElement('th');
+      th.className = c[1]; th.textContent = c[0];
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh); tb.appendChild(thead);
+
+    var corpo = document.createElement('tbody');
+    itens.forEach(function (it) {
+      var tr = document.createElement('tr');
+      if (it.decisao === 'sai') tr.className = 'sai';
+      tr.dataset.id = it.id;
+      tr.dataset.secao = sec;
+
+      var tdN = document.createElement('td');
+      tdN.className = 'cd-col-item';
+      tdN.appendChild(campoNome(it));
+      if (it.decisao === 'entra') {
+        var tag = document.createElement('span');
+        tag.className = 'cd-novo'; tag.textContent = 'novo';
+        tdN.appendChild(tag);
+      }
+      tr.appendChild(tdN);
+
+      var tdP = document.createElement('td');
+      tdP.className = 'cd-col-preco';
+      tdP.appendChild(campoPreco(it));
+      tr.appendChild(tdP);
+
+      var tdD = document.createElement('td');
+      tdD.className = 'cd-col-desc';
+      tdD.appendChild(campoDesc(it));
+      tr.appendChild(tdD);
+
+      var tdDec = document.createElement('td');
+      tdDec.className = 'cd-col-dec';
+      var sel = document.createElement('select');
+      sel.className = 'cd-dec-sel';
+      DECISOES.forEach(function (d) {
+        var o = document.createElement('option');
+        o.value = d.id; o.textContent = d.label;
+        if (d.id === it.decisao) o.selected = true;
+        sel.appendChild(o);
+      });
+      if (!PODE) sel.disabled = true;
+      else sel.onchange = function () {
+        salvaItem(it, { decisao: sel.value }, function () { abreProjeto(PROJ.id); });
+      };
+      tdDec.appendChild(sel);
+      tr.appendChild(tdDec);
+
+      var tdNota = document.createElement('td');
+      tdNota.className = 'cd-col-nota cd-tab-nota';
+      var linhaMotivo = textoMotivo(it);
+      if (linhaMotivo) {
+        var m = document.createElement('div');
+        if (it.cerebro_grupo === 'sair') m.className = 'aten';
+        m.textContent = linhaMotivo;
+        tdNota.appendChild(m);
+      }
+      var ref = refImpresso(it);
+      if (ref) tdNota.appendChild(ref);
+      tr.appendChild(tdNota);
+
+      if (PODE) {
+        var tdX = document.createElement('td');
+        tdX.className = 'cd-col-del';
+        tdX.appendChild(botaoApagar(it));
+        tr.appendChild(tdX);
+      }
+      corpo.appendChild(tr);
+    });
+    tb.appendChild(corpo);
+    wrap.appendChild(tb);
+    return wrap;
   }
 
   // Arrastar pra ordenar DENTRO da seção: a ordem no impresso é decisão de
@@ -1645,13 +1919,8 @@ function nomeArquivoSeguro(base) {
                                     : 'itens estão com preço diferente do impresso atual'));
 
     if (pendencias.length && !confirm(
-      'Este cardápio ainda está incompleto:
-
-- ' + pendencias.join('
-- ')
-      + '
-
-Quer exportar assim mesmo?'
+      'Este cardápio ainda está incompleto:\n\n- ' + pendencias.join('\n- ')
+      + '\n\nQuer exportar assim mesmo?'
     )) return;
 
     var blocos = [];
@@ -2879,7 +3148,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '01685f61b64b';
+  var BUILD = '876c9aec33c6';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

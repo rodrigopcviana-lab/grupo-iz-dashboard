@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Sessão Criativa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=01685f61b64b">
+<link rel="stylesheet" href="portal.css?v=876c9aec33c6">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1336,6 +1336,9 @@ window.msgAcessoNegado = function (nomePagina) {
   // da SESSÃO logada (que pra coord é '*'/"grupo" mesmo abrindo folha de
   // outra pessoa).
   var folhaCasa = null;
+  // Em que caderno esta folha mora (null = solta). Só serve pro "Continuar"
+  // da galeria conseguir validar uma folha que a listagem de soltas não traz.
+  var folhaCaderno = null;
   /* E8 — folha a dois. `base` é quantas ops do log CANÔNICO (o do servidor)
      este cliente já tem; tudo a partir daí em `ops` é meu e ainda não subiu.
      `eu` é o meu sub ("<casa>|<pessoa>"), sempre vindo do servidor — é ele
@@ -1711,16 +1714,24 @@ window.msgAcessoNegado = function (nomePagina) {
   function salva(){
     if (!folhaId || salvando || conflito || !sujo) return;
     salvando = true;
+    // Mesma guarda que `carregaConsumo()` já tinha do lado da leitura, e que
+    // faltava aqui: `abre()` chama `salva()` e troca de folha em seguida, então
+    // a resposta pode chegar com OUTRA folha na tela. Todo este handler mexe em
+    // estado GLOBAL (`versao`, `base`, `ops` via encaixaAlheias) — aplicá-lo na
+    // folha errada empurra as ops de uma folha pra dentro da outra no próximo
+    // salvamento, e isso não tem desfazer pela tela.
+    var alvo = folhaId;
     var pendentes = ops.slice(base);
     var corpo = {base:base, ops:pendentes, versao:versao,
                  titulo:elTitulo.value.trim() || 'Folha sem título'};
     var mini = miniatura(); if (mini) corpo.thumb = mini;
-    fetch(WORKER + '/api/sessao/folha/' + folhaId, {
+    fetch(WORKER + '/api/sessao/folha/' + alvo, {
       method:'PUT', headers:cab({'Content-Type':'application/json'}), body:JSON.stringify(corpo)
     }).then(function(r){
       return r.json().then(function(j){ return {s:r.status, j:j}; });
     }).then(function(res){
       salvando = false;
+      if (alvo !== folhaId) return;
       if (res.s === 200){
         versao = res.j.versao;
         // As `alheias` entram antes das minhas pendentes; depois disso as
@@ -1731,7 +1742,15 @@ window.msgAcessoNegado = function (nomePagina) {
         // Só limpa `sujo` se nada foi desenhado ENQUANTO o salvamento
         // estava no ar — senão o traço mais recente ficaria sem subir.
         if (ops.length === base) sujo = false; else agenda();
-        marca(sujo ? 'salvando…' : 'salvo'); listaGaleria(); return;
+        // A galeria só se repinta se estiver À VISTA. Antes ela ficava sempre
+        // montada abaixo da folha, e atualizar a miniatura a cada autosave
+        // fazia sentido; hoje ela é um estado escondido enquanto se desenha —
+        // repintar era buscar duas rotas e criar object URLs de miniatura que
+        // ninguém veria (e que ninguém revoga). Ao voltar pra galeria,
+        // `mostraGaleria()` já chama `listaGaleria()`.
+        marca(sujo ? 'salvando…' : 'salvo');
+        if (!document.getElementById('sc-gal').hidden) listaGaleria();
+        return;
       }
       if (res.s === 409){
         // Só o caminho legado (ou uma base à frente do servidor) chega aqui.
@@ -1744,6 +1763,7 @@ window.msgAcessoNegado = function (nomePagina) {
       marca('não consegui salvar', true);
     }).catch(function(){
       salvando = false;
+      if (alvo !== folhaId) return;
       marca('sem conexão — vou tentar de novo', true);
       clearTimeout(timer); timer = setTimeout(salva, 6000);
     });
@@ -2271,7 +2291,7 @@ window.msgAcessoNegado = function (nomePagina) {
       // existe), lido da MESMA `statusInsumo` — nunca um segundo cálculo.
       var st = statusInsumo(i.nome);
       var seloHtml = st ? '<span class="sc-preco-lin-fl ' + st.estado + '" title="casa da folha">' + esc(st.label) + '</span>' : '';
-      return '<div class="sc-preco-lin"><span>' + (i.qtde||'?') + (i.unidade||'') + ' ' +
+      return '<div class="sc-preco-lin"><span>' + esc(i.qtde||'?') + esc(i.unidade||'') + ' ' +
         esc(i.nome||'—') + '</span>' + seloHtml + '<span' + (temPreco?'':' class="sc-sem"') + '>' +
         (temPreco ? 'R$ '+brl(i.qtde*i.custo_unit) : '—') + '</span></div>';
     }).join('');
@@ -2308,8 +2328,14 @@ window.msgAcessoNegado = function (nomePagina) {
       b.onclick = function(){ trocaCenario(o, Number(b.dataset.i)); };
     });
   }
+  /* O truque textContent->innerHTML NÃO escapa aspas, e aqui o esc() é usado
+     DENTRO de atributo (value="..." em linhaIns, title="..." na gaveta Preço).
+     Um insumo chamado 'x" onfocus=...' fechava o atributo e executava — e a
+     folha é compartilhada, então quem grava o insumo não é quem abre a tela.
+     Esta é a mesma forma já usada nos outros esc() deste arquivo. */
   function esc(s){
-    var d = document.createElement('div'); d.textContent = String(s); return d.innerHTML;
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   /* ---------------- E3: virar ficha técnica ----------------
@@ -2335,7 +2361,7 @@ window.msgAcessoNegado = function (nomePagina) {
         ' — confira os ingredientes e complete o que falta antes de gravar no Banco de Cocktails.' + cenNota + '</div>' +
       '<div class="sc-cad-2">' +
         '<div><label class="sc-cad-lb">Categoria</label><select class="sc-cad-in" id="sc-vf-cat">' + catOpts + '</select></div>' +
-        '<div><label class="sc-cad-lb">CMV-alvo %</label><input class="sc-cad-in" id="sc-vf-alvo" type="number" min="5" max="60" value="' + (o.cmv_alvo || 20) + '"></div>' +
+        '<div><label class="sc-cad-lb">CMV-alvo %</label><input class="sc-cad-in" id="sc-vf-alvo" type="number" min="5" max="60" value="' + esc(o.cmv_alvo || 20) + '"></div>' +
       '</div>' +
       '<label class="sc-cad-lb">Casas onde entra</label><div class="sc-vf-chips" id="sc-vf-chips"></div>' +
       '<label class="sc-cad-lb">Descrição / perfil sensorial</label>' +
@@ -2370,10 +2396,10 @@ window.msgAcessoNegado = function (nomePagina) {
       var kv = catalogoInsumos && catalogoInsumos[normChave(i.nome)];
       row.innerHTML =
         '<input class="sc-vf-i-nome" value="' + esc(i.nome || '') + '">' +
-        '<input class="sc-vf-i-qtde" value="' + (i.qtde || '') + '">' +
+        '<input class="sc-vf-i-qtde" value="' + esc(i.qtde || '') + '">' +
         '<select class="sc-vf-i-un"><option value="ml">ml</option><option value="un">un</option>' +
           '<option value="g">g</option><option value="dose">dose</option></select>' +
-        '<input class="sc-vf-i-custo" value="' + (i.custo_unit != null ? String(i.custo_unit).replace('.', ',') : '') + '">' +
+        '<input class="sc-vf-i-custo" value="' + esc(i.custo_unit != null ? String(i.custo_unit).replace('.', ',') : '') + '">' +
         '<span class="sc-vf-match ' + (kv ? 'ok' : 'warn') + '" title="' +
           (kv ? 'Encontrado no B.D.1' : 'Não encontrado no B.D.1 — confira o preço') + '">' + (kv ? '✓' : '?') + '</span>';
       if (i.unidade) row.querySelector('.sc-vf-i-un').value = i.unidade;
@@ -3618,6 +3644,7 @@ window.msgAcessoNegado = function (nomePagina) {
     selecionado = null; conflito = false; sujo = false;
     base = 0; souDono = true; convidados = []; paraPoll(); pintaConvite();
     folhaCasa = null; // K9: cada folha aberta pode ser de outra casa.
+    folhaCaderno = null;
     // K2: toda folha (nova ou reaberta) começa mostrando a página 1.
     paginaAtual = 1; renderPaginas(); atualizaCabecalhosGaveta();
     // K3: consumo é da folha — não pode sobrar da anterior nem por um frame.
@@ -3635,6 +3662,7 @@ window.msgAcessoNegado = function (nomePagina) {
         folhaId = j.folha.id; versao = j.folha.versao;
         elTitulo.value = j.folha.titulo;
         folhaCasa = j.folha.casa || null;
+        folhaCaderno = j.folha.caderno_id || null;
         ops = (j.conteudo && j.conteudo.ops) || [];
         // Tudo que veio do servidor já é canônico — o que passar daqui é meu
         // e ainda não subiu.
@@ -3646,10 +3674,15 @@ window.msgAcessoNegado = function (nomePagina) {
       })
       .then(function(){
         mostraFolha();               // troca de estado só DEPOIS de ter conteúdo
-        lembraUltima(folhaId, elTitulo.value);
+        lembraUltima(folhaId, elTitulo.value, folhaCaderno);
         marca('salvo'); carregaConsumo();
       })
-      .catch(function(){ marca('não consegui abrir', true); toast('Não consegui abrir essa folha.', true); });
+      .catch(function(){
+        // Folha que não abre não pode continuar sendo oferecida como
+        // "Continuar" — é o caso da folha apagada noutro aparelho.
+        esqueceUltima(id);
+        marca('não consegui abrir', true); toast('Não consegui abrir essa folha.', true);
+      });
   }
   function nova(){
     if (sujo && folhaId) salva();
@@ -3874,13 +3907,25 @@ window.msgAcessoNegado = function (nomePagina) {
      `cdnGal`/`cdnView` pros MESMOS nós mais abaixo neste arquivo, e depender
      de qual atribuição roda primeiro é o tipo de fragilidade que quebra
      quando alguém reordena o código. Estas funções rodam raramente. */
+  /* Todo diálogo (`.sc-ed`) é filho de `#sc-tela`, que mora DENTRO da folha:
+     esconder a folha só o tira de vista, não o fecha. Quem abrisse outra folha
+     reencontrava o diálogo da anterior por cima dela — e cada um deles carrega
+     a folha de origem numa closure. O de "Registrar consumo" é o caro: ele
+     lançaria o gasto de uma folha no orçamento de outra, sem desfazer pela
+     tela. Trocar de estado fecha o que estava aberto. */
+  function fechaDialogos(){
+    Array.prototype.forEach.call(document.querySelectorAll('#sc-tela .sc-ed'),
+      function(b){ b.remove(); });
+  }
   function mostraGaleria(){
+    fechaDialogos();
     document.getElementById('sc-folha-view').hidden = true;
     document.getElementById('sc-cdn-view').hidden = true;
     document.getElementById('sc-gal').hidden = false;
     listaGaleria();
   }
   function mostraFolha(){
+    fechaDialogos();
     document.getElementById('sc-gal').hidden = true;
     document.getElementById('sc-cdn-view').hidden = true;
     document.getElementById('sc-folha-view').hidden = false;
@@ -3894,8 +3939,9 @@ window.msgAcessoNegado = function (nomePagina) {
      folha — duas pessoas na mesma folha compartilhada não têm por que
      herdar o "continuar" uma da outra. */
   var CONT_LS = 'sessao_criativa_ultima';
-  function lembraUltima(id, titulo){
-    try { localStorage.setItem(CONT_LS, JSON.stringify({id:id, titulo:titulo, quando:Date.now()})); } catch(e){}
+  function lembraUltima(id, titulo, cadernoId){
+    try { localStorage.setItem(CONT_LS, JSON.stringify({
+      id:id, titulo:titulo, caderno:cadernoId || null, quando:Date.now()})); } catch(e){}
   }
   function esqueceUltima(id){
     try {
@@ -3903,19 +3949,27 @@ window.msgAcessoNegado = function (nomePagina) {
       if (u && (!id || u.id === id)) localStorage.removeItem(CONT_LS);
     } catch(e){}
   }
-  function pintaContinuar(folhas){
+  function pintaContinuar(folhas, cadernos){
     var el = document.getElementById('sc-gal-cont');
     var u = null;
     try { u = JSON.parse(localStorage.getItem(CONT_LS) || 'null'); } catch(e){}
+    if (!u){ el.hidden = true; return; }
     // Só oferece o que AINDA existe e não foi arquivada — senão o atalho
     // levaria a um 404 (folha apagada noutro aparelho é o caso comum).
-    var viva = u && (folhas || []).filter(function(f){ return f.id === u.id; })[0];
-    if (!viva){ el.hidden = true; return; }
-    document.getElementById('sc-gal-cont-nome').textContent = 'Continuar: ' + viva.titulo;
-    document.getElementById('sc-gal-cont-meta').textContent =
-      (viva.meu === false ? 'de ' + (viva.dono || 'outra pessoa') + ' · ' : '') + quando(viva.atualizado);
+    var viva = (folhas || []).filter(function(f){ return f.id === u.id; })[0];
+    // Folha de dentro de caderno não aparece na listagem de soltas (K5). O
+    // que dá pra provar aqui é que o CADERNO dela ainda existe; se a folha em
+    // si tiver sumido, `abre()` avisa e o atalho se apaga sozinho.
+    var noCaderno = !viva && u.caderno
+      && (cadernos || []).filter(function(c){ return c.id === u.caderno; })[0];
+    if (!viva && !noCaderno){ el.hidden = true; return; }
+    document.getElementById('sc-gal-cont-nome').textContent =
+      'Continuar: ' + (viva ? viva.titulo : (u.titulo || 'última folha'));
+    document.getElementById('sc-gal-cont-meta').textContent = viva
+      ? ((viva.meu === false ? 'de ' + (viva.dono || 'outra pessoa') + ' · ' : '') + quando(viva.atualizado))
+      : ('em ' + (noCaderno.titulo || 'um caderno') + ' · ' + quando(u.quando));
     el.hidden = false;
-    el.onclick = function(){ abre(viva.id); };
+    el.onclick = function(){ abre(u.id); };
   }
   function quando(iso){
     var d = new Date(iso), min = Math.round((Date.now() - d) / 60000);
@@ -3946,7 +4000,7 @@ window.msgAcessoNegado = function (nomePagina) {
       document.getElementById('sc-gal-cadernos').hidden = !cds.length;
       document.getElementById('sc-gal-soltas').hidden = !fs.length;
       document.getElementById('sc-gvazio').hidden = (fs.length + cds.length) > 0;
-      pintaContinuar(fs);
+      pintaContinuar(fs, cds);
     });
   }
 
@@ -4499,6 +4553,8 @@ window.msgAcessoNegado = function (nomePagina) {
         cdnAba('sessoes');
         // A folha view também sai: caderno e folha são estados irmãos, e
         // deixar o canvas montado atrás reintroduzia o bloco vazio no topo.
+        // Diálogo aberto na folha vai junto (ver fechaDialogos).
+        fechaDialogos();
         document.getElementById('sc-folha-view').hidden = true;
         cdnGal.hidden = true; cdnView.hidden = false;
         marca('salvo');
@@ -5847,7 +5903,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '01685f61b64b';
+  var BUILD = '876c9aec33c6';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
