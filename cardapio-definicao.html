@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Cardápio em definição · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=15c84a4f9a83">
+<link rel="stylesheet" href="portal.css?v=01685f61b64b">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1615,9 +1615,44 @@ function nomeArquivoSeguro(base) {
       return;
     }
 
+    // Divergência não trava a exportação — trava é só pro que corromperia o
+    // impresso (seção sem nome, acima). O resto é decisão do Rodrigo: um
+    // único aviso resume tudo que está incompleto e pergunta se segue assim.
     var duvida = ITENS.filter(function (i) { return i.decisao === 'duvida'; });
-    if (duvida.length && !confirm(duvida.length + ' ' + (duvida.length === 1 ? 'item ainda está' : 'itens ainda estão')
-        + ' "em dúvida" e vão ficar de FORA do arquivo. Exportar assim mesmo?')) return;
+    var semDesc = vao.filter(function (i) { return !i.descricao; });
+    var semPreco = vao.filter(function (i) { return i.preco === null || i.preco === undefined; });
+    // Preço diferente do impresso ATUAL (não confundir com "mudou" mais abaixo,
+    // que é diferença contra o preço de quando o projeto foi semeado) — só
+    // conta item com par único no impresso; ambíguo já não gera link nenhum.
+    var divergePreco = vao.filter(function (i) {
+      var par = parDoItem(i);
+      if (!par || par.ambiguo) return false;
+      var pi = par.preco, pp = i.preco;
+      return pi !== null && pi !== undefined && pp !== null && pp !== undefined
+        && Math.abs(Number(pi) - Number(pp)) >= 0.01;
+    });
+
+    var pendencias = [];
+    if (duvida.length) pendencias.push(duvida.length + ' '
+      + (duvida.length === 1 ? 'item ainda está "em dúvida" e vai ficar de fora do arquivo'
+                              : 'itens ainda estão "em dúvida" e vão ficar de fora do arquivo'));
+    if (semDesc.length) pendencias.push(semDesc.length + ' '
+      + (semDesc.length === 1 ? 'item vai sem descrição' : 'itens vão sem descrição'));
+    if (semPreco.length) pendencias.push(semPreco.length + ' '
+      + (semPreco.length === 1 ? 'item vai sem preço' : 'itens vão sem preço'));
+    if (divergePreco.length) pendencias.push(divergePreco.length + ' '
+      + (divergePreco.length === 1 ? 'item está com preço diferente do impresso atual'
+                                    : 'itens estão com preço diferente do impresso atual'));
+
+    if (pendencias.length && !confirm(
+      'Este cardápio ainda está incompleto:
+
+- ' + pendencias.join('
+- ')
+      + '
+
+Quer exportar assim mesmo?'
+    )) return;
 
     var blocos = [];
     var secoes = [];
@@ -2844,7 +2879,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '15c84a4f9a83';
+  var BUILD = '01685f61b64b';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
