@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Meu perfil · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=ba789508ec40">
+<link rel="stylesheet" href="portal.css?v=4ced4e307755">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -533,6 +533,11 @@ window.msgAcessoNegado = function (nomePagina) {
   <span class="mp-tile-tx"><b>Acessos</b><span>quem entra no portal, senhas e pedidos</span></span>
   <span class="mp-tile-go">›</span>
 </a>
+<a class="mp-tile" id="mp-tile-mapa" href="mapa.html" style="display:none">
+  <span class="mp-tile-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg></span>
+  <span class="mp-tile-tx"><b>Mapa do sistema</b><span>como as páginas, os robôs e o cofre se ligam</span></span>
+  <span class="mp-tile-go">›</span>
+</a>
 
 <button type="button" class="mp-sair" id="mp-sair">Sair desta sessão</button>
 </div>
@@ -751,6 +756,13 @@ window.msgAcessoNegado = function (nomePagina) {
   // não por nível — cinco senhas resolvem pra "coord" hoje.
   if (s.nivel === 'coord' && s.pessoa && s.pessoa === ACESSOS_DONO) {
     document.getElementById('mp-tile-acessos').style.display = '';
+  }
+
+  // Mapa do sistema — mesma porta dos Acessos (página fora do nav), mas o
+  // recorte é por NÍVEL e não por pessoa: qualquer coord abre. Esconder aqui é
+  // cortesia visual; quem recusa de verdade é handleMapaSistema no Worker.
+  if (s.nivel === 'coord') {
+    document.getElementById('mp-tile-mapa').style.display = '';
   }
 
   // Botão manual de atualização — o aviso automático (JS_VERSAO) só aparece
@@ -1877,7 +1889,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'ba789508ec40';
+  var BUILD = '4ced4e307755';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

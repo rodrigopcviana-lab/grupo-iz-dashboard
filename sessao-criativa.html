@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Sessão Criativa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=ba789508ec40">
+<link rel="stylesheet" href="portal.css?v=4ced4e307755">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -781,6 +781,32 @@ window.msgAcessoNegado = function (nomePagina) {
      cadastrado: borda âmbar até alguém digitar. Sem isso o campo vazio
      parecia preenchido e o custo do drink saía menor do que é. */
   .sc-falta-custo{border-color:#e0b05c !important;background:#2a2113 !important;}
+  /* Peso do insumo no custo + origem do preço. Ocupam a linha inteira do
+     grid (`1/-1`) pra não mexer no `grid-template-columns` das 5 colunas —
+     mesmo truque do selo de estoque logo abaixo. */
+  .sc-cad-peso{grid-column:1/-1;display:flex;align-items:center;gap:6px;height:9px;margin:-2px 0 2px;}
+  .sc-cad-peso[hidden]{display:none;}
+  .sc-cad-peso i{display:block;height:4px;border-radius:99px;background:#d0a352;min-width:2px;}
+  .sc-cad-peso span{font-size:9px;color:#8f8672;font-variant-numeric:tabular-nums;}
+  .sc-cad-org{grid-column:1/-1;font-size:9px;color:#5f5a4a;margin:-2px 0 2px;}
+  .sc-cad-org[hidden]{display:none;}
+  /* Conselho do farol: só existe quando o CMV sai da faixa. */
+  .sc-cad-conselho{margin-top:8px;background:#2a2113;border:1px solid #3a3428;border-radius:8px;
+                  padding:8px 10px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
+  .sc-cad-conselho[hidden]{display:none;}
+  .sc-cad-cons-tx{font-size:11.5px;color:#e0b05c;line-height:1.5;}
+  .sc-cad-cons-tx b{color:#f3ede2;}
+  .sc-cad-cons-chip{font-size:11px;color:#d0a352;background:#241d10;border:1px solid #d0a352;
+                   border-radius:99px;padding:4px 11px;cursor:pointer;font-family:inherit;}
+  .sc-cad-cons-chip:hover{background:#2f2614;color:#f3ede2;}
+  /* Estado inicial da gaveta Ideias: promessa + exemplos clicáveis. */
+  .sc-id-promessa{color:#c3baa9;margin-bottom:8px;}
+  .sc-id-bullet{margin-bottom:6px;padding-left:9px;border-left:2px solid #3a3428;line-height:1.5;}
+  .sc-id-bullet b{color:#f3ede2;font-weight:600;}
+  .sc-id-ex{margin-top:10px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;}
+  .sc-id-chip{font-size:11px;color:#d0a352;background:#241d10;border:1px solid #3a3428;
+             border-radius:99px;padding:3px 9px;cursor:pointer;font-family:inherit;}
+  .sc-id-chip:hover{border-color:#d0a352;color:#f3ede2;}
   .sc-preco-lin-fl.tem{background:#163527;color:#9fe1cb;}
   .sc-preco-lin-fl.nao{background:#3a1c1a;color:#e24b4a;}
   .sc-preco-lin-fl.outra{background:#3a2f14;color:#e0b05c;}
@@ -1442,8 +1468,22 @@ window.msgAcessoNegado = function (nomePagina) {
               <input id="sc-id-q" type="text" placeholder="drink ou sabor…">
               <button class="sc-b" id="sc-id-buscar" type="button">Buscar</button>
             </div>
+            <!-- Estado inicial escrito aqui em HTML e repintado por
+                 `ideiasVazio()` no JS — os dois dizem a MESMA coisa. Se
+                 divergirem, a gaveta promete uma coisa ao abrir e outra
+                 depois da primeira busca vazia. -->
             <div id="sc-ideias-conteudo" class="sc-id-vazio">
-              Digite um nome de drink ou de um sabor pra ver o que já existe.
+              <div class="sc-id-promessa">Digite um ingrediente ou um drink. Eu respondo duas coisas:</div>
+              <div class="sc-id-bullet"><b>o que já existe</b> — drinks parecidos na carta do grupo,
+                pra não recriar o que a casa já vende</div>
+              <div class="sc-id-bullet"><b>com o que combina</b> — pares de sabor do livro,
+                pra puxar um caminho que você não tinha pensado</div>
+              <div class="sc-id-ex">Experimente:
+                <button type="button" class="sc-id-chip" data-q="jabuticaba">jabuticaba</button>
+                <button type="button" class="sc-id-chip" data-q="gin">gin</button>
+                <button type="button" class="sc-id-chip" data-q="amargo">amargo</button>
+                <button type="button" class="sc-id-chip" data-q="defumado">defumado</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1820,12 +1860,17 @@ window.msgAcessoNegado = function (nomePagina) {
     cy += 7*esc;
     c.font = '600 ' + (11*esc) + 'px -apple-system, sans-serif'; c.fillStyle = '#f3ede2'; c.textAlign = 'left';
     c.fillText('R$ ' + brl(custo), x+pad, cy);
-    // Item C: preço e MARGEM no próprio cartão, pra decidir olhando o papel
-    // em vez de ir ao painel. Linha extra abaixo do custo, só quando há
-    // preço — sem custo não há margem, e um zero ali seria dinheiro
-    // inventado. `semPreco` marca que o custo (e portanto a margem) é piso.
+    // Preço e MARGEM no cartão — mas NÃO quando o painel já está mostrando
+    // este mesmo cartão (redundância apontada pelo Rodrigo, 2026-08-05):
+    // com o painel docado aberto, o custo, o preço e a margem apareciam
+    // duas vezes lado a lado, e o cartão no papel virava um segundo painel
+    // pior. Aberto, o papel mostra o desenho; o painel mostra os números.
+    // Fechado, o cartão volta a carregar a linha — é ela que deixa bater o
+    // olho na folha inteira sem abrir nada.
     var semPrecoCt = (ins||[]).filter(function(i){ return !(i.custo_unit > 0); }).length;
-    if (custo > 0 && venda > 0){
+    var painelNesteCartao = (selecionado === o.id) &&
+      (elPreco && elPreco.classList.contains('on') || document.body.classList.contains('sc-ff'));
+    if (custo > 0 && venda > 0 && !painelNesteCartao){
       var yMg = cy + 13*esc;
       c.font = (9*esc) + 'px -apple-system, sans-serif'; c.fillStyle = '#8f8672';
       c.fillText('carta ' + brl(venda) + '  ·  margem ' + brl(venda-custo) +
@@ -1878,9 +1923,10 @@ window.msgAcessoNegado = function (nomePagina) {
     var h = 32 + Math.max(1,linhas)*15 + 26;
     if ((o.insumos||[]).length > 4) h += 13;
     if (o.copo) h += 13;
-    // A linha "carta · margem" (item C) só é desenhada quando há custo — a
-    // altura tem que crescer junto, senão ela vaza pra fora da moldura. A
-    // condição é a MESMA de desenhaCartao; divergir aqui reabre o vazamento.
+    // Espaço da linha "carta · margem". Reservado sempre que há custo, mesmo
+    // quando ela não é desenhada (painel aberto neste cartão): a altura fica
+    // ESTÁVEL, e o cartão não muda de tamanho no papel toda vez que alguém
+    // abre ou fecha o painel — pular de tamanho é pior que um espaço vazio.
     if (custoCartao(o) > 0) h += 13;
     return {w:CART_W*o.escala, h:h*o.escala};
   }
@@ -2418,7 +2464,39 @@ window.msgAcessoNegado = function (nomePagina) {
     });
     return achado;
   }
+  /* ---------------- dois dedos: mover e ampliar (v2) ----------------
+     No celular NÃO HAVIA como andar na folha. Arrastar com o lápis desenha,
+     e mover a vista só existia por botão do meio do mouse ou Shift+arrastar
+     — nenhum dos dois existe num telefone. Sobrava só os botões de zoom, que
+     ampliam no centro e não levam a lugar nenhum. Numa folha em proporção
+     retrato, com o papel maior que a tela, isso deixa a pessoa presa.
+
+     Dois dedos fazem as duas coisas ao mesmo tempo, como em qualquer mapa:
+     a distância entre eles é o zoom, o ponto médio é o arrasto. Enquanto os
+     dois estão na tela, o traço em curso é CANCELADO — sem isso, o primeiro
+     dedo já teria começado a desenhar e ficaria um risco solto na folha a
+     cada vez que alguém tenta se mover. */
+  var dedos = new Map();
+  var gesto = null;
+  function centroEDist(){
+    var ps = [...dedos.values()];
+    return {
+      x: (ps[0].x + ps[1].x)/2, y: (ps[0].y + ps[1].y)/2,
+      d: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y)
+    };
+  }
   cv.addEventListener('pointerdown', function(e){
+    if (e.pointerType === 'touch'){
+      dedos.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if (dedos.size === 2){
+        var c = centroEDist();
+        gesto = {d0:c.d, k0:view.k, cx:c.x, cy:c.y, tx0:view.tx, ty0:view.ty};
+        // Descarta o que o primeiro dedo tinha começado a desenhar.
+        atual = null; inicio = null; arrasta = null; pans = null;
+        desenha();
+        return;
+      }
+    }
     cv.setPointerCapture(e.pointerId);
     var p = paraMundo(e.clientX, e.clientY);
     if (e.button === 1 || e.shiftKey){ pans = {x:e.clientX, y:e.clientY, tx:view.tx, ty:view.ty}; return; }
@@ -2439,6 +2517,26 @@ window.msgAcessoNegado = function (nomePagina) {
     atual = {t:'traco', cor:cor, w:espessura/view.k, borracha:(tool === 'borracha'), pts:[[p.x,p.y]]};
   });
   cv.addEventListener('pointermove', function(e){
+    if (e.pointerType === 'touch' && dedos.has(e.pointerId)){
+      dedos.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if (gesto && dedos.size === 2){
+        var c = centroEDist();
+        // Zoom pela razão das distâncias, preso aos mesmos limites dos
+        // botões — senão o pinch levaria a folha a um zoom de onde os
+        // botões não conseguem trazer de volta.
+        var k = Math.max(K_MIN, Math.min(K_MAX, gesto.k0 * (c.d / Math.max(1, gesto.d0))));
+        // O ponto entre os dedos fica parado sob eles enquanto amplia, e o
+        // deslocamento do ponto médio arrasta a folha junto.
+        var r = cv.getBoundingClientRect();
+        var mx = gesto.cx - r.left, my = gesto.cy - r.top;
+        var mundoX = (mx - gesto.tx0) / gesto.k0, mundoY = (my - gesto.ty0) / gesto.k0;
+        view.k = k;
+        view.tx = (c.x - r.left) - mundoX * k;
+        view.ty = (c.y - r.top) - mundoY * k;
+        zpct(); refazTracos(); desenha();
+      }
+      return;
+    }
     if (pans){ view.tx = pans.tx + (e.clientX-pans.x); view.ty = pans.ty + (e.clientY-pans.y); refazTracos(); desenha(); return; }
     var p = paraMundo(e.clientX, e.clientY);
     if (arrasta){
@@ -2454,7 +2552,15 @@ window.msgAcessoNegado = function (nomePagina) {
     if (atual.t === 'traco') pintaTraco(cctx, atual); else pintaForma(cctx, atual);
     desenha();
   });
-  function solta(){
+  function solta(e){
+    if (e && e.pointerType === 'touch' && dedos.has(e.pointerId)){
+      dedos.delete(e.pointerId);
+      // Enquanto sobrar um dedo do gesto, ele NÃO volta a desenhar: quem
+      // tirou um dedo do pinch está terminando de se mover, não começando
+      // um traço. O gesto só morre quando a tela fica sem dedo nenhum.
+      if (dedos.size < 2) gesto = null;
+      if (dedos.size > 0) return;
+    }
     if (pans){ pans = null; return; }
     if (arrasta){
       var o = objetos.get(arrasta.id);
@@ -2649,7 +2755,11 @@ window.msgAcessoNegado = function (nomePagina) {
       '<div class="sc-vf-chips" id="sc-cad-cenarios"></div>' +
       '<div class="sc-cad-2">' +
         '<div><label class="sc-cad-lb">Rendimento (ml)</label><input class="sc-cad-in" id="sc-cad-rend" type="number" min="1" value="1"></div>' +
-        '<div><label class="sc-cad-lb">CMV-alvo %</label><input class="sc-cad-in" id="sc-cad-alvo" type="number" min="5" max="60" value="20"></div>' +
+        // `step="1"`: o campo é lido por `numBr`, parser BRASILEIRO, que
+        // apaga o ponto por tratá-lo como separador de milhar. Sem o step o
+        // navegador oferece decimais e "24.5" digitado à mão vira 245 —
+        // travado em 60% pelo clamp, com o CMV saindo o oposto do pedido.
+        '<div><label class="sc-cad-lb">CMV-alvo %</label><input class="sc-cad-in" id="sc-cad-alvo" type="number" min="5" max="60" step="1" value="20"></div>' +
       '</div>' +
       '<div class="sc-cad-ins-h"><span>Insumo</span><span>Qtde</span><span>Un.</span><span>Custo un.</span><span></span></div>' +
       '<div id="sc-cad-ins"></div>' +
@@ -2659,6 +2769,8 @@ window.msgAcessoNegado = function (nomePagina) {
         '<span>Venda sug. <b id="sc-cad-venda">0,00</b></span>' +
         '<span class="sc-farol ok" id="sc-cad-farol">saudável</span>' +
       '</div>' +
+      // Conselho só aparece quando há o que aconselhar (ver `pintaConselho`).
+      '<div class="sc-cad-conselho" id="sc-cad-conselho" hidden></div>' +
       '<div class="lin"><button class="sc-b" data-x="c" type="button">Cancelar</button>' +
       '<button class="sc-b pri" data-x="o" type="button">Salvar</button></div>';
     tela.appendChild(box);
@@ -2684,6 +2796,10 @@ window.msgAcessoNegado = function (nomePagina) {
           '<option value="g">g</option><option value="dose">dose</option></select>' +
         '<input class="sc-cad-i-custo" value="' + (vals.custo_unit != null ? String(vals.custo_unit).replace('.',',') : '') + '">' +
         '<button class="sc-cad-del" type="button" aria-label="Remover">&times;</button>' +
+        // Peso deste insumo no custo (preenchido por `pintaPesos`). Nasce
+        // hidden: sem custo não há proporção a mostrar.
+        '<span class="sc-cad-peso" hidden></span>' +
+        '<span class="sc-cad-org" hidden></span>' +
         // K9: 6º filho do grid — `grid-column:1/-1` (CSS) o joga numa linha
         // própria sem mexer em `grid-template-columns`. Nasce hidden: só
         // aparece quando há um veredito (buscaTransferencias resolvida).
@@ -2714,6 +2830,17 @@ window.msgAcessoNegado = function (nomePagina) {
             elCusto.value = pu.toFixed(4).replace('.',',');
             elCusto.classList.remove('sc-falta-custo');
             elCusto.placeholder = 'R$/un';
+            // De onde veio esse número. Um custo de 0,0480 aparecendo do nada
+            // não dá pra conferir; dizer "750ml · garrafa 36" deixa a pessoa
+            // validar de cabeça e perceber na hora se o cadastro está errado.
+            // Fato do B.D.1, não inferência — por isso substituiu a ideia de
+            // adivinhar a unidade, que o dado não sustenta (há líquido sem
+            // volume cadastrado, e ele viraria "un" errado).
+            if (kv.volume && kv.preco){
+              elCusto.title = 'do B.D.1: ' + kv.volume + 'ml · ' + brl(kv.preco) + ' a unidade de compra';
+              var org = row.querySelector('.sc-cad-org');
+              if (org){ org.textContent = kv.volume + 'ml'; org.hidden = false; }
+            }
             recalc();
           } else if (kv && pu == null && !elCusto.value){
             // Produto EXISTE no B.D.1 mas está sem custo cadastrado (284 dos
@@ -2741,14 +2868,100 @@ window.msgAcessoNegado = function (nomePagina) {
       }).filter(function(i){ return i.nome && i.qtde > 0; });
     }
     function recalc(){
-      var custo = insumosForm().reduce(function(s,i){ return s + i.qtde*i.custo_unit; }, 0);
+      var ins = insumosForm();
+      var custo = ins.reduce(function(s,i){ return s + i.qtde*i.custo_unit; }, 0);
       var alvo = Math.min(60, Math.max(5, numBr(elAlvo.value) || 20));
-      var venda = vendaSugerida(custo, alvo);
+      var venda = redondoDeCarta(vendaSugerida(custo, alvo));
       box.querySelector('#sc-cad-custo').textContent = brl(custo);
       box.querySelector('#sc-cad-venda').textContent = brl(venda);
       var cmvReal = venda > 0 ? (custo/venda*100) : 0, f = farolDe(cmvReal);
       var elF = box.querySelector('#sc-cad-farol');
       elF.className = 'sc-farol ' + f.cls; elF.textContent = f.label;
+      pintaPesos(ins, custo);
+      pintaConselho(ins, custo, venda, cmvReal, alvo);
+    }
+
+    /* PESO DE CADA INSUMO NO CUSTO. Três subtotais numa coluna obrigam a
+       comparar de cabeça; a barra responde "onde mexer" de relance, que é a
+       pergunta que se faz olhando um custo alto. Some quando não há custo —
+       barra de 0% não informa nada. */
+    function pintaPesos(ins, custo){
+      var linhas = elIns.querySelectorAll('.sc-cad-ins-row');
+      Array.prototype.forEach.call(linhas, function(row, n){
+        var el = row.querySelector('.sc-cad-peso');
+        if (!el) return;
+        var i = ins[n];
+        var sub = i ? i.qtde*i.custo_unit : 0;
+        if (!(custo > 0) || !(sub > 0)){ el.hidden = true; return; }
+        var pct = sub/custo*100;
+        el.hidden = false;
+        el.innerHTML = '<i style="width:' + Math.round(pct) + '%"></i>' +
+                       '<span>' + pct.toFixed(0) + '%</span>';
+      });
+    }
+
+    /* O FAROL VIRA CONSELHO. "CMV alto" é um diagnóstico sem saída: a pessoa
+       lê, não sabe o que fazer e salva assim mesmo.
+
+       Aqui ele diz DUAS coisas — qual insumo está pesando (fato, calculado)
+       e a que preço o alvo seria atingido (conta, não opinião). O chip de
+       preço aplica com um toque.
+
+       DE PROPÓSITO NÃO SUGERE MUDAR A RECEITA ("use 45ml em vez de 60"):
+       quanto de cada coisa vai no copo é decisão de quem cria o drink, não
+       de uma planilha. A ferramenta manda no dinheiro; a receita é do
+       bartender. */
+    function pintaConselho(ins, custo, venda, cmvReal, alvo){
+      var el = box.querySelector('#sc-cad-conselho');
+      if (!el) return;
+      var f = farolDe(cmvReal);
+      if (!(custo > 0) || !(venda > 0) || f.cls === 'ok'){ el.hidden = true; return; }
+      // O insumo que mais pesa, com nome — é por ele que se começa.
+      var maior = null, maiorSub = 0;
+      ins.forEach(function(i){
+        var sub = i.qtde*i.custo_unit;
+        if (sub > maiorSub){ maiorSub = sub; maior = i; }
+      });
+      // O preço mira um CMV SAUDÁVEL (25%, o limiar do farol), NÃO o alvo
+      // digitado. Mirar o alvo devolveria o preço que já está na tela: a
+      // venda é derivada dele, então "o preço do alvo" é o preço atual, e o
+      // chip nunca apareceria. Quando o alvo é o problema (alguém pôs 40%),
+      // é justamente dele que o conselho precisa discordar.
+      // O preço prometido tem que ser o preço que SAI ao clicar, não o
+      // teórico. O caminho real é: alvo vira INTEIRO (ver o onclick), e a
+      // venda é derivada dele. Calculando o teórico, o chip prometia 49 e
+      // entregava 50 — a tela dizia um número e fazia outro.
+      var alvoSaudavel = Math.round(custo / redondoDeCarta(vendaSugerida(custo, 25)) * 100);
+      var precoSaudavel = redondoDeCarta(vendaSugerida(custo, alvoSaudavel));
+      var partes = [];
+      if (maior && custo > 0){
+        partes.push('<b>' + esc(maior.nome) + '</b> é ' +
+          (maiorSub/custo*100).toFixed(0) + '% do custo.');
+      }
+      var html = '<div class="sc-cad-cons-tx">CMV em ' + cmvReal.toFixed(0) + '%. ' +
+                 partes.join(' ') + '</div>';
+      // Só oferece quando o preço é DIFERENTE do que já está na tela — chip
+      // que não muda nada é ruído.
+      if (precoSaudavel > 0 && Math.abs(precoSaudavel - venda) >= 1){
+        html += '<button type="button" class="sc-cad-cons-chip" data-preco="' + precoSaudavel + '">' +
+                'vender a ' + precoSaudavel + ' → CMV ' + (custo/precoSaudavel*100).toFixed(0) + '%</button>';
+      }
+      el.innerHTML = html;
+      el.hidden = false;
+      var chip = el.querySelector('.sc-cad-cons-chip');
+      // Aplicar o preço é mexer no ALVO, que é o campo que a tela tem: o
+      // preço é derivado dele (mesma régua do par do painel).
+      if (chip) chip.onclick = function(){
+        var p = Number(chip.dataset.preco);
+        if (!(p > 0) || !(custo > 0)) return;
+        // INTEIRO, obrigatoriamente. `recalc()` lê este campo com `numBr`,
+        // que é parser de número BRASILEIRO: ele apaga os pontos por
+        // considerá-los separador de milhar. Gravar "24.5" aqui virava 245,
+        // que o clamp de 60% transformava em 60 — o chip prometia um preço e
+        // entregava o oposto (testado: pedia 49 e devolvia 20).
+        elAlvo.value = Math.round((custo/p)*100);
+        recalc();
+      };
     }
     box.querySelector('#sc-cad-add').onclick = function(){ linhaInsumo(); };
     elAlvo.addEventListener('input', recalc);
@@ -2816,7 +3029,11 @@ window.msgAcessoNegado = function (nomePagina) {
       if (cenariosState.length < 5){
         var add = document.createElement('button');
         add.type = 'button'; add.className = 'sc-vf-chip sc-vf-chip-add';
-        add.textContent = '+ cenário';
+        // O rótulo diz o que o botão FAZ: ele já copiava os insumos do
+        // cenário aberto (ver `base.insumos` logo abaixo), mas "+ cenário"
+        // dá a entender que nasce vazio — e quem acha que vai redigitar a
+        // receita inteira não testa a variação.
+        add.textContent = '+ cenário (copia este)';
         add.onclick = function(){
           salvaFormNoCenario(cenarioAtual);
           var base = cenariosState[cenarioAtual];
@@ -2857,9 +3074,32 @@ window.msgAcessoNegado = function (nomePagina) {
         var id = novoId();
         push({t:'obj+', obj:Object.assign({id:id, kind:'cartao', x:p.x, y:p.y, escala:1/view.k}, depois)});
         selecionado = id; ferramenta('mover');
+        // O cartão nasce no papel E o preço abre junto (decisão do Rodrigo,
+        // 2026-08-05). Antes ele nascia e ficava lá: pra ver o que aquele
+        // drink custava era preciso trocar de ferramenta, achar o cartão,
+        // tocar nele e abrir a gaveta — quatro passos pra ver um número que
+        // o próprio ato de salvar acabou de calcular.
+        abrePrecoNoCartao();
       }
       atualizaPreco();
     };
+  }
+
+  /* Abre o painel de preço no cartão que está selecionado. No PC do modo
+     folha ele já está docado e visível — abrir de novo não faz nada, e é por
+     isso que a função checa: chamar `.add('on')` ali empurraria a gaveta
+     sobre o papel sem necessidade. */
+  function abrePrecoNoCartao(){
+    if (!selecionado) return;
+    var docado = document.body.classList.contains('sc-ff') && !mqCel.matches;
+    if (!docado && !elPreco.classList.contains('on')){
+      elIdeias.classList.remove('on');
+      elCons.classList.remove('on');
+      elPreco.classList.add('on');
+      marcaMesa();
+      revelaSelecionado();
+    }
+    atualizaPreco();
   }
 
   document.getElementById('sc-cartao').onclick = function(){
@@ -3452,11 +3692,43 @@ window.msgAcessoNegado = function (nomePagina) {
       '<div id="sc-id-sug"></div></div>';
     sugBotao();
   }
+  /* ---------------- o que a gaveta Ideias promete ----------------
+     O estado vazio dizia só "Digite um nome de drink ou de um sabor pra ver
+     o que já existe" — instrução do que fazer, não do que se ganha. Quem
+     abria não sabia se ia receber receita, preço, foto ou opinião, e fechava
+     (reclamação do Rodrigo: "não fica claro como atua e o que posso
+     esperar").
+
+     Agora ela DECLARA as duas respostas que sabe dar, e oferece exemplos
+     clicáveis: com 821 insumos e uma carta inteira atrás, o custo de
+     começar era pensar no que digitar. */
+  function ideiasVazio(){
+    return '<div class="sc-id-vazio">' +
+      '<div class="sc-id-promessa">Digite um ingrediente ou um drink. Eu respondo duas coisas:</div>' +
+      '<div class="sc-id-bullet"><b>o que já existe</b> — drinks parecidos na carta do grupo, ' +
+        'pra não recriar o que a casa já vende</div>' +
+      '<div class="sc-id-bullet"><b>com o que combina</b> — pares de sabor do livro, ' +
+        'pra puxar um caminho que você não tinha pensado</div>' +
+      '<div class="sc-id-ex">Experimente: ' +
+        ['jabuticaba','gin','amargo','defumado'].map(function(t){
+          return '<button type="button" class="sc-id-chip" data-q="' + t + '">' + t + '</button>';
+        }).join('') + '</div>' +
+    '</div>';
+  }
+  // Delegado no corpo da gaveta porque o estado vazio é repintado várias
+  // vezes — religar handler a cada pintura vazaria listener.
+  elIdeiasCorpo.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('.sc-id-chip') : null;
+    if (!b) return;
+    elIdeiasBusca.value = b.getAttribute('data-q');
+    buscaIdeias();
+  });
+
   function buscaIdeias(){
     var q = elIdeiasBusca.value.trim();
     if (!q){
       ctxIdeias = {q:'', carta:[], pares:[]};
-      elIdeiasCorpo.innerHTML = '<div class="sc-id-vazio">Digite um nome de drink ou de um sabor pra ver o que já existe.</div>';
+      elIdeiasCorpo.innerHTML = ideiasVazio();
       return;
     }
     ctxIdeias = {q:q, carta:[], pares:[]};
@@ -4539,7 +4811,7 @@ window.msgAcessoNegado = function (nomePagina) {
     // manter a busca da página anterior confundiria fato com a página nova.
     elIdeiasBusca.value = '';
     ctxIdeias = {q:'', carta:[], pares:[]};
-    elIdeiasCorpo.innerHTML = '<div class="sc-id-vazio">Digite um nome de drink ou de um sabor pra ver o que já existe.</div>';
+    elIdeiasCorpo.innerHTML = ideiasVazio();
     renderPaginas();
     atualizaCabecalhosGaveta();
     atualizaPreco();
@@ -6898,7 +7170,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'ba789508ec40';
+  var BUILD = '4ced4e307755';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
