@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Cérebro do Cardápio · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=6fabdb1e29f0">
+<link rel="stylesheet" href="portal.css?v=871e206e0b4c">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -475,7 +475,17 @@ window.msgAcessoNegado = function (nomePagina) {
   .cdp-card.pend { border-left-color:var(--border); }
   .cdp-c-nome { font-size:14px; font-weight:700; color:var(--text-1); }
   .cdp-c-sub { font-size:12px; color:var(--text-2); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .cdp-c-rs { font-size:13px; font-weight:700; color:#d9b26a; margin-top:4px; font-variant-numeric:tabular-nums; }
+  .cdp-c-ajuste { font-size:12.5px; color:var(--text-2); margin-top:4px; font-style:italic; }
   .cdp-c-motivo { font-size:12.5px; color:var(--text-3); margin-top:5px; line-height:1.45; }
+  .cdp-item-tag { display:inline-block; font-size:11px; padding:3px 9px; border-radius:999px;
+    background:var(--bg); color:var(--text-3); margin:4px 0 0; }
+  .cdp-itens { display:flex; flex-direction:column; gap:8px; margin:10px 0 0; }
+  .cdp-bl-rs { font-size:12px; font-weight:700; color:#d9b26a; font-variant-numeric:tabular-nums; }
+  .cdp-selo-cob { font-size:13px; line-height:1.5; color:var(--text-2); background:var(--card);
+    border:1px solid var(--border); border-radius:12px; padding:10px 14px; margin:0 0 16px; }
+  .cdp-selo-cob.atencao { border-color:#7a5a1e; color:#d9b26a; }
+  details.cdp-bloco > summary.cdp-bl-cab { cursor:pointer; }
   .cdp-tabela { width:100%; border-collapse:collapse; font-size:13px; }
   .cdp-tabela th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.03em;
     color:var(--text-3); font-weight:600; padding:0 8px 6px 0; }
@@ -486,7 +496,31 @@ window.msgAcessoNegado = function (nomePagina) {
   .cdp-cob-it { font-size:12px; padding:5px 11px; border-radius:999px; border:1px solid var(--border);
     background:var(--card); color:var(--text-2); }
   .cdp-cob-it.falta { border-color:#7a3030; color:#e69083; }
-  @media (max-width:640px) { .cdp-chips { grid-template-columns:repeat(auto-fit,minmax(108px,1fr)); } }
+
+  .cdp-mtx-sec { margin:10px 0 22px; }
+  .cdp-mtx-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .cdp-mtx-q { border:1px solid var(--border); border-left-width:3px; border-radius:11px;
+    padding:11px 13px; background:var(--card); }
+  .cdp-mtx-q.estrela { border-left-color:#86c79b; }
+  .cdp-mtx-q.cavalo { border-left-color:#d9b26a; }
+  .cdp-mtx-q.enigma { border-left-color:#8fb3d9; }
+  .cdp-mtx-q.morto { border-left-color:#e69083; }
+  .cdp-mtx-q.vazio { opacity:.55; }
+  .cdp-mtx-q-cab { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:0 0 4px; }
+  .cdp-mtx-q-tit { font-size:13.5px; font-weight:700; color:var(--text-1); }
+  .cdp-mtx-q-n { font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px;
+    background:var(--bg); color:var(--text-3); font-variant-numeric:tabular-nums; }
+  .cdp-mtx-q-rs { font-size:12px; font-weight:700; color:#d9b26a; margin-left:auto;
+    font-variant-numeric:tabular-nums; }
+  .cdp-mtx-itens { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .cdp-mtx-item { padding:6px 0 0; border-top:1px solid var(--border); }
+  .cdp-mtx-item:first-child { border-top:none; padding-top:0; }
+  .cdp-mtx-item-nome { font-size:12.5px; font-weight:600; color:var(--text-1); }
+  .cdp-mtx-item-sub { font-size:11.5px; color:var(--text-3); margin-top:2px; font-variant-numeric:tabular-nums; }
+  @media (max-width:640px) {
+    .cdp-chips { grid-template-columns:repeat(auto-fit,minmax(108px,1fr)); }
+    .cdp-mtx-grid { grid-template-columns:1fr; }
+  }
 </style>
 
 <div class="panel" id="cdp-gate">
@@ -509,6 +543,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <div id="cdp-titulo" class="cdp-titulo"></div>
     <div id="cdp-resp" class="cdp-resp"></div>
     <div id="cdp-chips" class="cdp-chips"></div>
+    <div id="cdp-itens" class="cdp-itens"></div>
     <div id="cdp-fontes" class="cdp-fontes"></div>
   </div>
   <div id="cdp-doc"></div>
@@ -547,9 +582,26 @@ window.msgAcessoNegado = function (nomePagina) {
     ['serie_curta', 'Série curta demais para julgar']
   ];
 
-  function cardItem(i, cls) {
+  // M1 — R$/mês em jogo por item (qtde × margem_un). null quando falta um dos dois.
+  function itemRs(i) {
+    return (i.qtde != null && i.margem_un != null) ? i.qtde * i.margem_un : null;
+  }
+  // Ordena por rs decrescente; item sem rs vai pro fim preservando a ordem original (sort estável).
+  function porRs(a, b) {
+    var ra = itemRs(a), rb = itemRs(b);
+    if (ra == null && rb == null) return 0;
+    if (ra == null) return 1;
+    if (rb == null) return -1;
+    return rb - ra;
+  }
+  function fmtRs0(v) {
+    return 'R$ ' + Math.round(v).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  }
+
+  function cardItem(i, cls, etiqueta) {
     var c = el('div', 'cdp-card ' + cls);
     c.appendChild(el('div', 'cdp-c-nome', i.nome));
+    if (etiqueta) c.appendChild(el('span', 'cdp-item-tag', etiqueta));
     var partes = [];
     if (i.qtde != null) partes.push(Math.round(i.qtde) + ' un/mês');
     if (i.share_pct != null) partes.push(i.share_pct + '% da seção');
@@ -557,119 +609,310 @@ window.msgAcessoNegado = function (nomePagina) {
     if (i.cmv_pct != null) partes.push('CMV ' + i.cmv_pct + '%');
     if (i.preco != null) partes.push('carta ' + i.preco.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
     if (i.preenche) partes.push('preenche ' + i.preenche.join(', '));
+    // M1b — tendência, só quando não é estável.
+    if (i.tend === 'alta') partes.push('em alta');
+    else if (i.tend === 'queda') partes.push('em queda');
     if (partes.length) c.appendChild(el('div', 'cdp-c-sub', partes.join(' · ')));
+    // M1 — R$/mês em jogo, linha própria em destaque. rs === 0 é ruído
+    // (item sem venda no mês) — só aparece quando é maior que zero.
+    var rs = itemRs(i);
+    if (rs) c.appendChild(el('div', 'cdp-c-rs', fmtRs0(rs) + ' por mês em margem'));
+    // M2 — só no bloco "ajustar": cada real de reajuste no preço = tanto por mês.
+    if (cls === 'ajustar' && i.qtde != null && i.qtde > 0) {
+      c.appendChild(el('div', 'cdp-c-ajuste', 'Cada real de reajuste no preço = ' + fmtRs0(i.qtde) + '/mês'));
+    }
     if (i.motivo) c.appendChild(el('div', 'cdp-c-motivo', i.motivo));
     return c;
   }
 
-  function bloco(titulo, n, acao) {
+  function bloco(titulo, n, acao, rsTotal) {
     var b = el('div', 'cdp-bloco');
     var cab = el('div', 'cdp-bl-cab');
     cab.appendChild(el('span', 'cdp-bl-tit', titulo));
     cab.appendChild(el('span', 'cdp-bl-n', String(n)));
+    if (rsTotal) cab.appendChild(el('span', 'cdp-bl-rs', fmtRs0(rsTotal) + '/mês em jogo'));
     b.appendChild(cab);
     if (acao) b.appendChild(el('div', 'cdp-bl-acao', acao));
     return b;
+  }
+
+  // M3 — itens de uma pergunta específica (d.itens), fora do documento.
+  function itensCard(i) {
+    var c = el('div', 'cdp-card');
+    c.appendChild(el('div', 'cdp-c-nome', i.nome));
+    if (i.tag) c.appendChild(el('span', 'cdp-item-tag', i.tag));
+    if (i.sub) c.appendChild(el('div', 'cdp-c-sub', i.sub));
+    if (i.motivo) c.appendChild(el('div', 'cdp-c-motivo', i.motivo));
+    return c;
+  }
+
+  function renderItens(lista) {
+    var box = document.getElementById('cdp-itens');
+    box.innerHTML = '';
+    (lista || []).forEach(function (i) { box.appendChild(itensCard(i)); });
+  }
+
+  var PEND_ETIQUETA = {
+    sem_cmv: 'sem custo cadastrado',
+    sem_depara: 'não encontrado no POS',
+    serie_curta: 'série curta'
+  };
+
+  // M8 — a matriz Kasavana-Smith em si (volume × margem, por seção). O
+  // servidor já calcula e manda em d.secoes; até aqui a tela jogava fora e
+  // só mostrava as listas derivadas (manter/ajustar/promover/sair/entrar).
+  // Ordem = a mesma leitura da reunião: quem está bem, onde mexer, o que
+  // promover, o que pesa.
+  // Os quadrantes são nomeados pelos PRÓPRIOS EIXOS da matriz (volume ×
+  // margem), não pelos apelidos clássicos de menu engineering (estrela /
+  // cavalo de batalha / enigma / peso morto) — pedido do Rodrigo em
+  // 2026-08-05. O apelido obriga a decorar um glossário para ler a tela; o
+  // eixo diz o critério na própria etiqueta, que é o que separa um item do
+  // outro. A ação continua embaixo, em linguagem de operação.
+  var QUAD_INFO = [
+    ['estrela', 'Volume alto · margem alta', 'Proteger: não mexer em preço nem em posição.'],
+    ['cavalo', 'Volume alto · margem baixa', 'Onde o reajuste rende mais: muito volume segurando pouca margem.'],
+    ['enigma', 'Volume baixo · margem alta', 'Promover antes de cortar: dá dinheiro, falta quem peça.'],
+    ['morto', 'Volume baixo · margem baixa', 'Candidatos a sair — mas a decisão continua sua.']
+  ];
+
+  // Soma o R$/mês em jogo do quadrante ignorando item sem qtde/margem (nunca
+  // trata null como zero) e devolve quantos ficaram de fora, pra o bloco
+  // avisar que o total é parcial em vez de fingir que é completo.
+  function somaQuadrante(lista) {
+    var total = 0, temValor = false, ignorados = 0;
+    (lista || []).forEach(function (i) {
+      var rs = itemRs(i);
+      if (rs == null) { ignorados++; return; }
+      total += rs; temValor = true;
+    });
+    return { total: total, temValor: temValor, ignorados: ignorados };
+  }
+
+  function itemMatrizLinha(i) {
+    var row = el('div', 'cdp-mtx-item');
+    row.appendChild(el('div', 'cdp-mtx-item-nome', i.nome));
+    var partes = [];
+    if (i.qtde != null) partes.push(Math.round(i.qtde) + ' un/mês');
+    if (i.share_pct != null) partes.push(i.share_pct + '% da seção');
+    if (i.margem_un != null) partes.push('margem ' + i.margem_un.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+    if (i.tend === 'alta') partes.push('em alta');
+    else if (i.tend === 'queda') partes.push('em queda');
+    var rs = itemRs(i);
+    if (rs) partes.push(fmtRs0(rs) + '/mês');
+    if (partes.length) row.appendChild(el('div', 'cdp-mtx-item-sub', partes.join(' · ')));
+    return row;
+  }
+
+  // Quadrante vazio (16 casos medidos no corpus real — ex.: "Autorais" do Grá
+  // sem nenhum item em "cavalo") continua desenhado, só apagado: manter o
+  // grid 2x2 inteiro é o que deixa claro que a seção foi avaliada e não deu
+  // nada naquele quadrante, em vez de sumir uma célula e confundir com
+  // "não avaliado". Omitir o quadrante quebraria a leitura do método.
+  function quadranteBox(qk, titulo, acao, lista) {
+    var box = el('div', 'cdp-mtx-q ' + qk);
+    var itens = (lista || []).slice().sort(porRs);
+    var cab = el('div', 'cdp-mtx-q-cab');
+    cab.appendChild(el('span', 'cdp-mtx-q-tit', titulo));
+    cab.appendChild(el('span', 'cdp-mtx-q-n', String(itens.length)));
+    if (!itens.length) {
+      box.className += ' vazio';
+      box.appendChild(cab);
+      box.appendChild(el('div', 'cdp-bl-vazio', 'Nenhum item nesta seção.'));
+      return box;
+    }
+    var soma = somaQuadrante(itens);
+    if (soma.temValor) cab.appendChild(el('span', 'cdp-mtx-q-rs', fmtRs0(soma.total) + '/mês'));
+    box.appendChild(cab);
+    box.appendChild(el('div', 'cdp-bl-acao', acao));
+    // Total parcial declarado — nunca apresentado como se fosse completo.
+    if (soma.ignorados) {
+      box.appendChild(el('div', 'cdp-c-motivo',
+        soma.ignorados + ' de ' + itens.length +
+        ' item(ns) sem qtde ou margem cadastrada, fora desta soma.'));
+    }
+    var wrap = el('div', 'cdp-mtx-itens');
+    itens.forEach(function (i) { wrap.appendChild(itemMatrizLinha(i)); });
+    box.appendChild(wrap);
+    return box;
+  }
+
+  function matrizSecao(s) {
+    var sec = el('div', 'cdp-mtx-sec');
+    var cab = el('div', 'cdp-bl-cab');
+    cab.appendChild(el('span', 'cdp-bl-tit', s.secao));
+    cab.appendChild(el('span', 'cdp-bl-n',
+      (s.n_no_pos != null ? s.n_no_pos : 0) + ' de ' + (s.n_carta != null ? s.n_carta : 0) + ' com venda no POS'));
+    sec.appendChild(cab);
+    var cortes = s.cortes || {};
+    if (cortes.popularidade_share_pct != null && cortes.margem_un != null) {
+      sec.appendChild(el('div', 'cdp-bl-acao',
+        'Corte de popularidade: ' + cortes.popularidade_share_pct + '% da seção. Corte de margem: R$ ' +
+        cortes.margem_un.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) +
+        ' por unidade (mediana da seção) — é o que define onde cada item caiu abaixo.'));
+    }
+    var grid = el('div', 'cdp-mtx-grid');
+    var Q = s.quadrantes || {};
+    QUAD_INFO.forEach(function (q) {
+      grid.appendChild(quadranteBox(q[0], q[1], q[2], Q[q[0]]));
+    });
+    sec.appendChild(grid);
+    return sec;
   }
 
   function renderDoc(d) {
     var doc = document.getElementById('cdp-doc');
     doc.innerHTML = '';
     var cd = d.cobertura_dado || {};
-    if (!cd.tem_cardapio_digital) return; // o aviso acima já explicou
-
-    // Tamanho da carta — a resposta direta de "quantos itens ter".
+    var temCarta = !!cd.tem_cardapio_digital; // M5: sem carta digital não esvazia mais o documento inteiro.
     var T = d.tamanho || {};
-    if (T.n_carta) {
-      var bt = bloco('Tamanho da carta', T.n_carta, null);
-      var tb = el('table', 'cdp-tabela');
-      var linhas = [
-        ['Itens na carta hoje', T.n_carta],
-        ['Fazem ' + T.pct_concentracao + '% do volume', T.n_concentracao],
-        ['Pedem promoção antes de corte', T.n_promover],
-        ['Candidatos a sair', T.n_sair],
-        ['Carta sugerida', T.sugerido]
-      ];
-      linhas.forEach(function (l) {
-        var tr = document.createElement('tr');
-        var td1 = el('td', null, l[0]); var td2 = el('td', 'n', String(l[1] == null ? '—' : l[1]));
-        tr.appendChild(td1); tr.appendChild(td2); tb.appendChild(tr);
-      });
-      bt.appendChild(tb);
-      if (T.regua) {
-        bt.appendChild(el('div', 'cdp-c-motivo',
-          'Régua de corte: menos de ' + T.regua.piso_un_mes + ' un/mês E menos de ' +
-          T.regua.piso_share_secao_pct + '% da seção, com pelo menos ' +
-          T.regua.meses_minimos_serie + ' meses de série. As três condições têm de bater.'));
+    var P = d.proposta || {};
+
+    if (temCarta) {
+      // M7 — selo de cobertura: quanto da carta esta proposta classifica.
+      if (T.n_carta) {
+        var classificados = ['manter', 'ajustar', 'promover', 'sair', 'entrar']
+          .reduce(function (a, k) { return a + ((P[k] || []).length); }, 0);
+        var PD0 = d.pendencias || {};
+        var pendentes = ['sem_cmv', 'sem_depara', 'serie_curta']
+          .reduce(function (a, k) { return a + ((PD0[k] || []).length); }, 0);
+        var pct = Math.round(classificados / T.n_carta * 100);
+        var txtSelo = 'Esta proposta classifica ' + classificados + ' de ' + T.n_carta +
+          ' itens da carta (' + pct + '%). Os outros ' + pendentes +
+          ' estão em pendência de cadastro e ficam fora de qualquer recomendação.';
+        var atencao = pct < 50;
+        if (atencao) txtSelo += ' Leia a proposta sabendo que ela cobre menos da metade da carta.';
+        doc.appendChild(el('div', 'cdp-selo-cob' + (atencao ? ' atencao' : ''), txtSelo));
       }
-      doc.appendChild(bt);
+
+      // Tamanho da carta — a resposta direta de "quantos itens ter".
+      if (T.n_carta) {
+        var bt = bloco('Tamanho da carta', T.n_carta, null);
+        var tb = el('table', 'cdp-tabela');
+        var linhas = [
+          ['Itens na carta hoje', T.n_carta],
+          ['Fazem ' + T.pct_concentracao + '% do volume', T.n_concentracao],
+          ['Pedem promoção antes de corte', T.n_promover],
+          ['Candidatos a sair', T.n_sair],
+          ['Carta sugerida', T.sugerido]
+        ];
+        linhas.forEach(function (l) {
+          var tr = document.createElement('tr');
+          var td1 = el('td', null, l[0]); var td2 = el('td', 'n', String(l[1] == null ? '—' : l[1]));
+          tr.appendChild(td1); tr.appendChild(td2); tb.appendChild(tr);
+        });
+        bt.appendChild(tb);
+        if (T.regua) {
+          bt.appendChild(el('div', 'cdp-c-motivo',
+            'Régua de corte: menos de ' + T.regua.piso_un_mes + ' un/mês E menos de ' +
+            T.regua.piso_share_secao_pct + '% da seção, com pelo menos ' +
+            T.regua.meses_minimos_serie + ' meses de série. As três condições têm de bater.'));
+        }
+        doc.appendChild(bt);
+      }
+
+      // M8 — a matriz Kasavana-Smith, por seção: o método que decide onde
+      // cada item das 5 listas abaixo caiu. Caso 1 (IZ, sem carta digital)
+      // já fica de fora sozinho: d.secoes vem [] e o forEach não desenha nada.
+      if ((d.secoes || []).length) {
+        var bm = bloco('Matriz da carta (volume × margem)', d.secoes.length,
+          'Cada seção cruzada em 4 quadrantes: quem vende muito e deixa margem boa, quem vende ' +
+          'muito e deixa pouco, quem vende pouco e deixa margem boa, quem não faz nem uma coisa nem outra.');
+        d.secoes.forEach(function (s) { bm.appendChild(matrizSecao(s)); });
+        doc.appendChild(bm);
+      }
+
+      // Os 5 blocos da proposta — M1 (ordenado por R$/mês em jogo, com total no cabeçalho)
+      // e M6 (bloco vazio recolhe num <details>, em vez de ocupar a dobra aberto e vazio).
+      BLOCOS.forEach(function (b) {
+        var lista = (P[b[0]] || []).slice().sort(porRs);
+        if (!lista.length) {
+          var det = el('details', 'cdp-bloco');
+          var sum = el('summary', 'cdp-bl-cab');
+          sum.appendChild(el('span', 'cdp-bl-tit', b[1]));
+          sum.appendChild(el('span', 'cdp-bl-n', '0'));
+          det.appendChild(sum);
+          det.appendChild(el('div', 'cdp-bl-vazio', 'Nada nesta lista para esta casa.'));
+          doc.appendChild(det);
+          return;
+        }
+        var rsTotal = lista.reduce(function (a, i) { return a + (itemRs(i) || 0); }, 0);
+        var box = bloco(b[1], lista.length, b[2], rsTotal);
+        lista.forEach(function (i) { box.appendChild(cardItem(i, b[0])); });
+        doc.appendChild(box);
+      });
     }
 
-    // Os 5 blocos da proposta.
-    var P = d.proposta || {};
-    BLOCOS.forEach(function (b) {
-      var lista = P[b[0]] || [];
-      var box = bloco(b[1], lista.length, b[2]);
-      if (!lista.length) {
-        box.appendChild(el('div', 'cdp-bl-vazio', 'Nada nesta lista para esta casa.'));
-      } else {
-        lista.forEach(function (i) { box.appendChild(cardItem(i, b[0])); });
-      }
-      doc.appendChild(box);
-    });
-
-    // Vende e não está na carta.
-    var fora = d.vende_fora_da_carta || [];
+    // Vende e não está na carta — M5: sempre aparece, com título/ação
+    // diferentes quando a casa não tem cardápio digital para comparar.
+    var fora = (d.vende_fora_da_carta || []).slice().sort(porRs);
     if (fora.length) {
-      var bf = bloco('Vende e não está na carta', fora.length,
-        'Aparecem no POS e não na carta de coquetelaria do cardápio digital — quem lê o cardápio não encontra.');
+      var rsFora = fora.reduce(function (a, i) { return a + (itemRs(i) || 0); }, 0);
+      var tituloFora = temCarta ? 'Vende e não está na carta' : 'Cocktails vendidos no mês';
+      var acaoFora = temCarta
+        ? 'Aparecem no POS e não na carta de coquetelaria do cardápio digital — quem lê o cardápio não encontra.'
+        : 'O cardápio digital desta casa não lista coquetelaria com preço por item, então não há carta para comparar. Estes são os cocktails que o POS registrou.';
+      var bf = bloco(tituloFora, fora.length, acaoFora, rsFora);
       fora.forEach(function (i) { bf.appendChild(cardItem(i, 'entrar')); });
       doc.appendChild(bf);
     }
 
-    // Cobertura estrutural.
-    var CC = d.cobertura_carta || {};
-    if (CC.raizes) {
-      var bc = bloco('Cobertura da carta', (CC.lacunas || []).length,
-        'O que a carta precisa ter mesmo que venda pouco. Vermelho é lacuna.');
-      ['raizes', 'bases', 'perfis'].forEach(function (g) {
-        var mapa = CC[g] || {};
-        var chaves = Object.keys(mapa);
-        if (!chaves.length) return;
-        bc.appendChild(el('div', 'cdp-c-sub',
-          g === 'raizes' ? 'Raízes' : g === 'bases' ? 'Destilados base' : 'Perfis'));
-        var linha = el('div', 'cdp-cob');
-        chaves.forEach(function (k) {
-          var v = mapa[k] || {};
-          linha.appendChild(el('span', 'cdp-cob-it' + (v.n ? '' : ' falta'),
-            k + ' · ' + (v.n || 0)));
+    if (temCarta) {
+      // Cobertura estrutural.
+      var CC = d.cobertura_carta || {};
+      if (CC.raizes) {
+        var bc = bloco('Cobertura da carta', (CC.lacunas || []).length,
+          'O que a carta precisa ter mesmo que venda pouco. Vermelho é lacuna.');
+        ['raizes', 'bases', 'perfis'].forEach(function (g) {
+          var mapa = CC[g] || {};
+          var chaves = Object.keys(mapa);
+          if (!chaves.length) return;
+          bc.appendChild(el('div', 'cdp-c-sub',
+            g === 'raizes' ? 'Raízes' : g === 'bases' ? 'Destilados base' : 'Perfis'));
+          var linha = el('div', 'cdp-cob');
+          chaves.forEach(function (k) {
+            var v = mapa[k] || {};
+            linha.appendChild(el('span', 'cdp-cob-it' + (v.n ? '' : ' falta'),
+              k + ' · ' + (v.n || 0)));
+          });
+          bc.appendChild(linha);
         });
-        bc.appendChild(linha);
-      });
-      if ((CC.indefinidos || []).length) {
-        bc.appendChild(el('div', 'cdp-c-motivo',
-          CC.indefinidos.length + ' item(ns) sem classificação por falta de ficha detalhada: ' +
-          CC.indefinidos.join(', ') + '.'));
+        if ((CC.indefinidos || []).length) {
+          bc.appendChild(el('div', 'cdp-c-motivo',
+            CC.indefinidos.length + ' item(ns) sem classificação por falta de ficha detalhada: ' +
+            CC.indefinidos.join(', ') + '.'));
+        }
+        doc.appendChild(bc);
       }
-      doc.appendChild(bc);
-    }
 
-    // Pendências — o que NÃO pode virar recomendação de corte.
-    var PD = d.pendencias || {};
-    var nPend = PEND.reduce(function (a, p) { return a + ((PD[p[0]] || []).length); }, 0);
-    if (nPend) {
-      var bp = bloco('Pendências de cadastro', nPend,
-        'Falta dado, não falta venda. Nenhum destes pode ser recomendado para corte.');
+      // Pendências — M4: duas listas por comportamento de venda, nunca sugestão de corte.
+      var PD = d.pendencias || {};
+      var todosPend = [];
       PEND.forEach(function (p) {
-        var lista = PD[p[0]] || [];
-        if (!lista.length) return;
-        bp.appendChild(el('div', 'cdp-c-sub', p[1] + ' (' + lista.length + ')'));
-        lista.forEach(function (i) { bp.appendChild(cardItem(i, 'pend')); });
+        (PD[p[0]] || []).forEach(function (i) {
+          todosPend.push({ item: i, etiqueta: PEND_ETIQUETA[p[0]] });
+        });
       });
-      doc.appendChild(bp);
+      if (todosPend.length) {
+        var vendendo = todosPend.filter(function (x) { return x.item.qtde != null && x.item.qtde > 0; });
+        var semVenda = todosPend.filter(function (x) { return !(x.item.qtde != null && x.item.qtde > 0); });
+        vendendo.sort(function (a, b) { return (b.item.qtde || 0) - (a.item.qtde || 0); });
+        if (vendendo.length) {
+          var bp1 = bloco('Vendendo sem cadastro completo', vendendo.length,
+            'Vendem hoje e o cadastro incompleto impede medir margem. É onde o cadastro rende dinheiro.');
+          vendendo.forEach(function (x) { bp1.appendChild(cardItem(x.item, 'pend', x.etiqueta)); });
+          doc.appendChild(bp1);
+        }
+        if (semVenda.length) {
+          var bp2 = bloco('Na carta e sem venda no mês', semVenda.length,
+            'Não venderam nenhuma unidade no mês. O cadastro incompleto impede qualquer recomendação de corte — resolver o cadastro é o que destrava a decisão.');
+          semVenda.forEach(function (x) { bp2.appendChild(cardItem(x.item, 'pend', x.etiqueta)); });
+          doc.appendChild(bp2);
+        }
+      }
     }
 
-    // O que este cérebro ainda não sabe (declarado, não escondido).
+    // O que este cérebro ainda não sabe (declarado, não escondido) — sempre, em qualquer caso.
     var falta = cd.camadas_ausentes || {};
     var chavesF = Object.keys(falta).filter(function (k) { return k.charAt(0) !== '_'; });
     if (chavesF.length) {
@@ -714,6 +957,7 @@ window.msgAcessoNegado = function (nomePagina) {
       box.appendChild(el('span', 'cdp-chip-v', c.valor));
       chips.appendChild(box);
     });
+    renderItens(d.itens); // M3 — cards da pergunta específica, entre chips e fontes
     document.getElementById('cdp-fontes').textContent =
       (d.fontes && d.fontes.length) ? 'Fontes: ' + d.fontes.join(' · ') : '';
     document.getElementById('cdp-ans').style.display = '';
@@ -1903,7 +2147,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '6fabdb1e29f0';
+  var BUILD = '871e206e0b4c';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

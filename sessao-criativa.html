@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Sessão Criativa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=6fabdb1e29f0">
+<link rel="stylesheet" href="portal.css?v=871e206e0b4c">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -450,6 +450,30 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-b[disabled]{opacity:.45;cursor:not-allowed;}
   .sc-palco{display:flex;gap:0;border:1px solid #3a3428;border-radius:12px;overflow:hidden;
             background:#1b1710;min-height:460px;}
+
+  /* Nota da folha — pedido do Rodrigo (2026-08-05): "logo abaixo da página de
+     trabalho da sessão ... só rolar pra baixo e vai estar lá de forma simples".
+
+     É papel, não gaveta. As 3 gavetas (Preço/Ideias/Consumo) moram DENTRO da
+     `.sc-tela` e disputam o espaço do canvas; esta fica FORA do `.sc-palco`,
+     no fluxo normal da página, sem lingueta e sem abrir/fechar — chegar nela
+     é rolar, que foi exatamente o que se pediu.
+
+     Some no modo folha (`body.sc-ff`): lá o `#sc-folha-view` vira
+     `position:fixed;inset:0` num flex-column, e um bloco depois do palco ou
+     ficaria fora da tela ou roubaria altura do canvas — que é justamente o
+     que o modo folha existe pra evitar. */
+  .sc-nota{margin-top:14px;}
+  .sc-nota-h{display:flex;align-items:baseline;gap:9px;font-size:10px;letter-spacing:.1em;
+             text-transform:uppercase;color:#8f8672;margin-bottom:6px;}
+  .sc-nota-est{font-size:10px;letter-spacing:0;text-transform:none;color:#5f5a4a;}
+  .sc-nota-est.erro{color:#e24b4a;}
+  .sc-nota-tx{display:block;width:100%;box-sizing:border-box;min-height:150px;resize:vertical;
+              background:#16130f;border:1px solid #3a3428;border-radius:12px;padding:12px 14px;
+              color:#f3ede2;font:inherit;font-size:13.5px;line-height:1.65;}
+  .sc-nota-tx::placeholder{color:#5f5a4a;}
+  .sc-nota-tx:focus{outline:none;border-color:#d0a352;}
+  body.sc-ff .sc-nota{display:none;}
   .sc-barra{width:46px;flex:none;background:#211c15;border-right:1px solid #3a3428;
             display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 0;}
   .sc-t{width:31px;height:31px;border-radius:8px;display:flex;align-items:center;justify-content:center;
@@ -753,6 +777,10 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-cad-ins-fl.outra{background:#3a2f14;color:#e0b05c;}
   .sc-preco-lin-fl{font-size:9px;padding:0 5px;border-radius:99px;white-space:nowrap;
                    line-height:1.5;flex:none;}
+  /* Campo de custo de um produto que existe no B.D.1 mas está sem custo
+     cadastrado: borda âmbar até alguém digitar. Sem isso o campo vazio
+     parecia preenchido e o custo do drink saía menor do que é. */
+  .sc-falta-custo{border-color:#e0b05c !important;background:#2a2113 !important;}
   .sc-preco-lin-fl.tem{background:#163527;color:#9fe1cb;}
   .sc-preco-lin-fl.nao{background:#3a1c1a;color:#e24b4a;}
   .sc-preco-lin-fl.outra{background:#3a2f14;color:#e0b05c;}
@@ -1211,6 +1239,11 @@ window.msgAcessoNegado = function (nomePagina) {
     .sc-ctx .sc-ctx-dir .sc-t{width:34px;height:30px;}
     .sc-ctx[hidden]{display:none;}
     .sc-pgm{display:flex;}
+    /* Com a mesa aberta o cartão sobe pra faixa visível (revelaSelecionado)
+       e passa por baixo do indicador flutuante, que fica atravessado no
+       meio dele. Some: quem está precificando não está trocando de página,
+       e as setas voltam assim que a mesa fecha. */
+    body.sc-mesa .sc-pgm{display:none;}
     .sc-sep{width:1px;height:22px;margin:0 3px;}
     /* `flex:none` é obrigatório: num container em coluna o flex-basis:0 do
        `.sc-tela{flex:1}` GANHA da altura declarada, e o 58vh nunca valia —
@@ -1358,6 +1391,9 @@ window.msgAcessoNegado = function (nomePagina) {
            no PC cor e espessura continuam na barra lateral, onde há espaço
            pra elas estarem sempre visíveis. `hidden` até a ferramenta ativa
            ter o que oferecer. -->
+      <!-- Lista do B.D.1 pros campos de insumo (uma só pra folha inteira). -->
+      <datalist id="sc-bd1-lista"></datalist>
+
       <div class="sc-ctx" id="sc-ctx" hidden>
         <div class="sc-ctx-esq" id="sc-ctx-esq"></div>
         <div class="sc-ctx-dir">
@@ -1428,6 +1464,18 @@ window.msgAcessoNegado = function (nomePagina) {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- A nota da folha. Papel simples logo abaixo do palco: sem lingueta,
+         sem botão de salvar, sem contador. Sobe junto do autosave da folha
+         (mesmo PUT, mesmo blob) e é vista por quem foi convidado. -->
+    <div class="sc-nota">
+      <label class="sc-nota-h" for="sc-nota-tx">
+        Nota da sessão
+        <span class="sc-nota-est" id="sc-nota-est"></span>
+      </label>
+      <textarea id="sc-nota-tx" class="sc-nota-tx" maxlength="20000"
+                placeholder="Escreva o que quiser: as medidas que deram certo, o que testar da próxima vez, o que perguntar pra alguém. Salva sozinho, junto da folha."></textarea>
     </div>
     </div><!-- /#sc-folha-view -->
 
@@ -1650,6 +1698,8 @@ window.msgAcessoNegado = function (nomePagina) {
   var cctx = camada.getContext('2d');
   var estado = document.getElementById('sc-estado');
   var elTitulo = document.getElementById('sc-titulo');
+  var elNota = document.getElementById('sc-nota-tx');
+  var elNotaEst = document.getElementById('sc-nota-est');
 
   function toast(m, ruim){
     var t = document.getElementById('sc-toast');
@@ -1757,7 +1807,13 @@ window.msgAcessoNegado = function (nomePagina) {
     if (ins.length > 4){
       c.fillStyle = '#5f5a4a'; c.fillText('+ ' + (ins.length-4) + ' insumo(s)', x+pad, cy); cy += 13*esc;
     }
-    var custo = custoCartao(o), alvo = o.cmv_alvo || 20, venda = vendaSugerida(custo, alvo);
+    var custo = custoCartao(o), alvo = o.cmv_alvo || 20;
+    // MESMA régua do painel (`redondoDeCarta`), obrigatoriamente: com o
+    // cálculo cru aqui e o redondo lá, o cartão no papel dizia "carta 41,00
+    // · margem 32,75" enquanto o painel ao lado dizia 40,00 e 31,75 — dois
+    // preços para o mesmo drink na mesma tela. Se um dia a régua mudar,
+    // muda nos dois ou volta a divergir.
+    var venda = redondoDeCarta(vendaSugerida(custo, alvo));
     var cmvReal = venda > 0 ? (custo/venda*100) : 0, f = farolDe(cmvReal);
     cy += 3*esc;
     c.strokeStyle = '#3a3428'; c.beginPath(); c.moveTo(x+pad, cy); c.lineTo(x+w-pad, cy); c.stroke();
@@ -2064,7 +2120,16 @@ window.msgAcessoNegado = function (nomePagina) {
      mesma ordem, e ninguém é mandado recarregar. */
   var timer = null;
   function agenda(){ sujo = true; marca('salvando…'); clearTimeout(timer); timer = setTimeout(salva, 1200); }
-  function marca(t, ruim){ estado.textContent = t; estado.className = 'sc-est' + (ruim ? ' erro' : ''); }
+  function marca(t, ruim){
+    estado.textContent = t; estado.className = 'sc-est' + (ruim ? ' erro' : '');
+    // O MESMO estado, repetido ao lado da nota. Quem está escrevendo nela
+    // rolou a página pra baixo e não enxerga mais a barra do topo — sem isto,
+    // "não consegui salvar" acontece fora do campo de visão de quem digitou.
+    if (elNotaEst){
+      elNotaEst.textContent = t;
+      elNotaEst.className = 'sc-nota-est' + (ruim ? ' erro' : '');
+    }
+  }
 
   function miniatura(){
     try {
@@ -2105,7 +2170,11 @@ window.msgAcessoNegado = function (nomePagina) {
     var alvo = folhaId;
     var pendentes = ops.slice(base);
     var corpo = {base:base, ops:pendentes, versao:versao,
-                 titulo:elTitulo.value.trim() || 'Folha sem título'};
+                 titulo:elTitulo.value.trim() || 'Folha sem título',
+                 // A nota vai INTEIRA em todo salvamento (não tem delta, como
+                 // o título): é texto curto perto do log de ops, e o servidor
+                 // preserva a que está lá quando o campo não vem.
+                 nota:elNota ? elNota.value : ''};
     var mini = miniatura(); if (mini) corpo.thumb = mini;
     fetch(WORKER + '/api/sessao/folha/' + alvo, {
       method:'PUT', headers:cab({'Content-Type':'application/json'}), body:JSON.stringify(corpo)
@@ -2179,6 +2248,13 @@ window.msgAcessoNegado = function (nomePagina) {
         }
         if (j && j.titulo && document.activeElement !== elTitulo && elTitulo.value !== j.titulo){
           elTitulo.value = j.titulo;
+        }
+        // Mesma régua do título: só troca o texto de quem NÃO está com o
+        // cursor dentro dele. Sobrescrever um campo em foco apagaria a frase
+        // que a pessoa está digitando no meio da palavra.
+        if (j && typeof j.nota === 'string' && elNota
+            && document.activeElement !== elNota && elNota.value !== j.nota){
+          elNota.value = j.nota;
         }
         agendaPoll();
       })
@@ -2434,8 +2510,52 @@ window.msgAcessoNegado = function (nomePagina) {
   function buscaCatalogo(){
     if (catalogoInsumos) return Promise.resolve(catalogoInsumos);
     return fetch(WORKER + '/api/receita/catalogo').then(function(r){ return r.ok ? r.json() : {}; })
-      .then(function(j){ catalogoInsumos = j || {}; return catalogoInsumos; })
+      .then(function(j){ catalogoInsumos = j || {}; montaDatalist(); return catalogoInsumos; })
       .catch(function(){ catalogoInsumos = {}; return catalogoInsumos; });
+  }
+
+  /* ---------------- lista de insumos do B.D.1 ----------------
+     `<datalist>` e não uma lista desenhada à mão: o navegador já filtra
+     enquanto se digita, funciona com teclado e no celular abre a lista
+     nativa — e são ~840 itens, que num menu próprio exigiria virtualizar.
+
+     Uma lista SÓ pra folha inteira (id fixo), não uma por linha de insumo:
+     com ~840 opções, repetir o nó por linha multiplicaria o DOM à toa.
+
+     Mostra o nome COMO ESTÁ NO B.D.1 (`v.nome`), não a chave normalizada —
+     senão a pessoa escolheria "gin beefeater 24 london dry gin" e era isso
+     que ficaria escrito na receita.
+
+     TODO PRODUTO ENTRA, com custo ou sem (pedido do Rodrigo). Os 284 sem
+     custo por ml não são lixo: são cadastro incompleto de coisa que se usa
+     de verdade (o "Gin Beefeater 24" é um deles). Poder escolhê-los é o que
+     permite montar a receita agora e acertar o custo depois.
+
+     ORDEM ALFABÉTICA ÚNICA, e isso é decisão medida: a primeira versão punha
+     os sem custo num bloco no fim, e como o navegador filtra mantendo a
+     ordem do DOM, digitar "gin" mostrava primeiro os gins com preço e jogava
+     o "Gin Beefeater 24" para depois de todos eles. Quem procura um produto
+     pelo nome não está procurando por status de cadastro. O aviso vai no
+     `label`, que aparece ao lado da opção sem mudar o que é escrito. */
+  function montaDatalist(){
+    var dl = document.getElementById('sc-bd1-lista');
+    if (!dl || !catalogoInsumos) return;
+    var itens = Object.keys(catalogoInsumos).map(function(k){
+      var v = catalogoInsumos[k] || {};
+      return {nome: v.nome || k, ml: v.preco_ml};
+    }).sort(function(a,b){ return a.nome.localeCompare(b.nome,'pt-BR'); });
+    var frag = document.createDocumentFragment();
+    itens.forEach(function(i){
+      var o = document.createElement('option');
+      o.value = i.nome;
+      // `label` só quando falta custo: o Safari mostra o label no lugar do
+      // value quando os dois existem, e repetir o nome em todas as ~840
+      // opções não acrescenta nada.
+      if (i.ml == null) o.label = i.nome + ' — custo a digitar';
+      frag.appendChild(o);
+    });
+    dl.textContent = '';
+    dl.appendChild(frag);
   }
   function normChave(s){
     return String(s||'').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
@@ -2484,9 +2604,15 @@ window.msgAcessoNegado = function (nomePagina) {
       if (outraSlug) return {estado:'outra', label:'em ' + (CASA_LABEL_POR_WORKER[outraSlug] || outraSlug)};
     }
     // Sem estoque na pr\u00f3pria casa nem em nenhuma outra (item nunca visto em
-    // contagem nenhuma, ou visto e sempre zerado) \u2014 "n\u00e3o existe" no sentido
-    // do plano: n\u00e3o h\u00e1 estoque desse insumo em lugar nenhum agora.
-    return {estado:'nao', label:'n\u00e3o existe'};
+    // contagem nenhuma, ou visto e sempre zerado).
+    //
+    // O r\u00f3tulo era "n\u00e3o existe" e confundia: aparecia ao lado do PRE\u00c7O do
+    // insumo, ent\u00e3o lia-se "este item n\u00e3o existe" \u2014 quando o que falta \u00e9
+    // ESTOQUE, n\u00e3o cadastro. Numa receita cujos insumos ningu\u00e9m contou
+    // ainda, os quatro sa\u00edam vermelhos dizendo "n\u00e3o existe" ao lado de
+    // quatro pre\u00e7os v\u00e1lidos. "Sem estoque" diz a mesma coisa sem a
+    // contradi\u00e7\u00e3o.
+    return {estado:'nao', label:'sem estoque'};
   }
   function pintaSeloInsumo(elSpan, nome){
     if (!elSpan) return;
@@ -2547,7 +2673,12 @@ window.msgAcessoNegado = function (nomePagina) {
       var row = document.createElement('div');
       row.className = 'sc-cad-ins-row';
       row.innerHTML =
-        '<input class="sc-cad-i-nome" placeholder="insumo" value="' + (vals.nome||'').replace(/"/g,'&quot;') + '">' +
+        // `list` liga o campo à lista do B.D.1 (montada por `montaDatalist`).
+        // Sem ela o campo era texto livre e o custo só preenchia se a pessoa
+        // digitasse o nome EXATO e completo ("gin beefeater 24 london dry
+        // gin") — ou seja, na prática nunca preenchia.
+        '<input class="sc-cad-i-nome" list="sc-bd1-lista" autocomplete="off" ' +
+        'placeholder="insumo (busque no B.D.1)" value="' + (vals.nome||'').replace(/"/g,'&quot;') + '">' +
         '<input class="sc-cad-i-qtde" value="' + (vals.qtde||'') + '">' +
         '<select class="sc-cad-i-un"><option value="ml">ml</option><option value="un">un</option>' +
           '<option value="g">g</option><option value="dose">dose</option></select>' +
@@ -2560,13 +2691,39 @@ window.msgAcessoNegado = function (nomePagina) {
       if (vals.unidade) row.querySelector('.sc-cad-i-un').value = vals.unidade;
       row.querySelector('.sc-cad-del').onclick = function(){ row.remove(); recalc(); };
       row.querySelectorAll('input').forEach(function(i){ i.addEventListener('input', recalc); });
+      // Digitou o custo que faltava: a marca de pendência sai na hora.
+      row.querySelector('.sc-cad-i-custo').addEventListener('input', function(e){
+        if (e.target.value) e.target.classList.remove('sc-falta-custo');
+      });
       var elSelo = row.querySelector('.sc-cad-ins-fl');
       row.querySelector('.sc-cad-i-nome').addEventListener('change', function(){
         var nomeAgora = row.querySelector('.sc-cad-i-nome').value;
         if (catalogoInsumos){
           var kv = catalogoInsumos[normChave(nomeAgora)];
           var elCusto = row.querySelector('.sc-cad-i-custo');
-          if (kv && kv.preco != null && !elCusto.value){ elCusto.value = String(kv.preco).replace('.',','); recalc(); }
+          // `preco_ml`, NUNCA `preco`. O campo é custo POR UNIDADE da receita
+          // (o ml que ela consome) e a conta é `qtde × custo_unit`; `preco` é
+          // o da garrafa inteira. Com ele aqui, 90ml de espumante custavam o
+          // preço de 90 garrafas — erro de 750×, mudo, e que contaminava
+          // margem, CMV e o Consumo carimbado a partir dele.
+          var pu = kv && kv.preco_ml != null ? kv.preco_ml : null;
+          if (pu != null && !elCusto.value){
+            // 4 casas: 0,048/ml arredondado a centavo viraria 0,05 (+4% no
+            // custo do drink). Dinheiro de receita se conta em fração de
+            // centavo por ml.
+            elCusto.value = pu.toFixed(4).replace('.',',');
+            elCusto.classList.remove('sc-falta-custo');
+            elCusto.placeholder = 'R$/un';
+            recalc();
+          } else if (kv && pu == null && !elCusto.value){
+            // Produto EXISTE no B.D.1 mas está sem custo cadastrado (284 dos
+            // 821). Escolher continua valendo — o que não pode é o campo
+            // ficar vazio parecendo preenchido e o custo do drink sair menor
+            // do que é. A marca some assim que a pessoa digita.
+            elCusto.classList.add('sc-falta-custo');
+            elCusto.placeholder = 'custo?';
+            elCusto.title = 'Este produto ainda não tem custo por ml no B.D.1 — digite aqui.';
+          }
         }
         pintaSeloInsumo(elSelo, nomeAgora);
       });
@@ -2724,7 +2881,47 @@ window.msgAcessoNegado = function (nomePagina) {
     elIdeias.classList.remove('on');
     elCons.classList.remove('on'); // K3: as três gavetas se fecham entre si
     elPreco.classList.toggle('on', abrindo);
+    marcaMesa();
+    if (abrindo) revelaSelecionado();
   };
+
+  /* ---------------- manter o cartão à vista (v2, item 12) ----------------
+     No celular a mesa ocupa 62% da tela DE BAIXO PRA CIMA, e o cartão
+     selecionado costuma estar no meio do papel — ou seja, exatamente onde a
+     mesa vai subir. Reservar 38% da altura não basta: o cartão precisa
+     estar DENTRO desses 38%.
+
+     Então ao abrir a mesa a vista desliza o necessário pra trazer o cartão
+     pra faixa que continua visível. Sem isso, "a mesa para antes do cartão"
+     é verdade sobre a mesa e mentira sobre o cartão — que é o que importa
+     pra quem está mexendo no preço olhando a receita. */
+  // Uma marca no body dizendo "há mesa aberta" — o CSS do celular usa pra
+  // tirar da frente o que flutua sobre o papel. Lê o estado das 3 gavetas em
+  // vez de cada handler manter a sua versão.
+  function marcaMesa(){
+    document.body.classList.toggle('sc-mesa',
+      elPreco.classList.contains('on') || elIdeias.classList.contains('on') ||
+      elCons.classList.contains('on'));
+  }
+
+  function revelaSelecionado(){
+    if (!mqCel.matches || !selecionado) return;
+    var o = objetos.get(selecionado);
+    if (!o) return;
+    var r = cv.getBoundingClientRect();
+    // Faixa util = do topo do papel até onde a mesa começa (62% de baixo).
+    var faixa = r.height * 0.38;
+    var m = medidasCartao(o);
+    var topo = o.y*view.k + view.ty;
+    var alt = (o.kind === 'cartao' ? m.h*view.k : 40);
+    var folga = 10;
+    // Só mexe se o cartão não couber na faixa como está.
+    if (topo >= folga && topo + alt <= faixa - folga) return;
+    // Encosta o cartão no topo do papel, com folga — cabendo ou não na
+    // faixa (cartão mais alto que ela ao menos começa visível).
+    view.ty += (folga - topo);
+    zpct(); refazTracos(); desenha();
+  }
   function atualizaPreco(){
     var o = (selecionado && objetos.get(selecionado));
     if (!o || o.kind !== 'cartao'){
@@ -2757,14 +2954,30 @@ window.msgAcessoNegado = function (nomePagina) {
       }).join('') + '</div>';
     }
     var ins = o.insumos || [], custo = custoCartao(o);
-    var alvo = o.cmv_alvo || 20, venda = vendaSugerida(custo, alvo);
+    var alvo = o.cmv_alvo || 20;
+    // O preço em destaque é o REDONDO DE CARTA, não o resultado cru da
+    // divisão. A tela inteira ensina que preço de carta é número que se
+    // escreve num cardápio (é o que os chips fazem) — e o número maior dela
+    // era o único que não seguia essa régua: com alvo 20% saía "41,00",
+    // enquanto os chips ofereciam 35/40/45/50 e NENHUM ficava marcado,
+    // porque nenhum casava com 41.
+    //
+    // Consequência assumida: o CMV exibido passa a ser o do preço redondo
+    // (40 → 20,6%), não o alvo digitado (20,0%). É o número verdadeiro
+    // daquele preço, que é o que interessa pra decidir.
+    var venda = redondoDeCarta(vendaSugerida(custo, alvo));
     var cmvReal = venda > 0 ? (custo/venda*100) : 0, f = farolDe(cmvReal);
     var linhas = ins.map(function(i){
       var temPreco = i.custo_unit != null && i.custo_unit !== '' && i.custo_unit > 0;
       // K9: mesmo veredito do formulário de edição (tem/outra casa/não
       // existe), lido da MESMA `statusInsumo` — nunca um segundo cálculo.
       var st = statusInsumo(i.nome);
-      var seloHtml = st ? '<span class="sc-preco-lin-fl ' + st.estado + '" title="casa da folha">' + esc(st.label) + '</span>' : '';
+      // O title explica o que o selo mede — antes dizia só "casa da folha",
+      // que não ajuda quem não sabe que o selo é sobre estoque.
+      var stTit = st ? ({tem:'há estoque na casa desta folha',
+                         outra:'sem estoque aqui, mas há em outra casa — dá pra transferir',
+                         nao:'sem estoque em nenhuma casa agora — precisa comprar'}[st.estado] || '') : '';
+      var seloHtml = st ? '<span class="sc-preco-lin-fl ' + st.estado + '" title="' + esc(stTit) + '">' + esc(st.label) + '</span>' : '';
       return '<div class="sc-preco-lin"><span>' + esc(i.qtde||'?') + esc(i.unidade||'') + ' ' +
         esc(i.nome||'—') + '</span>' + seloHtml + '<span' + (temPreco?'':' class="sc-sem"') + '>' +
         (temPreco ? 'R$ '+brl(i.qtde*i.custo_unit) : '—') + '</span></div>';
@@ -2795,6 +3008,15 @@ window.msgAcessoNegado = function (nomePagina) {
       '<div class="sc-preco-copo">' + (o.copo ? esc(o.copo) : 'Copo não definido') +
         ' <span style="color:#5f5a4a">· banco de copos ainda não integrado</span></div>' +
 
+      // O CUSTO VEM PRIMEIRO: é a base de tudo que vem abaixo. Ele estava
+      // depois da tabela de cenários, que já mostra o custo do cenário ativo
+      // na primeira linha — o leitor via o número duas vezes, e a segunda
+      // vez era a "oficial". Aqui ele abre o bloco, com o selo parcial
+      // encostado, e o que vem depois são decisões tomadas em cima dele.
+      '<div class="sc-preco-tot"><span>Custo do drink</span>' +
+        '<b>R$ ' + brl(custo) + '</b>' + seloParcial + '</div>' +
+      nomesFaltando +
+
       // ---- par editável (item 7): preço de carta ↔ CMV, um recalcula o outro
       '<div class="sc-par">' +
         '<div class="sc-par-c">' +
@@ -2821,9 +3043,6 @@ window.msgAcessoNegado = function (nomePagina) {
           '<div class="sc-preco-mini sc-cen-nota">O cenário marcado é o que vira ficha técnica.</div>'
         : '') +
 
-      '<div class="sc-preco-tot"><span>Custo do drink</span>' +
-        '<b>R$ ' + brl(custo) + '</b>' + seloParcial + '</div>' +
-      nomesFaltando +
       (linhas || '<div class="sc-preco-vazio">Nenhum insumo ainda.</div>') +
 
       // K3: o registro nasce AQUI porque é aqui que as quantidades já estão
@@ -3200,6 +3419,7 @@ window.msgAcessoNegado = function (nomePagina) {
     elPreco.classList.remove('on');
     elCons.classList.remove('on'); // K3: as três gavetas se fecham entre si
     elIdeias.classList.toggle('on', abrindo);
+    marcaMesa();
     if (abrindo && !elIdeiasBusca.value){
       var o = (selecionado && objetos.get(selecionado));
       if (o && o.kind === 'cartao' && o.nome) elIdeiasBusca.value = o.nome;
@@ -3688,6 +3908,7 @@ window.msgAcessoNegado = function (nomePagina) {
     elPreco.classList.remove('on');
     elIdeias.classList.remove('on');
     elCons.classList.toggle('on', abrindo);
+    marcaMesa();
     if (abrindo) carregaConsumo();
   };
 
@@ -4358,6 +4579,9 @@ window.msgAcessoNegado = function (nomePagina) {
     folhaCaderno = null;
     // K2: toda folha (nova ou reaberta) começa mostrando a página 1.
     paginaAtual = 1; renderPaginas(); atualizaCabecalhosGaveta();
+    // A nota é da folha — não pode sobrar da anterior nem por um frame, senão
+    // o próximo autosave gravaria o texto de uma folha dentro da outra.
+    if (elNota) elNota.value = '';
     // K3: consumo é da folha — não pode sobrar da anterior nem por um frame.
     consumoCache = null;
     consVazio('Abra ou crie uma folha para registrar o que foi gasto testando.');
@@ -4375,6 +4599,8 @@ window.msgAcessoNegado = function (nomePagina) {
         folhaCasa = j.folha.casa || null;
         folhaCaderno = j.folha.caderno_id || null;
         ops = (j.conteudo && j.conteudo.ops) || [];
+        if (elNota) elNota.value = (j.conteudo && typeof j.conteudo.nota === 'string')
+                                    ? j.conteudo.nota : '';
         // Tudo que veio do servidor já é canônico — o que passar daqui é meu
         // e ainda não subiu.
         base = ops.length;
@@ -4583,6 +4809,10 @@ window.msgAcessoNegado = function (nomePagina) {
     b.classList.toggle('on', b.getAttribute('data-pauta') === pauta);
   });
   elTitulo.addEventListener('input', function(){ if (folhaId) agenda(); });
+  // A nota entra no MESMO autosave do desenho (`agenda()` = 1,2 s de debounce):
+  // um segundo mecanismo de salvamento só pra ela daria duas fontes de verdade
+  // sobre o mesmo blob do R2.
+  if (elNota) elNota.addEventListener('input', function(){ if (folhaId) agenda(); });
 
   // K5 (PLANO_CADERNO.md): tile de UMA folha — extraído de listaGaleria()
   // pra virar reusável (a galeria mista e a galeria de dentro do caderno
@@ -6668,7 +6898,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '6fabdb1e29f0';
+  var BUILD = '871e206e0b4c';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
