@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Central de Demandas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=9ccf111ca9e0">
+<link rel="stylesheet" href="portal.css?v=6fabdb1e29f0">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -603,6 +603,15 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-kcol { flex: 0 0 260px; background: var(--card2, var(--card)); border: 1px solid var(--border); border-radius: 12px; padding: 8px; }
   .dm-kcol h4 { margin: 4px 6px 8px; font-size: 12.5px; display: flex; align-items: center; gap: 6px; color: var(--text-2); }
   .dm-kcol h4 .n { margin-left: auto; color: var(--text-3); font-weight: 600; }
+  /* Card-botão no topo da coluna da casa -> demandas-casa.html. Tracejado e
+     sem a barra de urgência de propósito: ele NÃO é uma demanda, e no meio de
+     uma pilha de .dm-gcard iguais viraria uma. */
+  .dm-kuni { display: block; text-decoration: none; border: 1px dashed var(--kc, var(--border));
+             border-radius: 12px; padding: 9px 12px; margin: 0 0 9px;
+             background: color-mix(in srgb, var(--kc, var(--acc)) 8%, transparent); }
+  .dm-kuni b { display: block; font-size: 13px; font-weight: 600; color: var(--text); }
+  .dm-kuni span { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 2px; line-height: 1.35; }
+  .dm-kuni:hover { background: color-mix(in srgb, var(--kc, var(--acc)) 16%, transparent); }
   .dm-tabwrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
   .dm-tab { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 720px; }
   .dm-tab th, .dm-tab td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
@@ -817,6 +826,22 @@ prioridade (urgência primeiro, mais antiga depois).</p>
                     width: 100%; max-width: 520px; }
   .dm-nota-tit { font-size: 15px; margin: 0 0 4px; }
   .dm-nota-sub { font-size: 12.5px; color: var(--text-2); margin: 0 0 12px; line-height: 1.5; }
+  /* O espaço ENTRE LINHAS (12px) é o que impede as faixas de toque de 44px
+     de se encostarem: 32px de pílula + 12px = 44px de passo, exatamente a
+     altura da faixa. Com o gap de 6px original, um toque na fresta entre
+     duas linhas caía no chip de baixo. Não reduzir sem reduzir a faixa. */
+  .dm-nota-chips { display: flex; flex-wrap: wrap; gap: 12px 6px; margin: 0 0 10px; }
+  /* 32px reais + faixa de toque de 44px via ::after — mesmo remédio que a
+     Sessão Criativa aplicou nos botões de convidar (medidos em 18px). A
+     faixa não muda o desenho da pílula nem empurra a linha. Medido aqui na
+     página renderizada: os chips nasceram com 28px, abaixo do alvo. */
+  .dm-nota-chip { font: inherit; font-size: 12px; padding: 0 12px; min-height: 32px;
+                   border-radius: 999px; position: relative;
+                   border: 1px solid var(--border); background: var(--bg); color: var(--text-2);
+                   cursor: pointer; }
+  .dm-nota-chip::after { content: ''; position: absolute; left: 0; right: 0;
+                          top: 50%; height: 44px; transform: translateY(-50%); }
+  .dm-nota-chip:hover { border-color: var(--acc); color: var(--text); }
   .dm-nota-ta { width: 100%; box-sizing: border-box; min-height: 72px; font: inherit; font-size: 13.5px;
                  background: var(--bg); color: var(--text); border: 1px solid var(--border);
                  border-radius: 10px; padding: 10px; resize: vertical; }
@@ -1376,6 +1401,20 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     toast._t = setTimeout(function () { elToast.classList.remove('on'); }, 3200);
   }
 
+  // Chips de resolução rápida (2026-08-05) — atrito medido: das 3 demandas
+  // fechadas desde o lançamento, 3 saíram sem nota porque "Fechar sem nota"
+  // era um clique contra digitar texto livre. Cada chip PREENCHE o textarea
+  // com um começo de frase editável, pra o caminho de um clique também
+  // produzir nota. "Fechar sem nota" continua existindo do lado — nota
+  // nunca vira obrigatória, só deixa de ser o caminho mais fácil.
+  var NOTA_CHIPS = [
+    { rotulo: 'Comprado/reposto', texto: 'Comprado e reposto: ' },
+    { rotulo: 'Consertado', texto: 'Consertado: ' },
+    { rotulo: 'Substituído', texto: 'Substituído: ' },
+    { rotulo: 'Resolvido na casa', texto: 'Resolvido na casa: ' },
+    { rotulo: 'Encaminhado ao fornecedor', texto: 'Encaminhado ao fornecedor: ' },
+    { rotulo: 'Não era necessário', texto: 'Não era necessário: ' }
+  ];
   // Folha "O que resolveu?" (2026-07-25) — aparece só na transição pra
   // Resolvido. Chama cb(nota, cancelou): "Fechar sem nota" devolve ('', false)
   // e mantém o fluxo antigo intacto; fechar por fora devolve ('', true) e NÃO
@@ -1400,12 +1439,24 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     ta.placeholder = 'Ex.: técnico trocou o compressor, testado e gelando';
     ta.maxLength = 1900;
 
+    var chips = document.createElement('div'); chips.className = 'dm-nota-chips';
+    NOTA_CHIPS.forEach(function (c) {
+      var bChip = document.createElement('button');
+      bChip.type = 'button'; bChip.className = 'dm-nota-chip'; bChip.textContent = c.rotulo;
+      bChip.onclick = function () {
+        ta.value = c.texto;
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      };
+      chips.appendChild(bChip);
+    });
+
     var btns = document.createElement('div'); btns.className = 'dm-nota-btns';
     var bSem = document.createElement('button'); bSem.type = 'button'; bSem.textContent = 'Fechar sem nota';
     var bOk = document.createElement('button'); bOk.type = 'button'; bOk.className = 'pri'; bOk.textContent = 'Resolver e avisar';
     btns.appendChild(bSem); btns.appendChild(bOk);
 
-    folha.appendChild(tit); folha.appendChild(sub); folha.appendChild(ta); folha.appendChild(btns);
+    folha.appendChild(tit); folha.appendChild(sub); folha.appendChild(chips); folha.appendChild(ta); folha.appendChild(btns);
     fundo.appendChild(folha);
 
     var fechado = false;
@@ -3106,6 +3157,20 @@ prioridade (urgência primeiro, mais antiga depois).</p>
       var c = document.createElement('div'); c.className = 'dm-kcol';
       var h = document.createElement('h4'); h.innerHTML = esc(k) + ' <span class="n">' + buckets[k].length + '</span>';
       c.appendChild(h);
+      // Porta pro panorama da casa (2026-08-05, pedido do Rodrigo): o Kanban
+      // responde "o que chegou e quando"; o card abaixo leva ao que ele não
+      // responde — tudo da casa junto, agrupado por setor. Só com colunas por
+      // CASA: numa coluna de status/setor a casa não é uma só, e o botão
+      // levaria a uma página que não corresponde à coluna clicada.
+      var cslug = CASA_LABEL_TO_SLUG[k];
+      if (col === 'casa' && cslug) {
+        var uni = document.createElement('a');
+        uni.className = 'dm-kuni';
+        uni.href = 'demandas-casa.html?casa=' + encodeURIComponent(cslug);
+        uni.style.setProperty('--kc', 'var(--casa-' + cslug + ')');
+        uni.innerHTML = '<b>Demandas unificadas</b><span>panorama da casa, agrupado por setor</span>';
+        c.appendChild(uni);
+      }
       if (!buckets[k].length) { var v = document.createElement('div'); v.className = 'dm-conversa-vazia'; v.style.padding = '4px 6px'; v.textContent = '—'; c.appendChild(v); }
       buckets[k].forEach(function (o) { c.appendChild(gcardCompacto(o.d, o.t)); });
       kb.appendChild(c);
@@ -4808,7 +4873,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '9ccf111ca9e0';
+  var BUILD = '6fabdb1e29f0';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

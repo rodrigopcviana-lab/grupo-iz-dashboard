@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Sessão Criativa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=9ccf111ca9e0">
+<link rel="stylesheet" href="portal.css?v=6fabdb1e29f0">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -432,6 +432,15 @@ window.msgAcessoNegado = function (nomePagina) {
           padding:4px 6px;border-radius:7px;min-width:180px;max-width:340px;}
   .sc-tit:focus{outline:0;background:#211c15;}
   .sc-est{font-size:11.5px;color:#8f8672;white-space:nowrap;}
+  /* Presença (item C): iniciais de quem tem acesso à folha. */
+  .sc-presenca{display:flex;gap:-4px;align-items:center;}
+  .sc-presenca[hidden]{display:none;}
+  .sc-pres-b{width:22px;height:22px;border-radius:50%;background:#2a2419;border:1px solid #3a3428;
+            color:#c3baa9;font-size:9px;font-weight:600;display:flex;align-items:center;
+            justify-content:center;margin-left:-5px;cursor:default;}
+  .sc-pres-b:first-child{margin-left:0;}
+  .sc-pres-b.eu{background:#d0a352;color:#241a06;border-color:#d0a352;}
+  .sc-pres-b.mais{background:#16130f;color:#8f8672;}
   .sc-est.erro{color:#e24b4a;}
   .sc-acoes{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap;}
   .sc-b{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#c3baa9;
@@ -445,6 +454,8 @@ window.msgAcessoNegado = function (nomePagina) {
             display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 0;}
   .sc-t{width:31px;height:31px;border-radius:8px;display:flex;align-items:center;justify-content:center;
         color:#c3baa9;border:1px solid transparent;background:none;cursor:pointer;}
+  /* Nome e tecla nascem escondidos: só o modo folha do PC os liga (item 6). */
+  .sc-t .rot{display:none;align-items:center;gap:4px;white-space:nowrap;}
   .sc-t:hover{background:#2a2419;color:#f3ede2;}
   .sc-t.on{background:#d0a352;color:#241a06;}
   .sc-t[disabled]{opacity:.3;cursor:not-allowed;}
@@ -476,6 +487,9 @@ window.msgAcessoNegado = function (nomePagina) {
          color:#8f8672;font-size:12px;display:flex;flex-direction:column;align-items:center;
          justify-content:center;gap:3px;cursor:pointer;padding:0;font-family:inherit;}
   .sc-pgt:hover{border-color:#5b5340;color:#c3baa9;}
+  /* A miniatura só existe no modo folha do PC (item 6) — na coluna de 44px
+     ou na fita do celular ela não seria legível. */
+  .sc-pgt canvas{display:none;}
   .sc-pgt .pt{width:4px;height:4px;border-radius:50%;background:#5b5340;opacity:.6;}
   .sc-pgt.tem .pt{background:#d0a352;opacity:1;}
   .sc-pgt.on{border-color:#d0a352;background:#d0a352;color:#241a06;font-weight:700;}
@@ -512,6 +526,19 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-ff-sair{display:none;}
   body.sc-ff .sc-ff-sair{display:inline-flex;}
   body.sc-ff .sc-ff-entrar{display:none;}
+
+  /* Linha contextual e indicador de página: só existem no celular (o media
+     query abaixo é quem os liga). Declarados aqui como `display:none` pro
+     PC não herdar nada. */
+  .sc-ctx{display:none;}
+  .sc-pgm{display:none;position:absolute;left:50%;transform:translateX(-50%);top:8px;
+          align-items:center;gap:2px;background:rgba(33,28,21,.94);border:1px solid #3a3428;
+          border-radius:99px;padding:2px 4px;z-index:6;}
+  .sc-pgm button{background:none;border:0;color:#c3baa9;cursor:pointer;padding:4px 7px;
+                 display:flex;align-items:center;}
+  .sc-pgm button[disabled]{opacity:.3;}
+  .sc-pgm span{font-size:11px;color:#c3baa9;min-width:26px;text-align:center;
+               font-variant-numeric:tabular-nums;}
 
   .sc-tela{flex:1;position:relative;min-width:0;}
   .sc-tela canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair;}
@@ -738,12 +765,118 @@ window.msgAcessoNegado = function (nomePagina) {
            background:#211c15;border:1px solid #3a3428;border-radius:10px 0 0 10px;
            transition:right .18s;display:flex;flex-direction:column;z-index:5;}
   .sc-preco.on{right:0;}
+
+  /* ---------------- painel docado no PC (v2, item 11) ----------------
+     Gaveta cobre o papel: fecha pra desenhar, reabre pra conferir. Docado,
+     dá pra desenhar OLHANDO a margem — que é o ponto de precificar dentro
+     da folha em vez de numa planilha à parte.
+
+     330px e não os 250px do mockup v2: a queixa original era a estreiteza
+     dos 230px de hoje, e 250 não sairia dela. Com 330 cabe a tabela de
+     cenários do item 9 (4 colunas), impossível numa coluna estreita.
+
+     Só no modo folha, e só acima de 640px. É ele que tira a folha da coluna
+     de 980px do portal — dentro dela, reservar 344px levaria o papel de 848
+     pra 506px (medido). Fora dela o papel fica em ~828px E ganha o painel.
+
+     Ideias e Consumo seguem gavetas deslizantes: o item 11 fala do painel de
+     PREÇO, e são elas que a pessoa abre pontualmente (buscar referência,
+     conferir gasto) — o preço é o que ela quer no campo de visão o tempo
+     todo enquanto mexe na receita. */
+  @media (min-width:641px){
+    /* ---------------- barra do PC no modo folha (v2, item 6) ----------------
+       Vira horizontal no topo e as ferramentas ganham NOME e tecla. No
+       desktop há largura de sobra e nenhum polegar: ícone mudo obriga a
+       passar o mouse em cada um pra descobrir o que é, e a tecla só existe
+       pra quem já sabe que existe. Escrito, ensina.
+
+       Fica em coluna (`column`) porque no modo folha o palco é flex-column:
+       a barra é o primeiro filho, o papel o segundo. */
+    body.sc-ff .sc-palco{flex-direction:column;}
+    body.sc-ff .sc-barra{width:auto;flex-direction:row;flex-wrap:wrap;align-items:center;
+                         justify-content:flex-start;gap:3px;padding:6px 8px;
+                         border-right:0;border-bottom:1px solid #3a3428;}
+    body.sc-ff .sc-barra .sc-t{width:auto;height:30px;padding:0 9px;gap:6px;font-size:11.5px;
+                               color:#c3baa9;font-family:inherit;}
+    body.sc-ff .sc-barra .sc-t .rot{display:inline;}
+    body.sc-ff .sc-barra .sc-t .tec{font-size:9px;color:#8f8672;border:1px solid #3a3428;
+                                    border-radius:4px;padding:0 3px;margin-left:1px;}
+    body.sc-ff .sc-barra .sc-t.on .tec{color:#241a06;border-color:rgba(36,26,6,.35);}
+    body.sc-ff .sc-sep{width:1px;height:20px;margin:0 5px;}
+    body.sc-ff .sc-cores{max-width:none;flex-wrap:nowrap;}
+    /* O trilho de páginas sai da lateral e vira fita horizontal com
+       miniatura — a coluna de 44px não comporta uma miniatura legível. */
+    body.sc-ff .sc-pgs{width:auto;flex-direction:row;border-right:0;
+                       border-bottom:1px solid #3a3428;padding:6px 8px;justify-content:flex-start;}
+    body.sc-ff .sc-pgs-cap{writing-mode:horizontal-tb;transform:none;margin:0 6px 0 0;
+                           align-self:center;}
+    body.sc-ff .sc-pgt{width:46px;height:34px;}
+    body.sc-ff .sc-pgt canvas{display:block;width:38px;height:22px;border-radius:3px;
+                              background:#16130f;}
+    body.sc-ff .sc-pgt .pt{display:none;}
+    body.sc-ff .sc-pgt .nm{font-size:9px;line-height:1;}
+
+    body.sc-ff .sc-tela{margin-right:344px;}
+    /* `.on` incluído no seletor porque a lingueta continua alternando a
+       classe; docado, ela não deve mover mais nada. */
+    body.sc-ff .sc-preco,
+    body.sc-ff .sc-preco.on{right:-344px;width:330px;border-radius:10px;
+                            border-right:1px solid #3a3428;transition:none;}
+    body.sc-ff .sc-preco-tab{display:none;}
+    /* Ideias e Consumo param ANTES do painel docado (344px), não sobre ele.
+       Com `right:0` elas cobriam o preço inteiro — e o ponto de docar era
+       justamente poder ver o preço enquanto se faz outra coisa. */
+    body.sc-ff .sc-ideias.on,
+    body.sc-ff .sc-cons.on{right:344px;}
+    body.sc-ff .sc-ideias,
+    body.sc-ff .sc-cons{right:calc(344px - 204px - 26px);}
+  }
   .sc-preco-tab{position:absolute;left:-27px;top:14px;width:27px;height:92px;
                background:#211c15;border:1px solid #3a3428;border-right:0;
                border-radius:8px 0 0 8px;color:#c3baa9;font-size:10.5px;letter-spacing:.06em;
                display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
                cursor:pointer;padding:0;writing-mode:vertical-rl;}
   .sc-preco-tab:hover{color:#f3ede2;}
+  /* ---------------- precificação v2 (itens 7-10) ---------------- */
+  .sc-par{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 5px;}
+  .sc-par-c label{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;
+                 color:#8f8672;margin-bottom:3px;}
+  .sc-par-in{display:flex;align-items:center;gap:4px;background:#16130f;border:1px solid #3a3428;
+            border-radius:8px;padding:5px 8px;}
+  .sc-par-in span{font-size:11px;color:#8f8672;flex:none;}
+  .sc-par-in input{background:none;border:0;color:#f3ede2;font-size:16px;width:100%;min-width:0;
+                  padding:0;font-variant-numeric:tabular-nums;font-family:inherit;}
+  .sc-par-in input:focus{outline:0;}
+  .sc-par-in:focus-within{border-color:#d0a352;}
+  .sc-par-nota{font-size:10.5px;color:#8f8672;margin-bottom:10px;display:flex;
+              align-items:center;gap:6px;}
+  .sc-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px;}
+  .sc-chip{font-size:12px;color:#c9c1ae;background:#1b1813;border:1px solid #332d22;
+          border-radius:99px;padding:4px 10px;cursor:pointer;font-family:inherit;
+          display:flex;align-items:baseline;gap:5px;font-variant-numeric:tabular-nums;}
+  .sc-chip i{font-style:normal;font-size:9.5px;color:#8f8672;}
+  .sc-chip.on{border-color:#d0a352;color:#f3ede2;background:#241d10;}
+  .sc-chip.ok i{color:#9fe1cb;} .sc-chip.warn i{color:#e0b05c;} .sc-chip.bad i{color:#e24b4a;}
+  /* Tabela de cenários: rola por dentro em vez de esticar o painel, senão a
+     4ª coluna cairia fora dos 330px. */
+  .sc-cen-wrap{overflow-x:auto;}
+  .sc-cen{width:100%;border-collapse:collapse;font-size:11.5px;}
+  .sc-cen th{font-weight:400;color:#8f8672;font-size:9.5px;letter-spacing:.06em;
+            text-transform:uppercase;text-align:left;padding:0 0 4px;}
+  .sc-cen td{padding:5px 0;border-top:1px solid #241f18;color:#c9c1ae;}
+  .sc-cen .num{text-align:right;padding-left:8px;font-variant-numeric:tabular-nums;}
+  .sc-cen .forte{color:#f3ede2;font-size:13px;}
+  .sc-cen tbody tr{cursor:pointer;}
+  .sc-cen tbody tr:hover td{color:#f3ede2;}
+  .sc-cen tr.on td{background:#201a11;}
+  .sc-cen-mk{display:inline-block;width:5px;height:5px;border-radius:50%;background:#d0a352;
+            margin-right:5px;vertical-align:middle;}
+  .sc-cen-nota{margin-top:5px;}
+  /* Selo "parcial" ENCOSTADO no número (item 10), não numa linha solta. */
+  .sc-parcial{font-size:9px;color:#e0b05c;background:#3a2f14;border-radius:99px;
+             padding:1px 7px;margin-left:6px;white-space:nowrap;cursor:help;}
+  .sc-falta{color:#e0b05c;}
+
   .sc-preco-corpo{flex:1;overflow-y:auto;padding:12px 13px;min-width:0;}
   .sc-preco-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8f8672;
              font-weight:600;margin-bottom:10px;}
@@ -1027,28 +1160,125 @@ window.msgAcessoNegado = function (nomePagina) {
                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   @media (max-width:640px){
-    .sc-palco{flex-direction:column;min-height:0;}
-    /* Páginas viram uma fita horizontal ACIMA da barra de ferramentas —
-       mesma ordem de leitura do desktop (onde estou, antes de o que uso). */
-    .sc-pgs{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid #3a3428;
-            padding:6px;justify-content:center;}
-    .sc-pgs-cap{display:none;}
-    .sc-pgt{width:26px;height:24px;}
-    .sc-barra{width:auto;flex-direction:row;flex-wrap:wrap;justify-content:center;
-              border-right:0;border-bottom:1px solid #3a3428;padding:7px;}
+    /* ---------------- celular v2 (itens 3-5) ----------------
+       A barra saiu do TOPO pro RODAPÉ. Medido antes: no topo ela ocupava
+       82px em duas linhas (8 ferramentas + undo/redo + 6 cores + 3
+       espessuras + 3 pautas, todas visíveis ao mesmo tempo) e empurrava o
+       papel pra baixo. No rodapé ela fica no alcance do polegar de quem está
+       em pé no bar — que é como esta tela é usada.
+
+       `column-reverse` e não `column` + `order`: a lição de CSS registrada no
+       CLAUDE.md é que filho sem `order` vai pra frente de todos os que têm,
+       e aqui são 4 filhos (páginas, barra, tela, e a linha contextual).
+       Invertendo o eixo, a ordem do HTML já é a ordem visual de baixo pra
+       cima e nenhum filho precisa de `order`. */
+    .sc-palco{flex-direction:column-reverse;min-height:0;}
+    /* O trilho de 5 botões SOME no celular: quem faz esse papel aqui é o
+       `#sc-pgm`, o passo a passo compacto sobre o papel (item 5). Manter os
+       dois custava 33px de altura pra dizer duas vezes a mesma coisa — e a
+       fita competia com a barra do rodapé pelo polegar. */
+    .sc-pgs{display:none;}
+    /* A barra do rodapé mostra 5 ferramentas por igual, SEM botão "Mais":
+       esconder metade das ferramentas atrás de um menu foi o defeito
+       apontado na v2 — o que a linha contextual resolve é justamente não
+       precisar mostrar cor e espessura o tempo todo. */
+    .sc-barra{width:auto;flex-direction:row;flex-wrap:nowrap;justify-content:space-around;
+              border-right:0;border-top:1px solid #3a3428;padding:6px 4px;gap:2px;}
+    .sc-barra .sc-t{flex:1;max-width:64px;height:38px;}
+    /* Some do rodapé o que virou linha contextual ou não cabe em 5 alvos. */
+    .sc-barra .sc-sep,
+    .sc-barra #sc-cores,
+    .sc-barra .sc-w,
+    .sc-barra .sc-pauta,
+    .sc-barra #sc-undo,
+    .sc-barra #sc-redo,
+    .sc-barra #sc-img-busca,
+    .sc-barra [data-tool="forma"],
+    .sc-barra [data-tool="mover"]{display:none;}
+    /* Linha contextual: só o que a ferramenta ativa usa (item 4). Fica
+       ENTRE o papel e a barra, colada na barra, pra o polegar ir de uma à
+       outra sem atravessar a tela. Undo/redo moram na direita dela. */
+    .sc-ctx{display:flex;align-items:center;gap:6px;padding:5px 8px;background:#1b1710;
+            border-top:1px solid #3a3428;min-height:38px;}
+    /* O lado esquerdo TEM que ser flex: como `div` comum ele empilhava a
+       paleta e as 3 espessuras em coluna, e a "linha" contextual nascia com
+       111px de altura — 73px roubados do papel (medido na página). */
+    .sc-ctx-esq{display:flex;align-items:center;gap:8px;min-width:0;overflow-x:auto;}
+    .sc-ctx .sc-cores{max-width:none;flex-wrap:nowrap;gap:5px;}
+    .sc-ctx .sc-cor{width:22px;height:22px;}
+    .sc-ctx .sc-w{width:34px;height:26px;}
+    .sc-ctx .sc-ctx-dir{margin-left:auto;display:flex;gap:4px;flex:none;}
+    .sc-ctx .sc-ctx-dir .sc-t{width:34px;height:30px;}
+    .sc-ctx[hidden]{display:none;}
+    .sc-pgm{display:flex;}
     .sc-sep{width:1px;height:22px;margin:0 3px;}
     /* `flex:none` é obrigatório: num container em coluna o flex-basis:0 do
        `.sc-tela{flex:1}` GANHA da altura declarada, e o 58vh nunca valia —
        a folha ficava com 173 px no celular (medido, não suposto). */
     .sc-tela{flex:none;height:56vh;}
+    /* No modo folha o palco é quem tem altura (fixed, tela inteira), então
+       aqui a folha volta a esticar — é o que devolve os pixels que o
+       cabeçalho e o menu estavam levando. */
+    body.sc-ff .sc-tela{flex:1;height:auto;min-height:0;}
     .sc-cores{max-width:none;}
     .sc-acoes{margin-left:0;width:100%;}
-    .sc-preco{width:200px;right:-174px;}
-    .sc-ideias{width:200px;right:-174px;top:120px;}
-    /* K3: no celular a tabela perde COLUNAS, não linhas — a gaveta ocupa
-       quase toda a folha porque o registro acontece no balcão, com a mão
-       suja, e essa é a leitura principal ali. */
-    .sc-cons{width:252px;right:-226px;top:230px;}
+    /* No modo folha do CELULAR o topo vira uma linha só. Medido: com
+       Convidar/Folha nova/Arquivar visíveis ele quebrava em 3 linhas e
+       ocupava ~230px — mais de um quarto da tela, num modo cujo propósito
+       declarado é dar espaço ao desenho.
+
+       Some a AÇÃO ADMINISTRATIVA, nunca a ferramenta de desenho: convidar,
+       criar e arquivar são coisas que se faz antes ou depois de desenhar, e
+       um toque em "Sair do modo folha" traz as três de volta. É diferente do
+       botão "Mais" recusado no item 3, que escondia metade das ferramentas
+       DURANTE o trabalho. */
+    body.sc-ff .sc-acoes{width:auto;margin-left:auto;}
+    body.sc-ff #sc-convite,
+    body.sc-ff #sc-nova,
+    body.sc-ff #sc-arquivar{display:none;}
+    body.sc-ff .sc-tit{min-width:0;flex:1;font-size:16px;}
+    body.sc-ff .sc-topo{flex-wrap:nowrap;gap:6px;}
+    body.sc-ff .sc-est{display:none;}
+    /* ---------------- mesa do celular (v2, item 12) ----------------
+       As três gavetas laterais não cabem em 375px — medido, viravam blocos
+       de 200 a 252px docados à direita, cobrindo o canto do papel. Aqui elas
+       sobem de BAIXO, no alcance do polegar, e param em 62% da altura: o
+       cartão que está sendo precificado continua visível acima da mesa. A v2
+       do mockup cobria o cartão inteiro, que é justamente o que não pode —
+       a pessoa mexe no preço OLHANDO a receita.
+
+       `top:38%` em vez de `height:62%` porque o rodapé de ações precisa
+       ancorar no fim da tela mesmo quando o conteúdo é curto. */
+    /* Desliza por `bottom`, NÃO por `transform`. As gavetas do PC já se
+       movem assim (`right` + transition) e é o padrão que este arquivo usa.
+       A versão com `transform:translateY()` foi escrita e descartada: o
+       valor final só chega quando a transição avança, e isso deixa a mesa
+       presa fora da tela em qualquer contexto que não anime — inclusive o
+       navegador headless onde esta tela é verificada, o que tornaria a
+       medição impossível. Deslizando por `bottom`, o estado final vale
+       mesmo se a animação não rodar. */
+    .sc-preco,.sc-ideias,.sc-cons{
+      position:fixed;left:0;right:0;width:100%;top:auto;bottom:-62%;height:62%;
+      border-radius:14px 14px 0 0;border-left:0;border-right:0;border-bottom:0;
+      transition:bottom .2s;z-index:70;}
+    .sc-preco.on,.sc-ideias.on,.sc-cons.on{bottom:0;}
+    /* As linguetas verticais viram alças horizontais empilhadas na borda de
+       baixo — é por elas que a mesa sobe. */
+    .sc-preco-tab,.sc-ideias-tab,.sc-cons-tab{
+      position:absolute;left:0;right:0;top:-30px;width:auto;height:30px;
+      writing-mode:horizontal-tb;flex-direction:row;border-radius:10px 10px 0 0;
+      border-right:1px solid #3a3428;border-bottom:0;font-size:11px;}
+    /* Com a mesa aberta a alça sai do caminho: ela já cumpriu o papel e
+       ficaria flutuando sobre o papel a 30px do topo da mesa. */
+    .sc-preco.on .sc-preco-tab,
+    .sc-ideias.on .sc-ideias-tab,
+    .sc-cons.on .sc-cons-tab{display:none;}
+    /* Puxador: a faixa que diz "isto arrasta/fecha". */
+    .sc-preco-corpo,.sc-ideias-corpo,.sc-cons-corpo{padding-top:16px;}
+    /* K3: no celular a tabela perde COLUNAS, não linhas — o registro
+       acontece no balcão, com a mão suja, e essa é a leitura principal ali.
+       (O posicionamento da gaveta saiu daqui na v2: as três viraram mesa de
+       baixo, regra acima.) */
     .sc-cons-tb .col-pg{display:none;}
     /* Alvo de toque: no desktop o × é mira de mouse, no balcão é dedo. */
     .sc-cons-x{padding:8px 6px;font-size:16px;}
@@ -1085,21 +1315,24 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="sc-palco">
       <div class="sc-pgs" id="sc-pgs">
         <span class="sc-pgs-cap">páginas</span>
-        <button class="sc-pgt on" data-pg="1" type="button" title="Página 1">1<i class="pt"></i></button>
-        <button class="sc-pgt" data-pg="2" type="button" title="Página 2">2<i class="pt"></i></button>
-        <button class="sc-pgt" data-pg="3" type="button" title="Página 3">3<i class="pt"></i></button>
-        <button class="sc-pgt" data-pg="4" type="button" title="Página 4">4<i class="pt"></i></button>
-        <button class="sc-pgt" data-pg="5" type="button" title="Página 5">5<i class="pt"></i></button>
+        <button class="sc-pgt on" data-pg="1" type="button" title="Página 1"><canvas width="38" height="22"></canvas><span class="nm">1</span><i class="pt"></i></button>
+        <button class="sc-pgt" data-pg="2" type="button" title="Página 2"><canvas width="38" height="22"></canvas><span class="nm">2</span><i class="pt"></i></button>
+        <button class="sc-pgt" data-pg="3" type="button" title="Página 3"><canvas width="38" height="22"></canvas><span class="nm">3</span><i class="pt"></i></button>
+        <button class="sc-pgt" data-pg="4" type="button" title="Página 4"><canvas width="38" height="22"></canvas><span class="nm">4</span><i class="pt"></i></button>
+        <button class="sc-pgt" data-pg="5" type="button" title="Página 5"><canvas width="38" height="22"></canvas><span class="nm">5</span><i class="pt"></i></button>
       </div>
       <div class="sc-barra">
-        <button class="sc-t on" data-tool="pen" type="button" title="Desenhar"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z"/><path d="M13 7l4 4"/></svg></button>
-        <button class="sc-t" data-tool="borracha" type="button" title="Apagar"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16.5 12.5 8a2 2 0 0 1 2.8 0l3.7 3.7a2 2 0 0 1 0 2.8L15 18"/><path d="M7 21h12"/><path d="M9.5 13 15 18.5"/></svg></button>
-        <button class="sc-t" data-tool="texto" type="button" title="Texto"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6.5V5h14v1.5"/><path d="M12 5v14"/><path d="M9 19h6"/></svg></button>
-        <button class="sc-t" id="sc-foto" type="button" title="Imagem do aparelho"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg></button>
-        <button class="sc-t" id="sc-img-busca" type="button" title="Buscar imagem"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.3-4.3"/></svg></button>
-        <button class="sc-t" id="sc-cartao" type="button" title="Cartão de receita"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button>
-        <button class="sc-t" data-tool="forma" type="button" title="Formas"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="10" height="10" rx="1.5"/><circle cx="15.5" cy="15.5" r="5"/></svg></button>
-        <button class="sc-t" data-tool="mover" type="button" title="Mover"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"/><path d="M3 12h18"/><path d="M9 6l3-3 3 3"/><path d="M9 18l3 3 3-3"/><path d="M6 9l-3 3 3 3"/><path d="M18 9l3 3-3 3"/></svg></button>
+        <!-- O `.rot` (nome) e a `.tec` (tecla) só aparecem no modo folha do
+             PC — item 6. No celular e na barra estreita eles ficam
+             display:none e sobra o ícone, como antes. -->
+        <button class="sc-t on" data-tool="pen" type="button" title="Desenhar"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z"/><path d="M13 7l4 4"/></svg><span class="rot">Desenhar<span class="tec">D</span></span></button>
+        <button class="sc-t" data-tool="borracha" type="button" title="Apagar"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16.5 12.5 8a2 2 0 0 1 2.8 0l3.7 3.7a2 2 0 0 1 0 2.8L15 18"/><path d="M7 21h12"/><path d="M9.5 13 15 18.5"/></svg><span class="rot">Apagar<span class="tec">E</span></span></button>
+        <button class="sc-t" data-tool="texto" type="button" title="Texto"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6.5V5h14v1.5"/><path d="M12 5v14"/><path d="M9 19h6"/></svg><span class="rot">Texto<span class="tec">T</span></span></button>
+        <button class="sc-t" id="sc-foto" type="button" title="Imagem do aparelho"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg><span class="rot">Imagem</span></button>
+        <button class="sc-t" id="sc-img-busca" type="button" title="Buscar imagem"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.3-4.3"/></svg><span class="rot">Buscar</span></button>
+        <button class="sc-t" id="sc-cartao" type="button" title="Cartão de receita"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span class="rot">Cartão<span class="tec">C</span></span></button>
+        <button class="sc-t" data-tool="forma" type="button" title="Formas"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="10" height="10" rx="1.5"/><circle cx="15.5" cy="15.5" r="5"/></svg><span class="rot">Formas</span></button>
+        <button class="sc-t" data-tool="mover" type="button" title="Mover"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"/><path d="M3 12h18"/><path d="M9 6l3-3 3 3"/><path d="M9 18l3 3 3-3"/><path d="M6 9l-3 3 3 3"/><path d="M18 9l3 3-3 3"/></svg><span class="rot">Mover<span class="tec">V</span></span></button>
         <div class="sc-sep"></div>
         <button class="sc-t" id="sc-undo" type="button" title="Desfazer"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/></svg></button>
         <button class="sc-t" id="sc-redo" type="button" title="Refazer"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 7 5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h1"/></svg></button>
@@ -1121,9 +1354,28 @@ window.msgAcessoNegado = function (nomePagina) {
                 title="Papel quadriculado" aria-label="Papel quadriculado"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18M16 3v18"/></svg></button>
       </div>
 
+      <!-- Linha contextual do celular (item 4). Só existe abaixo de 640px —
+           no PC cor e espessura continuam na barra lateral, onde há espaço
+           pra elas estarem sempre visíveis. `hidden` até a ferramenta ativa
+           ter o que oferecer. -->
+      <div class="sc-ctx" id="sc-ctx" hidden>
+        <div class="sc-ctx-esq" id="sc-ctx-esq"></div>
+        <div class="sc-ctx-dir">
+          <button class="sc-t" id="sc-undo-m" type="button" aria-label="Desfazer"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/></svg></button>
+          <button class="sc-t" id="sc-redo-m" type="button" aria-label="Refazer"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 7 5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h1"/></svg></button>
+        </div>
+      </div>
+
       <div class="sc-tela" id="sc-tela">
         <canvas id="sc-canvas"></canvas>
         <div class="sc-dica" id="sc-dica"></div>
+        <!-- Indicador de página do celular (item 5): mostra onde estou e
+             anda pra frente/trás. No PC o trilho lateral já faz isso. -->
+        <div class="sc-pgm" id="sc-pgm" hidden>
+          <button type="button" id="sc-pgm-ant" aria-label="Página anterior"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <span id="sc-pgm-lbl">1/5</span>
+          <button type="button" id="sc-pgm-prox" aria-label="Próxima página"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
         <div class="sc-zoom">
           <button id="sc-zout" type="button" aria-label="Diminuir">−</button>
           <span id="sc-zpct">100%</span>
@@ -1490,7 +1742,12 @@ window.msgAcessoNegado = function (nomePagina) {
     mostra.forEach(function(i){
       c.fillStyle = '#c3baa9'; c.textAlign = 'left';
       c.fillText((i.qtde||'?') + (i.unidade||'') + ' ' + (i.nome || '—'), x+pad, cy, w-pad*2-32*esc);
-      var temPreco = i.custo_unit != null && i.custo_unit !== '';
+      // `> 0` é obrigatório e faltava: com custo_unit == 0 o teste antigo
+      // dava "tem preço" (0 não é null nem ''), e o cartão no papel escrevia
+      // um valor zerado em reais para um insumo SEM preço cadastrado —
+      // dinheiro fabricado, que é a regra dura deste projeto. A gaveta Preço
+      // sempre usou a régua certa; era o cartão que divergia dela.
+      var temPreco = i.custo_unit != null && i.custo_unit !== '' && i.custo_unit > 0;
       c.fillStyle = temPreco ? '#9fe1cb' : '#5f5a4a';
       c.textAlign = 'right';
       c.fillText(temPreco ? brl((i.qtde||0)*i.custo_unit) : '—', x+w-pad, cy, 32*esc);
@@ -1507,6 +1764,17 @@ window.msgAcessoNegado = function (nomePagina) {
     cy += 7*esc;
     c.font = '600 ' + (11*esc) + 'px -apple-system, sans-serif'; c.fillStyle = '#f3ede2'; c.textAlign = 'left';
     c.fillText('R$ ' + brl(custo), x+pad, cy);
+    // Item C: preço e MARGEM no próprio cartão, pra decidir olhando o papel
+    // em vez de ir ao painel. Linha extra abaixo do custo, só quando há
+    // preço — sem custo não há margem, e um zero ali seria dinheiro
+    // inventado. `semPreco` marca que o custo (e portanto a margem) é piso.
+    var semPrecoCt = (ins||[]).filter(function(i){ return !(i.custo_unit > 0); }).length;
+    if (custo > 0 && venda > 0){
+      var yMg = cy + 13*esc;
+      c.font = (9*esc) + 'px -apple-system, sans-serif'; c.fillStyle = '#8f8672';
+      c.fillText('carta ' + brl(venda) + '  ·  margem ' + brl(venda-custo) +
+                 (semPrecoCt ? '  (parcial)' : ''), x+pad, yMg, w-pad*2);
+    }
     if (ins.length){
       var chipW = Math.min(64*esc, Math.max(0, w-pad*2-56*esc));
       if (chipW > 8*esc){
@@ -1554,6 +1822,10 @@ window.msgAcessoNegado = function (nomePagina) {
     var h = 32 + Math.max(1,linhas)*15 + 26;
     if ((o.insumos||[]).length > 4) h += 13;
     if (o.copo) h += 13;
+    // A linha "carta · margem" (item C) só é desenhada quando há custo — a
+    // altura tem que crescer junto, senão ela vaza pra fora da moldura. A
+    // condição é a MESMA de desenhaCartao; divergir aqui reabre o vazamento.
+    if (custoCartao(o) > 0) h += 13;
     return {w:CART_W*o.escala, h:h*o.escala};
   }
 
@@ -1761,18 +2033,27 @@ window.msgAcessoNegado = function (nomePagina) {
     return null;
   }
   function botoes(){
-    document.getElementById('sc-undo').disabled = !ultimaMinhaViva();
-    document.getElementById('sc-redo').disabled = !refeitos.length;
+    var semUndo = !ultimaMinhaViva(), semRedo = !refeitos.length;
+    document.getElementById('sc-undo').disabled = semUndo;
+    document.getElementById('sc-redo').disabled = semRedo;
+    // Os gêmeos do celular (linha contextual) espelham o mesmo estado.
+    var um = document.getElementById('sc-undo-m'), rm = document.getElementById('sc-redo-m');
+    if (um) um.disabled = semUndo;
+    if (rm) rm.disabled = semRedo;
   }
-  document.getElementById('sc-undo').onclick = function(){
+  function fazUndo(){
     var alvo = ultimaMinhaViva(); if (!alvo) return;
     refeitos.push(alvo.i); selecionado = null;
     pushBruto({t:'op!', ref:alvo.i, off:true}, true);
-  };
-  document.getElementById('sc-redo').onclick = function(){
+  }
+  function fazRedo(){
     if (!refeitos.length) return;
     pushBruto({t:'op!', ref:refeitos.pop(), off:false}, true);
-  };
+  }
+  document.getElementById('sc-undo').onclick = fazUndo;
+  document.getElementById('sc-redo').onclick = fazRedo;
+  document.getElementById('sc-undo-m').onclick = fazUndo;
+  document.getElementById('sc-redo-m').onclick = fazRedo;
 
   /* ---------------- salvar ----------------
      Debounce de 1,2 s. E8 trocou o protocolo: em vez de mandar o log inteiro
@@ -1922,7 +2203,99 @@ window.msgAcessoNegado = function (nomePagina) {
     if (t !== 'mover'){ selecionado = null; desenha(); atualizaPreco(); }
     cv.style.cursor = (t === 'mover') ? 'default' : 'crosshair';
     dica(DICAS[t]);
+    pintaContexto();
   }
+
+  /* ---------------- linha contextual do celular (item 4) ----------------
+     Move os MESMOS nós de cor e espessura da barra pra linha — não clona.
+     Clonar criaria um segundo conjunto de botões com o mesmo `data-w`, e os
+     handlers (que são delegados por atributo) passariam a marcar o `.on` no
+     par errado: a barra diria "fino" e a linha "grosso" ao mesmo tempo.
+
+     Só desenhar e apagar têm o que oferecer aqui. Texto/cartão/imagem abrem
+     diálogo próprio, então a linha some — e some de verdade, devolvendo os
+     38px pro papel, em vez de ficar vazia ocupando espaço. */
+  /* ---------------- presença (v2, item C) ----------------
+     Iniciais de quem está na folha, ao lado do título. O selo que já existia
+     dizia só o TAMANHO ("a três"); numa folha compartilhada o que importa é
+     COM QUEM — é o que decide se você espera a pessoa terminar de mexer ou
+     se manda mensagem perguntando.
+
+     Deriva de `convidados`, que o servidor já manda em toda leitura da
+     folha: nenhuma rota nova, nenhum heartbeat. Isso significa que mostra
+     quem TEM ACESSO, não quem está com a aba aberta agora — e é por isso que
+     o rótulo diz "nesta folha" e não "online". Prometer presença ao vivo
+     exigiria um canal que este Worker não tem (não há WebSocket em nenhum
+     Worker do projeto, e o poll é de 6s só quando a folha é compartilhada). */
+  function iniciaisDe(nome){
+    var ps = String(nome||'').trim().split(/\s+/).filter(Boolean);
+    if (!ps.length) return '?';
+    return (ps[0][0] + (ps.length > 1 ? ps[ps.length-1][0] : '')).toUpperCase();
+  }
+  function pintaPresenca(){
+    var el = document.getElementById('sc-presenca');
+    if (!el) return;
+    if (!folhaId || !convidados.length){ el.hidden = true; el.textContent = ''; return; }
+    // Só os CONVIDADOS têm nome aqui: o servidor manda `convidados`
+    // (sub+nome) mas o dono vem só como o booleano `dono`. Mostrar "você"
+    // exigiria o nome da própria sessão, que esta página não recebe — e
+    // inventar um rótulo pra si mesmo não acrescenta nada a quem já sabe
+    // que está na folha. Quem é convidado se reconhece pelo `eu`.
+    var todos = convidados.map(function(c){ return {nome:c.nome, eu:c.sub === eu}; });
+    el.textContent = '';
+    todos.slice(0, 4).forEach(function(p){
+      var b = document.createElement('span');
+      b.className = 'sc-pres-b' + (p.eu ? ' eu' : '');
+      b.textContent = iniciaisDe(p.nome);
+      b.title = p.nome + (p.eu ? ' (você)' : '') + ' · nesta folha';
+      el.appendChild(b);
+    });
+    if (todos.length > 4){
+      var m = document.createElement('span');
+      m.className = 'sc-pres-b mais';
+      m.textContent = '+' + (todos.length-4);
+      m.title = todos.slice(4).map(function(p){ return p.nome; }).join(', ');
+      el.appendChild(m);
+    }
+    el.hidden = false;
+  }
+
+  var elCtx = document.getElementById('sc-ctx');
+  var elCtxEsq = document.getElementById('sc-ctx-esq');
+  var elCores = document.getElementById('sc-cores');
+  var mqCel = window.matchMedia('(max-width:640px)');
+  function pintaContexto(){
+    if (!elCtx) return;
+    var barra = document.querySelector('.sc-barra');
+    // NO PC A LINHA NÃO EXISTE (`.sc-ctx{display:none}` fora do media query).
+    // Mover os nós pra dentro dela ali os faria SUMIR — a paleta e a
+    // espessura desapareceriam da barra lateral sem nada aparecer no lugar.
+    // Então no PC a única coisa a fazer é garantir que tudo está em casa.
+    if (!mqCel.matches){
+      if (elCores && elCores.parentNode !== barra) barra.appendChild(elCores);
+      Array.prototype.forEach.call(document.querySelectorAll('.sc-w'), function(b){
+        if (b.parentNode !== barra) barra.appendChild(b);
+      });
+      elCtx.hidden = true;
+      return;
+    }
+    // Só desenhar/forma/apagar têm o que oferecer. Texto, cartão e imagem
+    // abrem diálogo próprio: a linha some e devolve os 38px pro papel, em
+    // vez de ficar vazia ocupando espaço.
+    var mostra = (tool === 'pen' || tool === 'forma' || tool === 'borracha');
+    // Borracha usa espessura, não cor — a paleta volta pra barra (onde está
+    // escondida no celular) em vez de aparecer sem função.
+    var destinoCor = (mostra && tool !== 'borracha') ? elCtxEsq : barra;
+    var destinoW = mostra ? elCtxEsq : barra;
+    if (elCores && elCores.parentNode !== destinoCor) destinoCor.appendChild(elCores);
+    Array.prototype.forEach.call(document.querySelectorAll('.sc-w'), function(b){
+      if (b.parentNode !== destinoW) destinoW.appendChild(b);
+    });
+    elCtx.hidden = !mostra;
+  }
+  // Girar o aparelho ou abrir o inspetor cruza os 640px: sem isto, os nós
+  // ficariam presos na linha contextual (invisível no PC) depois do giro.
+  if (mqCel.addEventListener) mqCel.addEventListener('change', pintaContexto);
   Array.prototype.forEach.call(document.querySelectorAll('[data-tool]'), function(b){
     b.onclick = function(){
       if (b.dataset.tool === 'forma' && tool === 'forma'){
@@ -2396,27 +2769,183 @@ window.msgAcessoNegado = function (nomePagina) {
         esc(i.nome||'—') + '</span>' + seloHtml + '<span' + (temPreco?'':' class="sc-sem"') + '>' +
         (temPreco ? 'R$ '+brl(i.qtde*i.custo_unit) : '—') + '</span></div>';
     }).join('');
-    var semPreco = ins.filter(function(i){ return !(i.custo_unit > 0); }).length;
+    var faltando = ins.filter(function(i){ return !(i.custo_unit > 0); });
+    var semPreco = faltando.length;
+    // Selo PARCIAL encostado no número (item 10): custo com insumo sem preço
+    // não é o custo, é um piso. Antes isso era uma linha âmbar solta abaixo
+    // da lista, longe do valor que ela desqualifica — dava pra ler o total
+    // e decidir preço sem ver o aviso. Os que faltam são NOMEADOS: "2 sem
+    // preço" não diz o que conferir no B.D.1.
+    var seloParcial = semPreco
+      ? '<span class="sc-parcial" title="' + esc(faltando.map(function(i){ return i.nome||'sem nome'; }).join(', ')) +
+        '">parcial · ' + semPreco + ' sem preço</span>'
+      : '';
+    var nomesFaltando = semPreco
+      ? '<div class="sc-preco-mini sc-falta">Falta preço de ' +
+        esc(faltando.map(function(i){ return i.nome||'sem nome'; }).join(', ')) +
+        ' — o custo real é maior.</div>'
+      : '';
+
     elPrecoConteudo.className = '';
-    elPrecoConteudo.innerHTML = compHtml +
+    elPrecoConteudo.innerHTML =
+      // Item 11: o painel NOMEIA o cartão em foco. A folha pode ter vários,
+      // e docado ele fica visível o tempo todo — sem o nome, não dá pra
+      // saber de qual receita é o preço na tela.
       '<div class="sc-preco-nome">' + esc(o.nome||'Cartão sem nome') + '</div>' +
       '<div class="sc-preco-copo">' + (o.copo ? esc(o.copo) : 'Copo não definido') +
         ' <span style="color:#5f5a4a">· banco de copos ainda não integrado</span></div>' +
+
+      // ---- par editável (item 7): preço de carta ↔ CMV, um recalcula o outro
+      '<div class="sc-par">' +
+        '<div class="sc-par-c">' +
+          '<label for="sc-par-preco">Preço de carta</label>' +
+          '<div class="sc-par-in"><span>R$</span>' +
+          '<input id="sc-par-preco" type="text" inputmode="decimal" value="' + brl(venda) + '"></div>' +
+        '</div>' +
+        '<div class="sc-par-c">' +
+          '<label for="sc-par-cmv">CMV que dá</label>' +
+          '<div class="sc-par-in"><input id="sc-par-cmv" type="text" inputmode="decimal" value="' +
+          (isFinite(cmvReal)?cmvReal.toFixed(1):'0,0').replace('.',',') + '"><span>%</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sc-par-nota">Mexa num, o outro acompanha. ' +
+        '<span class="sc-farol ' + f.cls + '" id="sc-par-farol">' + f.label + '</span></div>' +
+
+      // ---- chips de preço redondo (item 8), cada um com o CMV que produz
+      '<div class="sc-chips" id="sc-chips"></div>' +
+
+      // ---- cenários como TABELA ao mesmo preço (item 9)
+      (cs.length > 1
+        ? '<div class="sc-preco-h" style="margin-top:14px">Cenários · ao mesmo preço</div>' +
+          '<div class="sc-cen-wrap"><table class="sc-cen" id="sc-cen"></table></div>' +
+          '<div class="sc-preco-mini sc-cen-nota">O cenário marcado é o que vira ficha técnica.</div>'
+        : '') +
+
+      '<div class="sc-preco-tot"><span>Custo do drink</span>' +
+        '<b>R$ ' + brl(custo) + '</b>' + seloParcial + '</div>' +
+      nomesFaltando +
       (linhas || '<div class="sc-preco-vazio">Nenhum insumo ainda.</div>') +
-      (semPreco ? '<div class="sc-preco-mini" style="color:#e0b05c">' + semPreco +
-        ' insumo(s) sem preço no B.D.1 — total é parcial</div>' : '') +
-      '<div class="sc-preco-tot"><span>Custo total</span><b>R$ ' + brl(custo) + '</b></div>' +
-      '<div class="sc-preco-mini"><span>CMV-alvo</span><span>' + alvo + '%</span></div>' +
-      '<div class="sc-preco-mini"><span>Venda sugerida</span><span>R$ ' + brl(venda) + '</span></div>' +
-      '<div class="sc-preco-mini"><span>CMV real</span><span>' + (isFinite(cmvReal)?cmvReal.toFixed(1):'0,0') +
-        '% <span class="sc-farol ' + f.cls + '">' + f.label + '</span></span></div>' +
+
       // K3: o registro nasce AQUI porque é aqui que as quantidades já estão
       // escritas — é o cenário que a pessoa acabou de montar.
-      '<button class="sc-b sc-preco-reg" id="sc-preco-reg" type="button">Registrar consumo</button>' +
+      '<button class="sc-b pri sc-preco-reg" id="sc-preco-reg" type="button">Registrar consumo</button>' +
       '<div class="sc-preco-reg-nota">Manda as quantidades deste cenário para o Consumo da sessão.</div>' +
       '<button class="sc-b sc-preco-editar" id="sc-preco-editar" type="button">Editar cartão</button>' +
-      '<button class="sc-b pri sc-preco-virar" id="sc-preco-virar" type="button">Virar ficha técnica</button>';
+      '<button class="sc-b sc-preco-virar" id="sc-preco-virar" type="button">Virar ficha técnica</button>';
+
+    pintaChips(o, custo, venda);
+    if (cs.length > 1) pintaCenarios(o, cs, ativoIdx, venda);
+    ligaPar(o, custo);
     box_bindEditar(o);
+  }
+
+  /* ---------------- o par preço ↔ CMV (item 7) ----------------
+     Os dois lados escrevem no MESMO estado do cartão (`cmv_alvo`), então não
+     existe "qual é a verdade": o preço é derivado do alvo, e digitar preço é
+     só outro jeito de dizer o alvo. Sem isso seriam dois números que se
+     contradizem na tela.
+
+     Nada aqui grava sozinho — mexer no preço muda o `cmv_alvo` do cartão via
+     a MESMA op de edição que o formulário usa, e quem soma dinheiro pra valer
+     continua sendo o servidor no Consumo. */
+  function ligaPar(o, custo){
+    var elP = document.getElementById('sc-par-preco');
+    var elC = document.getElementById('sc-par-cmv');
+    if (!elP || !elC) return;
+    function aplicaAlvo(novoAlvo){
+      novoAlvo = Math.min(90, Math.max(1, novoAlvo));
+      // Mesma op do formulário de edição — não inventa caminho de escrita.
+      push({t:'obj~', id:o.id, depois:{cmv_alvo:novoAlvo}});
+      atualizaPreco();
+    }
+    elP.onchange = function(){
+      var p = numBr(elP.value);
+      // Preço sem custo não define CMV nenhum (divisão por zero). Devolve o
+      // campo ao valor anterior em vez de gravar um alvo inventado.
+      if (!(p > 0) || !(custo > 0)){ atualizaPreco(); return; }
+      aplicaAlvo(Math.round((custo / p) * 1000) / 10);
+    };
+    elC.onchange = function(){
+      var c = numBr(elC.value);
+      if (!(c > 0)){ atualizaPreco(); return; }
+      aplicaAlvo(c);
+    };
+  }
+
+  /* ---------------- chips de preço redondo (item 8) ----------------
+     Preço de carta não é o resultado de uma divisão: é um número que se
+     escreve num cardápio. Os chips são os redondos em volta do sugerido, e
+     cada um mostra O CMV QUE PRODUZ — é assim que a escolha vira decisão e
+     não chute. Sem custo não há CMV a mostrar, e a régua some inteira. */
+  function pintaChips(o, custo, venda){
+    var box = document.getElementById('sc-chips');
+    if (!box) return;
+    if (!(custo > 0) || !(venda > 0)){ box.innerHTML = ''; return; }
+    var base = [];
+    [-8,-4,0,5,10].forEach(function(d){
+      var v = redondoDeCarta(venda + d);
+      if (v > 0 && base.indexOf(v) < 0) base.push(v);
+    });
+    base.sort(function(a,b){ return a-b; });
+    box.innerHTML = base.map(function(v){
+      var cmv = custo/v*100, ff = farolDe(cmv);
+      return '<button type="button" class="sc-chip ' + ff.cls + (v===venda?' on':'') +
+        '" data-v="' + v + '">' + v + '<i>' + cmv.toFixed(0) + '%</i></button>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.sc-chip'), function(b){
+      b.onclick = function(){
+        var v = Number(b.dataset.v);
+        if (!(v > 0) || !(custo > 0)) return;
+        push({t:'obj~', id:o.id, depois:{cmv_alvo: Math.round((custo/v)*1000)/10}});
+        atualizaPreco();
+      };
+    });
+  }
+  // Preço que se escreve num cardápio: dezena cheia, meia dezena ou o
+  // clássico terminado em 9 — nunca o resultado cru da divisão, que ninguém
+  // imprime num cardápio.
+  function redondoDeCarta(v){
+    v = Math.round(v);
+    if (v <= 0) return 0;
+    var cands = [Math.floor(v/10)*10, Math.floor(v/10)*10+5, Math.floor(v/10)*10+9,
+                 Math.ceil(v/10)*10, Math.ceil(v/10)*10+5];
+    var melhor = cands[0], dist = Infinity;
+    cands.forEach(function(c){
+      if (c <= 0) return;
+      var d = Math.abs(c-v);
+      if (d < dist){ dist = d; melhor = c; }
+    });
+    return melhor;
+  }
+
+  /* ---------------- cenários em tabela (item 9) ----------------
+     Deixam de ser cartões soltos com o preço de cada um e viram comparação
+     AO MESMO PREÇO — é a única forma de a coluna de margem significar algo.
+     A margem em R$/UNIDADE é a coluna forte, mesma régua do Cérebro do
+     Cardápio, que decide por R$/un e não por percentual: em % um drink
+     barato parece melhor que um caro que dá o dobro de dinheiro no caixa. */
+  function pintaCenarios(o, cs, ativoIdx, preco){
+    var tb = document.getElementById('sc-cen');
+    if (!tb) return;
+    var linhas = cs.map(function(c, i){
+      var cc = custoCartao({insumos:c.insumos});
+      var temCusto = cc > 0;
+      var cmv = (temCusto && preco > 0) ? (cc/preco*100) : null;
+      var marg = temCusto ? (preco - cc) : null;
+      var ff = cmv == null ? null : farolDe(cmv);
+      return '<tr class="' + (i===ativoIdx?'on':'') + '" data-i="' + i + '">' +
+        '<td>' + (i===ativoIdx ? '<i class="sc-cen-mk"></i>' : '') + esc(c.nome||('Cenário '+(i+1))) + '</td>' +
+        '<td class="num">' + (temCusto ? brl(cc) : '—') + '</td>' +
+        '<td class="num">' + (cmv == null ? '—' :
+          '<span class="sc-farol ' + ff.cls + '">' + cmv.toFixed(0) + '%</span>') + '</td>' +
+        '<td class="num forte">' + (marg == null ? '—' : brl(marg)) + '</td>' +
+      '</tr>';
+    }).join('');
+    tb.innerHTML = '<thead><tr><th>Cenário</th><th class="num">Custo</th>' +
+      '<th class="num">CMV</th><th class="num">Margem</th></tr></thead><tbody>' + linhas + '</tbody>';
+    Array.prototype.forEach.call(tb.querySelectorAll('tbody tr'), function(tr){
+      tr.onclick = function(){ trocaCenario(o, Number(tr.dataset.i)); };
+    });
   }
   function box_bindEditar(o){
     var btn = document.getElementById('sc-preco-editar');
@@ -3118,7 +3647,17 @@ window.msgAcessoNegado = function (nomePagina) {
   }
   function enquadra(){
     var b = limites(), r = cv.getBoundingClientRect();
-    if (!b){ view = {k:1, tx:r.width/2, ty:r.height/2}; zpct(); refazTracos(); desenha(); return; }
+    // Folha vazia enquadra o PAPEL, não a origem (v2, item 2). Antes caía num
+    // `tx = largura/2` que punha o canto do papel no meio da tela — com o
+    // papel agora sendo um retângulo visível, isso aparecia como uma folha
+    // cortada no canto inferior direito em vez de uma folha centrada.
+    if (!b){
+      var kp = Math.min((r.width-40)/PAPEL_W, (r.height-40)/PAPEL_H);
+      view.k = Math.max(K_MIN, Math.min(K_MAX, kp));
+      view.tx = (r.width - PAPEL_W*view.k)/2;
+      view.ty = (r.height - PAPEL_H*view.k)/2;
+      zpct(); refazTracos(); desenha(); return;
+    }
     var pad = 50, w = Math.max(1, b.x1-b.x0), h = Math.max(1, b.y1-b.y0);
     var k = Math.min((r.width-pad*2)/w, (r.height-pad*2)/h, 2);
     view.k = Math.max(K_MIN, Math.min(K_MAX, k));
@@ -3707,12 +4246,62 @@ window.msgAcessoNegado = function (nomePagina) {
       return (op.t === 'traco' || op.t === 'forma') && pgDe(op) === n;
     });
   }
+  /* ---------------- miniatura real no trilho (item 6) ----------------
+     Número solto não diz o que tem na página — com 5 delas, achar "aquela do
+     esboço do copo" virava tentativa e erro. A miniatura desenha as ops DA
+     PÁGINA em escala, no mesmo canvas de 38×22, e é redesenhada quando o
+     conteúdo muda.
+
+     Só traço e forma entram: cartão e texto exigiriam medir fonte e caber
+     em 22px de altura, onde não sobraria nada legível — o objetivo é
+     reconhecer a página, não ler o conteúdo dela. */
+  function pintaMiniatura(btn, n){
+    var cvm = btn.querySelector('canvas');
+    if (!cvm) return;
+    var g = cvm.getContext('2d'), W = cvm.width, H = cvm.height;
+    g.clearRect(0,0,W,H);
+    var ops = vivas().filter(function(op){
+      return pgDe(op) === n && (op.t === 'traco' || op.t === 'forma');
+    });
+    if (!ops.length) return;
+    // Enquadra o conteúdo da página dentro da miniatura.
+    var x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+    ops.forEach(function(op){
+      (op.pts||[]).forEach(function(p){
+        if(p.x<x0)x0=p.x; if(p.x>x1)x1=p.x; if(p.y<y0)y0=p.y; if(p.y>y1)y1=p.y;
+      });
+      if (op.t === 'forma' && op.a && op.b){
+        [op.a,op.b].forEach(function(p){
+          if(p.x<x0)x0=p.x; if(p.x>x1)x1=p.x; if(p.y<y0)y0=p.y; if(p.y>y1)y1=p.y;
+        });
+      }
+    });
+    if (!isFinite(x0)) return;
+    var k = Math.min((W-4)/Math.max(1,x1-x0), (H-4)/Math.max(1,y1-y0));
+    var ox = 2 - x0*k, oy = 2 - y0*k;
+    g.strokeStyle = '#d0a352'; g.lineWidth = 1; g.lineCap = 'round'; g.lineJoin = 'round';
+    ops.forEach(function(op){
+      var pts = op.pts || (op.a && op.b ? [op.a, op.b] : null);
+      if (!pts || !pts.length) return;
+      g.beginPath();
+      pts.forEach(function(p,i){
+        var X = p.x*k+ox, Y = p.y*k+oy;
+        if (i) g.lineTo(X,Y); else g.moveTo(X,Y);
+      });
+      g.stroke();
+    });
+  }
+
   function renderPaginas(){
     Array.prototype.forEach.call(document.querySelectorAll('.sc-pgt'), function(b){
       var n = Number(b.dataset.pg);
       b.classList.toggle('on', n === paginaAtual);
       b.classList.toggle('tem', paginaTemConteudo(n));
+      pintaMiniatura(b, n);
     });
+    // O indicador do celular é a MESMA fonte de verdade do trilho do PC —
+    // pintado aqui pra não existir um segundo caminho que possa divergir.
+    pintaPgm();
   }
   function atualizaCabecalhosGaveta(){
     var hp = document.getElementById('sc-preco-h'), hi = document.getElementById('sc-ideias-h');
@@ -3738,6 +4327,27 @@ window.msgAcessoNegado = function (nomePagina) {
   Array.prototype.forEach.call(document.querySelectorAll('.sc-pgt'), function(b){
     b.onclick = function(){ trocaPagina(Number(b.dataset.pg)); };
   });
+
+  /* ---------------- indicador de página do celular (item 5) ----------------
+     O trilho de 5 botões do PC não cabe a 375px sem disputar o polegar com a
+     barra do rodapé, e a v2 do mockup tinha simplesmente sumido com as
+     páginas no celular — o que esconde metade da folha de quem só usa o
+     telefone. Aqui vira um passo a passo compacto sobre o papel. */
+  var pgmLbl = document.getElementById('sc-pgm-lbl');
+  var pgmAnt = document.getElementById('sc-pgm-ant');
+  var pgmProx = document.getElementById('sc-pgm-prox');
+  // Contado do DOM e não fixado em 5: se um dia o trilho ganhar uma página,
+  // o indicador acompanha sem virar mentira ("3/5" numa folha de 6).
+  var N_PGS = document.querySelectorAll('.sc-pgt').length || 5;
+  function pintaPgm(){
+    if (!pgmLbl) return;
+    pgmLbl.textContent = paginaAtual + '/' + N_PGS;
+    pgmAnt.disabled = paginaAtual <= 1;
+    pgmProx.disabled = paginaAtual >= N_PGS;
+    document.getElementById('sc-pgm').hidden = false;
+  }
+  pgmAnt.onclick = function(){ if (paginaAtual > 1) trocaPagina(paginaAtual-1); };
+  pgmProx.onclick = function(){ if (paginaAtual < N_PGS) trocaPagina(paginaAtual+1); };
 
   /* ---------------- folhas ---------------- */
   function limpa(){
@@ -3821,6 +4431,7 @@ window.msgAcessoNegado = function (nomePagina) {
         ? (n === 1 ? 'a dois' : 'a ' + (n+1))
         : 'convidado';
     }
+    pintaPresenca();
     // Arquivar é do dono; convidar também. Escondido, não desabilitado —
     // botão cinza convida ao clique (mesma régua do body.es-so-leitura da
     // Escala).
@@ -3950,8 +4561,22 @@ window.msgAcessoNegado = function (nomePagina) {
   document.getElementById('sc-ff').onclick = function(){ modoFolha(true); };
   document.getElementById('sc-ff-sair').onclick = function(){ modoFolha(false); };
   // Esc é o gesto que todo mundo tenta primeiro pra sair de tela cheia.
+  // As teclas de ferramenta (item 6) moram aqui junto: a barra do PC ANUNCIA
+  // a tecla, então ela precisa existir de fato — anunciar atalho que não
+  // funciona é pior que não anunciar.
+  var TECLAS = {d:'pen', e:'borracha', t:'texto', v:'mover'};
   document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && ffAtivo && !document.querySelector('.sc-ed')) modoFolha(false);
+    if (e.key === 'Escape' && ffAtivo && !document.querySelector('.sc-ed')) { modoFolha(false); return; }
+    // Nunca sequestra digitação: campo de texto, título e qualquer diálogo
+    // aberto têm precedência sobre atalho de uma letra.
+    var a = document.activeElement;
+    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (document.querySelector('.sc-ed')) return;
+    if (document.getElementById('sc-folha-view').hidden) return;
+    var k = String(e.key||'').toLowerCase();
+    if (TECLAS[k]){ e.preventDefault(); ferramenta(TECLAS[k]); }
+    else if (k === 'c'){ e.preventDefault(); document.getElementById('sc-cartao').click(); }
   });
   Array.prototype.forEach.call(document.querySelectorAll('.sc-pauta'), function(b){
     b.onclick = function(){ trocaPauta(b.getAttribute('data-pauta')); };
@@ -4065,6 +4690,10 @@ window.msgAcessoNegado = function (nomePagina) {
     // Restaurado AQUI e não no boot porque só faz sentido com folha aberta —
     // galeria em tela cheia não teria como voltar ao portal.
     try { if (localStorage.getItem(FF_LS) === '1') modoFolha(true); } catch(e){}
+    // A linha contextual depende da largura da JANELA, não da ferramenta: no
+    // boot `ferramenta()` roda com a folha ainda [hidden], quando medir não
+    // vale. Repintar aqui é o que a faz nascer visível no celular.
+    pintaContexto();
     // O canvas mede 0×0 enquanto está com [hidden] — sem redimensionar aqui,
     // a folha abre em branco até o primeiro resize da janela.
     dimensiona(); enquadra();
@@ -6039,7 +6668,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '9ccf111ca9e0';
+  var BUILD = '6fabdb1e29f0';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

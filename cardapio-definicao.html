@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Cardápio em definição · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=9ccf111ca9e0">
+<link rel="stylesheet" href="portal.css?v=6fabdb1e29f0">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -500,6 +500,35 @@ window.msgAcessoNegado = function (nomePagina) {
       border:none; background:none; color:var(--text-3); cursor:pointer; font-family:inherit; }
   .cd-vista-sel button + button { border-left:1px solid var(--border); }
   .cd-vista-sel button.on { background:var(--acc); color:var(--acc-txt); }
+  /* 2ª linha: busca + filtro por decisão. Separada da 1ª de propósito — a
+     linha de seções já enche a largura numa casa com 6 seções. */
+  .cd-linha2 { margin-top:-4px; }
+  .cd-busca { flex:1; min-width:150px; max-width:280px; padding:6px 11px; font-size:12.5px;
+      border-radius:999px; border:1px solid var(--border); background:var(--card);
+      color:var(--text); font-family:inherit; }
+  .cd-busca:focus { outline:none; border-color:var(--acc); }
+  /* Barra de ação em massa: só aparece com item selecionado (hidden), e o
+     [hidden] precisa vencer o display:flex da classe — mesma lição do Mural v3. */
+  .cd-massa { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;
+      padding:8px 12px; border-radius:9px; background:var(--card);
+      border:1px solid var(--acc); font-size:12.5px; }
+  .cd-massa[hidden] { display:none !important; }
+  .cd-massa-acoes { display:flex; gap:5px; flex-wrap:wrap; }
+  .cd-massa-acoes button, .cd-massa-acoes select { font-size:11.5px; padding:4px 10px; border-radius:6px;
+      border:1px solid var(--border); background:var(--bg); color:var(--text-2); cursor:pointer;
+      font-family:inherit; }
+  .cd-massa-x { margin-left:auto; background:none; border:none; color:var(--text-3);
+      cursor:pointer; font-size:11.5px; font-family:inherit; text-decoration:underline; }
+  .cd-sel-box { flex-shrink:0; cursor:pointer; accent-color:var(--acc); margin:0; }
+  .cd-item.selecionado { outline:1px solid var(--acc); outline-offset:-1px; }
+  table.cd-tabela tr.selecionado td { background:rgba(208,163,82,.09); }
+  /* Sugestão de descrição pendente de aceite: nunca gravada sozinha (trava 2). */
+  .cd-sug { display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-size:11px;
+      color:var(--verde); margin-top:3px; }
+  .cd-sug button { font-size:10.5px; padding:2px 9px; border-radius:999px; border:1px solid var(--verde);
+      background:none; color:var(--verde); cursor:pointer; font-family:inherit; }
+  .cd-sug button.nao { border-color:var(--border); color:var(--text-3); }
+  .cd-sug .txt { font-style:italic; color:var(--text-2); }
 
   /* Vista Cards: grade de cards estreitos — cada item é uma caixa própria,
      não mais uma linha de largura cheia. */
@@ -656,6 +685,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <div style="display:flex; gap:7px; align-items:center; flex-wrap:wrap">
       <button class="cd-btn sec" id="cd-carta-abrir" aria-expanded="false" aria-controls="cd-carta"
               disabled><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Cardápio atual</button>
+      <button class="cd-btn sec" id="cd-sugerir" style="display:none"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg> Sugerir descrições</button>
       <select class="cd-sel-status" id="cd-status"></select>
       <button class="cd-btn" id="cd-pdf"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg> Exportar PDF</button>
     </div>
@@ -673,6 +703,16 @@ window.msgAcessoNegado = function (nomePagina) {
           <button type="button" data-v="cards"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg> Cards</button>
           <button type="button" data-v="tabela"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M9 9.5v10"/></svg> Tabela</button>
         </div>
+      </div>
+      <div class="cd-filtros-linha cd-linha2">
+        <input type="search" id="cd-busca" class="cd-busca" placeholder="Buscar item pelo nome…"
+               autocomplete="off" aria-label="Buscar item pelo nome">
+        <div class="cd-filtros" id="cd-filtros-dec"></div>
+      </div>
+      <div class="cd-massa" id="cd-massa" hidden>
+        <span id="cd-massa-txt"></span>
+        <div class="cd-massa-acoes" id="cd-massa-acoes"></div>
+        <button type="button" class="cd-massa-x" id="cd-massa-limpar">Limpar seleção</button>
       </div>
       <div id="cd-itens"></div>
       <div id="cd-add" style="display:none; margin-top:6px">
@@ -1397,6 +1437,34 @@ function nomeArquivoSeguro(base) {
   try { if (localStorage.getItem('cd_vista') === 'tabela') VISTA = 'tabela'; } catch (e) {}
   var SECOES_OFF = {};
   var vistaAplicada = null;
+  // Recortes "do que eu quero olhar agora" — memória de tela, nunca estado do
+  // cardápio: recarregar volta a mostrar tudo, de propósito.
+  var BUSCA = '';
+  var DEC_OFF = {};
+  // Seleção pra ação em massa. Guarda ID, não índice: a lista é redesenhada a
+  // cada filtro e índice apontaria pro item errado.
+  var SEL = {};
+  // Sugestões de descrição aguardando aceite (id -> texto). Nunca gravadas
+  // sozinhas — trava 2 do plano.
+  var SUG = {};
+
+  function normBusca(s) {
+    return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().trim();
+  }
+
+  // O recorte único que TODA vista usa. Se as vistas filtrassem por conta
+  // própria, uma ia divergir da outra em silêncio.
+  function passaFiltro(it) {
+    if (DEC_OFF[it.decisao]) return false;
+    if (BUSCA && normBusca(it.nome).indexOf(BUSCA) < 0
+        && normBusca(it.descricao || '').indexOf(BUSCA) < 0) return false;
+    return true;
+  }
+
+  function selecionados() {
+    return ITENS.filter(function (i) { return SEL[i.id]; });
+  }
 
   function vistaEfetiva() {
     // No celular é SEMPRE a tabela fina: card com respiro cabe um por linha e
@@ -1436,6 +1504,88 @@ function nomeArquivoSeguro(base) {
     });
   }
 
+  function desenhaFiltrosDec() {
+    var cx = document.getElementById('cd-filtros-dec');
+    if (!cx) return;
+    cx.innerHTML = '';
+    DECISOES.forEach(function (d) {
+      var n = ITENS.filter(function (i) { return i.decisao === d.id; }).length;
+      if (!n) return;   // decisão que ninguém usou não vira filtro
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cd-filtro-chip' + (DEC_OFF[d.id] ? '' : ' on');
+      b.textContent = d.label + ' (' + n + ')';
+      b.setAttribute('aria-pressed', DEC_OFF[d.id] ? 'false' : 'true');
+      b.onclick = function () {
+        if (DEC_OFF[d.id]) delete DEC_OFF[d.id]; else DEC_OFF[d.id] = true;
+        desenhaItens();
+      };
+      cx.appendChild(b);
+    });
+  }
+
+  // Ação em massa: só aparece com seleção. As ações batem UM PATCH por item
+  // (não existe rota de lote) — por isso o botão desabilita enquanto roda e a
+  // tela só recarrega no fim, senão N recargas competiriam entre si.
+  function desenhaMassa() {
+    var barra = document.getElementById('cd-massa');
+    if (!barra) return;
+    var sel = selecionados();
+    if (!PODE || !sel.length) { barra.hidden = true; return; }
+    barra.hidden = false;
+    txt(document.getElementById('cd-massa-txt'),
+        sel.length + (sel.length === 1 ? ' item selecionado' : ' itens selecionados'));
+
+    var acoes = document.getElementById('cd-massa-acoes');
+    acoes.innerHTML = '';
+    DECISOES.forEach(function (d) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = d.label;
+      b.title = 'Marcar os selecionados como "' + d.label + '"';
+      b.onclick = function () { massaAplica({ decisao: d.id }, acoes); };
+      acoes.appendChild(b);
+    });
+
+    var secoes = [];
+    ITENS.forEach(function (i) { if (secoes.indexOf(i.secao) < 0) secoes.push(i.secao); });
+    if (secoes.length > 1) {
+      var mv = document.createElement('select');
+      var o0 = document.createElement('option');
+      o0.value = ''; o0.textContent = 'Mover para…';
+      mv.appendChild(o0);
+      secoes.forEach(function (s) {
+        var o = document.createElement('option');
+        o.value = s; o.textContent = s;
+        mv.appendChild(o);
+      });
+      mv.onchange = function () {
+        if (!mv.value) return;
+        massaAplica({ secao: mv.value }, acoes);
+      };
+      acoes.appendChild(mv);
+    }
+  }
+
+  function massaAplica(campos, acoes) {
+    var sel = selecionados();
+    if (!sel.length) return;
+    Array.prototype.forEach.call(acoes.querySelectorAll('button,select'), function (b) { b.disabled = true; });
+    aviso('Aplicando em ' + sel.length + '…');
+    var restantes = sel.length, erros = 0;
+    sel.forEach(function (it) {
+      api('/api/cardapio-projeto/' + PROJ.id + '/item/' + it.id,
+          { method: 'PATCH', body: JSON.stringify(campos) })
+        .catch(function () { erros++; })
+        .then(function () {
+          if (--restantes > 0) return;
+          SEL = {};
+          if (erros) aviso(erros + ' de ' + sel.length + ' não salvaram.', true);
+          abreProjeto(PROJ.id);
+        });
+    });
+  }
+
   function desenhaVistaSel() {
     var sel = document.getElementById('cd-vista-sel');
     if (!sel) return;
@@ -1467,7 +1617,10 @@ function nomeArquivoSeguro(base) {
     var secoes = [];
     ITENS.forEach(function (i) { if (secoes.indexOf(i.secao) < 0) secoes.push(i.secao); });
     desenhaFiltros(secoes);
+    desenhaFiltrosDec();
     desenhaVistaSel();
+    desenhaMassa();
+    atualizaSugerir();
 
     var vista = vistaEfetiva();
     vistaAplicada = vista;
@@ -1480,9 +1633,14 @@ function nomeArquivoSeguro(base) {
       return;
     }
 
+    // Seção que existe mas cujos itens foram todos filtrados não vira caixa
+    // vazia — some, e o contador embaixo diz quantos o recorte escondeu.
+    var mostrados = 0;
     visiveis.forEach(function (sec) {
-      var itens = ITENS.filter(function (i) { return i.secao === sec; })
+      var itens = ITENS.filter(function (i) { return i.secao === sec && passaFiltro(i); })
         .sort(function (a, b) { return a.ordem - b.ordem; });
+      if (!itens.length) return;
+      mostrados += itens.length;
       var box = document.createElement('div');
       box.className = 'cd-secao';
       var t = document.createElement('div');
@@ -1511,6 +1669,52 @@ function nomeArquivoSeguro(base) {
       }
       alvo.appendChild(box);
     });
+
+    // O recorte é DECLARADO: sem isto, filtrar some com item e a tela fica
+    // indistinguível de um cardápio que perdeu linha.
+    var escondidos = ITENS.length - mostrados;
+    if (escondidos > 0) {
+      var nota = document.createElement('p');
+      nota.className = 'cd-vazio';
+      nota.style.padding = '12px';
+      nota.textContent = mostrados === 0
+        ? 'Nenhum item bate com este recorte — ' + ITENS.length + ' estão escondidos pelo filtro.'
+        : escondidos + (escondidos === 1 ? ' item escondido' : ' itens escondidos') + ' pelo filtro atual.';
+      alvo.appendChild(nota);
+    }
+  }
+
+  // Caixa de seleção pra ação em massa. Mesma função nas duas vistas — se cada
+  // uma tivesse a sua, o estado SEL divergiria ao trocar de vista.
+  function caixaSel(it) {
+    var c = document.createElement('input');
+    c.type = 'checkbox';
+    c.className = 'cd-sel-box';
+    c.checked = !!SEL[it.id];
+    c.setAttribute('aria-label', 'Selecionar ' + it.nome);
+    c.onclick = function (e) { e.stopPropagation(); };
+    c.onchange = function () {
+      if (c.checked) SEL[it.id] = true; else delete SEL[it.id];
+      desenhaItens();
+    };
+    return c;
+  }
+
+  // Mover UM item de seção. O PATCH já aceita `secao` desde o começo — o que
+  // faltava era a porta na tela. Sem isso, tirar um drink de Clássicos e pôr
+  // em Autorais exigia apagar e recriar, perdendo o motivo do Cérebro junto.
+  function moveItem(it) {
+    var secoes = [];
+    ITENS.forEach(function (i) { if (secoes.indexOf(i.secao) < 0) secoes.push(i.secao); });
+    var destino = prompt(
+      'Mover "' + it.nome + '" para qual seção?\n\n'
+      + 'Seções deste cardápio: ' + secoes.join(', ')
+      + '\n\n(pode digitar um nome novo — ele vira uma seção)',
+      it.secao);
+    if (destino === null) return;
+    destino = destino.trim();
+    if (!destino || destino === it.secao) return;
+    salvaItem(it, { secao: destino }, function () { abreProjeto(PROJ.id); });
   }
 
   // Campos que as duas vistas compartilham — nome, preço e descrição gravam
@@ -1548,6 +1752,43 @@ function nomeArquivoSeguro(base) {
     };
     return desc;
   }
+  // Sugestão de descrição AGUARDANDO aceite. A trava 2 (revisada em
+  // 2026-08-04) permite a IA propor, nunca gravar: enquanto o humano não
+  // clicar em "Usar", isto vive só em SUG, na memória da tela.
+  function blocoSugestao(it) {
+    if (!PODE || !SUG[it.id]) return null;
+    var box = document.createElement('div');
+    box.className = 'cd-sug';
+    var t = document.createElement('span');
+    t.className = 'txt';
+    t.textContent = SUG[it.id];
+    var ok = document.createElement('button');
+    ok.type = 'button';
+    ok.textContent = 'Usar';
+    ok.onclick = function () {
+      var texto = SUG[it.id];
+      delete SUG[it.id];
+      salvaItem(it, { descricao: texto }, function () { desenhaItens(); });
+    };
+    var nao = document.createElement('button');
+    nao.type = 'button';
+    nao.className = 'nao';
+    nao.textContent = 'Descartar';
+    nao.onclick = function () { delete SUG[it.id]; desenhaItens(); };
+    box.appendChild(t); box.appendChild(ok); box.appendChild(nao);
+    return box;
+  }
+
+  function botaoMover(it) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'cd-del';
+    b.innerHTML = "<svg class=\"ic\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 10 4 15l5 5\"/><path d=\"M20 4v7a4 4 0 0 1-4 4H4\"/></svg>";
+    b.title = 'Mover para outra seção';
+    b.onclick = function () { moveItem(it); };
+    return b;
+  }
+
   function textoMotivo(it) {
     if (it.cerebro_motivo) return it.cerebro_motivo;
     var motivo = [];
@@ -1608,7 +1849,8 @@ function nomeArquivoSeguro(base) {
   // linha de tabela dentro de <tbody> não sobrevive à troca de vista.
   function linhaItem(it, sec) {
     var row = document.createElement('div');
-    row.className = 'cd-item' + (it.decisao === 'sai' ? ' sai' : '');
+    row.className = 'cd-item' + (it.decisao === 'sai' ? ' sai' : '')
+      + (SEL[it.id] ? ' selecionado' : '');
     row.dataset.id = it.id;
     row.dataset.secao = sec;
 
@@ -1620,6 +1862,7 @@ function nomeArquivoSeguro(base) {
     var topo = document.createElement('div');
     topo.className = 'cd-cartao-topo';
     if (PODE) {
+      topo.appendChild(caixaSel(it));
       var punho = document.createElement('span');
       punho.className = 'cd-punho';
       punho.innerHTML = "<svg class=\"ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v18\"/><path d=\"M3 12h18\"/><path d=\"M9 6l3-3 3 3\"/><path d=\"M9 18l3 3 3-3\"/><path d=\"M6 9l-3 3 3 3\"/><path d=\"M18 9l3 3-3 3\"/></svg>";
@@ -1634,10 +1877,12 @@ function nomeArquivoSeguro(base) {
       tag.className = 'cd-novo'; tag.textContent = 'novo';
       topo.appendChild(tag);
     }
-    if (PODE) topo.appendChild(botaoApagar(it));
+    if (PODE) { topo.appendChild(botaoMover(it)); topo.appendChild(botaoApagar(it)); }
     row.appendChild(topo);
 
     row.appendChild(campoDesc(it));
+    var sug = blocoSugestao(it);
+    if (sug) row.appendChild(sug);
 
     var linhaPreco = refImpresso(it) || document.createElement('div');
     linhaPreco.className = 'cd-pagref';
@@ -1680,9 +1925,11 @@ function nomeArquivoSeguro(base) {
     tb.className = 'cd-tabela';
     var thead = document.createElement('thead');
     var trh = document.createElement('tr');
-    var cols = [['Item', 'cd-col-item'], ['Preço', 'cd-col-preco'],
-                ['Descrição', 'cd-col-desc'], ['Decisão', 'cd-col-dec'],
-                ['Por quê', 'cd-col-nota']];
+    var cols = [];
+    if (PODE) cols.push(['', 'cd-col-sel']);
+    cols.push(['Item', 'cd-col-item'], ['Preço', 'cd-col-preco'],
+              ['Descrição', 'cd-col-desc'], ['Decisão', 'cd-col-dec'],
+              ['Por quê', 'cd-col-nota']);
     if (PODE) cols.push(['', 'cd-col-del']);
     cols.forEach(function (c) {
       var th = document.createElement('th');
@@ -1694,9 +1941,16 @@ function nomeArquivoSeguro(base) {
     var corpo = document.createElement('tbody');
     itens.forEach(function (it) {
       var tr = document.createElement('tr');
-      if (it.decisao === 'sai') tr.className = 'sai';
+      tr.className = (it.decisao === 'sai' ? 'sai' : '') + (SEL[it.id] ? ' selecionado' : '');
       tr.dataset.id = it.id;
       tr.dataset.secao = sec;
+
+      if (PODE) {
+        var tdS = document.createElement('td');
+        tdS.className = 'cd-col-sel';
+        tdS.appendChild(caixaSel(it));
+        tr.appendChild(tdS);
+      }
 
       var tdN = document.createElement('td');
       tdN.className = 'cd-col-item';
@@ -1716,6 +1970,8 @@ function nomeArquivoSeguro(base) {
       var tdD = document.createElement('td');
       tdD.className = 'cd-col-desc';
       tdD.appendChild(campoDesc(it));
+      var sugT = blocoSugestao(it);
+      if (sugT) tdD.appendChild(sugT);
       tr.appendChild(tdD);
 
       var tdDec = document.createElement('td');
@@ -1751,6 +2007,8 @@ function nomeArquivoSeguro(base) {
       if (PODE) {
         var tdX = document.createElement('td');
         tdX.className = 'cd-col-del';
+        tdX.style.whiteSpace = 'nowrap';
+        tdX.appendChild(botaoMover(it));
         tdX.appendChild(botaoApagar(it));
         tr.appendChild(tdX);
       }
@@ -1759,6 +2017,65 @@ function nomeArquivoSeguro(base) {
     tb.appendChild(corpo);
     wrap.appendChild(tb);
     return wrap;
+  }
+
+  // ---------- descrição assistida (trava 2 revisada) ----------
+  // Só entram itens que VÃO pro PDF e estão sem descrição: sugerir texto pra
+  // item que vai sair da carta é gastar chamada de modelo à toa.
+  function itensSemDescricao() {
+    return ITENS.filter(function (i) {
+      return decDe(i.decisao).no_pdf && !i.descricao && !SUG[i.id];
+    });
+  }
+
+  function atualizaSugerir() {
+    var b = document.getElementById('cd-sugerir');
+    if (!b) return;
+    var faltam = itensSemDescricao().length;
+    if (!PODE || !faltam) { b.style.display = 'none'; return; }
+    b.style.display = 'inline-flex';
+    b.disabled = false;
+    txt(b, '');
+    b.innerHTML = "<svg class=\"ic\" width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z\"/><path d=\"M10 19.5h4\"/></svg>" + ' Sugerir ' + faltam + (faltam === 1 ? ' descrição' : ' descrições');
+  }
+
+  var SUG_LOTE = 25;   // espelha o teto da rota; acima disso ela recusa
+
+  function sugereDescricoes() {
+    var falta = itensSemDescricao();
+    if (!falta.length) return;
+    var lote = falta.slice(0, SUG_LOTE);
+    var b = document.getElementById('cd-sugerir');
+    b.disabled = true;
+    aviso('Pedindo sugestão para ' + lote.length + '…');
+    api('/api/cardapio-projeto/' + PROJ.id + '/descricoes', {
+      method: 'POST',
+      body: JSON.stringify({
+        itens: lote.map(function (i) { return { id: i.id, nome: i.nome, secao: i.secao }; }),
+      }),
+    }).then(function (d) {
+      // Conta CHAVES, não iterações: o modelo pode devolver o mesmo id duas
+      // vezes (achado na revisão da rota). SUG é mapa e a 2ª sobrescreve, mas
+      // um n++ por volta contaria 2 sugestões onde há 1 — e faria `mudos`
+      // abaixo virar negativo, dizendo "-1 sem sugestão".
+      var antes = Object.keys(SUG).length;
+      (d.sugestoes || []).forEach(function (s) {
+        if (s && s.id && s.descricao) SUG[s.id] = s.descricao;
+      });
+      var n = Object.keys(SUG).length - antes;
+      // O que NÃO voltou é dito, não escondido: item que a IA não reconheceu
+      // fica sem sugestão de propósito (trava 2), e o Rodrigo precisa saber
+      // que aqueles continuam pra digitar à mão.
+      var mudos = lote.length - n;
+      var msg = n + (n === 1 ? ' sugestão' : ' sugestões') + ' — confira e clique em "Usar"';
+      if (mudos) msg += '. ' + mudos + ' sem sugestão (nome não reconhecido), digite à mão';
+      if (d.aviso) msg += '. ' + d.aviso;
+      aviso(msg);
+      desenhaItens();
+    }).catch(function (e) {
+      aviso(e.message, true);
+      b.disabled = false;
+    });
   }
 
   // Arrastar pra ordenar DENTRO da seção: a ordem no impresso é decisão de
@@ -1998,6 +2315,20 @@ function nomeArquivoSeguro(base) {
     };
     document.getElementById('cd-pdf').onclick = exportaPDF;
     document.getElementById('cd-add-btn').onclick = adicionaItem;
+    document.getElementById('cd-sugerir').onclick = sugereDescricoes;
+    document.getElementById('cd-massa-limpar').onclick = function () { SEL = {}; desenhaItens(); };
+    // Busca com debounce: redesenhar a cada tecla numa casa de 115 itens
+    // pisca a lista inteira a cada letra.
+    var tBusca = null;
+    document.getElementById('cd-busca').oninput = function (e) {
+      var v = normBusca(e.target.value);
+      clearTimeout(tBusca);
+      tBusca = setTimeout(function () {
+        if (v === BUSCA) return;
+        BUSCA = v;
+        desenhaItens();
+      }, 180);
+    };
     document.getElementById('cd-carta-abrir').onclick = function () {
       if (CARTA.aberto) cartaFecha(false); else cartaAbre(null);
     };
@@ -3148,7 +3479,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '9ccf111ca9e0';
+  var BUILD = '6fabdb1e29f0';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
