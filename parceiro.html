@@ -75,7 +75,12 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .resposta{margin-top:10px;padding:9px 11px;background:var(--bg);border-radius:9px;
   border-left:2px solid var(--acc)}
 .resposta-cab{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em}
-.resposta-txt{font-size:13.5px;color:var(--text-1);margin-top:5px;line-height:1.55;white-space:pre-wrap}
+/* `--text-1` nunca existiu (as variáveis são --text/--text-2/--text-3): a
+   declaração era inválida e a cor caía por herança. Trocado pela real. */
+.resposta-txt{font-size:13.5px;color:var(--text);margin-top:5px;line-height:1.55;white-space:pre-wrap}
+/* `.desc` só tinha regra dentro de `.ficha` — no card de demanda ela herdava
+   o corpo (16px), saindo MAIOR que o próprio título do card (14px). */
+.card .desc{font-size:12.5px;color:var(--text-2);margin-top:6px;line-height:1.5}
 
 .ficha{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
 .ficha .nome{font-size:14px}
@@ -246,6 +251,24 @@ h1{font-family:var(--serif);font-size:24px;margin:0 0 2px;font-weight:400}
 .reg-tag.pendente{background:#e0b05c33;color:var(--amarelo)}
 .reg-tag.ok{background:#9fe1cb33;color:var(--verde)}
 .reg-toggle{font-size:12.5px;color:var(--acc);background:none;border:none;cursor:pointer;padding:0;margin-top:10px}
+/* Coquetelaria (montaCoquetelaria) e Tarefas (D6). As classes .coq-* existiam
+   sem UMA linha de CSS: a função nunca era chamada, então ninguém viu que a
+   seção sairia como divs empilhados sem formatação. `min-width:0` no lado
+   esquerdo é obrigatório — sem ele o título longo empurra o número/os botões
+   pra fora do cartão em vez de quebrar (a mesma armadilha da Lição de CSS 3,
+   aqui em flex). */
+.coq-linha{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:9px 0;border-top:1px solid var(--border)}
+.coq-linha:first-of-type{border-top:none}
+.coq-linha>div:first-child{min-width:0;flex:1}
+.coq-nome{font-size:13.5px}
+.coq-sub{font-size:11.5px;color:var(--text-3);margin-top:2px}
+.coq-n{font-size:15px;font-weight:600;white-space:nowrap;flex:none}
+.tar-part{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2)}
+.tar-part input{width:auto;flex:none}
+.tar-acoes{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+.tar-bt{font:inherit;font-size:11.5px;padding:5px 10px;border-radius:999px;
+  border:1px solid var(--border);background:none;color:var(--text-2);cursor:pointer}
 
 /* --- avisos configuráveis (P10) --- */
 .av-linha{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 0;border-top:1px solid var(--border)}
@@ -765,7 +788,10 @@ function nomeArquivoSeguro(base) {
     card.appendChild(topo);
     var bar = el('div', 'bar');
     var fill = el('div', 'bar-fill');
-    fill.style.width = Math.min(100, Math.round((n / meta) * 100)) + '%'; fill.style.background = cor;
+    // Meta 0/ausente viraria divisão por zero e um "NaN%" de largura, que o
+    // navegador descarta em silêncio — a barra sumia sem ninguém saber por quê.
+    fill.style.width = (meta > 0 ? Math.min(100, Math.round((n / meta) * 100)) : 0) + '%';
+    fill.style.background = cor;
     bar.appendChild(fill); card.appendChild(bar);
     return card;
   }
@@ -776,7 +802,7 @@ function nomeArquivoSeguro(base) {
   // mínima. Se o hero contasse de outro jeito, viraria uma segunda verdade
   // brigando com a tela logo abaixo dele.
   function contaEntregas(d, casasLabels) {
-    var c = { previstas: 0, concluidas: 0, andamento: 0 };
+    var c = { previstas: 0, concluidas: 0, andamento: 0, semMedicao: 0 };
     var tipos = {};
     (d.contrapartidas || []).forEach(function (i) {
       c.previstas++;
@@ -796,12 +822,18 @@ function nomeArquivoSeguro(base) {
     var backbar = d.backbar || {};
     if (d.backbar_meta_pct != null && casasLabels.length) {
       casasLabels.forEach(function (label) {
-        c.previstas++;
         var serie = backbar[label] || [];
         var ult = serie.length ? serie[serie.length - 1] : null;
         var pct = ult && ult.percentual != null ? ult.percentual : null;
-        if (pct != null && pct >= d.backbar_meta_pct) c.concluidas++;
-        else if (pct) c.andamento++;
+        // Casa SEM nenhuma contagem de backbar não entra no denominador —
+        // ela é contada à parte, como "sem medição". Somá-la como previsto e
+        // nunca como concluído afirmava, em números, que a marca falhou uma
+        // entrega que ninguém chegou a medir: hoje as 3 marcas têm ZERO foto
+        // de backbar registrada, e era isso que empurrava o hero pra 0%.
+        if (pct == null) { c.semMedicao++; return; }
+        c.previstas++;
+        if (pct >= d.backbar_meta_pct) c.concluidas++;
+        else if (pct > 0) c.andamento++;
         tipos.backbar = true;
       });
     }
@@ -859,6 +891,10 @@ function nomeArquivoSeguro(base) {
       : c.previstas + ' ' + subst + ' combinada' + plural));
     var det = [];
     if (!c.concluidas) det.push('Nenhuma concluída ainda');
+    if (c.semMedicao) {
+      det.push(c.semMedicao + (c.semMedicao === 1 ? ' item sem medição' : ' itens sem medição')
+        + ' — fora da conta');
+    }
     var cm = d.compra_minima || {};
     if (cm.ciclo_inicio && cm.ciclo_fim) {
       det.push('Ciclo de compra: ' + periodoCurto(cm.ciclo_inicio, cm.ciclo_fim));
@@ -1039,6 +1075,45 @@ function nomeArquivoSeguro(base) {
     } else if (r.sem_dado) {
       wrap.appendChild(el('p', 'giro-nota', r.sem_dado + ' célula(s) sem dado suficiente pra avaliar.'));
     }
+
+    // A matriz mostra o retrato; esta lista mostra o TRABALHO. Ela já existia
+    // — mas só dentro do PDF, que quase ninguém gera. Uma matriz de pontinhos
+    // com 44 buracos não se lê no celular: o que se lê é "este SKU não entrou
+    // nestas casas". Duas listas separadas de propósito: "nunca vendeu" é
+    // prospecção, "parou" é recuperação, e cobrar as duas do mesmo jeito
+    // confunde quem vai fazer a visita.
+    var casasPorSlug = {};
+    p.casas.forEach(function (c) { casasPorSlug[c.casa] = c.rotulo; });
+    function listaPorEstado(estado, titulo, nota) {
+      var linhas = [];
+      p.produtos.forEach(function (prod) {
+        var alvo = Object.keys(prod.por_casa || {}).filter(function (c) {
+          return prod.por_casa[c] === estado;
+        });
+        if (alvo.length) {
+          linhas.push([prod.rotulo, alvo.map(function (c) { return casasPorSlug[c] || c; })]);
+        }
+      });
+      if (!linhas.length) return;
+      var det = document.createElement('details');
+      det.className = 'posi-det';
+      var sum = document.createElement('summary');
+      sum.textContent = titulo + ' · ' + linhas.length
+        + (linhas.length === 1 ? ' produto' : ' produtos');
+      det.appendChild(sum);
+      linhas.forEach(function (par) {
+        var linha = el('div', 'posi-acao');
+        linha.appendChild(el('div', 'posi-acao-nome', par[0]));
+        linha.appendChild(el('div', 'posi-acao-casas', par[1].join(' · ')));
+        det.appendChild(linha);
+      });
+      if (nota) det.appendChild(el('p', 'giro-sub', nota));
+      wrap.appendChild(det);
+    }
+    listaPorEstado('nunca_vendeu', 'Onde entrar',
+      'Produto que nunca registrou venda nessa casa na janela apurada.');
+    listaPorEstado('parou', 'Onde recuperar',
+      'Vendia e parou. Vale conferir se saiu da carta ou se faltou reposição.');
     return wrap;
   }
 
@@ -1048,6 +1123,10 @@ function nomeArquivoSeguro(base) {
   // (trava T6/T7): ausência de contagem nunca vira alerta de ruptura.
   function montaRuptura(alertas) {
     if (!alertas || !alertas.length) return null;
+    // A nota de rodapé usa a semana do primeiro alerta. Um item sem
+    // `semana_fim` derrubava o render INTEIRO do mural (TypeError no
+    // `.split`), não só a nota — por isso a data é opcional aqui.
+    var semanaFim = (alertas[0] && alertas[0].semana_fim) || '';
     var card = el('div', 'rupt-card');
     card.appendChild(el('p', 'rupt-cab', 'Ruptura · última contagem'));
     alertas.slice(0, 8).forEach(function (a) {
@@ -1060,8 +1139,9 @@ function nomeArquivoSeguro(base) {
       card.appendChild(el('p', 'giro-sub', '+' + (alertas.length - 8) + ' outro(s) item(ns) zerado(s).'));
     }
     card.appendChild(el('p', 'giro-sub',
-      'Da contagem semanal da casa (fechamento em ' + alertas[0].semana_fim.split('-').reverse().join('/') + '). '
-      + 'É o dado mais fresco do painel.'));
+      'Da contagem semanal da casa'
+      + (semanaFim ? ' (fechamento em ' + semanaFim.split('-').reverse().join('/') + ')' : '')
+      + '. É o dado mais fresco do painel.'));
     return card;
   }
 
@@ -1075,16 +1155,43 @@ function nomeArquivoSeguro(base) {
 
     var cd = m.cardapio_digital;
     if (cd && (cd.casas_com_foto || []).length) {
+      var comMarca = cd.casas_com_marca || [];
       var linha1 = el('div', 'menu-linha');
       var lt1 = el('div', 'menu-lt');
       lt1.appendChild(el('div', 'menu-lnome', 'No cardápio digital'));
       lt1.appendChild(el('div', 'menu-lval',
-        cd.casas_com_marca.length + ' de ' + cd.casas_com_foto.length + ' casas'));
+        comMarca.length + ' de ' + cd.casas_com_foto.length + ' casas'));
       linha1.appendChild(lt1);
-      var casasSem = cd.casas_com_foto.filter(function (s) { return cd.casas_com_marca.indexOf(s) === -1; });
+      // ITEM A ITEM, por casa. O payload sempre trouxe `por_casa` com os
+      // nomes dos produtos e a tela jogava fora, dizendo só "5 de 6 casas" —
+      // que não responde nem "quais produtos meus estão lá" nem "qual é a
+      // casa que falta". As duas perguntas são o trabalho do On Trade.
+      var porCasa = cd.por_casa || {};
+      Object.keys(porCasa).sort().forEach(function (casa) {
+        var itens = porCasa[casa] || [];
+        var bloco = el('div', 'cd-casa');
+        var cab = el('div', 'cd-cab');
+        cab.appendChild(el('span', 'cd-nome', casa));
+        cab.appendChild(el('span', 'cd-n', itens.length + (itens.length === 1 ? ' item' : ' itens')));
+        bloco.appendChild(cab);
+        var lista = el('div', 'cd-itens');
+        itens.forEach(function (nome) { lista.appendChild(el('span', 'cd-pill', nome)); });
+        bloco.appendChild(lista);
+        linha1.appendChild(bloco);
+      });
+      // Casa com foto de cardápio e SEM item nenhum da marca — nomeada, que é
+      // o que transforma um número numa lista de trabalho. Vem pronta do
+      // gerador (`casas_sem_marca`): os outros dois campos são slug e este é
+      // rótulo, então derivar aqui exigiria repetir a tradução no cliente.
+      var casasSem = cd.casas_sem_marca || [];
       if (casasSem.length) {
-        linha1.appendChild(el('p', 'menu-sub',
-          'Sem item seu no cardápio de ' + casasSem.length + ' casa' + (casasSem.length === 1 ? '' : 's') + '.'));
+        var falta = el('p', 'cd-falta');
+        falta.textContent = 'Sem nenhum item seu: ' + casasSem.join(', ')
+          + '. O cardápio dessas casas foi coletado — a ausência é real, não falta de foto.';
+        linha1.appendChild(falta);
+      }
+      if (cd.data_foto) {
+        linha1.appendChild(el('p', 'menu-sub', 'Foto do cardápio de ' + fmtData(cd.data_foto) + '.'));
       }
       wrap.appendChild(linha1);
     }
@@ -1109,6 +1216,84 @@ function nomeArquivoSeguro(base) {
       wrap.appendChild(el('p', 'giro-nota',
         'Cardápio digital coletado de ' + cd.casas_com_foto.length + ' das 6 casas.'));
     }
+    return wrap;
+  }
+
+  // Coquetelaria RECORTADA POR MARCA (decisão do Rodrigo, 2026-08-06, revisão
+  // P11 — o caso real que motivou o recorte está no PLANO_PARCEIRO_CICLO §14;
+  // não repetir aqui, este arquivo é o MESMO pras 3 marcas e o repo do site é
+  // público). Entra só o drink da própria marca, e quem corta é o GERADOR:
+  // esta função não filtra nada, porque filtro no cliente não é contenção — o
+  // payload chega cru pela rede. Volume, nunca R$.
+  // 'poucos-dados' faltava e vazava o slug cru na tela do parceiro ("cocktails
+  // classicos · poucos-dados") — visto ao renderizar a página de verdade, não
+  // no código. É o valor mais comum hoje: a maioria das casas tem 2 meses de
+  // série, e o ranking classifica assim quando não dá pra afirmar tendência.
+  var TEND_ROTULO = {
+    subindo: 'subindo', caindo: 'caindo', estavel: 'estável',
+    'poucos-dados': 'série curta',
+  };
+  function montaCoquetelaria(c, cor) {
+    if (!c) return null;
+    // Duas ausências diferentes, duas mensagens diferentes — colapsar as duas
+    // em "nada aqui" esconderia qual é a ação. Sem drink vinculado é problema
+    // de CADASTRO (nosso); drink vinculado que não gira é EXECUÇÃO (dele).
+    if (!(c.casas || []).length) {
+      var vazio = el('div');
+      vazio.appendChild(el('div', 'secao', 'Seus drinks nas casas'));
+      vazio.appendChild(el('p', 'giro-sub', !c.drinks_da_marca
+        ? 'Ainda não há nenhum drink com a sua marca vinculado ao nosso banco de '
+          + 'receitas. Sem isso não dá pra medir desempenho — fale com a '
+          + 'coordenação pra vincular.'
+        : 'Nenhum dos seus ' + c.drinks_da_marca + ' drinks apareceu nas vendas das '
+          + 'casas do acordo no mês de referência.'));
+      return vazio;
+    }
+    var wrap = el('div');
+    wrap.appendChild(el('div', 'secao',
+      'Seus drinks nas casas' + (c.mes_ref ? ' · ' + c.mes_ref : '')));
+    wrap.appendChild(el('p', 'giro-sub',
+      'Como os coquetéis com a sua marca vendem nas casas onde você está, e em que '
+      + 'posição ficam na carta de cada uma.'));
+    c.casas.forEach(function (casa) {
+      var card = el('div', 'card');
+      var topo = el('div', 'topo');
+      topo.appendChild(el('div', 'titulo', casa.rotulo));
+      if (casa.n_itens_carta) {
+        topo.appendChild(el('span', 'giro-lval', casa.n_itens_carta + ' na carta'));
+      }
+      card.appendChild(topo);
+      casa.itens.forEach(function (it) {
+        var linha = el('div', 'coq-linha');
+        var esq = el('div');
+        esq.appendChild(el('div', 'coq-nome', it.nome));
+        var sub = [];
+        // A posição é o que dá escala ao número: "3º da carta" e "31º da
+        // carta" com o mesmo volume são conversas diferentes. Só existe
+        // porque o gerador passou a varrer o ranking inteiro, não só o topo.
+        if (it.posicao_na_casa) sub.push(it.posicao_na_casa + 'º da carta');
+        if (it.categoria) sub.push(String(it.categoria).toLowerCase());
+        if (it.tendencia) sub.push(TEND_ROTULO[it.tendencia] || it.tendencia);
+        if (sub.length) esq.appendChild(el('div', 'coq-sub', sub.join(' · ')));
+        linha.appendChild(esq);
+        // Volume do mês de referência. `null` é "não apurado", nunca zero.
+        linha.appendChild(el('div', 'coq-n',
+          it.qtde_mes == null ? '—' : Math.round(it.qtde_mes).toLocaleString('pt-BR')));
+        card.appendChild(linha);
+      });
+      wrap.appendChild(card);
+    });
+    // Casa do acordo onde nenhum drink da marca vendeu é DECLARADA, não
+    // omitida: sumir com ela faria parecer que a casa saiu do acordo.
+    if ((c.casas_sem_drink_da_marca || []).length) {
+      wrap.appendChild(el('p', 'giro-nota',
+        'Sem venda de drink seu no mês em: ' + c.casas_sem_drink_da_marca.join(', ')
+        + '.'));
+    }
+    wrap.appendChild(el('p', 'giro-nota',
+      'Unidades vendidas no mês de referência, sem valor comercial. Entram só os '
+      + 'coquetéis vinculados à sua marca no nosso banco de receitas — casa do acordo '
+      + 'sem ranking apurado não aparece, e ausência aqui não é venda zero.'));
     return wrap;
   }
 
@@ -1303,6 +1488,133 @@ function nomeArquivoSeguro(base) {
       .catch(function () { /* complemento — falha aqui não derruba a aba */ });
   }
 
+  // --- Tarefas do parceiro (D6, ligadas na P11 em 2026-08-06) ---------------
+  // O bloco de anotações do próprio On Trade. O handler existia no worker
+  // desde a P-alguma-coisa e NUNCA tinha sido roteado — a P11 achou como
+  // código morto e o Rodrigo autorizou ligar, com um desenho dele: quem cria
+  // escolhe, tarefa a tarefa, se a coordenação enxerga.
+  //
+  // A caixa de partilha nasce DESMARCADA, e o servidor exige `=== true`. Nas
+  // duas pontas o padrão é privado: partilhar tem que ser um ato, nunca o
+  // efeito de um campo esquecido.
+  function montaTarefaForm() {
+    var wrap = el('div', 'reg-form');
+    var inpTitulo = document.createElement('input');
+    inpTitulo.type = 'text';
+    inpTitulo.maxLength = 140;
+    inpTitulo.placeholder = 'O que você precisa fazer';
+    wrap.appendChild(inpTitulo);
+
+    var inpPrazo = document.createElement('input');
+    inpPrazo.type = 'date';
+    wrap.appendChild(inpPrazo);
+
+    var selCasa = document.createElement('select');
+    var opV = document.createElement('option'); opV.value = ''; opV.textContent = 'Casa (opcional)';
+    selCasa.appendChild(opV);
+    Object.keys(CASAS_LABEL).forEach(function (slug) {
+      var op = document.createElement('option'); op.value = slug; op.textContent = CASAS_LABEL[slug];
+      selCasa.appendChild(op);
+    });
+    wrap.appendChild(selCasa);
+
+    var lblPart = el('label', 'tar-part');
+    var chkPart = document.createElement('input');
+    chkPart.type = 'checkbox';
+    lblPart.appendChild(chkPart);
+    lblPart.appendChild(document.createTextNode(' Mostrar esta tarefa para a coordenação'));
+    wrap.appendChild(lblPart);
+
+    var bt = el('button', '', 'Adicionar');
+    bt.type = 'button';
+    wrap.appendChild(bt);
+    var aviso = el('p', 'meta-aviso');
+    wrap.appendChild(aviso);
+
+    bt.onclick = function () {
+      var titulo = inpTitulo.value.trim();
+      if (!titulo) {
+        aviso.className = 'meta-aviso err'; aviso.textContent = 'Escreva a tarefa.';
+        return;
+      }
+      if (!sessaoAtualGlobal) {
+        aviso.className = 'meta-aviso err'; aviso.textContent = 'Sua sessão expirou. Recarregue a página.';
+        return;
+      }
+      bt.disabled = true;
+      tarefaAcao({
+        acao: 'criar', titulo: titulo, prazo: inpPrazo.value || null,
+        casa: selCasa.value || null, compartilhada: chkPart.checked,
+      }).then(function (ok) {
+        if (!ok) throw new Error('falhou');
+        inpTitulo.value = ''; inpPrazo.value = ''; chkPart.checked = false;
+        aviso.className = 'meta-aviso'; aviso.textContent = '';
+      }).catch(function () {
+        aviso.className = 'meta-aviso err'; aviso.textContent = 'Não deu pra salvar agora. Tente de novo.';
+      }).finally(function () { bt.disabled = false; });
+    };
+    return wrap;
+  }
+
+  function tarefaAcao(corpo) {
+    if (!sessaoAtualGlobal) return Promise.resolve(false);
+    return fetch(WORKER + '/api/parceiro/tarefas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Token': sessaoAtualGlobal.token },
+      body: JSON.stringify(corpo),
+    }).then(function (r) {
+      if (!r.ok) return false;
+      return r.json().then(function (j) { pintaTarefas(j.tarefas || []); return true; });
+    });
+  }
+
+  function pintaTarefas(itens) {
+    var holder = document.getElementById('tar-holder');
+    if (!holder) return;
+    holder.innerHTML = '';
+    if (!itens.length) {
+      holder.appendChild(el('p', 'giro-nota', 'Nenhuma tarefa anotada.'));
+      return;
+    }
+    itens.forEach(function (t) {
+      var linha = el('div', 'coq-linha');
+      var esq = el('div');
+      var nome = el('div', 'coq-nome', t.titulo);
+      if (t.feito) nome.style.textDecoration = 'line-through';
+      esq.appendChild(nome);
+      var sub = [];
+      // fmtData fatia o texto AAAA-MM-DD; nunca `new Date(iso)`, que é
+      // meia-noite UTC e vira o dia anterior em UTC-3 (armadilha do sino).
+      if (t.prazo) sub.push('até ' + fmtData(t.prazo));
+      if (t.casa && CASAS_LABEL[t.casa]) sub.push(CASAS_LABEL[t.casa]);
+      // Estado de partilha SEMPRE visível: quem escreveu precisa saber, olhando
+      // a lista, o que a coordenação está vendo — sem reabrir nada.
+      sub.push(t.compartilhada ? 'visível para a coordenação' : 'só você vê');
+      esq.appendChild(el('div', 'coq-sub', sub.join(' · ')));
+      linha.appendChild(esq);
+
+      var acoes = el('div', 'tar-acoes');
+      var btOk = el('button', 'tar-bt', t.feito ? 'Reabrir' : 'Concluir');
+      btOk.type = 'button';
+      btOk.onclick = function () { tarefaAcao({ acao: 'alternar', id: t.id }); };
+      acoes.appendChild(btOk);
+      var btDel = el('button', 'tar-bt', 'Apagar');
+      btDel.type = 'button';
+      btDel.onclick = function () { tarefaAcao({ acao: 'apagar', id: t.id }); };
+      acoes.appendChild(btDel);
+      linha.appendChild(acoes);
+      holder.appendChild(linha);
+    });
+  }
+
+  function carregaTarefas() {
+    if (!sessaoAtualGlobal) return;
+    fetch(WORKER + '/api/parceiro/tarefas', { headers: { 'X-Token': sessaoAtualGlobal.token } })
+      .then(function (r) { return r.ok ? r.json() : { tarefas: [] }; })
+      .then(function (j) { pintaTarefas(j.tarefas || []); })
+      .catch(function () { /* complemento — falha aqui não derruba a aba */ });
+  }
+
   // --- Avisos configuráveis (P10) -------------------------------------------
   // A marca escolhe o que quer receber no celular. O canal em si tem uma
   // chave mestra do nosso lado (config/parceiros.json → avisos.ativo), e
@@ -1398,6 +1710,18 @@ function nomeArquivoSeguro(base) {
     var nota = 'Venda apurada até ' + g.ate + '.';
     if (txtVar && (g.variacao_base_casas || []).length) {
       nota += ' Variação comparando ' + g.variacao_base_casas.join(', ') + '.';
+    }
+    // `cobertura_casas` (quantas casas foram apuradas em cada mês) sempre
+    // esteve no payload e nunca foi lido. Sem ele a série engana: os meses
+    // antigos têm 4 casas apuradas e os recentes 6, então a curva sobe em
+    // parte porque entrou casa nova — não só porque a marca vendeu mais.
+    var cob = g.cobertura_casas || [];
+    if (cob.length) {
+      var minC = Math.min.apply(null, cob), maxC = Math.max.apply(null, cob);
+      if (minC !== maxC) {
+        nota += ' A janela não é comparável mês a mês: começa com ' + minC
+          + ' casas apuradas e termina com ' + maxC + '.';
+      }
     }
     hero.appendChild(el('p', 'giro-nota', nota));
     wrap.appendChild(hero);
@@ -1722,6 +2046,21 @@ function nomeArquivoSeguro(base) {
     painelExecucao.appendChild(montaRegistroForm());
     painelExecucao.appendChild(el('div', '', null)).id = 'reg-holder';
 
+    // Seus drinks nas casas (recortado por marca — ver montaCoquetelaria).
+    // Fica na Execução, ao lado de "Sua marca na carta": as duas respondem a
+    // mesma pergunta (o que da marca está na carta, e como vai).
+    var coqEl = montaCoquetelaria(d.coquetelaria, cor);
+    if (coqEl) painelExecucao.appendChild(coqEl);
+
+    // Tarefas (D6): nasce vazio, carregaTarefas() preenche.
+    painelExecucao.appendChild(el('div', 'secao', 'Suas tarefas'));
+    painelExecucao.appendChild(el('p', 'giro-sub',
+      'Seu bloco de anotações. Cada tarefa nasce privada — marque a caixa se quiser '
+      + 'que a coordenação acompanhe aquela.'));
+    painelExecucao.appendChild(montaTarefaForm());
+    painelExecucao.appendChild(el('div', '', null)).id = 'tar-holder';
+    carregaTarefas();
+
     painelExecucao.appendChild(el('div', 'secao', 'Revisão de conta'));
     painelExecucao.appendChild(el('p', 'giro-sub',
       'Giro, share, positivação, presença na carta e pendências — tudo num PDF pronto pra apresentar à sua indústria.'));
@@ -2008,7 +2347,15 @@ function nomeArquivoSeguro(base) {
   // O que ele vê é recortado pela MARCA DO TOKEN, no servidor — nunca por
   // parâmetro daqui (ver credencialDemandaParceiro no registro-bares). Demanda
   // interna não tem marca e por isso nunca aparece.
-  var COR_STATUS = {
+  // NOME PRÓPRIO, e não `COR_STATUS` de novo: havia DUAS declarações de
+  // `COR_STATUS` no mesmo escopo desta IIFE — a de status de contrapartida
+  // (nao_iniciado/entregue/...) lá em cima e esta, de status de demanda. Como
+  // as duas atribuições rodam no corpo da IIFE, antes de qualquer render, a
+  // segunda vencia sempre: `montaContrapartida` procurava 'entregue' num mapa
+  // que só tem 'Resolvido' e caía no cinza padrão. Resultado: TODA tag de
+  // contrapartida saía cinza, em todas as marcas, desde que este bloco nasceu.
+  // `var` não avisa em redeclaração — só o olho pega.
+  var COR_STATUS_DEMANDA = {
     'Novo': '#e0b05c', 'Visto': '#7fb8e0', 'Em andamento': '#7fb8e0',
     'Resolvido': '#9fe1cb', 'Arquivado': '#8f8672',
   };
@@ -2068,7 +2415,7 @@ function nomeArquivoSeguro(base) {
           topo.appendChild(el('div', 'titulo', it.tipo + (it.casa ? ' · ' + it.casa : '')));
           var st = it.status || 'Novo';
           var tag = el('span', 'status', st);
-          var cs = COR_STATUS[st] || '#8f8672';
+          var cs = COR_STATUS_DEMANDA[st] || '#8f8672';
           tag.style.background = cs + '33'; tag.style.color = cs;
           topo.appendChild(tag);
           card.appendChild(topo);
@@ -2371,8 +2718,13 @@ function nomeArquivoSeguro(base) {
     // permite a ela entrar na MESMA fila da equipe em vez de virar um recado
     // sem dono. Ideia/Receita/Nota seguem só com título e texto.
     var ehDemanda = tipo === 'Demanda';
-    document.getElementById('cr-demanda-campos').style.display = ehDemanda ? 'block' : 'none';
-    document.getElementById('cr-titulo-linha').style.display = ehDemanda ? 'none' : 'block';
+    document.getElementById('cr-demanda-campos').style.display = ehDemanda ? '' : 'none';
+    // String VAZIA, nunca 'block': `.criar-campo` é `display:flex` com
+    // `flex-direction:column` e `gap`, e um `display:block` inline ganha da
+    // regra de classe — o rótulo colava no campo toda vez que o formulário
+    // voltava de uma Demanda. Mesma família da "Lição de CSS" do Mural v3:
+    // pra devolver um elemento ao default da classe, limpa-se o inline.
+    document.getElementById('cr-titulo-linha').style.display = ehDemanda ? 'none' : '';
     if (ehDemanda) preencheCamposDemanda();
     criarMenu.style.display = 'none';
     criarForm.style.display = '';
@@ -2507,12 +2859,38 @@ function nomeArquivoSeguro(base) {
   }
   document.getElementById('cr-salvar').onclick = enviarCriar;
 
+  // Falha de carga com sessão VÁLIDA precisa aparecer na tela, não no gate:
+  // quem já tem sessão entra com o gate escondido (ver o boot no fim), então
+  // escrever em `#g-erro` deixava o painel em branco e mudo — sem rede, a
+  // marca via uma página vazia e nenhuma explicação. Agora o aviso é
+  // desenhado no próprio mural, com botão de tentar de novo.
+  function falhaDeCarga(texto, sessao) {
+    erro.textContent = texto;               // serve ao caso "ainda no gate"
+    if (!painelMural) return;
+    painelMural.innerHTML = '';
+    mostraVista('mural');
+    var card = el('div', 'card');
+    card.appendChild(el('div', 'titulo', 'Não consegui carregar seu painel'));
+    card.appendChild(el('div', 'meta', texto));
+    var bt = el('button', 'criar-salvar', 'Tentar de novo');
+    bt.type = 'button';
+    bt.style.marginTop = '10px';
+    bt.onclick = function () { buscar(sessao); };
+    card.appendChild(bt);
+    painelMural.appendChild(card);
+  }
+
   function buscar(sessao) {
     sessaoAtualGlobal = sessao;
     fetch(WORKER + '/api/parceiro', { headers: { 'X-Token': sessao.token } })
       .then(function (r) {
         if (r.status === 401) { sessaoLimpar(); location.reload(); return; }
-        if (!r.ok) { erro.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return; }
+        if (!r.ok) {
+          falhaDeCarga(r.status === 404
+            ? 'Seu painel ainda não foi configurado. Fale com a coordenação.'
+            : 'O servidor respondeu ' + r.status + '. Tente de novo em instantes.', sessao);
+          return;
+        }
         return r.json().then(function (d) {
           ULTIMO_D = d;
           gate.style.display = 'none';
@@ -2526,7 +2904,7 @@ function nomeArquivoSeguro(base) {
           carregaAvisos();
         });
       })
-      .catch(function () { erro.textContent = 'Sem conexão. Tente de novo.'; });
+      .catch(function () { falhaDeCarga('Sem conexão. Verifique a internet e tente de novo.', sessao); });
   }
 
   function entrar() {

@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=2d9627d74581">
+<link rel="stylesheet" href="portal.css?v=c050ed39a621">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -17,18 +17,29 @@
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
 
-<button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar receita" title="Buscar receita (/)">
+<button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar no portal" title="Buscar no portal (/)">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 <circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4.5 4.5"/></svg>
-<span class="lb-txt">Buscar receita</span>
+<span class="lb-txt">Buscar</span>
 </button>
-<div id="busca-global-ov" role="dialog" aria-modal="true" aria-label="Buscar receita">
+<div id="busca-global-ov" role="dialog" aria-modal="true" aria-label="Buscar no portal">
 <div class="bg-caixa">
 <div class="bg-topo">
-<input id="bg-input" type="search" placeholder="Nome do drink…" autocomplete="off">
+<input id="bg-input" type="search" placeholder="Página, receita ou item…" autocomplete="off">
 <button class="bg-fechar" id="bg-fechar" type="button" aria-label="Fechar busca">&times;</button>
 </div>
-<div class="bg-res" id="bg-res"><p class="bg-dica">Digite ao menos 2 letras.</p></div>
+<div class="bg-chips" id="bg-chips" role="group" aria-label="Filtrar por fonte">
+<button class="bg-chip ativo" type="button" data-fonte="tudo" aria-pressed="true">Tudo</button>
+<button class="bg-chip" type="button" data-fonte="paginas" aria-pressed="false">Páginas</button>
+<button class="bg-chip" type="button" data-fonte="receitas" aria-pressed="false">Receitas</button>
+<button class="bg-chip" type="button" data-fonte="itens" aria-pressed="false">Itens</button>
+</div>
+<div class="bg-res" id="bg-res">
+<p class="bg-dica" id="bg-msg">Digite ao menos 2 letras.</p>
+<div class="bg-sec" id="bg-sec-paginas" hidden><p class="bg-sec-tt">Páginas</p><div class="bg-sec-lista"></div></div>
+<div class="bg-sec" id="bg-sec-receitas" hidden><p class="bg-sec-tt">Receitas</p><div class="bg-sec-lista"></div></div>
+<div class="bg-sec" id="bg-sec-itens" hidden><p class="bg-sec-tt">Itens no estoque das casas</p><div class="bg-sec-lista"></div></div>
+</div>
 </div>
 </div>
 
@@ -539,12 +550,19 @@ window.msgAcessoNegado = function (nomePagina) {
      Linha 1: 3 botões simétricos (Entenda o portal · Nova demanda · Central de
      Demandas). Linha 2: 3 ações — Notas saiu daqui e virou card dentro da
      gaveta Criar (ver comentário de _painel_rapido_corpo).
-     v8 (2026-07-31, PLANO_TRANSFERENCIAS.md D4): a linha 2 virou
-     `Buscar item · Avarias · Dose` — o buscador entre casas assumiu o slot do
-     Criar, que desceu pra uma etiqueta docada na borda direita. Os drawers
-     (pr-conteudo
+     v8 (2026-07-31, PLANO_TRANSFERENCIAS.md D4): a linha 2 virou o atalho de
+     busca entre casas + `Avarias · Dose` — o buscador entre casas assumiu o
+     slot do Criar, que desceu pra uma etiqueta docada na borda direita. Os
+     drawers (pr-conteudo
      do Criar, np-painel das Notas — agora aninhado dentro do Criar,
-     pr-avarias-sub) e seus ids seguem iguais — só a casca dos botões mudou. -->
+     pr-avarias-sub) e seus ids seguem iguais — só a casca dos botões mudou.
+     v9 (2026-08-06, PLANO_BUSCA_UNIVERSAL.md §4.5): o atalho de busca entre
+     casas saiu do mural — a lupa do topo (toda página) passou a buscar item
+     guardado nas casas, além de página e receita, então o atalho duplicava a
+     mesma busca. A linha 2 fica só com `Avarias · Dose`; pra quem não vê
+     Dose (a maioria, que não é bartender/chefe/coord), sobra um botão só —
+     ver a regra `:has()` perto de `.prv-q3` que trava a largura dele em vez
+     de deixá-lo esticar a linha inteira. -->
 <style>
   .prv-top3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 9px; }
   .prv-tb { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
@@ -566,7 +584,17 @@ window.msgAcessoNegado = function (nomePagina) {
             text-align: center; border: 1.5px solid var(--border); border-radius: 12px; padding: 9px 3px;
             text-decoration: none; color: var(--text); background: var(--card); font: inherit; font-size: 10.5px; cursor: pointer; }
   .prv-q .ic { color: var(--acc); display: flex; } .prv-q .ic svg { width: 17px; height: 17px; }
-  .prv-q-busca { border-color: #6fbf90; } .prv-q-busca .ic { color: #8fd6a8; }
+  /* v9 (2026-08-06): sem o atalho de busca entre casas, quem não vê Dose
+     (todo mundo que não é bartender/chefe/coord — a maioria) fica só com
+     Avarias na linha. Com
+     flex:1 puro ele esticaria até a largura inteira do card (até ~940px em
+     desktop), um botão pequeno de ícone+texto virando uma barra enorme. O
+     `:has()` trava a largura só nesse caso (Dose ainda com o display:none
+     inline que nasce no HTML) e centraliza; assim que o JS revela Dose pra
+     quem tem acesso, o seletor deixa de casar e os dois voltam a dividir a
+     linha em flex:1 normal, lado a lado. */
+  .prv-q3:has(#pr-dose-card[style*="display:none"]) .prv-q-avaria { flex: 0 1 230px; }
+  .prv-q3:has(#pr-dose-card[style*="display:none"]) { justify-content: center; }
   /* Criar saiu da linha de 3 (PLANO_TRANSFERENCIAS.md D4, 2026-07-31): virou
      etiqueta docada na borda DIREITA, que se puxa da direita pra esquerda e
      revela os mesmos cards de sempre. Os ids (pr-toggle-btn / pr-conteudo) e a
@@ -613,7 +641,6 @@ window.msgAcessoNegado = function (nomePagina) {
   <a class="prv-tb prv-dem" href="demandas.html"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><b>Central de Demandas</b></a>
 </div>
 <div class="prv-q3">
-  <a class="prv-q prv-q-busca" href="transferencias.html"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.3-4.3"/></svg></span>Buscar item</a>
   <button type="button" class="prv-q prv-q-avaria" id="pr-avarias-btn" aria-expanded="false" aria-controls="pr-avarias-sub"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg></span>Avarias</button>
   <a class="prv-q prv-q-dose" id="pr-dose-card" href="dose.html" style="display:none"><span class="ic"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg></span>Dose</a>
 </div>
@@ -921,7 +948,7 @@ window.msgAcessoNegado = function (nomePagina) {
   <a class="hg-cell" href="eventos.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg></span><span class="hg-txt"><span class="hg-n" id="hg-ev-n">—</span><span class="hg-t">Eventos</span></span></a>
   <a class="hg-cell" href="demandas.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><span class="hg-txt"><span class="hg-n" id="hg-dm-n">—</span><span class="hg-t">Demandas</span></span></a>
   <a class="hg-cell" href="presenca.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg></span><span class="hg-txt"><span class="hg-n" id="hg-on-n">—</span><span class="hg-t">Online</span></span></a>
-  <a class="hg-cell" href="cocktails.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="hg-txt"><span class="hg-n">182</span><span class="hg-t">Receitas</span></span></a>
+  <a class="hg-cell" href="cocktails.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="hg-txt"><span class="hg-n">189</span><span class="hg-t">Receitas</span></span></a>
 </div>
 <div class="hg-prox" id="hg-prox" hidden><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Próximo: <b id="hg-prox-txt"></b></span><a class="go" href="eventos.html" aria-label="Ver o mural">›</a></div>
 </details>
@@ -1055,7 +1082,7 @@ window.msgAcessoNegado = function (nomePagina) {
 <summary class="k">MUNDO DA COQUETELARIA<span class="seta" aria-hidden="true">▾</span></summary>
 <div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span><b>Sustentabilidade operacional ganha peso concreto</b> — Batching pra reduzir desperdício por drink, reaproveitamento de cascas/sobras, compostagem com hortas urbanas e fim de descartáveis viram diferencial competitivo citado por múltiplas casas em 2026. (diageobaracademy.com)</span><a class="go" href="https://diageobaracademy.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Dandelion (Nova York)</b> — Bar do West Village pela equipe do Zero Bond e do reformado White Horse Tavern, com serviço dedicado de Martini e cozinha assinada por chef estrelado Michelin. (wwd.com)</span><a class="go" href="https://wwd.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Diageo World Class 2026</b> — Campeões regionais definidos (EUA: Alexis Ortega, Static Bar, Filadélfia; Hong Kong, Tailândia, Líbano, Cingapura já têm campeões); final global em outubro/2026 na Escócia. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Cato (Londres)</b> — Bar de cinco andares do bartender Angelos Bafas em Covent Garden, dedicado ao clássico Julep; toda a produção e destilados são de origem britânica. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Spirited Awards 2026 (Tales of the Cocktail)</b> — 20ª edição; cerimônia marcada para 23/jul/2026 em Nova Orleans. Finalistas Top 4 e vencedores de prêmios especiais (Helen David Lifetime Achievement, Tales Visionary Award) já anunciados. (talesofthecocktail.org)</span><a class="go" href="https://talesofthecocktail.org/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Destilados sem álcool atraem investimento pesado</b> — Lyre&#x27;s é hoje a mais capitalizada do setor (US$53 milhões levantados); previsão de crescimento de 36,7% em valor no segmento entre 2024-2028. (tracxn.com)</span><a class="go" href="https://tracxn.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Asia&#x27;s 50 Best Bars 2026</b> — Cerimônia em Macau em 28/jul/2026. Smoke &amp; Bitters (Sri Lanka) já venceu o Michter&#x27;s Art of Hospitality Award; Shelley Tai (Mius, Hong Kong) o prêmio Altos Bartenders&#x27; Bartender. (ttrweekly.com)</span><a class="go" href="https://ttrweekly.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Agave em transição: mezcal e reposado sobem sobre o blanco</b> — Mercado de agave se estabiliza após colapso de preço (pico ~32 pesos/kg para ~5 pesos/kg); oferta mais previsível, mas replantio baixo pode gerar novo aperto futuro. (theiwsr.com)</span><a class="go" href="https://theiwsr.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Sabor &quot;savory&quot;/umami dominando os menus</b> — Bartenders reportam alta de miso, shoyu, MSG e maior salinidade em coquetéis, criando perfis mais food-forward e complexos. (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Elderflower é eleito &quot;sabor do ano&quot; de 2026</b> — Floral/botânico domina cardápios, puxando também ervas nativas e infusões naturais como categoria em crescimento. (mrsipps.nl)</span><a class="go" href="https://mrsipps.nl/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Volta à simplicidade técnica</b> — Reação contra coquetéis de 5+ componentes e guarnições excessivas; foco em clássicos revisitados com ingredientes melhores (clarificação, soluções salinas, yuzu). (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Low/no-álcool vira parte estrutural do menu</b> — &quot;Zebra striping&quot; (alternar drink alcoólico e não-alcoólico) já é hábito de 78% da Gen Z; spritzes e clássicos com ABV reduzido seguem como base fixa de carta. (tastingtable.com)</span><a class="go" href="https://tastingtable.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div>
 <div class="coq-historico"><p class="titulo">🏆 World&#39;s 50 Best Bars — últimos vencedores</p><ul><li>World&#x27;s 50 Best Bars 2024 — Handshake Speakeasy (Cidade do México)</li><li>World&#x27;s 50 Best Bars 2025 — Bar Leone (Hong Kong)</li><li>World&#x27;s 50 Best Bars 2023 — Sips (Barcelona)</li><li>World&#x27;s 50 Best Bars 2021 — Connaught Bar (Londres)</li><li>World&#x27;s 50 Best Bars 2022 — Paradiso (Barcelona)</li></ul></div>
-<p class="coq-foot">Atualizado em 06/08/2026 02:12.</p>
+<p class="coq-foot">Atualizado em 06/08/2026 10:56.</p>
 </details>
 <script>
 // Cocktail do mês (PLANO_RANKING_COCKTAILS.md §5) — mesmo Worker da presença
@@ -1140,7 +1167,12 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <!-- v7 (2026-07-23): seções como 3 botões + caixa flutuante. -->
 <style>
-  .hsecs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  /* minmax(0,1fr) e NÃO 1fr: `1fr` é `minmax(auto,1fr)`, e esse `auto` respeita
+     a largura mínima do conteúdo — com nome longo ("Padrão & Acompanhamento")
+     a coluna cresce e as 3 ficam desiguais (medido: 104/104/123 em 375px).
+     Mesmo motivo em .hsec-list e .hsec-switch abaixo. */
+  .hsecs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 400px) { .hsecs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .hsec { display: flex; flex-direction: column; align-items: center; gap: 5px; border: 1px solid var(--border);
            border-radius: 13px; padding: 12px 6px; background: var(--card); color: var(--text); cursor: pointer; font: inherit; }
   .hsec:hover { border-color: var(--acc); }
@@ -1148,13 +1180,18 @@ window.msgAcessoNegado = function (nomePagina) {
   .hsec-ai svg { width: 17px; height: 17px; }
   .hsec-an { font-size: 12.5px; font-weight: 600; }
   .hsec-ad { font-size: 9px; color: var(--text-3); min-height: 11px; }
-  .hsec-ov { position: fixed; inset: 0; z-index: 120; background: rgba(8,6,4,.72); display: flex; align-items: flex-end; }
+  /* Centralizada em TODA largura (2026-08-06, pedido do Rodrigo). Era bottom
+     sheet no celular e só centralizava a partir de 640px: colada embaixo, a
+     caixa disputava altura com o trocador e a lista ficava espremida. */
+  .hsec-ov { position: fixed; inset: 0; z-index: 120; background: rgba(8,6,4,.72);
+              display: flex; align-items: center; justify-content: center;
+              padding: 14px calc(14px + env(safe-area-inset-right))
+                       calc(14px + env(safe-area-inset-bottom))
+                       calc(14px + env(safe-area-inset-left)); }
   .hsec-ov[hidden] { display: none; }
-  .hsec-sheet { width: 100%; max-height: 80vh; background: var(--bg); border-top: 2px solid var(--acc);
-                 border-radius: 18px 18px 0 0; padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
-                 display: flex; flex-direction: column; box-shadow: 0 -12px 30px rgba(0,0,0,.5); }
-  @media (min-width: 640px) { .hsec-ov { align-items: center; justify-content: center; }
-    .hsec-sheet { max-width: 560px; border-radius: 16px; border: 1px solid var(--acc); } }
+  .hsec-sheet { width: 100%; max-width: 560px; max-height: 86vh; background: var(--bg);
+                 border: 1px solid var(--acc); border-radius: 16px; padding: 14px;
+                 display: flex; flex-direction: column; box-shadow: 0 12px 34px rgba(0,0,0,.55); }
   .hsec-cab { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
   .hsec-cab .hsec-ai { width: 30px; height: 30px; }
   .hsec-ti { font-family: var(--serif); font-size: 17px; flex: 1; }
@@ -1163,7 +1200,14 @@ window.msgAcessoNegado = function (nomePagina) {
   /* flex+min-height:0 (não só overflow-y) — senão o filho não encolhe dentro do
      max-height do .hsec-sheet e o conteúdo vaza pra fora da caixa em vez de rolar. */
   .hsec-lists { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
-  .hsec-list { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  /* minmax(0,1fr): com `1fr` puro a coluna não encolhia abaixo do min-content
+     do nome (nowrap), a grade estourava a caixa e o .hsec-lists — que tem
+     overflow-y:auto, logo overflow-x vira auto pela regra do CSS — ganhava
+     rolagem LATERAL, cortando a coluna da direita. Era o "falta tela". */
+  .hsec-list { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 9px; }
+  /* Uma coluna no celular: em 375px duas colunas dão ~150px cada e quase todo
+     nome vira reticência ("Central de Demand…"). Lista rola, nome inteiro. */
+  @media (max-width: 460px) { .hsec-list { grid-template-columns: minmax(0, 1fr); } }
   .hsec-list[hidden] { display: none; }
   .hsl-item { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: 12px;
                padding: 15px 14px; text-decoration: none; color: var(--text); background: var(--card); font-size: 14.5px; }
@@ -1171,9 +1215,16 @@ window.msgAcessoNegado = function (nomePagina) {
   .hsl-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; opacity: .8; }
   .hsl-tt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hsl-tt .lk { margin-left: 4px; opacity: .6; } .hsl-tt .lk svg { vertical-align: -1px; }
-  .hsec-switch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 11px;
-                  padding-top: 11px; border-top: 1px solid var(--border); }
-  .hsec-sw { border: 1px solid var(--border); border-radius: 10px; padding: 8px 4px; background: var(--card);
+  /* UMA fileira que rola de lado, não grade. Com 6 seções o grid de 3 colunas
+     virava 2 linhas de 111px comendo a altura da lista, e os rótulos longos
+     quebravam em duas linhas — os botões "encolhiam" pra caber. Em fileira
+     cada um fica do tamanho do próprio texto e o conjunto ocupa ~46px. */
+  .hsec-switch { display: flex; gap: 7px; overflow-x: auto; margin-top: 11px;
+                  padding-top: 11px; border-top: 1px solid var(--border);
+                  scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .hsec-switch::-webkit-scrollbar { display: none; }
+  .hsec-sw { flex: 0 0 auto; white-space: nowrap;
+              border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; background: var(--card);
               color: var(--text-2); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
               display: flex; align-items: center; justify-content: center; gap: 6px; }
   .hsec-sw.on { border-color: var(--acc); color: var(--text); background: rgba(208,163,82,.1); }
@@ -1183,7 +1234,7 @@ window.msgAcessoNegado = function (nomePagina) {
 <div class="hsec-ov" id="hsec-ov" hidden>
   <div class="hsec-sheet" role="dialog" aria-modal="true">
     <div class="hsec-cab"><span class="hsec-ai" id="hsec-ai"></span><span class="hsec-ti" id="hsec-ti"></span><button type="button" class="hsec-x" id="hsec-x" aria-label="Fechar">✕</button></div>
-    <div class="hsec-lists"><div class="hsec-list" id="hsec-list-dia" hidden><a class="hsl-item" href="pergunte.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Pergunte ao bar</span></a><a class="hsl-item" href="avisos.html" data-niveis="equipe chefe coord rh treinador marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Avisos</span></a><a class="hsl-item" href="canais.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Intercom</span></a><a class="hsl-item" href="rotinas.html" data-niveis="equipe chefe coord rh treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Rotinas</span></a><a class="hsl-item" href="turno.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Relatório de turno</span></a><a class="hsl-item" href="gestao-produto.html?tab=contagem" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Contagem</span></a><a class="hsl-item" href="producao.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Produção possível</span></a><a class="hsl-item" href="calculadora.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Calculadora PB</span></a><a class="hsl-item" href="eventos.html" data-niveis="equipe chefe coord marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Eventos</span></a><a class="hsl-item" href="demandas.html" data-niveis="equipe chefe coord treinador marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Central de Demandas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="agenda.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Minha Mesa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="captacoes.html" data-niveis="chefe coord marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Captações<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-carta" hidden><a class="hsl-item" href="cocktails.html" data-niveis="equipe chefe coord treinador marketing"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Fichas técnicas</span></a><a class="hsl-item" href="sessao-criativa.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Sessão Criativa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="cerebro-cardapio.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Cérebro · Cardápio<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="cardapio-definicao.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Cardápio em definição<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="constelacao.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Constelação de Sabores<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="harmonizacao.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Sala · Harmonização<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="lab.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Lab de Drinks<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="lab-proposta.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Lab 2.0 — proposta<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="planejador-3d.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Planejador 3D</span></a></div><div class="hsec-list" id="hsec-list-estoque" hidden><a class="hsl-item" href="gestao-produto.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Gestão de Produto</span></a><a class="hsl-item" href="estoque.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Estoque</span></a><a class="hsl-item" href="transferencias.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Buscador entre casas</span></a><a class="hsl-item" href="inventario.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Inventário</span></a><a class="hsl-item" href="avarias.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Avarias<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="inventario.html?tab=venda" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Venda de equipamentos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-numeros" hidden><a class="hsl-item" href="vendas/index.html" data-niveis="coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Vendas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="cerebro-numeros.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Cérebro · Números<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="performance.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Performance</span></a><a class="hsl-item" href="resultados.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Resultados &amp; Impacto<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="minha-casa.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Minha casa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="mercado.html" data-niveis="coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Radar de Mercado<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="contratos.html" data-niveis="coord controladoria"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Contratos On Trade<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="viabilidade-parceria.html" data-niveis="coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Viabilidade de Parceria<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="backbar-ontrade.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Backbar — parceiros<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="orcamento-eventos.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Orçamento de Eventos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="investimentos.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Orçamento de Investimentos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-equipe" hidden><a class="hsl-item" href="time.html" data-niveis="equipe chefe coord rh controladoria treinador marketing"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Time</span></a><a class="hsl-item" href="regimento.html" data-niveis="equipe chefe coord rh treinador"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Regimento Interno</span></a><a class="hsl-item" href="treinamentos.html" data-niveis="equipe chefe coord treinador"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Treinamentos</span></a><a class="hsl-item" href="evolucao.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Evolução do treino<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="regras.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Escala &amp; BH</span></a><a class="hsl-item" href="escala.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Escala (editar)<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="escalas.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Escalas &amp; Reforço</span></a><a class="hsl-item" href="banco-horas.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Banco de Horas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="ferias.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Solicitações de Férias<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="garcons.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Desempenho por garçom<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="organograma.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Organograma<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="recrutamento.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Recrutamento<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="competicoes.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Competições</span></a><a class="hsl-item" href="obrigacoes.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Definir obrigações<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="acessos.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Acessos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-padrao" hidden><a class="hsl-item" href="auditorias.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Auditorias<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="nutricook.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Nutricook</span></a><a class="hsl-item" href="treinamentos-aplicados.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Treinamentos Aplicados<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="demandas-analise.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Análise de Demandas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="doses-painel.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Controle de Doses<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="atividade.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Atividade por pessoa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="presenca.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Presença online<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div></div>
+    <div class="hsec-lists"><div class="hsec-list" id="hsec-list-dia" hidden><a class="hsl-item" href="pergunte.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Pergunte ao bar</span></a><a class="hsl-item" href="avisos.html" data-niveis="equipe chefe coord rh treinador marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Avisos</span></a><a class="hsl-item" href="canais.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Intercom</span></a><a class="hsl-item" href="rotinas.html" data-niveis="equipe chefe coord rh treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Rotinas</span></a><a class="hsl-item" href="turno.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Relatório de turno</span></a><a class="hsl-item" href="gestao-produto.html?tab=contagem" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Contagem</span></a><a class="hsl-item" href="producao.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Produção possível</span></a><a class="hsl-item" href="calculadora.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Calculadora PB</span></a><a class="hsl-item" href="eventos.html" data-niveis="equipe chefe coord marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Eventos</span></a><a class="hsl-item" href="demandas.html" data-niveis="equipe chefe coord treinador marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Central de Demandas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="agenda.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Minha Mesa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="captacoes.html" data-niveis="chefe coord marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Captações<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-carta" hidden><a class="hsl-item" href="cocktails.html" data-niveis="equipe chefe coord treinador marketing"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Fichas técnicas</span></a><a class="hsl-item" href="sessao-criativa.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Sessão Criativa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="cerebro-cardapio.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Cérebro · Cardápio<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="cardapio-definicao.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Cardápio em definição<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="constelacao.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Constelação de Sabores<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="harmonizacao.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Sala · Harmonização<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="lab.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Lab de Drinks<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="lab-proposta.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Lab 2.0 — proposta<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="planejador-3d.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Planejador 3D</span></a></div><div class="hsec-list" id="hsec-list-estoque" hidden><a class="hsl-item" href="gestao-produto.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Gestão de Produto</span></a><a class="hsl-item" href="estoque.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Estoque</span></a><a class="hsl-item" href="transferencias.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Buscador entre casas</span></a><a class="hsl-item" href="producao-interna.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Produção interna</span></a><a class="hsl-item" href="inventario.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Inventário</span></a><a class="hsl-item" href="avarias.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Avarias<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="inventario.html?tab=venda" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Venda de equipamentos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-numeros" hidden><a class="hsl-item" href="vendas/index.html" data-niveis="coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Vendas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="cerebro-numeros.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Cérebro · Números<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="performance.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Performance</span></a><a class="hsl-item" href="resultados.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Resultados &amp; Impacto<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="minha-casa.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Minha casa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="mercado.html" data-niveis="coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Radar de Mercado<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="contratos.html" data-niveis="coord controladoria"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Contratos On Trade<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="viabilidade-parceria.html" data-niveis="coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Viabilidade de Parceria<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="backbar-ontrade.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Backbar — parceiros<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="orcamento-eventos.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Orçamento de Eventos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="investimentos.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Orçamento de Investimentos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-equipe" hidden><a class="hsl-item" href="time.html" data-niveis="equipe chefe coord rh controladoria treinador marketing"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Time</span></a><a class="hsl-item" href="regimento.html" data-niveis="equipe chefe coord rh treinador"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Regimento Interno</span></a><a class="hsl-item" href="treinamentos.html" data-niveis="equipe chefe coord treinador"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Treinamentos</span></a><a class="hsl-item" href="evolucao.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Evolução do treino<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="regras.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Escala &amp; BH</span></a><a class="hsl-item" href="escala.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Escala (editar)<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="escalas.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Escalas &amp; Reforço</span></a><a class="hsl-item" href="banco-horas.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Banco de Horas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="ferias.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Solicitações de Férias<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="garcons.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Desempenho por garçom<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="organograma.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Organograma<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="recrutamento.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Recrutamento<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="competicoes.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Competições</span></a><a class="hsl-item" href="obrigacoes.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Definir obrigações<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="acessos.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Acessos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-padrao" hidden><a class="hsl-item" href="auditorias.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Auditorias<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="nutricook.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Nutricook</span></a><a class="hsl-item" href="treinamentos-aplicados.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Treinamentos Aplicados<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="demandas-analise.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Análise de Demandas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="doses-painel.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Controle de Doses<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="atividade.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Atividade por pessoa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="presenca.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Presença online<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div></div>
     <div class="hsec-switch"><button type="button" class="hsec-sw" data-sec="dia" data-niveis="chefe coord equipe marketing rh treinador"><span class="hsec-swdot" style="background:var(--verde)"></span>Dia a dia</button><button type="button" class="hsec-sw" data-sec="carta" data-niveis="chefe coord equipe marketing treinador"><span class="hsec-swdot" style="background:var(--acc)"></span>Bar & Carta</button><button type="button" class="hsec-sw" data-sec="estoque" data-niveis="chefe controladoria coord equipe"><span class="hsec-swdot" style="background:var(--amarelo)"></span>Estoque & Compras</button><button type="button" class="hsec-sw" data-sec="numeros" data-niveis="chefe controladoria coord equipe"><span class="hsec-swdot" style="background:#86b6d8"></span>Números & Análise</button><button type="button" class="hsec-sw" data-sec="equipe" data-niveis="chefe controladoria coord equipe marketing rh treinador"><span class="hsec-swdot" style="background:var(--lilas)"></span>Equipe</button><button type="button" class="hsec-sw" data-sec="padrao" data-niveis="chefe coord equipe rh treinador"><span class="hsec-swdot" style="background:var(--verde)"></span>Padrão & Acompanhamento</button></div>
   </div>
 </div>
@@ -2239,6 +2290,11 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
       else pill.removeAttribute('data-tem-pessoa');
     }
   }
+  // Exposto porque a busca universal (JS_BUSCA_GLOBAL, roda depois deste
+  // bloco) precisa da MESMA régua de data-dono pra não oferecer "Vendas" a
+  // quem não é o dono. Não vaza nada novo: o valor já está interpolado no
+  // HTML de toda página, aqui só deixa de ficar preso ao IIFE.
+  window.ACESSOS_DONO = ACESSOS_DONO;
   window.definirNivel = function (v) {
     try { localStorage.setItem('portal_nivel', v); } catch (e) {}
     aplica();
@@ -2269,57 +2325,284 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
 <script>
 (function () {
   var COR = { iz: '#d0a352', '1929': '#c9705a', gra: '#8fd0a5', famu: '#a58fd0', fulles: '#6fa8dc', nip: '#d98fb0' };
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var TETO = { paginas: 6, receitas: 8, itens: 8 };
   var btn = document.getElementById('lupa-busca');
   var ov = document.getElementById('busca-global-ov');
   var input = document.getElementById('bg-input');
-  var res = document.getElementById('bg-res');
   var fechar = document.getElementById('bg-fechar');
+  var msg = document.getElementById('bg-msg');
+  var chips = document.getElementById('bg-chips');
+  var SEC = {
+    paginas: document.getElementById('bg-sec-paginas'),
+    receitas: document.getElementById('bg-sec-receitas'),
+    itens: document.getElementById('bg-sec-itens')
+  };
   if (!btn || !ov) return;
-  var idx = null, carregando = false;
+  var fonte = 'tudo';
+  // Cada fonte tem estado PRÓPRIO (dado, carregando, falhou): falha de uma
+  // nunca derruba as outras duas (4.3 do PLANO_BUSCA_UNIVERSAL.md).
+  var rec = { d: null, load: false, erro: false };
+  var pag = { d: null, load: false, erro: false };
+  var itn = { d: null, load: false, erro: false };
 
   function semAcento(s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
 
-  function carrega() {
-    if (idx || carregando) return;
-    carregando = true;
-    fetch('receitas_idx.json').then(function (r) { return r.json(); })
-      .then(function (d) { idx = d; if (input.value.trim().length >= 2) aplica(); })
-      .catch(function () { idx = []; res.innerHTML = '<p class="bg-vazio">Índice indisponível — ' +
-        '<a href="cocktails.html">abrir fichas técnicas</a>.</p>'; });
+  // Mesma régua de JS_NIVEL: o nível vem de portal_nivel (não da sessão) e
+  // bartender enxerga a superfície de equipe. Só decoração — quem recusa de
+  // verdade continua sendo o Worker e o exigirNivel() de cada página.
+  function nivelDaTela() {
+    var n;
+    try { n = localStorage.getItem('portal_nivel') || 'equipe'; } catch (e) { n = 'equipe'; }
+    return n === 'bartender' ? 'equipe' : n;
+  }
+  function sessao() {
+    try { return window.sessaoLer ? window.sessaoLer() : null; } catch (e) { return null; }
+  }
+  function ehDono() {
+    var s = sessao();
+    return !!(s && s.pessoa && window.ACESSOS_DONO && s.pessoa === window.ACESSOS_DONO);
   }
 
-  function marca(nome, q) {
+  function carregaRec() {
+    if (rec.d || rec.load || rec.erro) return;
+    rec.load = true;
+    fetch('receitas_idx.json').then(function (r) { return r.json(); })
+      .then(function (d) { rec.d = d || []; rec.load = false; aplica(); })
+      .catch(function () { rec.erro = true; rec.load = false; aplica(); });
+  }
+  function carregaPag() {
+    if (pag.d || pag.load || pag.erro) return;
+    pag.load = true;
+    fetch('paginas_idx.json').then(function (r) { return r.json(); })
+      .then(function (d) { pag.d = d || []; pag.load = false; aplica(); })
+      .catch(function () { pag.erro = true; pag.load = false; aplica(); });
+  }
+  // D3: 125 KB sob token — nada é buscado ao abrir a caixa. Dispara no
+  // primeiro termo com 2+ letras, uma vez por carga de página.
+  function carregaItens() {
+    if (itn.d || itn.load || itn.erro) return;
+    var s = sessao();
+    if (!WORKER || !s || !s.token) return;
+    itn.load = true;
+    fetch(WORKER + '/api/transferencias', { headers: { 'X-Token': s.token } })
+      .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
+      .then(function (d) { itn.d = d || {}; itn.load = false; aplica(); })
+      .catch(function () { itn.erro = true; itn.load = false; aplica(); });
+  }
+
+  // Realce por DOM (nunca innerHTML): parte do texto vem do Worker.
+  function marcaEl(nome, q) {
+    var f = document.createDocumentFragment();
     var i = semAcento(nome).indexOf(q);
-    if (i < 0) return nome;
-    return nome.slice(0, i) + '<mark>' + nome.slice(i, i + q.length) + '</mark>' + nome.slice(i + q.length);
+    if (i < 0) { f.appendChild(document.createTextNode(nome)); return f; }
+    f.appendChild(document.createTextNode(nome.slice(0, i)));
+    var mk = document.createElement('mark');
+    mk.textContent = nome.slice(i, i + q.length);
+    f.appendChild(mk);
+    f.appendChild(document.createTextNode(nome.slice(i + q.length)));
+    return f;
+  }
+
+  function linha(href, classe) {
+    var a = document.createElement('a');
+    a.className = 'bg-item ' + classe;
+    a.href = href;
+    return a;
+  }
+  function nomeEm(a, nome, q) {
+    var sp = document.createElement('span');
+    sp.className = 'nome';
+    sp.appendChild(marcaEl(nome, q));
+    a.appendChild(sp);
+    return sp;
+  }
+
+  function pinta(chave, itens, monta, verHref, verTexto) {
+    var sec = SEC[chave];
+    if (!sec) return 0;
+    if (fonte !== 'tudo' && fonte !== chave) { sec.hidden = true; return 0; }
+    var lista = sec.querySelector('.bg-sec-lista');
+    lista.textContent = '';
+    var teto = TETO[chave];
+    itens.slice(0, teto).forEach(function (it) { lista.appendChild(monta(it)); });
+    if (itens.length > teto && verHref) {
+      var v = document.createElement('a');
+      v.className = 'bg-ver';
+      v.href = verHref;
+      v.textContent = verTexto;
+      lista.appendChild(v);
+    }
+    sec.hidden = !itens.length;
+    return itens.length;
+  }
+
+  function avisa(chave, texto) {
+    var sec = SEC[chave];
+    if (!sec) return;
+    if (fonte !== 'tudo' && fonte !== chave) { sec.hidden = true; return; }
+    var lista = sec.querySelector('.bg-sec-lista');
+    lista.textContent = '';
+    var p = document.createElement('p');
+    p.className = 'bg-aviso';
+    p.textContent = texto;
+    lista.appendChild(p);
+    sec.hidden = false;
+  }
+
+  function achaPaginas(q) {
+    if (!pag.d) return [];
+    var nivel = nivelDaTela(), dono = ehDono();
+    return pag.d.filter(function (p) {
+      var n = (p.n || '').split(' ');
+      if (n.indexOf(nivel) < 0) return false;
+      if (p.d && !dono) return false;
+      return semAcento(p.t).indexOf(q) >= 0 || semAcento(p.k || '').indexOf(q) >= 0;
+    });
+  }
+
+  function achaReceitas(q) {
+    if (!rec.d) return [];
+    return rec.d.filter(function (it) { return semAcento(it.n).indexOf(q) >= 0; });
+  }
+
+  // D2: "excedente" é lido como GUARDADO, nunca como folga acima do mínimo —
+  // 62% das entradas estão abaixo do mínimo e ordenar por folga poria no topo
+  // a casa de mínimo mais frouxo. Ordem: guardado total desc.
+  function achaItens(q) {
+    if (!itn.d || !itn.d.itens) return [];
+    var casas = itn.d.casas || {};
+    var out = [];
+    itn.d.itens.forEach(function (it) {
+      if (semAcento(it.nome || '').indexOf(q) < 0) return;
+      var tot = 0, onde = [];
+      Object.keys(it.casas || {}).forEach(function (slug) {
+        var g = (it.casas[slug] || {}).guardado || 0;
+        if (g > 0) { tot += g; onde.push({ casa: (casas[slug] || {}).nome || slug, qt: g }); }
+      });
+      if (!tot) return;
+      onde.sort(function (a, b) { return b.qt - a.qt; });
+      out.push({ nome: it.nome, tot: tot, onde: onde });
+    });
+    out.sort(function (a, b) { return b.tot - a.tot; });
+    return out;
   }
 
   function aplica() {
-    var q = semAcento(input.value.trim());
-    if (q.length < 2) { res.innerHTML = '<p class="bg-dica">Digite ao menos 2 letras.</p>'; return; }
-    if (!idx) { res.innerHTML = '<p class="bg-dica">Carregando…</p>'; return; }
-    var achados = idx.filter(function (it) { return semAcento(it.n).indexOf(q) >= 0; }).slice(0, 8);
-    if (!achados.length) {
-      res.innerHTML = '<p class="bg-vazio">Nada com "' + input.value.trim() +
-        '" — <a href="cocktails.html">ver todas as fichas &rarr;</a></p>';
+    var termo = input.value.trim();
+    var q = semAcento(termo);
+    if (q.length < 2) {
+      msg.className = 'bg-dica';
+      msg.textContent = 'Digite ao menos 2 letras.';
+      msg.hidden = false;
+      SEC.paginas.hidden = SEC.receitas.hidden = SEC.itens.hidden = true;
       return;
     }
-    res.innerHTML = '';
-    achados.forEach(function (it) {
-      var a = document.createElement('a');
-      a.className = 'bg-item'; a.href = 'cocktails.html#r-' + it.s;
-      var casas = (it.c || []).map(function (c) {
-        return '<i style="background:' + (COR[c] || '#8f8672') + '"></i>';
-      }).join('');
-      a.innerHTML = '<span class="nome">' + marca(it.n, q) + '</span><span class="bg-casas">' + casas + '</span>';
-      res.appendChild(a);
+    carregaPag(); carregaRec();
+    if (fonte === 'tudo' || fonte === 'itens') carregaItens();
+
+    var nP = pinta('paginas', achaPaginas(q), function (p) {
+      var a = linha(p.u, 'bg-item-pag');
+      nomeEm(a, p.t, q);
+      var g = document.createElement('span');
+      g.className = 'bg-grp';
+      g.textContent = p.g || '';
+      a.appendChild(g);
+      return a;
+    }, 'index.html', 'ver todas as áreas \u2192');
+
+    var nR = pinta('receitas', achaReceitas(q), function (it) {
+      var a = linha('cocktails.html#r-' + it.s, 'bg-item-rec');
+      nomeEm(a, it.n, q);
+      var c = document.createElement('span');
+      c.className = 'bg-casas';
+      (it.c || []).forEach(function (casa) {
+        var i = document.createElement('i');
+        i.style.background = COR[casa] || '#8f8672';
+        c.appendChild(i);
+      });
+      a.appendChild(c);
+      return a;
+    }, 'cocktails.html', 'ver todas as fichas \u2192');
+
+    var nI = 0;
+    var s = sessao();
+    if (fonte === 'tudo' || fonte === 'itens') {
+      if (!WORKER || !s || !s.token) {
+        if (fonte === 'itens') avisa('itens', 'Entre no portal para buscar itens no estoque das casas.');
+        else SEC.itens.hidden = true;
+      } else if (itn.erro) {
+        avisa('itens', 'Não deu para consultar o estoque das casas agora.');
+      } else if (itn.load || !itn.d) {
+        avisa('itens', 'Procurando nas casas\u2026');
+      } else {
+        nI = pinta('itens', achaItens(q), function (it) {
+          var a = linha('transferencias.html?q=' + encodeURIComponent(termo), 'bg-item-item');
+          nomeEm(a, it.nome, q);
+          var c = document.createElement('span');
+          c.className = 'bg-casa-qt';
+          it.onde.forEach(function (o, i) {
+            if (i) c.appendChild(document.createTextNode(' \u00b7 '));
+            c.appendChild(document.createTextNode(o.casa + ' '));
+            var b = document.createElement('b');
+            b.textContent = String(o.qt);
+            c.appendChild(b);
+          });
+          a.appendChild(c);
+          return a;
+        }, 'transferencias.html?q=' + encodeURIComponent(termo), 'ver no buscador entre casas \u2192');
+      }
+    } else {
+      SEC.itens.hidden = true;
+    }
+
+    // A mensagem geral só aparece quando NENHUMA seção está na tela — uma
+    // seção que mostra aviso próprio ("procurando nas casas", "não deu para
+    // consultar") já está falando por si, e um "nada com X" por cima dela se
+    // contradiz.
+    var algumaSecao = !SEC.paginas.hidden || !SEC.receitas.hidden || !SEC.itens.hidden;
+    if (nP + nR + nI > 0 || algumaSecao) { msg.hidden = true; return; }
+    // Nada em nenhuma fonte: uma mensagem só, com as duas saídas.
+    if (pag.load || rec.load || itn.load) {
+      msg.className = 'bg-dica';
+      msg.textContent = 'Carregando\u2026';
+      msg.hidden = false;
+      return;
+    }
+    msg.className = 'bg-vazio';
+    msg.textContent = '';
+    msg.appendChild(document.createTextNode('Nada com "' + termo + '" \u2014 '));
+    var l1 = document.createElement('a');
+    l1.href = 'cocktails.html'; l1.textContent = 'ver fichas';
+    var l2 = document.createElement('a');
+    l2.href = 'transferencias.html'; l2.textContent = 'buscar entre casas';
+    msg.appendChild(l1);
+    msg.appendChild(document.createTextNode(' ou '));
+    msg.appendChild(l2);
+    msg.appendChild(document.createTextNode('.'));
+    msg.hidden = false;
+  }
+
+  if (chips) {
+    chips.addEventListener('click', function (e) {
+      var c = e.target.closest ? e.target.closest('.bg-chip') : null;
+      if (!c) return;
+      fonte = c.dataset.fonte || 'tudo';
+      chips.querySelectorAll('.bg-chip').forEach(function (o) {
+        var on = o === c;
+        o.classList.toggle('ativo', on);
+        o.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      aplica();
     });
   }
 
   function abre() {
     ov.classList.add('aberto');
     document.body.style.overflow = 'hidden';
-    carrega();
+    // Páginas e receitas são arquivos estáticos leves — carregam no foco,
+    // como antes. Itens (125 KB sob token) só a partir de 2 letras (D3).
+    carregaPag(); carregaRec();
     setTimeout(function () { input.focus(); }, 30);
   }
   function fecha() {
@@ -3210,7 +3493,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '2d9627d74581';
+  var BUILD = 'c050ed39a621';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
