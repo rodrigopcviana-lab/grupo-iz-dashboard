@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Produção interna · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=36a43b411cfa">
+<link rel="stylesheet" href="portal.css?v=3c1295eaf04a">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -471,6 +471,7 @@ window.msgAcessoNegado = function (nomePagina) {
 <div id="pi-wrap" hidden>
   <div class="pi-chips" id="pi-chips" hidden></div>
   <p class="pi-aviso" id="pi-granularidade"></p>
+  <div id="pi-procedencia"></div>
   <div id="pi-res"></div>
   <div id="pi-pend" hidden></div>
   <p class="pi-rodape" id="pi-rodape"></p>
@@ -575,10 +576,40 @@ window.msgAcessoNegado = function (nomePagina) {
     renderCasa(DADOS.casas[slug]);
   }
 
+  // Avisa a PROCEDÊNCIA da lista de preparos desta casa — lista emprestada
+  // do Grá (só a dele foi revisada com o dono) e insumos que a casa ainda
+  // não classificou como comprado-pronto/feito-na-casa. Reage à troca de
+  // casa junto com o resto (chamado de dentro de renderCasa).
+  function renderProcedencia(c) {
+    var box = document.getElementById('pi-procedencia');
+    box.innerHTML = '';
+
+    var origem = c.depara_origem || '';
+    if (origem.indexOf('emprestada:') === 0) {
+      var slugDoadora = origem.slice('emprestada:'.length);
+      var nomeDoadora = (DADOS.casas[slugDoadora] && DADOS.casas[slugDoadora].casa) || slugDoadora;
+      box.appendChild(el('p', 'pi-aviso',
+        'Esta casa ainda usa a lista de preparos do ' + nomeDoadora + ' — a previsão pode estar faltando preparos que esta casa faz e o ' + nomeDoadora + ' não.'));
+    }
+
+    var semClass = c.insumos_sem_classificacao || [];
+    if (semClass.length) {
+      var LIMITE = 8;
+      var nomes = semClass.map(function (i) { return (i && i.insumo) || '—'; });
+      var listaTxt = nomes.length > LIMITE
+        ? nomes.slice(0, LIMITE).join(', ') + ' e mais ' + (nomes.length - LIMITE)
+        : nomes.join(', ');
+      box.appendChild(el('p', 'pi-aviso',
+        semClass.length + ' insumo(s) desta casa ainda não foram classificados como comprado pronto ou feito na casa — por isso podem existir preparos fora desta previsão: ' + listaTxt + '.'));
+    }
+  }
+
   function renderCasa(c) {
     var granTxt = 'Previsão de CONSUMO (venda × ficha técnica), não de estoque.';
     if (c.granularidade_real) granTxt += ' Granularidade real do dado: ' + c.granularidade_real + ' — semanal/quinzenal, quando derivados, são estimativa, não medida direta.';
     document.getElementById('pi-granularidade').textContent = granTxt;
+
+    renderProcedencia(c);
 
     var res = document.getElementById('pi-res');
     res.innerHTML = '';
@@ -615,6 +646,7 @@ window.msgAcessoNegado = function (nomePagina) {
       document.getElementById('pi-res').innerHTML = '';
       document.getElementById('pi-res').appendChild(el('p', 'pi-vazio', 'Nenhuma casa disponível.'));
       document.getElementById('pi-granularidade').textContent = '';
+      document.getElementById('pi-procedencia').innerHTML = '';
       document.getElementById('pi-rodape').textContent = '';
       return;
     }
@@ -1988,7 +2020,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '36a43b411cfa';
+  var BUILD = '3c1295eaf04a';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
