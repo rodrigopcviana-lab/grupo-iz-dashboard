@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Sessão Criativa · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=4ced4e307755">
+<link rel="stylesheet" href="portal.css?v=dbe23aaaf582">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -772,8 +772,17 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-cad-ins-fl{grid-column:1/-1;font-size:9.5px;padding:1px 6px;border-radius:99px;
                 margin:1px 0 3px;display:inline-flex;align-items:center;gap:4px;
                 width:fit-content;}
+  /* PESO VISUAL INVERTIDO (2026-08-05). "Sem estoque" é o estado NORMAL de
+     um insumo que ninguém contou ainda — numa receita nova quase toda linha
+     fica assim, e quatro tarjas vermelhas numa lista de quatro param de
+     marcar coisa alguma: viram o fundo da tela.
+
+     O que merece destaque é o contrário. "Tem aqui" e "está em outra casa"
+     são ACIONÁVEIS (pego agora / peço transferência) e são a minoria. Então
+     eles ficam coloridos e o "sem estoque" vira discreto — o vermelho fica
+     guardado pra quando importa. A informação continua toda lá. */
   .sc-cad-ins-fl.tem{background:#163527;color:#9fe1cb;}
-  .sc-cad-ins-fl.nao{background:#3a1c1a;color:#e24b4a;}
+  .sc-cad-ins-fl.nao{background:none;color:#5f5a4a;padding-left:0;}
   .sc-cad-ins-fl.outra{background:#3a2f14;color:#e0b05c;}
   .sc-preco-lin-fl{font-size:9px;padding:0 5px;border-radius:99px;white-space:nowrap;
                    line-height:1.5;flex:none;}
@@ -791,6 +800,13 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-cad-org{grid-column:1/-1;font-size:9px;color:#5f5a4a;margin:-2px 0 2px;}
   .sc-cad-org[hidden]{display:none;}
   /* Conselho do farol: só existe quando o CMV sai da faixa. */
+  /* `sticky` e não `fixed`: o rodapé gruda no fim do MODAL, não da janela —
+     com fixed ele flutuaria sobre a página quando o modal fosse menor que a
+     tela. O fundo precisa ser opaco, senão a lista rola por baixo e some
+     atrás do texto. A margem negativa e o padding compensam o padding do
+     próprio modal, pra faixa encostar nas bordas. */
+  .sc-cad-pe{position:sticky;bottom:0;background:#211c15;margin:0 -12px -12px;
+            padding:2px 12px 10px;border-top:1px solid #3a3428;}
   .sc-cad-conselho{margin-top:8px;background:#2a2113;border:1px solid #3a3428;border-radius:8px;
                   padding:8px 10px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
   .sc-cad-conselho[hidden]{display:none;}
@@ -807,8 +823,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-id-chip{font-size:11px;color:#d0a352;background:#241d10;border:1px solid #3a3428;
              border-radius:99px;padding:3px 9px;cursor:pointer;font-family:inherit;}
   .sc-id-chip:hover{border-color:#d0a352;color:#f3ede2;}
+  /* Mesma inversão do modal: o comum fica quieto, o acionável salta. */
   .sc-preco-lin-fl.tem{background:#163527;color:#9fe1cb;}
-  .sc-preco-lin-fl.nao{background:#3a1c1a;color:#e24b4a;}
+  .sc-preco-lin-fl.nao{background:none;color:#5f5a4a;padding:0;}
   .sc-preco-lin-fl.outra{background:#3a2f14;color:#e0b05c;}
 
   /* Gaveta Preço — lingueta docada na borda direita de `.sc-tela`. Fechada,
@@ -2614,7 +2631,16 @@ window.msgAcessoNegado = function (nomePagina) {
      token — catálogo não é dado sensível). */
   var catalogoInsumos = null;
   function buscaCatalogo(){
-    if (catalogoInsumos) return Promise.resolve(catalogoInsumos);
+    // `montaDatalist()` TAMBÉM no caminho do cache. Esta função é chamada de
+    // 4 lugares (cartão, virar ficha, custo avulso e o input dele); quem
+    // chegasse primeiro preenchia `catalogoInsumos`, e a partir daí o
+    // early-return pulava a montagem — a lista de insumos do modal nascia
+    // VAZIA pra sempre naquela sessão.
+    //
+    // Não aparecia em teste porque abrir o cartão como primeira ação é o
+    // caminho que funciona; basta ter tocado na gaveta Preço antes pra
+    // quebrar. Achado no uso real, não aqui.
+    if (catalogoInsumos){ montaDatalist(); return Promise.resolve(catalogoInsumos); }
     return fetch(WORKER + '/api/receita/catalogo').then(function(r){ return r.ok ? r.json() : {}; })
       .then(function(j){ catalogoInsumos = j || {}; montaDatalist(); return catalogoInsumos; })
       .catch(function(){ catalogoInsumos = {}; return catalogoInsumos; });
@@ -2646,6 +2672,9 @@ window.msgAcessoNegado = function (nomePagina) {
   function montaDatalist(){
     var dl = document.getElementById('sc-bd1-lista');
     if (!dl || !catalogoInsumos) return;
+    // Idempotente: agora que é chamada em todo `buscaCatalogo`, refazer 821
+    // nós a cada abertura de modal seria trabalho jogado fora.
+    if (dl.children.length) return;
     var itens = Object.keys(catalogoInsumos).map(function(k){
       var v = catalogoInsumos[k] || {};
       return {nome: v.nome || k, ml: v.preco_ml};
@@ -2764,15 +2793,23 @@ window.msgAcessoNegado = function (nomePagina) {
       '<div class="sc-cad-ins-h"><span>Insumo</span><span>Qtde</span><span>Un.</span><span>Custo un.</span><span></span></div>' +
       '<div id="sc-cad-ins"></div>' +
       '<button class="sc-cad-add" id="sc-cad-add" type="button">+ adicionar insumo</button>' +
-      '<div class="sc-cad-resumo">' +
-        '<span>Custo <b id="sc-cad-custo">0,00</b></span>' +
-        '<span>Venda sug. <b id="sc-cad-venda">0,00</b></span>' +
-        '<span class="sc-farol ok" id="sc-cad-farol">saudável</span>' +
-      '</div>' +
-      // Conselho só aparece quando há o que aconselhar (ver `pintaConselho`).
-      '<div class="sc-cad-conselho" id="sc-cad-conselho" hidden></div>' +
-      '<div class="lin"><button class="sc-b" data-x="c" type="button">Cancelar</button>' +
-      '<button class="sc-b pri" data-x="o" type="button">Salvar</button></div>';
+      // RODAPÉ FIXO: custo, farol, conselho e botões param de rolar junto
+      // com a lista. Com 4 insumos o modal passa a rolar por dentro (760px
+      // de conteúdo em 584px de altura, medido) e tudo isto caía abaixo da
+      // dobra — justamente os números que a pessoa está tentando mexer, e o
+      // conselho que diz o que fazer. Agora o custo muda à vista enquanto se
+      // edita o insumo.
+      '<div class="sc-cad-pe">' +
+        '<div class="sc-cad-resumo">' +
+          '<span>Custo <b id="sc-cad-custo">0,00</b></span>' +
+          '<span>Venda sug. <b id="sc-cad-venda">0,00</b></span>' +
+          '<span class="sc-farol ok" id="sc-cad-farol">saudável</span>' +
+        '</div>' +
+        // Conselho só aparece quando há o que aconselhar (ver `pintaConselho`).
+        '<div class="sc-cad-conselho" id="sc-cad-conselho" hidden></div>' +
+        '<div class="lin"><button class="sc-b" data-x="c" type="button">Cancelar</button>' +
+        '<button class="sc-b pri" data-x="o" type="button">Salvar</button></div>' +
+      '</div>';
     tela.appendChild(box);
 
     var elNome = box.querySelector('#sc-cad-nome'), elCopo = box.querySelector('#sc-cad-copo');
@@ -7170,7 +7207,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '4ced4e307755';
+  var BUILD = 'dbe23aaaf582';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
