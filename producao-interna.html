@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Produção interna · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=c050ed39a621">
+<link rel="stylesheet" href="portal.css?v=c31ebcd8f70f">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -437,9 +437,13 @@ window.msgAcessoNegado = function (nomePagina) {
 
 
 <h1>Produção interna</h1>
-<p class="sub">Previsão de quanto produzir de preparo da casa (suco, xarope caseiro…) por semana/quinzena/mês — a partir do histórico de venda × ficha técnica. Piloto só Grá Bistrô.</p>
+<p class="sub">Previsão de quanto produzir de preparo da casa (suco, xarope caseiro…) por semana/quinzena/mês — a partir do histórico de venda × ficha técnica.</p>
 
 <style>
+  .pi-chips { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 16px; }
+  .pi-chip { font-size:12.5px; padding:6px 13px; border-radius:999px; cursor:pointer;
+    background:var(--card); color:var(--text-2); border:1px solid var(--border); }
+  .pi-chip.on { background:var(--acc); color:var(--acc-txt,#171310); border-color:var(--acc); font-weight:600; }
   .pi-aviso { font-size:12.5px; color:var(--text-3); border-left:2px solid var(--border);
     padding:2px 0 2px 10px; margin:0 0 16px; }
   .pi-card { background:var(--card); border:1px solid var(--border); border-radius:12px;
@@ -465,6 +469,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </div>
 
 <div id="pi-wrap" hidden>
+  <div class="pi-chips" id="pi-chips" hidden></div>
   <p class="pi-aviso" id="pi-granularidade"></p>
   <div id="pi-res"></div>
   <div id="pi-pend" hidden></div>
@@ -543,36 +548,79 @@ window.msgAcessoNegado = function (nomePagina) {
     cx.appendChild(document.createTextNode(d.pendencias_match.join(', ')));
   }
 
-  function inicia(d) {
-    wrap.hidden = false;
-    document.getElementById('pi-gate').style.display = 'none';
+  // Ordem de exibição fixa — não confiar em Object.keys(d.casas): chave
+  // "1929" é numérica pro motor de JS e enumeraria fora de ordem (vem
+  // primeiro, ignorando a ordem de inserção do JSON).
+  var ORDEM_CASAS = ['gra-bistro', '1929', 'famu', 'fulles', 'iz', 'nip'];
+  var DADOS = null;
+  var CASA_ATUAL = null;
 
+  function montaChips() {
+    var slugs = ORDEM_CASAS.filter(function (s) { return DADOS.casas[s]; });
+    var cx = document.getElementById('pi-chips');
+    if (slugs.length <= 1) { cx.hidden = true; return; }
+    cx.hidden = false;
+    cx.innerHTML = '';
+    slugs.forEach(function (slug) {
+      var b = el('button', 'pi-chip' + (slug === CASA_ATUAL ? ' on' : ''), DADOS.casas[slug].casa || slug);
+      b.type = 'button';
+      b.addEventListener('click', function () { selecionaCasa(slug); });
+      cx.appendChild(b);
+    });
+  }
+
+  function selecionaCasa(slug) {
+    CASA_ATUAL = slug;
+    montaChips();
+    renderCasa(DADOS.casas[slug]);
+  }
+
+  function renderCasa(c) {
     var granTxt = 'Previsão de CONSUMO (venda × ficha técnica), não de estoque.';
-    if (d.granularidade_real) granTxt += ' Granularidade real do dado: ' + d.granularidade_real + ' — semanal/quinzenal, quando derivados, são estimativa, não medida direta.';
+    if (c.granularidade_real) granTxt += ' Granularidade real do dado: ' + c.granularidade_real + ' — semanal/quinzenal, quando derivados, são estimativa, não medida direta.';
     document.getElementById('pi-granularidade').textContent = granTxt;
 
     var res = document.getElementById('pi-res');
     res.innerHTML = '';
-    var preparos = d.preparos || [];
+    var preparos = c.preparos || [];
     if (!preparos.length) {
       res.appendChild(el('p', 'pi-vazio', 'Nenhum preparo com dado suficiente ainda.'));
     } else {
       preparos.forEach(function (p) { res.appendChild(cardPreparo(p)); });
     }
 
-    renderPendencias(d);
+    renderPendencias(c);
 
     var rodape = [];
-    if (d.gerado_de) {
-      if (typeof d.gerado_de.vendas_meses_disponiveis === 'number') {
-        rodape.push(d.gerado_de.vendas_meses_disponiveis + ' mês(es) de venda disponíveis');
+    if (c.gerado_de) {
+      if (typeof c.gerado_de.vendas_meses_disponiveis === 'number') {
+        rodape.push(c.gerado_de.vendas_meses_disponiveis + ' mês(es) de venda disponíveis');
       }
-      if (d.gerado_de.contagem_atualizada_em) {
-        rodape.push('contagem atualizada em ' + d.gerado_de.contagem_atualizada_em);
+      if (c.gerado_de.contagem_atualizada_em) {
+        rodape.push('contagem atualizada em ' + c.gerado_de.contagem_atualizada_em);
       }
     }
-    if (d.aviso_estoque) rodape.push(d.aviso_estoque);
+    if (c.aviso_estoque) rodape.push(c.aviso_estoque);
     document.getElementById('pi-rodape').textContent = rodape.join(' · ');
+  }
+
+  function inicia(d) {
+    wrap.hidden = false;
+    document.getElementById('pi-gate').style.display = 'none';
+
+    DADOS = d;
+    var primeira = ORDEM_CASAS.filter(function (s) { return d.casas && d.casas[s]; })[0];
+    if (!primeira) {
+      document.getElementById('pi-chips').hidden = true;
+      document.getElementById('pi-res').innerHTML = '';
+      document.getElementById('pi-res').appendChild(el('p', 'pi-vazio', 'Nenhuma casa disponível.'));
+      document.getElementById('pi-granularidade').textContent = '';
+      document.getElementById('pi-rodape').textContent = '';
+      return;
+    }
+    CASA_ATUAL = primeira;
+    montaChips();
+    renderCasa(d.casas[primeira]);
   }
 
   function carrega(sessao) {
@@ -1940,7 +1988,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c050ed39a621';
+  var BUILD = 'c31ebcd8f70f';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

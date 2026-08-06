@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Demandas unificadas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=c050ed39a621">
+<link rel="stylesheet" href="portal.css?v=c31ebcd8f70f">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -627,6 +627,13 @@ Chefe de bar vê a própria casa; coordenação vê todas.</p>
   // "todas as casas" pra ele seria mentira de tela — o dado é honesto, o
   // texto tem que ser também.
   function escopoTexto() { return AMPLA ? 'todas as casas' : ('no ' + (CASAS[minha] || minha)); }
+  // Num recorte que JÁ É "Resolvido", contar quantas "precisam pra hoje" é uma
+  // afirmação no presente sobre pendência que não existe mais: "Necessário
+  // desde" é carimbo do registro, não cobrança viva. Medido na base real —
+  // 2 das 8 resolvidas têm urgência Hoje/Urgente, e o KPI dizia "2 precisam
+  // pra hoje" numa tela onde tudo já foi fechado. Mesma família do "0 abertas"
+  // que o modo status já evita.
+  function soResolvidas() { return MODO === 'status' && valorAtual === 'Resolvido'; }
 
   function dias(iso) {
     if (!iso) return null;
@@ -760,7 +767,7 @@ Chefe de bar vê a própria casa; coordenação vê todas.</p>
     var sol = itens.length - oco;
     var partes = [];
     if (maisVelha !== null) partes.push('mais antiga há ' + frase(maisVelha, 'dia', 'dias'));
-    if (hoje) partes.push(frase(hoje, 'precisa', 'precisam') + ' pra hoje');
+    if (hoje && !soResolvidas()) partes.push(frase(hoje, 'precisa', 'precisam') + ' pra hoje');
     partes.push(frase(oco, 'ocorrência', 'ocorrências') + ' · ' + frase(sol, 'solicitação', 'solicitações'));
 
     // Dentro da seção: urgência primeiro, mais antiga depois — a mesma régua
@@ -813,7 +820,9 @@ Chefe de bar vê a própria casa; coordenação vê todas.</p>
       h += '<div class="dc-kpi"><div class="v">' + principais.length + '</div><div class="l">abertas</div></div>';
       h += '<div class="dc-kpi"><div class="v">' + historico.length + '</div><div class="l">resolvidas</div></div>';
     }
-    h += '<div class="dc-kpi"><div class="v' + (hoje ? ' warn' : '') + '">' + hoje + '</div><div class="l">precisam pra hoje</div></div>';
+    if (!soResolvidas()) {
+      h += '<div class="dc-kpi"><div class="v' + (hoje ? ' warn' : '') + '">' + hoje + '</div><div class="l">precisam pra hoje</div></div>';
+    }
     h += '<div class="dc-kpi"><div class="v' + (maisVelha !== null && maisVelha > 7 ? ' warn' : '') + '">' +
          (maisVelha === null ? '—' : maisVelha) + '</div><div class="l">dias da ' +
          (MODO === 'status' ? 'mais antiga' : 'aberta mais antiga') + '</div></div>';
@@ -2303,7 +2312,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c050ed39a621';
+  var BUILD = 'c31ebcd8f70f';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
