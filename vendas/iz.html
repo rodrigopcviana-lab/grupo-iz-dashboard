@@ -28,6 +28,11 @@
   .gate p.d { font-size: 12px; color: var(--text-3); margin: 0 0 14px; }
   .gate .msg { font-size: 12px; color: var(--amarelo); margin-top: 10px; min-height: 14px; }
   .gate a { color: var(--acc); }
+  .gate input[type=password] { width:100%; background:var(--card2); border:1px solid var(--border);
+    border-radius:9px; padding:9px 12px; color:var(--text); font-size:13px; margin-top:8px; }
+  .gate button { width:100%; margin-top:8px; background:var(--acc); color:var(--acc-txt); font-weight:600;
+    border:none; border-radius:9px; padding:9px 12px; font-size:13px; cursor:pointer; }
+  .gate .msg.erro { color: var(--verm); }
 
   .estado-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; position:sticky; top:0;
     background:var(--bg); padding:10px 0; z-index:50; border-bottom:1px solid var(--border); }
@@ -142,6 +147,11 @@
   <h2>IZ Restaurante</h2>
   <p class="d">Área restrita — o acesso vem do login do Portal dos Bares.</p>
   <p class="msg" id="gateMsg">Verificando seu acesso…</p>
+  <form id="gate-senha-form" style="display:none" onsubmit="return enviaSenhaVendas(event)">
+    <input type="password" id="gate-senha-input" placeholder="Senha de vendas" autocomplete="off">
+    <button type="submit">Entrar</button>
+    <p class="msg erro" id="gate-senha-erro"></p>
+  </form>
 </div>
 
 <div id="app" style="display:none">
@@ -588,8 +598,18 @@ function aplicaDados(d) {
 }
 
 const SESSAO_LS = 'portal_sessao';
-const NIVEIS_OK = ['coord', 'controladoria'];
-try { localStorage.removeItem('vendas_senha'); } catch (e) {} // esquema antigo: senha em claro
+// Vendas é exclusiva do dono desde 2026-08-06 — controladoria via a página até aqui e deixou de ver;
+// o gate real é o Worker (só coord passa, e só com a 2ª senha abaixo), isto é só espelho de UI.
+const NIVEIS_OK = ['coord'];
+try { localStorage.removeItem('vendas_senha'); } catch (e) {} // esquema antigo: senha em claro no localStorage
+
+// 2ª senha (X-Senha-Vendas): fica em sessionStorage, NUNCA localStorage — precisa morrer quando a aba
+// fecha, decisão de segurança do dono, não estilo. Nunca vai para console.log, URL ou atributo HTML.
+const SENHA_VENDAS_SS = 'vendas_senha';
+function senhaVendasLer(){ try { return sessionStorage.getItem(SENHA_VENDAS_SS) || ''; } catch (e) { return ''; } }
+function senhaVendasSalvar(v){ try { sessionStorage.setItem(SENHA_VENDAS_SS, v); } catch (e) {} }
+function senhaVendasLimpar(){ try { sessionStorage.removeItem(SENHA_VENDAS_SS); } catch (e) {} }
+
 function sessaoLer(){
   try {
     const s = JSON.parse(localStorage.getItem(SESSAO_LS) || 'null');
@@ -605,13 +625,51 @@ function voltaSlug(){
 function irParaLogin(){
   location.replace('../index.html?volta=' + encodeURIComponent(voltaSlug()) + '#nivel');
 }
+function pedeSenhaVendas(comErro){
+  document.getElementById('gate-senha-erro').textContent = comErro ? 'Senha de vendas incorreta.' : '';
+  document.getElementById('gate-senha-form').style.display = '';
+  document.getElementById('gateMsg').textContent = '';
+  const campo = document.getElementById('gate-senha-input');
+  campo.value = '';
+  campo.focus();
+}
+function enviaSenhaVendas(ev){
+  ev.preventDefault();
+  const v = document.getElementById('gate-senha-input').value;
+  senhaVendasSalvar(v);
+  document.getElementById('gate-senha-form').style.display = 'none';
+  const s = sessaoLer();
+  if (s) carrega(s.token); else irParaLogin();
+  return false;
+}
 function carrega(token){
   const msg = document.getElementById('gateMsg');
   msg.textContent = 'Carregando…';
   return fetch(`${WORKER_URL}/api/vendas?casa=${encodeURIComponent(CASA_SLUG)}`, {
-    headers: { 'X-Token': token }
+    headers: { 'X-Token': token, 'X-Senha-Vendas': senhaVendasLer() }
   }).then(async r => {
-    if (r.status === 401) { sessaoLimpar(); irParaLogin(); return false; }
+    if (r.status === 401) {
+      let corpo = null;
+      try { corpo = await r.json(); } catch (e) {}
+      if (corpo && corpo.precisa_senha) {
+        const tinhaSenha = !!senhaVendasLer();
+        senhaVendasLimpar();
+        pedeSenhaVendas(tinhaSenha);
+        return false;
+      }
+      sessaoLimpar(); irParaLogin(); return false;
+    }
+    if (r.status === 503) {
+      let corpo = null;
+      try { corpo = await r.json(); } catch (e) {}
+      if (corpo && corpo.erro === 'sem_config') {
+        document.getElementById('gate-senha-form').style.display = 'none';
+        msg.textContent = 'A senha de vendas ainda não foi configurada no servidor.';
+        return false;
+      }
+      msg.textContent = `Erro ao carregar (${r.status}). Tente de novo.`;
+      return false;
+    }
     if (!r.ok) { msg.textContent = `Erro ao carregar (${r.status}). Tente de novo.`; return false; }
     aplicaDados(await r.json());
     return true;
