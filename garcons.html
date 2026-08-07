@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Desempenho por garçom · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=c269a46712e0">
+<link rel="stylesheet" href="portal.css?v=2224f85d9b1e">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -121,10 +121,61 @@ window.sessaoSalvar = function (nivel, token, exp, casa, pessoa) {
 window.sessaoLimpar = function () {
   try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
 };
+// Id do aparelho (localStorage, por NAVEGADOR e não por pessoa). Nasceu no
+// heartbeat de presença (JS_PRESENCA) e subiu pra cá porque o LOGIN também
+// precisa dele: senha de tier compartilhado não gera evento de presença
+// nenhum, então o login é o único ponto onde essas sessões deixam rastro de
+// qual aparelho entrou. Mesma chave dos dois lados, senão o mesmo aparelho
+// apareceria com dois ids e o apelido não valeria nos dois lugares.
+window.portalDeviceId = function () {
+  try {
+    var k = localStorage.getItem('portal_device');
+    if (!k) { k = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('portal_device', k); }
+    return k;
+  } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
+};
+// Impressão digital do aparelho. O que ela resolve NÃO é "de que marca é o
+// celular" — é sobreviver a limpar o localStorage: sem ela, quem limpa vira
+// um device id novo e o rastro se perde sem ninguém perceber. Só lê o que o
+// navegador expõe sem permissão nenhuma; nada aqui pergunta nada ao usuário.
+window._pfpAlta = null;
+window.portalFingerprint = function () {
+  var fp = {};
+  try {
+    fp.tela = (screen.width | 0) + 'x' + (screen.height | 0) + '@' + (window.devicePixelRatio || 1);
+    fp.idioma = (navigator.languages && navigator.languages.join(',')) || navigator.language || '';
+    fp.tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+    fp.cpu = navigator.hardwareConcurrency || null;
+    fp.mem = navigator.deviceMemory || null;
+    fp.toque = navigator.maxTouchPoints || 0;
+  } catch (e) {}
+  // Preenchidos pelos Client Hints abaixo, que são assíncronos.
+  if (window._pfpAlta) { fp.modelo = window._pfpAlta.modelo; fp.so = window._pfpAlta.so; }
+  return fp;
+};
+// Client Hints de alta entropia: só o Chromium responde (Safari recusa por
+// política, então iPhone NUNCA devolve modelo — não é falha, é o navegador).
+// É assíncrono e dispara uma vez por carga: o primeiro envio da página pode
+// sair sem `modelo`, os seguintes levam.
+(function () {
+  try {
+    var uad = navigator.userAgentData;
+    if (!uad || !uad.getHighEntropyValues) return;
+    uad.getHighEntropyValues(['model', 'platformVersion']).then(function (v) {
+      window._pfpAlta = {
+        modelo: v.model || null,
+        so: ((v.platform || '') + ' ' + (v.platformVersion || '')).trim() || null,
+      };
+    }).catch(function () {});
+  } catch (e) {}
+})();
 window.loginSenha = function (worker, senha) {
   return fetch(worker + '/api/nivel', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ senha: senha }),
+    body: JSON.stringify({
+      senha: senha, device: window.portalDeviceId(),
+      pg: location.pathname, fp: window.portalFingerprint(),
+    }),
   }).then(function (r) {
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
@@ -185,7 +236,11 @@ window.msgAcessoNegado = function (nomePagina) {
 <script>
 (function () {
   var PRES_WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  // Delega pro helper de JS_SESSAO (injetado antes deste bloco) pra login e
+  // presença carimbarem o MESMO id; a cópia local fica só como reserva se a
+  // ordem de injeção mudar algum dia.
   function deviceId() {
+    if (window.portalDeviceId) return window.portalDeviceId();
     try {
       var k = localStorage.getItem('portal_device');
       if (!k) { k = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('portal_device', k); }
@@ -216,7 +271,14 @@ window.msgAcessoNegado = function (nomePagina) {
     } catch (e) {}
     fetch(PRES_WORKER + '/api/presenca', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
-      body: JSON.stringify({ device: deviceId(), label: deviceLabel() }),
+      // `pg` = em que página o ping aconteceu; `fp` = impressão digital do
+      // aparelho (helpers em JS_SESSAO). Os dois só servem à Presença online,
+      // que é coord-only — nenhuma outra superfície lê isso.
+      body: JSON.stringify({
+        device: deviceId(), label: deviceLabel(),
+        pg: location.pathname,
+        fp: window.portalFingerprint ? window.portalFingerprint() : null,
+      }),
     }).catch(function () {});
   };
   window.marcaPresenca();
@@ -2012,7 +2074,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c269a46712e0';
+  var BUILD = '2224f85d9b1e';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

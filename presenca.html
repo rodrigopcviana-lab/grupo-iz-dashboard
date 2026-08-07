@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Presença online · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=c269a46712e0">
+<link rel="stylesheet" href="portal.css?v=2224f85d9b1e">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -121,10 +121,61 @@ window.sessaoSalvar = function (nivel, token, exp, casa, pessoa) {
 window.sessaoLimpar = function () {
   try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
 };
+// Id do aparelho (localStorage, por NAVEGADOR e não por pessoa). Nasceu no
+// heartbeat de presença (JS_PRESENCA) e subiu pra cá porque o LOGIN também
+// precisa dele: senha de tier compartilhado não gera evento de presença
+// nenhum, então o login é o único ponto onde essas sessões deixam rastro de
+// qual aparelho entrou. Mesma chave dos dois lados, senão o mesmo aparelho
+// apareceria com dois ids e o apelido não valeria nos dois lugares.
+window.portalDeviceId = function () {
+  try {
+    var k = localStorage.getItem('portal_device');
+    if (!k) { k = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('portal_device', k); }
+    return k;
+  } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
+};
+// Impressão digital do aparelho. O que ela resolve NÃO é "de que marca é o
+// celular" — é sobreviver a limpar o localStorage: sem ela, quem limpa vira
+// um device id novo e o rastro se perde sem ninguém perceber. Só lê o que o
+// navegador expõe sem permissão nenhuma; nada aqui pergunta nada ao usuário.
+window._pfpAlta = null;
+window.portalFingerprint = function () {
+  var fp = {};
+  try {
+    fp.tela = (screen.width | 0) + 'x' + (screen.height | 0) + '@' + (window.devicePixelRatio || 1);
+    fp.idioma = (navigator.languages && navigator.languages.join(',')) || navigator.language || '';
+    fp.tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+    fp.cpu = navigator.hardwareConcurrency || null;
+    fp.mem = navigator.deviceMemory || null;
+    fp.toque = navigator.maxTouchPoints || 0;
+  } catch (e) {}
+  // Preenchidos pelos Client Hints abaixo, que são assíncronos.
+  if (window._pfpAlta) { fp.modelo = window._pfpAlta.modelo; fp.so = window._pfpAlta.so; }
+  return fp;
+};
+// Client Hints de alta entropia: só o Chromium responde (Safari recusa por
+// política, então iPhone NUNCA devolve modelo — não é falha, é o navegador).
+// É assíncrono e dispara uma vez por carga: o primeiro envio da página pode
+// sair sem `modelo`, os seguintes levam.
+(function () {
+  try {
+    var uad = navigator.userAgentData;
+    if (!uad || !uad.getHighEntropyValues) return;
+    uad.getHighEntropyValues(['model', 'platformVersion']).then(function (v) {
+      window._pfpAlta = {
+        modelo: v.model || null,
+        so: ((v.platform || '') + ' ' + (v.platformVersion || '')).trim() || null,
+      };
+    }).catch(function () {});
+  } catch (e) {}
+})();
 window.loginSenha = function (worker, senha) {
   return fetch(worker + '/api/nivel', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ senha: senha }),
+    body: JSON.stringify({
+      senha: senha, device: window.portalDeviceId(),
+      pg: location.pathname, fp: window.portalFingerprint(),
+    }),
   }).then(function (r) {
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
@@ -185,7 +236,11 @@ window.msgAcessoNegado = function (nomePagina) {
 <script>
 (function () {
   var PRES_WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  // Delega pro helper de JS_SESSAO (injetado antes deste bloco) pra login e
+  // presença carimbarem o MESMO id; a cópia local fica só como reserva se a
+  // ordem de injeção mudar algum dia.
   function deviceId() {
+    if (window.portalDeviceId) return window.portalDeviceId();
     try {
       var k = localStorage.getItem('portal_device');
       if (!k) { k = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('portal_device', k); }
@@ -216,7 +271,14 @@ window.msgAcessoNegado = function (nomePagina) {
     } catch (e) {}
     fetch(PRES_WORKER + '/api/presenca', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
-      body: JSON.stringify({ device: deviceId(), label: deviceLabel() }),
+      // `pg` = em que página o ping aconteceu; `fp` = impressão digital do
+      // aparelho (helpers em JS_SESSAO). Os dois só servem à Presença online,
+      // que é coord-only — nenhuma outra superfície lê isso.
+      body: JSON.stringify({
+        device: deviceId(), label: deviceLabel(),
+        pg: location.pathname,
+        fp: window.portalFingerprint ? window.portalFingerprint() : null,
+      }),
     }).catch(function () {});
   };
   window.marcaPresenca();
@@ -488,6 +550,31 @@ window.msgAcessoNegado = function (nomePagina) {
                border: 1px solid var(--border); border-radius: 999px;
                padding: 1px 7px; margin-left: 8px; white-space: nowrap; }
   .ps-vazio { color: var(--text-3); font-size: 13px; }
+  /* Linha de rede (IP/operadora/cidade) sob o aparelho. Fonte tabular pro IP
+     não dançar entre linhas. */
+  .ps-rede { font-size: 11.5px; color: var(--text-3); padding: 2px 0 0 14px;
+             font-variant-numeric: tabular-nums; word-break: break-word; }
+  .ps-rede b { color: var(--text-2); font-weight: 600; }
+  /* O aparelho e a rede dele são UM item: o tracejado separa itens, então
+     mora no invólucro. Sem isto ele cortava a linha da rede do próprio
+     aparelho, sugerindo que ela pertencia ao aparelho de baixo. */
+  .ps-dev { border-bottom: 1px dashed var(--border); padding-bottom: 4px; }
+  .ps-dev:last-child { border-bottom: none; }
+  .ps-dev .ps-on { border-bottom: none; padding-bottom: 2px; }
+  /* Aparelho NÃO reconhecido pelo dono — âmbar, não vermelho: é "olhe isto",
+     não "isto é um invasor". Quem decide o que é intruso é o Rodrigo. */
+  .ps-alerta { border-left: 3px solid var(--amarelo, #d9a441); padding-left: 9px; }
+  .ps-bt { font-size: 11px; color: var(--acc); cursor: pointer; margin-left: 8px; white-space: nowrap; }
+  .ps-log { font-size: 12.5px; padding: 7px 0; border-bottom: 1px dashed var(--border); }
+  .ps-log:last-child { border-bottom: none; }
+  .ps-log .top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+  .ps-log .chave { font-weight: 600; color: var(--text); font-family: var(--mono, monospace); font-size: 12px; }
+  .ps-log .quando { color: var(--acc); font-variant-numeric: tabular-nums; }
+  .ps-log.falhou .chave { color: var(--vermelho, #c4553d); }
+  .ps-filtros { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 10px; }
+  .ps-filtro { font-size: 12px; border: 1px solid var(--border); border-radius: 999px;
+               padding: 3px 10px; cursor: pointer; color: var(--text-2); background: transparent; }
+  .ps-filtro[aria-pressed="true"] { border-color: var(--acc); color: var(--acc); }
 </style>
 <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg> Presença online</h1>
 <p class="sub">Quem está online agora e histórico de tempo de uso. Quem tem
@@ -501,12 +588,37 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   <div class="ps-card">
     <h2>Aparelhos conectados agora</h2>
     <p class="sub" style="margin:2px 0 8px;font-size:12px">Sessões ativas neste
-    momento — pelo aparelho e horário. Os seus (coordenação) e os acessos sem
-    identificação (senha compartilhada).</p>
-    <div style="font-size:11px;color:var(--text-3);margin:6px 0 2px;text-transform:uppercase;letter-spacing:.04em">Meus aparelhos</div>
+    momento, com <b>de onde cada uma se conecta</b>. Marque “é meu” nos seus
+    aparelhos — o que sobrar embaixo é a lista do que você ainda não
+    reconheceu.</p>
+    <div style="font-size:11px;color:var(--text-3);margin:6px 0 2px;text-transform:uppercase;letter-spacing:.04em">Meus aparelhos (reconhecidos)</div>
     <div id="ps-meus"></div>
-    <div style="font-size:11px;color:var(--text-3);margin:12px 0 2px;text-transform:uppercase;letter-spacing:.04em">Outros acessos</div>
+    <div style="font-size:11px;color:var(--text-3);margin:12px 0 2px;text-transform:uppercase;letter-spacing:.04em">Ainda não reconhecidos</div>
     <div id="ps-outros"></div>
+  </div>
+  <!-- Cruzamento por IP (2026-08-07): não coleta nada novo, é análise do que
+       já entra. Responde "este aparelho desconhecido já saiu do mesmo
+       endereço que alguém que eu sei quem é?" — a pista mais forte que existe
+       aqui, e a que antes dependia de comparar na mão. -->
+  <div class="ps-card">
+    <h2>Aparelho desconhecido × gente conhecida</h2>
+    <p class="sub" style="margin:2px 0 8px;font-size:12px">Endereços de rede em
+    que um aparelho <b>não reconhecido</b> apareceu junto com alguém de senha
+    individual. Não é prova — é por onde começar a perguntar.</p>
+    <div id="ps-cruza"><p class="ps-vazio">Carregando…</p></div>
+  </div>
+  <!-- Registro de login (2026-08-07): a ÚNICA superfície que enxerga senha de
+       tier compartilhado. `_boss` (izbar2026) é coord sem `pessoa`, então
+       nunca gerou evento de presença — não existe histórico dela antes daqui.
+       Mostra também tentativa recusada, que é o sinal de alguém tateando. -->
+  <div class="ps-card">
+    <h2>Registro de entradas</h2>
+    <p class="sub" style="margin:2px 0 8px;font-size:12px">Toda vez que uma
+    senha é digitada — inclusive as <b>compartilhadas</b>, que não aparecem em
+    nenhuma outra lista desta página. Mostra qual senha foi usada (pelo nome
+    da chave, nunca a senha em si), de onde e em qual aparelho.</p>
+    <div class="ps-filtros" id="ps-log-filtros"></div>
+    <div id="ps-logins"><p class="ps-vazio">Carregando…</p></div>
   </div>
   <div class="ps-card">
     <h2>Online agora</h2>
@@ -550,7 +662,21 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     concreta, e coord não tem uma, então nenhum acesso de coordenação virou
     histórico. O tempo de uso da coordenação anterior a 06/08/2026 não existe
     em lugar nenhum e não dá pra reconstruir.</p>
-  </div>
+    <p class="sub" style="margin:8px 0 0;font-size:12.5px"><b>Sobre a rede:</b>
+    IP, operadora e cidade passaram a ser gravados em <b>07/08/2026</b>, junto
+    com o <b>Registro de entradas</b>. Sessão anterior aparece como “rede não
+    registrada”. Nada disso identifica uma pessoa sozinho — o que identifica é
+    o cruzamento: um aparelho desconhecido saindo do mesmo IP que alguém de
+    senha individual usa é a pista forte. Cidade e operadora vêm do
+    Cloudflare e têm precisão de cidade, não de endereço.</p>
+    <p class="sub" style="margin:8px 0 0;font-size:12.5px"><b>Modelo, tela e
+    página visitada:</b> o modelo do aparelho só aparece no Android — o Safari
+    recusa entregá-lo, então <b>iPhone nunca mostra modelo</b>, e isso não é
+    falha de leitura. Tela, idioma e fuso servem pra reconhecer o mesmo
+    aparelho depois de alguém limpar os dados do navegador, quando o
+    identificador muda e o rastro se perderia. A <b>página</b> de cada acesso
+    mostra o que a pessoa foi ver — é o que separa quem passou no mural de
+    quem abriu Banco de Horas ou Vendas.</p>
 </div>
 
 <script>
@@ -596,6 +722,109 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   // Apelidos dos aparelhos, vindos do próprio /api/presenca/detalhe (mapa
   // device -> apelido, o MESMO que "Aparelhos conectados agora" usa).
   var APELIDOS = {};
+  // Aparelhos que o dono marcou como dele (mapa device -> true).
+  var MEUS = {};
+
+  // ─── Leitura da rede (2026-08-07) ──────────────────────────────────────
+  // O que responde "de onde veio". Operadora primeiro, porque é o campo que
+  // separa "dentro de uma casa" de "internet residencial" de "celular na
+  // rua"; o IP vem por último, é o que amarra dois aparelhos à mesma rede.
+  function txtRede(r) {
+    if (!r || typeof r !== 'object') return '';
+    var p = [];
+    if (r.org) p.push(r.org);
+    var loc = [r.cidade, r.regiao].filter(Boolean).join('/');
+    if (loc) p.push(loc);
+    if (r.ip) p.push(r.ip);
+    return p.join(' · ');
+  }
+  // Versão exata de OS e navegador — é o que separa dois "iPhone" que hoje
+  // aparecem idênticos. A ordem dos testes importa: o UA do Chrome contém
+  // "Safari" e o do Edge contém "Chrome", então o mais específico vem antes.
+  function txtSO(ua) {
+    if (!ua) return '';
+    var m;
+    if ((m = ua.match(/iPhone OS ([\d_]+)/))) return 'iOS ' + m[1].replace(/_/g, '.');
+    if ((m = ua.match(/CPU OS ([\d_]+)/))) return 'iPadOS ' + m[1].replace(/_/g, '.');
+    if ((m = ua.match(/Android ([\d.]+)/))) return 'Android ' + m[1];
+    if ((m = ua.match(/Mac OS X ([\d_.]+)/))) return 'macOS ' + m[1].replace(/_/g, '.');
+    if (/Windows NT 10/.test(ua)) return 'Windows 10/11';
+    if ((m = ua.match(/Windows NT ([\d.]+)/))) return 'Windows NT ' + m[1];
+    if (/Linux/.test(ua)) return 'Linux';
+    return '';
+  }
+  function txtNav(ua) {
+    if (!ua) return '';
+    var m;
+    if ((m = ua.match(/(?:Edg|EdgiOS|EdgA)\/([\d.]+)/))) return 'Edge ' + m[1];
+    if ((m = ua.match(/(?:CriOS|Chrome)\/([\d.]+)/))) return 'Chrome ' + m[1];
+    if ((m = ua.match(/(?:FxiOS|Firefox)\/([\d.]+)/))) return 'Firefox ' + m[1];
+    if ((m = ua.match(/Version\/([\d.]+).*Safari/))) return 'Safari ' + m[1];
+    return '';
+  }
+  function txtAparelhoUA(ua) {
+    return [txtSO(ua), txtNav(ua)].filter(Boolean).join(' · ');
+  }
+  // Impressão digital: só o que ajuda a distinguir dois aparelhos parecidos.
+  // Modelo aparece quando o navegador entrega (Chromium; Safari nunca).
+  function txtFp(fp) {
+    if (!fp || typeof fp !== 'object') return '';
+    var p = [];
+    if (fp.modelo) p.push(fp.modelo);
+    if (fp.so) p.push(fp.so);
+    if (fp.tela) p.push('tela ' + fp.tela);
+    if (fp.idioma) p.push(fp.idioma.split(',')[0]);
+    if (fp.tz) p.push(fp.tz);
+    if (fp.cpu) p.push(fp.cpu + ' núcleos');
+    return p.join(' · ');
+  }
+  // Latência alta com operadora brasileira sugere VPN/proxy. É PISTA, nunca
+  // afirmação: 4G ruim também sobe. Por isso o texto é condicional.
+  function txtSinais(r) {
+    if (!r) return '';
+    var p = [];
+    if (typeof r.rtt === 'number' && r.rtt > 0) {
+      p.push(r.rtt + ' ms' + (r.rtt > 250 ? ' (alto — pode ser VPN)' : ''));
+    }
+    if (r.tls) p.push(r.tls);
+    if (r.colo) p.push('via ' + r.colo);
+    return p.join(' · ');
+  }
+  // Tudo que se sabe da origem, em até três linhas finas. `title` guarda o UA
+  // cru pra conferência manual sem poluir a tela.
+  function linhaRede(rede, pagina) {
+    var el = document.createElement('div'); el.className = 'ps-rede';
+    var partes = [];
+    var ap = txtAparelhoUA(rede && rede.ua);
+    if (ap) partes.push(ap);
+    var rd = txtRede(rede);
+    if (rd) partes.push(rd);
+    if (!partes.length) {
+      el.textContent = 'rede não registrada';
+    } else {
+      el.textContent = partes.join(' — ');
+      if (rede && rede.ua) el.title = rede.ua;
+    }
+    var fp = txtFp(rede && rede.fp), sn = txtSinais(rede);
+    var extra = [fp, sn].filter(Boolean).join(' · ');
+    if (extra) {
+      var l2 = document.createElement('div'); l2.className = 'ps-rede';
+      l2.style.opacity = '.8'; l2.textContent = extra;
+      el.appendChild(l2);
+    }
+    if (pagina) {
+      var l3 = document.createElement('div'); l3.className = 'ps-rede';
+      l3.style.opacity = '.8'; l3.textContent = 'em ' + pagina;
+      el.appendChild(l3);
+    }
+    return el;
+  }
+  // `rede` vem como TEXTO JSON na coluna do D1 e como objeto no KV.
+  function parseRede(v) {
+    if (!v) return null;
+    if (typeof v === 'object') return v;
+    try { return JSON.parse(v); } catch (e) { return null; }
+  }
 
   // `ref` do evento = "<device>|<label>" (contagem-worker, handlePresencaPost).
   // Evento anterior a 2026-08-06 vem NULL — device vazio, e a tela DIZ isso em
@@ -626,7 +855,7 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     eventos.forEach(function (e) {
       var r = partesRef(e.ref);
       var chave = e.casa + '|' + e.nome + '|' + r.device;
-      (porPessoa[chave] = porPessoa[chave] || []).push({ ts: e.ts, nome: e.nome, casa: e.casa, nivel: e.nivel, device: r.device, label: r.label });
+      (porPessoa[chave] = porPessoa[chave] || []).push({ ts: e.ts, nome: e.nome, casa: e.casa, nivel: e.nivel, device: r.device, label: r.label, rede: parseRede(e.rede), pagina: e.pagina || null });
     });
     var sessoes = [];
     Object.keys(porPessoa).forEach(function (chave) {
@@ -636,9 +865,14 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
         var t = new Date(p.ts).getTime();
         if (atual && (t - atual.fimMs) <= GAP_SESSAO_MS) {
           atual.fim = p.ts; atual.fimMs = t;
+          // Rede do ping mais recente que tiver uma: uma sessão longa pode
+          // trocar de rede no meio (sai do wifi da casa, cai no 4G), e o mais
+          // recente é o que descreve onde a pessoa terminou.
+          if (p.rede) atual.rede = p.rede;
+          if (p.pagina) atual.pagina = p.pagina;
         } else {
           atual = { nome: p.nome, casa: p.casa, nivel: p.nivel, device: p.device, label: p.label,
-                    inicio: p.ts, fim: p.ts, fimMs: t };
+                    rede: p.rede || null, pagina: p.pagina || null, inicio: p.ts, fim: p.ts, fimMs: t };
           sessoes.push(atual);
         }
       });
@@ -688,6 +922,7 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     // Antes de montar sessão nenhuma: sem isso o histórico mostraria o id
     // opaco do aparelho no lugar do apelido que a coordenação já deu.
     APELIDOS = (d && d.apelidos) || {};
+    MEUS = (d && d.meus) || {};
     var online = (d.online || []).slice().sort(function (a, b) {
       return rotuloOnline(a).localeCompare(rotuloOnline(b), 'pt-BR');
     });
@@ -761,6 +996,9 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
       elHist.innerHTML = '<p class="ps-vazio">Ainda sem histórico — começa a contar a partir de agora.</p>';
     } else {
       sessoes.forEach(function (s) {
+        // Mesmo invólucro dos aparelhos: a sessão e a rede dela são um item
+        // só, e é o invólucro que leva o tracejado e o destaque de âmbar.
+        var caixa = document.createElement('div'); caixa.className = 'ps-dev';
         var linha = document.createElement('div'); linha.className = 'ps-sessao';
         var esq = document.createElement('span'); esq.className = 'nome';
         esq.textContent = s.nome + ' · ' + nomeCasa(s.casa);
@@ -777,7 +1015,14 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
         dir.textContent = fmtDataHora(s.inicio) + (s.duracaoMin >= 1 ? ' – ' + fmtDataHora(s.fim) : '')
           + ' · ' + fmtDuracaoMin(s.duracaoMin);
         linha.appendChild(esq); linha.appendChild(dir);
-        elHist.appendChild(linha);
+        // Aparelho que o dono NÃO reconheceu: destaque na barra lateral. Só
+        // vale a partir do momento em que ele marcou os dele — antes disso
+        // nada está reconhecido e a marcação seria ruído, então exige MEUS
+        // ter pelo menos um.
+        if (s.device && Object.keys(MEUS).length && !MEUS[s.device]) caixa.classList.add('ps-alerta');
+        caixa.appendChild(linha);
+        caixa.appendChild(linhaRede(s.rede, s.pagina));
+        elHist.appendChild(caixa);
       });
     }
     gate.style.display = 'none';
@@ -811,17 +1056,34 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
       body: JSON.stringify({ device: device, apelido: nome.trim() }),
     }).then(function (r) { if (r.ok) buscaDevices(meuToken); }).catch(function () {});
   }
+  // Marca/desmarca "este aparelho é meu". Mandado no MESMO endpoint do
+  // apelido, mas em campo separado: batizar e reconhecer são coisas
+  // diferentes — "Felipe ?" tem apelido e não é dele.
+  function marcaMeu(device, meu) {
+    if (!meuToken) return;
+    fetch(WORKER + '/api/presenca/apelido', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': meuToken },
+      body: JSON.stringify({ device: device, apelido: (APELIDOS[device] || ''), meu: !!meu }),
+    }).then(function (r) { if (r.ok) { buscaDevices(meuToken); busca(meuToken); } }).catch(function () {});
+  }
   function linhaDevice(dv, meta) {
+    var wrap = document.createElement('div'); wrap.className = 'ps-dev';
     var linha = document.createElement('div'); linha.className = 'ps-on';
     var esq = document.createElement('span'); esq.className = 'nome'; esq.textContent = nomeAparelho(dv);
     var dir = document.createElement('span'); dir.className = 'meta'; dir.textContent = meta;
-    var bt = document.createElement('span');
+    var bt = document.createElement('span'); bt.className = 'ps-bt';
     bt.textContent = dv.apelido ? 'renomear' : 'apelidar';
-    bt.style.cssText = 'font-size:11px;color:var(--acc);cursor:pointer;margin-left:8px;white-space:nowrap';
     bt.onclick = function () { apelidar(dv.device, dv.apelido || ''); };
     dir.appendChild(bt);
+    var btM = document.createElement('span'); btM.className = 'ps-bt';
+    btM.textContent = dv.meu ? 'não é meu' : 'é meu';
+    btM.onclick = function () { marcaMeu(dv.device, !dv.meu); };
+    dir.appendChild(btM);
     linha.appendChild(esq); linha.appendChild(dir);
-    return linha;
+    if (!dv.meu) linha.classList.add('ps-alerta');
+    wrap.appendChild(linha);
+    wrap.appendChild(linhaRede(dv.rede, dv.pagina));
+    return wrap;
   }
   function desenhaDevices(d) {
     var list = (d && d.devices) || [];
@@ -830,7 +1092,11 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     meus.innerHTML = ''; outros.innerHTML = '';
     var nM = 0, nO = 0;
     list.forEach(function (dv) {
-      if (dv.nivel === 'coord') {
+      // A régua é o RECONHECIMENTO explícito, não o nível da sessão. Separar
+      // por `nivel === 'coord'` (como era até 2026-08-07) punha o intruso que
+      // usa a senha do Rodrigo dentro de "meus aparelhos" — justamente o caso
+      // que esta tela precisa mostrar.
+      if (dv.meu) {
         meus.appendChild(linhaDevice(dv, 'logado · ' + haQuanto(dv.ts))); nM++;
       } else {
         var det = [];
@@ -842,8 +1108,150 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
         outros.appendChild(linhaDevice(dv, det.join(' · '))); nO++;
       }
     });
-    if (!nM) meus.innerHTML = '<p class="ps-vazio">Nenhum aparelho seu conectado agora.</p>';
-    if (!nO) outros.innerHTML = '<p class="ps-vazio">Nenhum outro acesso agora.</p>';
+    if (!nM) meus.innerHTML = '<p class="ps-vazio">Nenhum aparelho marcado como seu está conectado. Use “é meu” na lista abaixo.</p>';
+    if (!nO) outros.innerHTML = '<p class="ps-vazio">Nenhum acesso não reconhecido agora.</p>';
+  }
+
+  // ─── Registro de entradas (GET /api/presenca/logins) ────────────────────
+  var LOGINS = [], FILTRO = 'tudo';
+  // A linha de login guarda a rede em colunas PLANAS + um JSON `extra` (sinais
+  // secundários e impressão digital). Aqui vira o mesmo formato que o ping de
+  // presença usa, pra `linhaRede` servir aos dois sem saber a diferença.
+  function redeDoLogin(lg) {
+    var ex = {};
+    try { ex = lg.extra ? JSON.parse(lg.extra) : {}; } catch (e) { ex = {}; }
+    return {
+      ip: lg.ip, asn: lg.asn, org: lg.org, cidade: lg.cidade, regiao: lg.regiao,
+      pais: lg.pais, tz: lg.tz, ua: lg.ua,
+      rtt: ex.rtt, tls: ex.tls, colo: ex.colo, fp: ex.fp || null,
+    };
+  }
+  function nomeAparelhoLogin(lg, apelidos, meus) {
+    if (!lg.device) return 'aparelho não registrado';
+    if (apelidos[lg.device]) return apelidos[lg.device] + (meus[lg.device] ? ' (meu)' : '');
+    return '#' + (lg.device.replace(/[^a-z0-9]/gi, '').slice(-4) || '????');
+  }
+  function desenhaLogins(d) {
+    var el = document.getElementById('ps-logins');
+    var apelidos = (d && d.apelidos) || {}, meus = (d && d.meus) || {};
+    LOGINS = (d && d.logins) || [];
+    el.innerHTML = '';
+    if (d && d.aviso) {
+      el.innerHTML = '<p class="ps-vazio">' + d.aviso + ' — o registro começa a valer assim que a tabela for criada.</p>';
+      return;
+    }
+    var lista = LOGINS.filter(function (lg) {
+      if (FILTRO === 'tudo') return true;
+      if (FILTRO === 'recusadas') return !lg.ok;
+      if (FILTRO === 'compartilhadas') return lg.ok && !lg.pessoa;
+      return lg.ok && lg.chave === FILTRO;
+    });
+    if (!lista.length) {
+      el.innerHTML = '<p class="ps-vazio">Nenhuma entrada registrada neste recorte. O registro começou em 07/08/2026 — nada anterior existe.</p>';
+      return;
+    }
+    lista.forEach(function (lg) {
+      var bloco = document.createElement('div'); bloco.className = 'ps-log' + (lg.ok ? '' : ' falhou');
+      var top = document.createElement('div'); top.className = 'top';
+      var esq = document.createElement('span');
+      var ch = document.createElement('span'); ch.className = 'chave';
+      ch.textContent = lg.ok ? (lg.chave || 'senha válida') : 'tentativa recusada';
+      esq.appendChild(ch);
+      var quem = [];
+      if (lg.pessoa) quem.push(lg.pessoa);
+      if (lg.nivel) quem.push(lg.nivel);
+      if (lg.casa && lg.casa !== '*') quem.push(lg.casa);
+      quem.push(nomeAparelhoLogin(lg, apelidos, meus));
+      var sp = document.createElement('span');
+      sp.style.cssText = 'color:var(--text-2);margin-left:8px';
+      sp.textContent = quem.join(' · ');
+      esq.appendChild(sp);
+      var dir = document.createElement('span'); dir.className = 'quando';
+      dir.textContent = fmtDataHora(lg.ts);
+      top.appendChild(esq); top.appendChild(dir);
+      bloco.appendChild(top);
+      bloco.appendChild(linhaRede(redeDoLogin(lg), lg.pagina));
+      if (lg.device && Object.keys(meus).length && !meus[lg.device]) bloco.classList.add('ps-alerta');
+      el.appendChild(bloco);
+    });
+  }
+  function desenhaFiltros() {
+    var el = document.getElementById('ps-log-filtros');
+    if (!el || el.dataset.pronto) return;
+    el.dataset.pronto = '1';
+    // Recortes fixos: são as perguntas que se faz de fato. Filtro por chave
+    // específica sai da lista real de chaves vistas, então uma senha nova
+    // aparece sozinha sem ninguém editar isto.
+    var base = [['tudo', 'Tudo'], ['compartilhadas', 'Só senha compartilhada'], ['recusadas', 'Recusadas']];
+    var vistas = {};
+    LOGINS.forEach(function (lg) { if (lg.ok && lg.chave) vistas[lg.chave] = true; });
+    Object.keys(vistas).sort().forEach(function (k) { base.push([k, k]); });
+    base.forEach(function (par) {
+      var b = document.createElement('button'); b.className = 'ps-filtro'; b.type = 'button';
+      b.textContent = par[1];
+      b.setAttribute('aria-pressed', FILTRO === par[0] ? 'true' : 'false');
+      b.onclick = function () {
+        FILTRO = par[0];
+        Array.prototype.forEach.call(el.children, function (o) { o.setAttribute('aria-pressed', 'false'); });
+        b.setAttribute('aria-pressed', 'true');
+        desenhaLogins({ logins: LOGINS, apelidos: ULT_APELIDOS, meus: ULT_MEUS });
+      };
+      el.appendChild(b);
+    });
+  }
+  function desenhaCruzamento(lista, apelidos, meus) {
+    var el = document.getElementById('ps-cruza');
+    el.innerHTML = '';
+    if (!Object.keys(meus).length) {
+      el.innerHTML = '<p class="ps-vazio">Marque “é meu” nos seus aparelhos primeiro — sem isso, todo aparelho conta como desconhecido e este cruzamento não diz nada.</p>';
+      return;
+    }
+    if (!lista || !lista.length) {
+      el.innerHTML = '<p class="ps-vazio">Nenhum aparelho desconhecido dividiu endereço de rede com alguém identificado.</p>';
+      return;
+    }
+    lista.forEach(function (c) {
+      var bloco = document.createElement('div'); bloco.className = 'ps-log';
+      var top = document.createElement('div'); top.className = 'top';
+      var esq = document.createElement('span');
+      var devs = c.devices.map(function (d) {
+        return apelidos[d] || ('#' + (d.replace(/[^a-z0-9]/gi, '').slice(-4) || '????'));
+      }).join(', ');
+      var ch = document.createElement('span'); ch.className = 'chave'; ch.textContent = devs;
+      esq.appendChild(ch);
+      var sp = document.createElement('span');
+      sp.style.cssText = 'color:var(--text-2);margin-left:8px';
+      sp.textContent = 'mesma rede que ' + c.pessoas.join(', ');
+      esq.appendChild(sp);
+      var dir = document.createElement('span'); dir.className = 'quando'; dir.textContent = c.ip;
+      top.appendChild(esq); top.appendChild(dir);
+      bloco.appendChild(top);
+      // As duas ressalvas que impedem conclusão errada. Sem elas, um IP de
+      // operadora móvel (compartilhado por milhares) ou o wifi de uma casa
+      // pareceriam apontar uma pessoa.
+      var nota = document.createElement('div'); nota.className = 'ps-rede';
+      var txt = [c.org || 'operadora desconhecida'];
+      if (c.local) txt.push('rede coletiva (' + c.pessoas.length + ' pessoas aqui) — diz o LUGAR, não a pessoa');
+      else if (c.movel) txt.push('operadora móvel — endereço compartilhado por muitos assinantes, pista fraca');
+      else txt.push('rede fixa com pouca gente — pista forte');
+      nota.textContent = txt.join(' · ');
+      bloco.appendChild(nota);
+      if (!c.local && !c.movel) bloco.classList.add('ps-alerta');
+      el.appendChild(bloco);
+    });
+  }
+  var ULT_APELIDOS = {}, ULT_MEUS = {};
+  function buscaLogins(token) {
+    fetch(WORKER + '/api/presenca/logins?dias=90', { headers: { 'X-Token': token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) { document.getElementById('ps-logins').innerHTML = '<p class="ps-vazio">Não foi possível carregar o registro de entradas.</p>'; return; }
+        ULT_APELIDOS = d.apelidos || {}; ULT_MEUS = d.meus || {};
+        desenhaLogins(d);
+        desenhaFiltros();
+        desenhaCruzamento(d.cruzamento, ULT_APELIDOS, ULT_MEUS);
+      })
+      .catch(function () { document.getElementById('ps-logins').innerHTML = '<p class="ps-vazio">Sem conexão para o registro de entradas.</p>'; });
   }
   function buscaDevices(token) {
     meuToken = token;
@@ -858,6 +1266,7 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   if (r.ok) {
     busca(r.sessao.token);
     buscaDevices(r.sessao.token);
+    buscaLogins(r.sessao.token);
     setInterval(function () { buscaDevices(r.sessao.token); }, 60000);
   } else if (!r.redirecionou) {
     msg.innerHTML = window.msgAcessoNegado('a Presença online');
@@ -2211,7 +2620,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c269a46712e0';
+  var BUILD = '2224f85d9b1e';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
