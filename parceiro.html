@@ -2915,6 +2915,16 @@ function nomeArquivoSeguro(base) {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: senha }),
     }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
+        // Autocadastro por e-mail (2026-08-07): duas respostas 200 do
+        // /api/nivel que não trazem token. Aqui elas só aparecem se alguém
+        // digitar uma senha INTERNA (ou um código de cadastro) neste gate —
+        // "Senha inválida." mandaria a pessoa procurar erro de digitação.
+        if (res.ok && res.d && res.d.cadastro) {
+          erro.textContent = 'Esta senha agora exige cadastro. Abra o portal no navegador para criar seu acesso.'; return;
+        }
+        if (res.ok && res.d && res.d.primeiro_acesso) {
+          erro.textContent = 'Este é um código de cadastro. Termine seu cadastro no portal antes de usar aqui.'; return;
+        }
         if (!res.ok || res.d.nivel !== 'parceiro') { erro.textContent = 'Senha inválida.'; return; }
         var sessao = { token: res.d.token, exp: res.d.exp, marca: res.d.marca, pessoa: res.d.pessoa };
         sessaoSalvar(sessao);

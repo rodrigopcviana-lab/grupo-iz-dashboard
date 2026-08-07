@@ -448,8 +448,25 @@ async function login(slug, senha){
   } catch(e){ return { erro: 'rede' }; } // sem rede/timeout — distinto de senha errada (login exige rede)
   if (!r.ok) return { erro: 'senha' };
   var d = await r.json();
+  // Autocadastro por e-mail (2026-08-07): o /api/nivel ganhou DUAS respostas
+  // 200 que não são login e não trazem token. Dizer "senha inválida" nelas
+  // seria mentira — a senha está certa, ela é que deixou de logar.
+  // (a) senha compartilhada em migração: vira bilhete de cadastro.
+  if (d.cadastro) return { erro: 'cadastro' };
+  // (b) o que foi digitado é o código provisório de primeiro acesso.
+  if (d.primeiro_acesso) return { erro: 'primeiro_acesso' };
   if (!d.token || !['bartender','chefe','coord'].includes(d.nivel)) return { erro: 'senha' };
   return { sessao: { token:d.token, pessoa:d.pessoa || d.nivel, nivel:d.nivel, casa:d.casa, exp:d.exp } };
+}
+
+// Texto honesto para as duas respostas de autocadastro. Devolve null pro
+// resto (aí o chamador segue com a mensagem que já tinha). O cadastro pede
+// e-mail e NÃO é feito aqui: este é um tablet de balcão, a pessoa termina no
+// portal, no navegador.
+function msgLoginCadastro(erro){
+  if (erro === 'cadastro') return 'Esta senha agora exige cadastro. Abra o portal no navegador para criar seu acesso.';
+  if (erro === 'primeiro_acesso') return 'Este é um código de cadastro. Termine seu cadastro no portal antes de usar aqui.';
+  return null;
 }
 
 async function carregaCardapio(token){
@@ -570,6 +587,8 @@ function montaGate(slug){
     var res = await login(slug, senha);
     btn.disabled = false;
     if (res.erro === 'rede') { erro.textContent = 'sem conexão — tente de novo'; return; } // mantém a senha digitada
+    var mcad = msgLoginCadastro(res.erro);
+    if (mcad) { erro.textContent = mcad; input.value=''; return; }
     if (res.erro) { erro.textContent = 'senha inválida'; input.value=''; input.focus(); return; }
     sessaoSalvar(slug, res.sessao);
     sess[slug] = res.sessao;
@@ -868,6 +887,8 @@ function telaLoginAdmin(msg){
     var res = await login('admin', senha); // reusa login(); 'admin' é só rótulo de slug
     btn.disabled = false;
     if (res.erro === 'rede') { erro.textContent = 'sem conexão — tente de novo'; return; }
+    var mcad = msgLoginCadastro(res.erro);
+    if (mcad) { erro.textContent = mcad; inp.value = ''; return; }
     if (res.erro) { erro.textContent = 'senha inválida'; inp.value = ''; inp.focus(); return; }
     if (!['chefe','coord'].includes(res.sessao.nivel)) {
       // senha de bartender é válida, mas não pode fechar evento
@@ -1012,7 +1033,7 @@ init();
 </div>
 <script>
 (function () {
-  var BUILD = 'bf859bf83444';
+  var BUILD = '000de5aace03';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

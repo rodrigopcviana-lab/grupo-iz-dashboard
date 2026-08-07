@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Acessos · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=bf859bf83444">
+<link rel="stylesheet" href="portal.css?v=000de5aace03">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -844,6 +844,28 @@ existia nas senhas antigas.</p>
   .ac-topo-bts { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 4px; }
   .ac-vazio { font-size: 13px; color: var(--text-3); }
   .ac-nova { margin-top: 9px; font-size: 13px; color: var(--verde); }
+  /* --- autocadastro por e-mail --- */
+  .ac-ico { flex: none; display: flex; }
+  .ac-faixa-alerta { background: rgba(214,158,46,.13); }
+  .ac-faixa-alerta svg { color: var(--amarelo); }
+  .ac-auto { border-left: 3px solid var(--border); }
+  .ac-auto-esperando { border-left-color: var(--acc); }
+  .ac-auto-expirado { border-left-color: var(--amarelo); }
+  .ac-auto-pronto { border-left-color: var(--verde); }
+  .ac-est { font-weight: 600; }
+  .ac-est-esperando { border-color: var(--acc); color: var(--acc); }
+  .ac-est-expirado { border-color: var(--amarelo); color: var(--amarelo); }
+  .ac-est-pronto { border-color: var(--verde); color: var(--verde); }
+  .ac-cps { display: flex; flex-wrap: wrap; gap: 9px 18px; margin-top: 10px;
+            padding-top: 9px; border-top: 1px solid var(--border); }
+  .ac-cp { flex: 1 1 150px; min-width: 0; }
+  .ac-cp-rot { display: block; font-size: 10px; letter-spacing: .1em; color: var(--text-3); }
+  .ac-cp-val { display: block; font-size: 13px; color: var(--text-2); overflow-wrap: anywhere; }
+  .ac-cp-val.mono { font-family: ui-monospace, Menlo, monospace; }
+  .ac-cp-val.viva { color: var(--verde); }
+  .ac-cp-val.atencao { color: var(--amarelo); }
+  .ac-cp-val.ausente { color: var(--text-3); font-style: italic; }
+  .ac-auto-nota { margin: 9px 0 0; font-size: 12px; color: var(--text-3); }
 </style>
 
 <div class="panel" id="ac-gate">
@@ -889,6 +911,10 @@ existia nas senhas antigas.</p>
   <div class="ac-kpis" id="ac-kpis"></div>
   <div class="ac-faixa" id="ac-faixa" style="display:none"></div>
 
+  <div class="ac-sec" id="ac-sec-auto">AUTOCADASTRO POR E-MAIL</div>
+  <div class="ac-faixa" id="ac-auto-estado"></div>
+  <div id="ac-auto"></div>
+
   <div class="ac-sec" id="ac-sec-pend">PEDIDOS PENDENTES</div>
   <div id="ac-pendentes"></div>
 
@@ -916,12 +942,21 @@ existia nas senhas antigas.</p>
       exp: 'Senhas que já existiam antes do autosserviço (secrets do Worker) — só listadas, não passam por aqui.' },
     parados: { rot: 'nunca entraram',
       exp: 'Acesso criado e ativo, mas a pessoa nunca usou a senha pra entrar — ou não recebeu, ou não sabe que existe.' },
+    auto: { rot: 'autocadastro por e-mail',
+      exp: 'Quem pediu acesso pelo próprio e-mail: o código provisório de 24h, o primeiro acesso e a senha que a pessoa escolheu.' },
   };
+  var ICO_ENVELOPE = "<svg class=\"ic\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5.5\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M3.6 7l8.4 6 8.4-6\"/></svg>";
+  var ICO_ALERTA = "<svg class=\"ic\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3.5l9 15.5H3z\"/><path d=\"M12 10v4M12 16.5h.01\"/></svg>";
+
+  // Relógio do SERVIDOR (payload.agora). Validade de código nunca é contada
+  // contra o relógio do aparelho, que pode estar adiantado/atrasado.
+  var deltaRelogio = 0;
+  function agoraServidor() { return Date.now() + deltaRelogio; }
 
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
   function quando(ms) {
     if (!ms) return 'nunca';
-    var dias = Math.floor((Date.now() - ms) / 86400000);
+    var dias = Math.floor((agoraServidor() - ms) / 86400000);
     if (dias <= 0) return 'hoje';
     if (dias === 1) return 'ontem';
     if (dias < 30) return 'há ' + dias + ' dias';
@@ -946,6 +981,7 @@ existia nas senhas antigas.</p>
       })
       .then(function (d) {
         dados = d; revelado = false;
+        deltaRelogio = typeof d.agora === 'number' ? d.agora - Date.now() : 0;
         gate.style.display = 'none'; app.style.display = 'block';
         pinta();
       })
@@ -975,21 +1011,32 @@ existia nas senhas antigas.</p>
   function pinta() {
     var acessos = dados.acessos || [];
     var pend = acessos.filter(function (a) { return a.status === 'pendente'; });
-    var resto = acessos.filter(function (a) { return a.status !== 'pendente'; });
-    var ativos = acessos.filter(function (a) { return a.status === 'ativo'; });
+    // Linha de autocadastro fica só na seção própria — menos quando está
+    // pendente de aprovação, aí ela precisa dos botões de decidir.
+    var autos = acessos.filter(function (a) { return ehAuto(a) && a.status !== 'pendente'; });
+    var resto = acessos.filter(function (a) { return a.status !== 'pendente' && !ehAuto(a); });
+    var ativos = resto.filter(function (a) { return a.status === 'ativo'; });
     var parados = ativos.filter(function (a) { return !a.ultimo_acesso; });
+    var venceram = autos.filter(function (a) { return estadoAuto(a) === 'expirado'; });
 
     document.getElementById('ac-kpis').innerHTML =
       kpi('PENDENTES', pend.length, pend.length ? 'var(--amarelo)' : '', 'pend') +
-      kpi('CRIADOS PELO SITE', acessos.length, '', 'criados') +
+      kpi('AUTOCADASTRO', autos.length, venceram.length ? 'var(--amarelo)' : '', 'auto') +
+      kpi('CRIADOS PELO SITE', pend.length + resto.length, '', 'criados') +
       kpi('SENHAS ANTIGAS', (dados.secrets || []).length, '', 'secrets') +
       kpi('NUNCA ENTRARAM', parados.length, '', 'parados');
 
     renderFaixaAc();
 
+    var mostraAuto = !recorte || recorte === 'auto';
     var mostraPend = !recorte || recorte === 'pend';
     var mostraCriados = !recorte || recorte === 'criados' || recorte === 'parados';
     var mostraSecrets = !recorte || recorte === 'secrets';
+
+    document.getElementById('ac-sec-auto').style.display = mostraAuto ? '' : 'none';
+    document.getElementById('ac-auto-estado').style.display = mostraAuto ? '' : 'none';
+    document.getElementById('ac-auto').style.display = mostraAuto ? '' : 'none';
+    renderAuto(autos);
 
     document.getElementById('ac-sec-pend').style.display = mostraPend ? '' : 'none';
     document.getElementById('ac-pendentes').style.display = mostraPend ? '' : 'none';
@@ -1029,6 +1076,150 @@ existia nas senhas antigas.</p>
       '<p>Mostrando <b>' + esc(info.rot) + '</b>. ' + esc(info.exp) + '</p>' +
       '<button type="button" id="ac-faixa-limpar">Ver tudo</button>';
     document.getElementById('ac-faixa-limpar').onclick = function () { recorte = null; pinta(); };
+  }
+
+  // --- Autocadastro por e-mail --------------------------------------------
+  // Nada aqui usa innerHTML com texto do servidor: nome, e-mail, código e
+  // senha são digitados pela PESSOA que se cadastrou. Só textContent.
+  function ehAuto(a) { return a.origem === 'autocadastro' || !!a.chave_origem; }
+
+  function estadoAuto(a) {
+    if (a.status === 'cadastro' && a.tem_codigo) return 'esperando';
+    if (a.status === 'cadastro' && a.codigo_expirado) return 'expirado';
+    if (a.status === 'ativo' && a.chave_origem) return 'pronto';
+    return 'outro';
+  }
+  var EST_AUTO = {
+    esperando: { ord: 0, rot: 'Esperando 1º acesso',
+      nota: 'Código enviado. A pessoa ainda não terminou o primeiro acesso — enquanto não terminar, não tem senha e não entra.' },
+    expirado: { ord: 1, rot: 'Código venceu',
+      nota: 'Parou no meio do caminho: o código de 24h venceu. Ela precisa pedir um código novo na tela de entrada — o antigo não serve mais.' },
+    outro: { ord: 2, rot: 'Sem código válido',
+      nota: 'Cadastro começado, mas sem código registrado. Se ela estiver esperando, peça que recomece pela tela de entrada.' },
+    pronto: { ord: 3, rot: 'Cadastro concluído',
+      nota: 'Primeiro acesso feito: já escolheu a senha definitiva e entra por conta própria.' },
+  };
+
+  function faltaPara(ms) {
+    if (!ms) return null;
+    var t = ms - agoraServidor();
+    if (t <= 0) return null;
+    var h = Math.floor(t / 3600000), mi = Math.floor((t % 3600000) / 60000);
+    if (h > 0) return 'vale por mais ' + h + 'h' + (mi ? ' ' + mi + 'min' : '');
+    if (mi > 0) return 'vale por mais ' + mi + 'min';
+    return 'vence em menos de 1 min';
+  }
+  // Data pura (AAAA-MM-DD) se fatia como texto: new Date() a lê como UTC e
+  // devolve o dia anterior aqui no fuso -3.
+  function dataBr(iso) {
+    if (typeof iso !== 'string' || iso.length < 10) return null;
+    return iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
+  }
+
+  function campoAuto(rot, texto, classe) {
+    var d = document.createElement('div'); d.className = 'ac-cp';
+    var r = document.createElement('span'); r.className = 'ac-cp-rot'; r.textContent = rot;
+    var v = document.createElement('span');
+    v.className = 'ac-cp-val' + (classe ? ' ' + classe : '');
+    v.textContent = texto;
+    d.appendChild(r); d.appendChild(v);
+    return d;
+  }
+
+  function linhaAuto(a) {
+    var est = estadoAuto(a), info = EST_AUTO[est];
+    var box = document.createElement('div');
+    box.className = 'ac-linha ac-auto ac-auto-' + est;
+
+    var topo = document.createElement('div'); topo.className = 'ac-topo';
+    var nome = document.createElement('div'); nome.className = 'ac-nome';
+    var b = document.createElement('b'); b.textContent = a.nome || 'nome ainda não informado';
+    var sub = document.createElement('span');
+    sub.textContent = casaNome(a.casa) + ' · ' + (a.nivel || 'sem nível') +
+      ' · pediu ' + quando(a.criado_em) +
+      (a.chave_origem ? ' · saiu da senha ' + a.chave_origem : '');
+    nome.appendChild(b); nome.appendChild(sub);
+    var tag = document.createElement('span');
+    tag.className = 'ac-tag ac-est ac-est-' + est;
+    tag.textContent = info.rot;
+    topo.appendChild(nome); topo.appendChild(tag);
+    box.appendChild(topo);
+
+    var cps = document.createElement('div'); cps.className = 'ac-cps';
+
+    cps.appendChild(a.email
+      ? campoAuto('E-MAIL', a.email, 'mono')
+      : campoAuto('E-MAIL', 'não informado — cadastro anterior ao e-mail', 'ausente'));
+
+    if (a.tem_codigo) {
+      cps.appendChild(a.codigo
+        ? campoAuto('CÓDIGO', a.codigo, 'mono viva')
+        : campoAuto('CÓDIGO', '•••••• — use "Mostrar senhas"', 'mono'));
+      cps.appendChild(campoAuto('VALIDADE', faltaPara(a.codigo_exp) || 'vencendo agora', 'atencao'));
+    } else if (a.codigo_expirado) {
+      cps.appendChild(campoAuto('CÓDIGO', 'venceu — precisa de um novo', 'atencao'));
+    } else {
+      cps.appendChild(campoAuto('CÓDIGO',
+        est === 'pronto' ? 'já usado no primeiro acesso' : 'nenhum código registrado', 'ausente'));
+    }
+
+    cps.appendChild(a.tem_senha
+      ? (a.senha ? campoAuto('SENHA', a.senha, 'mono viva')
+                 : campoAuto('SENHA', '•••••••• — use "Mostrar senhas"', 'mono'))
+      : campoAuto('SENHA', 'ainda não escolheu', 'ausente'));
+
+    cps.appendChild(campoAuto('NASCIMENTO', dataBr(a.nascimento) || 'não informado',
+      a.nascimento ? '' : 'ausente'));
+
+    box.appendChild(cps);
+
+    var nota = document.createElement('p');
+    nota.className = 'ac-auto-nota';
+    nota.textContent = info.nota;
+    box.appendChild(nota);
+    return box;
+  }
+
+  function renderAutoEstado() {
+    var alvo = document.getElementById('ac-auto-estado');
+    var chaves = dados.autocadastro_chaves || [];
+    var desligado = dados.autocadastro_ativo === false;
+    alvo.textContent = '';
+    alvo.className = 'ac-faixa' + (desligado ? ' ac-faixa-alerta' : '');
+    var ico = document.createElement('span');
+    ico.className = 'ac-ico';
+    ico.innerHTML = desligado ? ICO_ALERTA : ICO_ENVELOPE; // constante do gerador
+    var p = document.createElement('p');
+    if (desligado) {
+      p.textContent = 'Autocadastro desligado: o provedor de e-mail ainda não foi ' +
+        'configurado, então nenhum código sai daqui. Quem pedir na tela de entrada ' +
+        'não vai receber nada — até lá, crie o acesso por "Criar acesso".';
+    } else if (chaves.length) {
+      p.textContent = 'Autocadastro ligado só para ' + chaves.join(', ') +
+        '. Quem entra com essa senha compartilhada é convidado a criar o cadastro ' +
+        'individual; as outras senhas seguem como estão.';
+    } else {
+      p.textContent = 'Autocadastro ligado, mas sem nenhuma senha compartilhada ' +
+        'apontada pra ele — na prática ninguém consegue se cadastrar.';
+    }
+    alvo.appendChild(ico); alvo.appendChild(p);
+  }
+
+  function renderAuto(autos) {
+    renderAutoEstado();
+    var alvo = document.getElementById('ac-auto');
+    alvo.textContent = '';
+    if (!autos.length) {
+      var v = document.createElement('p'); v.className = 'ac-vazio';
+      v.textContent = 'Ninguém se cadastrou por e-mail ainda.';
+      alvo.appendChild(v);
+      return;
+    }
+    autos.slice().sort(function (x, y) {
+      var dx = EST_AUTO[estadoAuto(x)].ord, dy = EST_AUTO[estadoAuto(y)].ord;
+      if (dx !== dy) return dx - dy;                    // quem pede ação primeiro
+      return (y.criado_em || 0) - (x.criado_em || 0);
+    }).forEach(function (a) { alvo.appendChild(linhaAuto(a)); });
   }
 
   function senhaHtml(a) {
@@ -1152,6 +1343,7 @@ existia nas senhas antigas.</p>
         if (!d) { m.textContent = 'Senha incorreta.'; return; }
         campo.value = ''; m.textContent = '';
         dados.acessos = d.acessos; dados.secrets = d.secrets;
+        if (typeof d.agora === 'number') deltaRelogio = d.agora - Date.now();
         revelado = true;
         document.getElementById('ac-revelar-box').style.display = 'none';
         document.getElementById('ac-revelar').textContent = 'Esconder senhas';
@@ -2567,7 +2759,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'bf859bf83444';
+  var BUILD = '000de5aace03';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
