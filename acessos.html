@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Acessos · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=7577c0827c83">
+<link rel="stylesheet" href="portal.css?v=4889a32dda74">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -952,7 +952,6 @@ existia nas senhas antigas.</p>
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
   var app = document.getElementById('ac-app');
-  var msg = document.getElementById('ac-msg');
   var gate = document.getElementById('ac-gate');
   var dados = null, revelado = false;
   var recorte = null; // 'pend' | 'criados' | 'secrets' | 'parados' | null (todos)
@@ -995,9 +994,49 @@ existia nas senhas antigas.</p>
   var s = window.sessaoLer();
   if (!s) { window.irParaLogin('acessos'); return; }
 
+  // 2ª senha da página (2026-08-07, pedido do Rodrigo): além da sessão de
+  // coordenação, o Worker exige X-Senha-Acessos em toda rota administrativa
+  // — esta é a página que revela TODAS as outras senhas do portal, então a
+  // sessão sozinha (que 5 credenciais diferentes de coord satisfazem) não
+  // basta. Guardada em sessionStorage: fechar o navegador fecha a porta,
+  // mesmo padrão de Presença online.
+  var SENHA_AC = '';
+  try { SENHA_AC = sessionStorage.getItem('ac_senha') || ''; } catch (e) {}
+  function hdrsAc() {
+    return { 'X-Token': s.token, 'X-Senha-Acessos': SENHA_AC };
+  }
+  function hdrsAcJson() {
+    return { 'Content-Type': 'application/json', 'X-Token': s.token, 'X-Senha-Acessos': SENHA_AC };
+  }
+  function pedeSenhaAcessos(erro) {
+    gate.style.display = '';
+    app.style.display = 'none';
+    gate.innerHTML = '<h2>Senha de Acessos</h2>'
+      + '<p class="sub" style="margin:4px 0 10px">Esta página tem uma segunda senha, além do seu acesso de coordenação.</p>'
+      + '<input id="ac-senha-2" type="password" autocomplete="off" style="width:100%;max-width:280px;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:15px">'
+      + '<div><button id="ac-senha-2-ok" type="button" style="margin-top:10px;padding:9px 16px;border-radius:9px;border:1px solid var(--acc);background:transparent;color:var(--acc);font-size:14px;cursor:pointer">Abrir</button></div>'
+      + '<p id="ac-senha-2-erro" class="sub" style="margin:8px 0 0;color:var(--vermelho,#c4553d)">' + (erro || '') + '</p>';
+    var inp = document.getElementById('ac-senha-2');
+    var vai = function () {
+      SENHA_AC = inp.value || '';
+      try { sessionStorage.setItem('ac_senha', SENHA_AC); } catch (e) {}
+      carrega();
+    };
+    document.getElementById('ac-senha-2-ok').onclick = vai;
+    inp.onkeydown = function (ev) { if (ev.key === 'Enter') vai(); };
+    inp.focus();
+  }
+
   function carrega() {
-    return fetch(WORKER + '/api/acessos', { headers: { 'X-Token': s.token } })
+    return fetch(WORKER + '/api/acessos', { headers: hdrsAc() })
       .then(function (r) {
+        if (r.status === 503) { throw new Error('sem_config'); }
+        if (r.status === 401) {
+          return r.json().catch(function () { return {}; }).then(function (d) {
+            if (d && d.erro === 'senha_acessos') throw new Error('senha_acessos');
+            throw new Error('negado');
+          });
+        }
         if (r.status === 403) { throw new Error('negado'); }
         if (!r.ok) throw new Error('falha');
         return r.json();
@@ -1009,10 +1048,24 @@ existia nas senhas antigas.</p>
         pinta();
       })
       .catch(function (e) {
+        if (e.message === 'senha_acessos') {
+          pedeSenhaAcessos(SENHA_AC ? 'Senha incorreta.' : '');
+          return;
+        }
         gate.style.display = ''; app.style.display = 'none';
-        msg.textContent = e.message === 'negado'
-          ? 'Esta página é só do Rodrigo — nem toda coordenação abre.'
-          : 'Não consegui carregar os acessos.';
+        // Reconstrói o gate do zero: depois que pedeSenhaAcessos() (ou este
+        // mesmo bloco) reescreve gate.innerHTML, a referência antiga a
+        // `msg` fica órfã (fora do DOM) — escrever nela não aparece pra
+        // ninguém. Cada ramo de erro monta sua própria mensagem completa.
+        if (e.message === 'sem_config') {
+          gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">A segunda senha desta página ainda não foi configurada no servidor.</p>';
+          return;
+        }
+        gate.innerHTML = '<h2>Acesso restrito</h2><p class="sub" style="margin:4px 0 0" role="status" aria-live="polite">'
+          + (e.message === 'negado'
+              ? 'Esta página é só do Rodrigo — nem toda coordenação abre.'
+              : 'Não consegui carregar os acessos.')
+          + '</p>';
       });
   }
 
@@ -1138,6 +1191,14 @@ existia nas senhas antigas.</p>
     if (typeof iso !== 'string' || iso.length < 10) return null;
     return iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
   }
+  // Só formatação pra exibição — o valor gravado (`a.telefone`) é dígitos
+  // puros (DDD + número), sem máscara.
+  function telFmt(d) {
+    if (typeof d !== 'string' || !d) return null;
+    if (d.length === 11) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
+    if (d.length === 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
+    return d;
+  }
 
   function campoAuto(rot, texto, classe) {
     var d = document.createElement('div'); d.className = 'ac-cp';
@@ -1193,6 +1254,11 @@ existia nas senhas antigas.</p>
 
     cps.appendChild(campoAuto('NASCIMENTO', dataBr(a.nascimento) || 'não informado',
       a.nascimento ? '' : 'ausente'));
+
+    // Obrigatório desde 2026-08-07; cadastro concluído antes disso pode não
+    // ter. Só formata pra exibição — o valor gravado é dígitos puros.
+    cps.appendChild(campoAuto('CELULAR', telFmt(a.telefone) || 'não informado',
+      a.telefone ? '' : 'ausente'));
 
     box.appendChild(cps);
 
@@ -1326,7 +1392,7 @@ existia nas senhas antigas.</p>
     }
     bt.disabled = true;
     fetch(WORKER + '/api/acesso/decidir', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      method: 'POST', headers: hdrsAcJson(),
       body: JSON.stringify(corpo)
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
@@ -1366,7 +1432,7 @@ existia nas senhas antigas.</p>
     var m = document.getElementById('ac-revogar-msg');
     m.textContent = 'Derrubando…';
     fetch(WORKER + '/api/acessos/revogar', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      method: 'POST', headers: hdrsAcJson(),
       body: JSON.stringify({ senha: campo.value })
     })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
@@ -1389,7 +1455,7 @@ existia nas senhas antigas.</p>
     var m = document.getElementById('ac-revelar-msg');
     m.textContent = 'Conferindo…';
     fetch(WORKER + '/api/acessos/revelar', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      method: 'POST', headers: hdrsAcJson(),
       body: JSON.stringify({ senha: campo.value })
     })
       .then(function (r) { return r.ok ? r.json() : null; })
@@ -1444,7 +1510,7 @@ existia nas senhas antigas.</p>
     if (!criarSel.nivel) { m.textContent = 'Escolha o nível.'; return; }
     var btn = this; btn.disabled = true; m.textContent = 'Criando…';
     fetch(WORKER + '/api/acesso/criar', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      method: 'POST', headers: hdrsAcJson(),
       body: JSON.stringify({ nome: nome, nivel: criarSel.nivel, casa: criarSel.casa })
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
@@ -2813,7 +2879,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '7577c0827c83';
+  var BUILD = '4889a32dda74';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
