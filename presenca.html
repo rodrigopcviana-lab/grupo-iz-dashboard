@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Presença online · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=2224f85d9b1e">
+<link rel="stylesheet" href="portal.css?v=1c6e21650f3b">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -127,13 +127,129 @@ window.sessaoLimpar = function () {
 // nenhum, então o login é o único ponto onde essas sessões deixam rastro de
 // qual aparelho entrou. Mesma chave dos dois lados, senão o mesmo aparelho
 // apareceria com dois ids e o apelido não valeria nos dois lugares.
-window.portalDeviceId = function () {
+// Guardado em TRÊS lugares (localStorage, cookie e IndexedDB) porque limpar
+// um só é comum e apagava o rastro em silêncio: o aparelho voltava como novo
+// e o histórico dele recomeçava do zero sem ninguém notar. localStorage e
+// cookie são síncronos e resolvem na hora; o IndexedDB é assíncrono e serve
+// de resgate — se ele guardar um id ANTERIOR, adotamos o antigo e os pings
+// seguintes voltam a casar com o histórico (o heartbeat se repete, então a
+// correção se propaga sozinha).
+window.PORTAL_DEV_K = 'portal_device';
+function _pdCookieLer() {
   try {
-    var k = localStorage.getItem('portal_device');
-    if (!k) { k = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('portal_device', k); }
-    return k;
-  } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
+    var m = document.cookie.match(/(?:^|;\s*)portal_device=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch (e) { return null; }
+}
+function _pdCookieGravar(v) {
+  try {
+    document.cookie = 'portal_device=' + encodeURIComponent(v) +
+      ';path=/;max-age=' + (60 * 60 * 24 * 365) + ';SameSite=Lax';
+  } catch (e) {}
+}
+function _pdIdb(fn) {
+  try {
+    var req = indexedDB.open('portal_dev', 1);
+    req.onupgradeneeded = function () { req.result.createObjectStore('kv'); };
+    req.onsuccess = function () {
+      try { fn(req.result); } catch (e) {}
+    };
+    req.onerror = function () {};
+  } catch (e) {}
+}
+window.portalDeviceId = function () {
+  var k = null;
+  try { k = localStorage.getItem(window.PORTAL_DEV_K); } catch (e) {}
+  if (!k) k = _pdCookieLer();
+  if (!k) k = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  try { localStorage.setItem(window.PORTAL_DEV_K, k); } catch (e) {}
+  _pdCookieGravar(k);
+  return k;
 };
+// Resgate/gravação no IndexedDB, uma vez por carga.
+(function () {
+  var atual = null;
+  try { atual = window.portalDeviceId(); } catch (e) { return; }
+  _pdIdb(function (db) {
+    var tx = db.transaction('kv', 'readwrite');
+    var st = tx.objectStore('kv');
+    var g = st.get('id');
+    g.onsuccess = function () {
+      var antigo = g.result;
+      if (antigo && antigo !== atual) {
+        // O id do IndexedDB é o mais antigo que sobreviveu — ele é a
+        // identidade do aparelho; o que acabou de nascer é fruto de limpeza.
+        try { localStorage.setItem(window.PORTAL_DEV_K, antigo); } catch (e) {}
+        _pdCookieGravar(antigo);
+      } else if (!antigo) {
+        try { st.put(atual, 'id'); } catch (e) {}
+      }
+    };
+  });
+})();
+
+// ─── Assinatura de hardware ────────────────────────────────────────────────
+// GPU, canvas e áudio. É a identificação de MÁQUINA mais forte possível sem
+// instalar nada: sobrevive a limpar tudo dentro do mesmo navegador e separa
+// dois aparelhos que pelo User-Agent seriam idênticos. Calculada UMA vez e
+// guardada — canvas e áudio custam alguns milissegundos e não podem rodar a
+// cada ping.
+function _pdHash(s) {
+  var h = 5381, i = s.length;
+  while (i) h = ((h * 33) ^ s.charCodeAt(--i)) >>> 0;
+  return h.toString(36);
+}
+function _pdGpu() {
+  try {
+    var c = document.createElement('canvas');
+    var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+    if (!gl) return null;
+    var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    if (!dbg) return null;
+    // Vem legível: "Apple M2 Pro", "ANGLE (NVIDIA GeForce RTX 3060 ...)".
+    return String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '').slice(0, 90) || null;
+  } catch (e) { return null; }
+}
+function _pdCanvas() {
+  try {
+    var c = document.createElement('canvas'); c.width = 200; c.height = 40;
+    var x = c.getContext('2d'); if (!x) return null;
+    x.textBaseline = 'top'; x.font = '14px Arial';
+    x.fillStyle = '#f60'; x.fillRect(0, 0, 100, 20);
+    x.fillStyle = '#069'; x.fillText('Bar.IZ presenca', 2, 4);
+    x.strokeStyle = 'rgba(0,0,255,.4)'; x.beginPath(); x.arc(50, 20, 18, 0, Math.PI * 2); x.stroke();
+    return _pdHash(c.toDataURL());
+  } catch (e) { return null; }
+}
+function _pdAudio(cb) {
+  try {
+    var OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OC) return cb(null);
+    // Offline: renderiza sem tocar nada e sem exigir gesto do usuário.
+    var ctx = new OC(1, 5000, 44100);
+    var osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = 10000;
+    var comp = ctx.createDynamicsCompressor();
+    osc.connect(comp); comp.connect(ctx.destination); osc.start(0);
+    ctx.startRendering().then(function (buf) {
+      var d = buf.getChannelData(0), s = 0;
+      for (var i = 2000; i < 3000; i++) s += Math.abs(d[i]);
+      cb(_pdHash(String(s)));
+    }).catch(function () { cb(null); });
+  } catch (e) { cb(null); }
+}
+window._pdHw = null;
+(function () {
+  try {
+    var guardado = localStorage.getItem('portal_hw');
+    if (guardado) { window._pdHw = JSON.parse(guardado); return; }
+  } catch (e) {}
+  var hw = { gpu: _pdGpu(), canvas: _pdCanvas(), audio: null };
+  window._pdHw = hw;
+  _pdAudio(function (a) {
+    hw.audio = a;
+    try { localStorage.setItem('portal_hw', JSON.stringify(hw)); } catch (e) {}
+  });
+})();
 // Impressão digital do aparelho. O que ela resolve NÃO é "de que marca é o
 // celular" — é sobreviver a limpar o localStorage: sem ela, quem limpa vira
 // um device id novo e o rastro se perde sem ninguém perceber. Só lê o que o
@@ -149,8 +265,25 @@ window.portalFingerprint = function () {
     fp.mem = navigator.deviceMemory || null;
     fp.toque = navigator.maxTouchPoints || 0;
   } catch (e) {}
+  try {
+    // Tipo de conexão (Chromium): separa wifi de rede celular, o que o IP
+    // sozinho nem sempre diz.
+    var cn = navigator.connection;
+    if (cn && cn.effectiveType) fp.conexao = cn.effectiveType + (cn.downlink ? ' ~' + cn.downlink + 'Mb' : '');
+  } catch (e) {}
+  try {
+    // De onde a pessoa chegou: link compartilhado, busca, ou digitado direto.
+    if (document.referrer && document.referrer.indexOf(location.host) < 0) {
+      fp.ref = document.referrer.slice(0, 80);
+    }
+  } catch (e) {}
+  var hw = window._pdHw;
+  if (hw) { fp.gpu = hw.gpu; fp.canvas = hw.canvas; fp.audio = hw.audio; }
   // Preenchidos pelos Client Hints abaixo, que são assíncronos.
-  if (window._pfpAlta) { fp.modelo = window._pfpAlta.modelo; fp.so = window._pfpAlta.so; }
+  if (window._pfpAlta) {
+    fp.modelo = window._pfpAlta.modelo; fp.so = window._pfpAlta.so;
+    fp.arq = window._pfpAlta.arq; fp.nav = window._pfpAlta.nav;
+  }
   return fp;
 };
 // Client Hints de alta entropia: só o Chromium responde (Safari recusa por
@@ -161,10 +294,12 @@ window.portalFingerprint = function () {
   try {
     var uad = navigator.userAgentData;
     if (!uad || !uad.getHighEntropyValues) return;
-    uad.getHighEntropyValues(['model', 'platformVersion']).then(function (v) {
+    uad.getHighEntropyValues(['model', 'platformVersion', 'architecture', 'bitness', 'uaFullVersion']).then(function (v) {
       window._pfpAlta = {
         modelo: v.model || null,
         so: ((v.platform || '') + ' ' + (v.platformVersion || '')).trim() || null,
+        arq: ((v.architecture || '') + (v.bitness ? ' ' + v.bitness + ' bits' : '')).trim() || null,
+        nav: v.uaFullVersion || null, // build exato, não só a versão maior
       };
     }).catch(function () {});
   } catch (e) {}
@@ -596,6 +731,16 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     <div style="font-size:11px;color:var(--text-3);margin:12px 0 2px;text-transform:uppercase;letter-spacing:.04em">Ainda não reconhecidos</div>
     <div id="ps-outros"></div>
   </div>
+  <!-- Identidades por aparelho: o único item da tela que pode entregar um
+       NOME sozinho. Se o aparelho desconhecido algum dia entrar com a senha
+       própria de quem o usa, as duas identidades caem na mesma linha. -->
+  <div class="ps-card">
+    <h2>Aparelho usado por mais de uma identidade</h2>
+    <p class="sub" style="margin:2px 0 8px;font-size:12px">Aparelhos em que
+    <b>mais de uma senha</b> já foi usada. É aqui que um aparelho desconhecido
+    se entrega: basta ele entrar uma vez com a senha pessoal de quem o usa.</p>
+    <div id="ps-ident"><p class="ps-vazio">Carregando…</p></div>
+  </div>
   <!-- Cruzamento por IP (2026-08-07): não coleta nada novo, é análise do que
        já entra. Responde "este aparelho desconhecido já saiu do mesmo
        endereço que alguém que eu sei quem é?" — a pista mais forte que existe
@@ -729,13 +874,17 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   // O que responde "de onde veio". Operadora primeiro, porque é o campo que
   // separa "dentro de uma casa" de "internet residencial" de "celular na
   // rua"; o IP vem por último, é o que amarra dois aparelhos à mesma rede.
+  // Nome reverso do IP (DNS), preenchido pela resposta de /logins. Em rede
+  // residencial vem genérico da operadora; em link empresarial às vezes traz
+  // o domínio da empresa — e aí diz de ONDE a pessoa acessa.
+  var PTR = {};
   function txtRede(r) {
     if (!r || typeof r !== 'object') return '';
     var p = [];
     if (r.org) p.push(r.org);
     var loc = [r.cidade, r.regiao].filter(Boolean).join('/');
     if (loc) p.push(loc);
-    if (r.ip) p.push(r.ip);
+    if (r.ip) p.push(r.ip + (PTR[r.ip] ? ' (' + PTR[r.ip] + ')' : ''));
     return p.join(' · ');
   }
   // Versão exata de OS e navegador — é o que separa dois "iPhone" que hoje
@@ -776,6 +925,15 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     if (fp.idioma) p.push(fp.idioma.split(',')[0]);
     if (fp.tz) p.push(fp.tz);
     if (fp.cpu) p.push(fp.cpu + ' núcleos');
+    if (fp.arq) p.push(fp.arq);
+    if (fp.conexao) p.push(fp.conexao);
+    // GPU vem legível e é o traço de máquina mais reconhecível da lista.
+    if (fp.gpu) p.push('GPU ' + fp.gpu);
+    // canvas/audio são hashes: não dizem nada sozinhos, servem pra comparar
+    // dois registros. Aparecem curtos, como assinatura.
+    var assin = [fp.canvas, fp.audio].filter(Boolean).join('/');
+    if (assin) p.push('assinatura ' + assin);
+    if (fp.ref) p.push('veio de ' + fp.ref);
     return p.join(' · ');
   }
   // Latência alta com operadora brasileira sugere VPN/proxy. É PISTA, nunca
@@ -1199,6 +1357,39 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
       el.appendChild(b);
     });
   }
+  function desenhaIdentidades(lista, apelidos) {
+    var el = document.getElementById('ps-ident');
+    el.innerHTML = '';
+    if (!lista || !lista.length) {
+      el.innerHTML = '<p class="ps-vazio">Nenhum aparelho apareceu com mais de uma identidade até agora. Isto se preenche sozinho conforme as pessoas entram — é o caminho mais provável de dar um nome a um aparelho desconhecido.</p>';
+      return;
+    }
+    lista.forEach(function (a) {
+      var bloco = document.createElement('div'); bloco.className = 'ps-log';
+      var top = document.createElement('div'); top.className = 'top';
+      var esq = document.createElement('span');
+      var ch = document.createElement('span'); ch.className = 'chave';
+      ch.textContent = apelidos[a.device] || ('#' + (a.device.replace(/[^a-z0-9]/gi, '').slice(-4) || '????'));
+      esq.appendChild(ch);
+      var sp = document.createElement('span');
+      sp.style.cssText = 'color:var(--text-2);margin-left:8px';
+      sp.textContent = a.identidades.length + ' identidades neste aparelho';
+      esq.appendChild(sp);
+      top.appendChild(esq);
+      bloco.appendChild(top);
+      a.identidades.forEach(function (i) {
+        var l = document.createElement('div'); l.className = 'ps-rede';
+        // "pessoa" é nome real (senha individual); "chave" é senha
+        // compartilhada, que identifica o acesso e não a pessoa.
+        l.textContent = i.rotulo + (i.tipo === 'chave' ? ' (senha compartilhada)' : '')
+          + ' · ' + i.n + (i.n === 1 ? ' entrada' : ' entradas')
+          + ' · ' + fmtDataHora(i.primeiro) + ' a ' + fmtDataHora(i.ultimo);
+        bloco.appendChild(l);
+      });
+      bloco.classList.add('ps-alerta');
+      el.appendChild(bloco);
+    });
+  }
   function desenhaCruzamento(lista, apelidos, meus) {
     var el = document.getElementById('ps-cruza');
     el.innerHTML = '';
@@ -1247,9 +1438,13 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
       .then(function (d) {
         if (!d) { document.getElementById('ps-logins').innerHTML = '<p class="ps-vazio">Não foi possível carregar o registro de entradas.</p>'; return; }
         ULT_APELIDOS = d.apelidos || {}; ULT_MEUS = d.meus || {};
+        PTR = d.ptr || {};
         desenhaLogins(d);
         desenhaFiltros();
         desenhaCruzamento(d.cruzamento, ULT_APELIDOS, ULT_MEUS);
+        desenhaIdentidades(d.identidades, ULT_APELIDOS);
+        // As outras duas listas foram desenhadas antes do PTR chegar.
+        if (Object.keys(PTR).length) { buscaDevices(meuToken); busca(meuToken); }
       })
       .catch(function () { document.getElementById('ps-logins').innerHTML = '<p class="ps-vazio">Sem conexão para o registro de entradas.</p>'; });
   }
@@ -2620,7 +2815,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '2224f85d9b1e';
+  var BUILD = '1c6e21650f3b';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
