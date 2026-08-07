@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Presença online · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=1c6e21650f3b">
+<link rel="stylesheet" href="portal.css?v=c16f2490a0cd">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -237,18 +237,119 @@ function _pdAudio(cb) {
     }).catch(function () { cb(null); });
   } catch (e) { cb(null); }
 }
+// Fontes instaladas: mede a largura de um texto em cada fonte contra as três
+// genéricas. Se difere, a fonte existe. Lista curta e representativa de
+// propósito — o conjunto completo custaria caro e o ganho satura rápido.
+// Vira uma máscara compacta, não a lista (a lista é longa e não se lê).
+var _PD_FONTES = ['Arial','Calibri','Cambria','Consolas','Courier New','Georgia',
+  'Helvetica Neue','Impact','Lucida Grande','Menlo','Monaco','Segoe UI',
+  'Tahoma','Times New Roman','Trebuchet MS','Verdana','Roboto','Noto Sans',
+  'Ubuntu','DejaVu Sans','Optima','Futura','Gill Sans','Franklin Gothic Medium'];
+function _pdFontes() {
+  try {
+    var base = ['monospace','sans-serif','serif'], teste = 'mmmmmmmmmmlli', px = '72px';
+    var c = document.createElement('canvas').getContext('2d');
+    if (!c) return null;
+    var padrao = {};
+    base.forEach(function (b) { c.font = px + ' ' + b; padrao[b] = c.measureText(teste).width; });
+    var bits = '';
+    _PD_FONTES.forEach(function (f) {
+      var achou = base.some(function (b) {
+        c.font = px + " '" + f + "'," + b;
+        return c.measureText(teste).width !== padrao[b];
+      });
+      bits += achou ? '1' : '0';
+    });
+    // Guarda a máscara crua (24 bits, comparável direto) + um hash curto.
+    return bits;
+  } catch (e) { return null; }
+}
+// Contagem de câmeras e microfones. Sem permissão nenhuma vem só a
+// quantidade e o tipo — nome do aparelho exigiria permissão e não é pedido.
+function _pdMidia(cb) {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return cb(null);
+    navigator.mediaDevices.enumerateDevices().then(function (ds) {
+      var cam = 0, mic = 0, alt = 0;
+      ds.forEach(function (d) {
+        if (d.kind === 'videoinput') cam++;
+        else if (d.kind === 'audioinput') mic++;
+        else if (d.kind === 'audiooutput') alt++;
+      });
+      cb(cam + 'c/' + mic + 'm/' + alt + 's');
+    }).catch(function () { cb(null); });
+  } catch (e) { cb(null); }
+}
+// Vozes de síntese de fala: revela os pacotes de idioma instalados no
+// sistema. Entropia alta e ninguém limpa. Chega assíncrono em alguns
+// navegadores, daí o evento.
+function _pdVozes(cb) {
+  try {
+    var ss = window.speechSynthesis;
+    if (!ss) return cb(null);
+    var pega = function () {
+      var v = ss.getVoices() || [];
+      if (!v.length) return false;
+      cb(v.length + 'v/' + _pdHash(v.map(function (x) { return x.name + '|' + x.lang; }).sort().join(',')));
+      return true;
+    };
+    if (pega()) return;
+    ss.onvoiceschanged = function () { ss.onvoiceschanged = null; if (!pega()) cb(null); };
+    setTimeout(function () { if (ss.onvoiceschanged) { ss.onvoiceschanged = null; cb(null); } }, 1500);
+  } catch (e) { cb(null); }
+}
+// Layout físico do teclado (Chromium): distingue ABNT2 de teclado americano,
+// ou seja, máquina comprada no Brasil ou fora.
+function _pdTeclado(cb) {
+  try {
+    if (!navigator.keyboard || !navigator.keyboard.getLayoutMap) return cb(null);
+    navigator.keyboard.getLayoutMap().then(function (m) {
+      // A tecla à direita do L muda de layout pra layout.
+      cb(String(m.get('Semicolon') || '') + '/' + String(m.get('Quote') || '') || null);
+    }).catch(function () { cb(null); });
+  } catch (e) { cb(null); }
+}
+function _pdBateria(cb) {
+  try {
+    if (!navigator.getBattery) return cb(null);
+    navigator.getBattery().then(function (b) {
+      cb(Math.round(b.level * 100) + '%' + (b.charging ? ' carregando' : ''));
+    }).catch(function () { cb(null); });
+  } catch (e) { cb(null); }
+}
+// Detalhes extras da GPU — fabricante, limite de textura e nº de extensões.
+// Somam entropia sobre o nome do renderizador que já pego.
+function _pdGl() {
+  try {
+    var gl = document.createElement('canvas').getContext('webgl');
+    if (!gl) return null;
+    var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    var vend = dbg ? String(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) || '') : '';
+    var ext = (gl.getSupportedExtensions() || []).length;
+    return (vend.slice(0, 40) || '?') + '/' + gl.getParameter(gl.MAX_TEXTURE_SIZE) + '/' + ext;
+  } catch (e) { return null; }
+}
 window._pdHw = null;
 (function () {
   try {
     var guardado = localStorage.getItem('portal_hw');
-    if (guardado) { window._pdHw = JSON.parse(guardado); return; }
+    // `v` protege contra ler um blob de versão antiga sem os campos novos.
+    if (guardado) {
+      var g = JSON.parse(guardado);
+      if (g && g.v === 2) { window._pdHw = g; return; }
+    }
   } catch (e) {}
-  var hw = { gpu: _pdGpu(), canvas: _pdCanvas(), audio: null };
+  var hw = { v: 2, gpu: _pdGpu(), gl: _pdGl(), canvas: _pdCanvas(), fontes: _pdFontes(),
+             audio: null, midia: null, vozes: null, teclado: null, bateria: null };
   window._pdHw = hw;
-  _pdAudio(function (a) {
-    hw.audio = a;
-    try { localStorage.setItem('portal_hw', JSON.stringify(hw)); } catch (e) {}
-  });
+  var salva = function () { try { localStorage.setItem('portal_hw', JSON.stringify(hw)); } catch (e) {} };
+  _pdAudio(function (a) { hw.audio = a; salva(); });
+  _pdMidia(function (m) { hw.midia = m; salva(); });
+  _pdVozes(function (v) { hw.vozes = v; salva(); });
+  _pdTeclado(function (t) { hw.teclado = t; salva(); });
+  // Bateria NÃO entra no blob guardado: ela muda o tempo todo, e cachear
+  // congelaria um valor falso. Fica só na memória desta carga.
+  _pdBateria(function (b) { hw.bateria = b; });
 })();
 // Impressão digital do aparelho. O que ela resolve NÃO é "de que marca é o
 // celular" — é sobreviver a limpar o localStorage: sem ela, quem limpa vira
@@ -277,8 +378,37 @@ window.portalFingerprint = function () {
       fp.ref = document.referrer.slice(0, 80);
     }
   } catch (e) {}
+  try {
+    // Tela útil: expõe a configuração de barra de tarefas/dock, que varia de
+    // pessoa pra pessoa mesmo em monitores idênticos.
+    if (screen.availWidth) fp.util = (screen.availWidth | 0) + 'x' + (screen.availHeight | 0);
+    // Preferências de acessibilidade/aparência: estáveis por pessoa e pouco
+    // óbvias — quase ninguém pensa nelas como identificação.
+    var mq = function (q) { try { return matchMedia(q).matches; } catch (e) { return false; } };
+    var pref = [];
+    if (mq('(prefers-color-scheme: dark)')) pref.push('escuro');
+    if (mq('(prefers-reduced-motion: reduce)')) pref.push('menos-movimento');
+    if (mq('(forced-colors: active)')) pref.push('alto-contraste');
+    if (mq('(pointer: coarse)')) pref.push('toque');
+    if (mq('(hover: none)')) pref.push('sem-hover');
+    // App instalado na tela inicial: quem instalou não é curioso de passagem.
+    if (mq('(display-mode: standalone)') || navigator.standalone) pref.push('app-instalado');
+    if (pref.length) fp.pref = pref.join(',');
+    var io = Intl.DateTimeFormat().resolvedOptions();
+    if (io && io.hourCycle) fp.hora = io.hourCycle; // 12h x 24h, e calendário
+    if (performance && performance.memory && performance.memory.jsHeapSizeLimit) {
+      fp.heap = Math.round(performance.memory.jsHeapSizeLimit / 1048576); // classe do aparelho
+    }
+    // Desvio do relógio contra o servidor: alguns segundos de diferença viram
+    // assinatura. Calculado na resposta anterior (window._pdSkew).
+    if (typeof window._pdSkew === 'number') fp.relogio = window._pdSkew;
+  } catch (e) {}
   var hw = window._pdHw;
-  if (hw) { fp.gpu = hw.gpu; fp.canvas = hw.canvas; fp.audio = hw.audio; }
+  if (hw) {
+    fp.gpu = hw.gpu; fp.canvas = hw.canvas; fp.audio = hw.audio;
+    fp.gl = hw.gl; fp.fontes = hw.fontes; fp.midia = hw.midia;
+    fp.vozes = hw.vozes; fp.teclado = hw.teclado; fp.bateria = hw.bateria;
+  }
   // Preenchidos pelos Client Hints abaixo, que são assíncronos.
   if (window._pfpAlta) {
     fp.modelo = window._pfpAlta.modelo; fp.so = window._pfpAlta.so;
@@ -304,6 +434,20 @@ window.portalFingerprint = function () {
     }).catch(function () {});
   } catch (e) {}
 })();
+// Desvio do relógio do aparelho contra o do servidor. Alguns segundos de
+// diferença viram assinatura estável — poucos aparelhos têm o mesmo desvio.
+// Calculado da resposta de qualquer chamada ao Worker (cabeçalho Date), sem
+// requisição dedicada.
+window._pdSkew = null;
+window.pdMedeRelogio = function (resp) {
+  try {
+    var d = resp && resp.headers && resp.headers.get('Date');
+    if (!d) return;
+    var srv = new Date(d).getTime();
+    if (!srv) return;
+    window._pdSkew = Math.round((Date.now() - srv) / 1000);
+  } catch (e) {}
+};
 window.loginSenha = function (worker, senha) {
   return fetch(worker + '/api/nivel', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -312,6 +456,7 @@ window.loginSenha = function (worker, senha) {
       pg: location.pathname, fp: window.portalFingerprint(),
     }),
   }).then(function (r) {
+    window.pdMedeRelogio(r);
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
     return r.json().then(function (d) {
@@ -414,7 +559,8 @@ window.msgAcessoNegado = function (nomePagina) {
         pg: location.pathname,
         fp: window.portalFingerprint ? window.portalFingerprint() : null,
       }),
-    }).catch(function () {});
+    }).then(function (r) { if (window.pdMedeRelogio) window.pdMedeRelogio(r); })
+      .catch(function () {});
   };
   window.marcaPresenca();
   // Intervalo do heartbeat (2026-07-24, achado por acidente: publicar o
@@ -741,6 +887,24 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     se entrega: basta ele entrar uma vez com a senha pessoal de quem o usa.</p>
     <div id="ps-ident"><p class="ps-vazio">Carregando…</p></div>
   </div>
+  <!-- Pistas (2026-08-07): os dois cruzamentos que não dependem de IP. O de
+       hardware identifica a MÁQUINA (IP é fraco em wifi compartilhado); o de
+       escala devolve quem poderia estar no teclado naquela hora. -->
+  <div class="ps-card">
+    <h2>Mesma máquina que um aparelho conhecido</h2>
+    <p class="sub" style="margin:2px 0 8px;font-size:12px">Aparelhos não
+    reconhecidos cuja <b>assinatura de hardware</b> bate com a de um aparelho
+    que você conhece. Placa de vídeo, canvas, áudio e tela iguais significam
+    a mesma máquina — sem depender de endereço de rede.</p>
+    <div id="ps-hw"><p class="ps-vazio">Carregando…</p></div>
+  </div>
+  <div class="ps-card">
+    <h2>Quem estava escalado na hora do acesso</h2>
+    <p class="sub" style="margin:2px 0 8px;font-size:12px">Para cada acesso de
+    aparelho não reconhecido, quem estava <b>de serviço</b> naquele horário,
+    em qualquer casa. Não aponta ninguém — encurta a lista.</p>
+    <div id="ps-escala"><p class="ps-vazio">Carregando…</p></div>
+  </div>
   <!-- Cruzamento por IP (2026-08-07): não coleta nada novo, é análise do que
        já entra. Responde "este aparelho desconhecido já saiu do mesmo
        endereço que alguém que eu sei quem é?" — a pista mais forte que existe
@@ -931,7 +1095,18 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     if (fp.gpu) p.push('GPU ' + fp.gpu);
     // canvas/audio são hashes: não dizem nada sozinhos, servem pra comparar
     // dois registros. Aparecem curtos, como assinatura.
-    var assin = [fp.canvas, fp.audio].filter(Boolean).join('/');
+    if (fp.gl) p.push('GL ' + fp.gl);
+    if (fp.util) p.push('útil ' + fp.util);
+    if (fp.heap) p.push(fp.heap + ' MB heap');
+    if (fp.teclado) p.push('teclado ' + fp.teclado);
+    if (fp.vozes) p.push('vozes ' + fp.vozes);
+    if (fp.midia) p.push('mídia ' + fp.midia);
+    if (fp.bateria) p.push('bateria ' + fp.bateria);
+    if (typeof fp.relogio === 'number') p.push('relógio ' + (fp.relogio > 0 ? '+' : '') + fp.relogio + 's');
+    if (fp.pref) p.push(fp.pref);
+    // canvas/audio/fontes são hashes e máscaras: não dizem nada sozinhos,
+    // servem pra comparar dois registros entre si.
+    var assin = [fp.canvas, fp.audio, fp.fontes].filter(Boolean).join('/');
     if (assin) p.push('assinatura ' + assin);
     if (fp.ref) p.push('veio de ' + fp.ref);
     return p.join(' · ');
@@ -944,7 +1119,9 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     if (typeof r.rtt === 'number' && r.rtt > 0) {
       p.push(r.rtt + ' ms' + (r.rtt > 250 ? ' (alto — pode ser VPN)' : ''));
     }
-    if (r.tls) p.push(r.tls);
+    if (r.tls) p.push(r.tls + (r.cifra ? ' ' + r.cifra : ''));
+    if (r.http) p.push(r.http);
+    if (r.lang) p.push('aceita ' + r.lang);
     if (r.colo) p.push('via ' + r.colo);
     return p.join(' · ');
   }
@@ -1281,7 +1458,8 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     return {
       ip: lg.ip, asn: lg.asn, org: lg.org, cidade: lg.cidade, regiao: lg.regiao,
       pais: lg.pais, tz: lg.tz, ua: lg.ua,
-      rtt: ex.rtt, tls: ex.tls, colo: ex.colo, fp: ex.fp || null,
+      rtt: ex.rtt, tls: ex.tls, cifra: ex.cifra, http: ex.http, colo: ex.colo,
+      lang: ex.lang, fp: ex.fp || null,
     };
   }
   function nomeAparelhoLogin(lg, apelidos, meus) {
@@ -1431,6 +1609,89 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
       el.appendChild(bloco);
     });
   }
+  function nomeDev(d, apelidos) {
+    return apelidos[d] || ('#' + (String(d).replace(/[^a-z0-9]/gi, '').slice(-4) || '????'));
+  }
+  function desenhaPistas(d) {
+    var ap = (d && d.apelidos) || {}, meus = (d && d.meus) || {};
+    var elH = document.getElementById('ps-hw');
+    elH.innerHTML = '';
+    if (!Object.keys(meus).length) {
+      elH.innerHTML = '<p class="ps-vazio">Marque “é meu” nos seus aparelhos primeiro — sem isso não há aparelho conhecido contra o que comparar.</p>';
+    } else if (!d.hardware || !d.hardware.length) {
+      elH.innerHTML = '<p class="ps-vazio">Nenhum aparelho desconhecido tem hardware igual ao de um aparelho conhecido.</p>';
+    } else {
+      d.hardware.forEach(function (h) {
+        var b = document.createElement('div'); b.className = 'ps-log ps-alerta';
+        var top = document.createElement('div'); top.className = 'top';
+        var e = document.createElement('span');
+        var c = document.createElement('span'); c.className = 'chave';
+        c.textContent = nomeDev(h.device, ap); e.appendChild(c);
+        var sp = document.createElement('span');
+        sp.style.cssText = 'color:var(--text-2);margin-left:8px';
+        var alvo = h.meu ? 'um aparelho SEU (' + nomeDev(h.contra, ap) + ')'
+                         : (h.quem.length ? h.quem.join(', ') : nomeDev(h.contra, ap));
+        sp.textContent = 'mesma máquina que ' + alvo;
+        e.appendChild(sp);
+        var dir = document.createElement('span'); dir.className = 'quando';
+        dir.textContent = h.campos + '/' + h.total + ' campos';
+        top.appendChild(e); top.appendChild(dir);
+        b.appendChild(top);
+        var n = document.createElement('div'); n.className = 'ps-rede';
+        n.textContent = h.campos >= 4
+          ? 'coincidência forte — placa de vídeo, assinaturas e tela batem'
+          : 'coincidência parcial — confira campo a campo antes de concluir';
+        b.appendChild(n);
+        elH.appendChild(b);
+      });
+    }
+    var elE = document.getElementById('ps-escala');
+    elE.innerHTML = '';
+    var esc = d && d.escala;
+    if (!esc || !esc.disponivel) {
+      elE.innerHTML = '<p class="ps-vazio">A escala não está configurada neste Worker — cruzamento indisponível.</p>';
+      return;
+    }
+    if (!esc.itens.length) {
+      elE.innerHTML = '<p class="ps-vazio">Nenhum acesso de aparelho não reconhecido nos últimos dias.</p>';
+      return;
+    }
+    esc.itens.forEach(function (it) {
+      var b = document.createElement('div'); b.className = 'ps-log';
+      var top = document.createElement('div'); top.className = 'top';
+      var e = document.createElement('span');
+      var c = document.createElement('span'); c.className = 'chave';
+      c.textContent = nomeDev(it.device, ap); e.appendChild(c);
+      var sp = document.createElement('span');
+      sp.style.cssText = 'color:var(--text-2);margin-left:8px';
+      sp.textContent = it.escalados.length
+        ? it.escalados.length + (it.escalados.length === 1 ? ' pessoa de serviço' : ' pessoas de serviço')
+        : (it.semEscalaNoDia ? 'sem escala cadastrada nesse dia' : 'ninguém de serviço nesse horário');
+      e.appendChild(sp);
+      var dir = document.createElement('span'); dir.className = 'quando';
+      dir.textContent = it.dia.slice(8) + '/' + it.dia.slice(5, 7) + ', ' + it.hora;
+      top.appendChild(e); top.appendChild(dir);
+      b.appendChild(top);
+      if (it.escalados.length) {
+        var n = document.createElement('div'); n.className = 'ps-rede';
+        n.textContent = it.escalados.map(function (x) { return x.pessoa + ' (' + x.casa + ')'; }).join(' · ');
+        b.appendChild(n);
+      } else if (it.semEscalaNoDia) {
+        var n2 = document.createElement('div'); n2.className = 'ps-rede';
+        // Ausência de linha é ausência de CADASTRO, não prova de que ninguém
+        // trabalhou — dizer o contrário seria inventar um álibi.
+        n2.textContent = 'a escala desse dia não está no banco — não dá pra afirmar que ninguém trabalhou';
+        b.appendChild(n2);
+      }
+      elE.appendChild(b);
+    });
+  }
+  function buscaPistas(token) {
+    fetch(WORKER + '/api/presenca/pistas', { headers: { 'X-Token': token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d) desenhaPistas(d); else document.getElementById('ps-hw').innerHTML = '<p class="ps-vazio">Não foi possível carregar as pistas.</p>'; })
+      .catch(function () { document.getElementById('ps-hw').innerHTML = '<p class="ps-vazio">Sem conexão para as pistas.</p>'; });
+  }
   var ULT_APELIDOS = {}, ULT_MEUS = {};
   function buscaLogins(token) {
     fetch(WORKER + '/api/presenca/logins?dias=90', { headers: { 'X-Token': token } })
@@ -1462,6 +1723,7 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     busca(r.sessao.token);
     buscaDevices(r.sessao.token);
     buscaLogins(r.sessao.token);
+    buscaPistas(r.sessao.token);
     setInterval(function () { buscaDevices(r.sessao.token); }, 60000);
   } else if (!r.redirecionou) {
     msg.innerHTML = window.msgAcessoNegado('a Presença online');
@@ -2815,7 +3077,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '1c6e21650f3b';
+  var BUILD = 'c16f2490a0cd';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
