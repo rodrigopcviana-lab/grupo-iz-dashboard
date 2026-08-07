@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Presença online · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=c16f2490a0cd">
+<link rel="stylesheet" href="portal.css?v=391aaa900ac4">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1028,6 +1028,37 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     return min < 1 ? 'agora' : ('há ' + fmtDuracaoMin(min));
   }
 
+  // ─── 2ª senha da página (2026-08-07) ────────────────────────────────────
+  // Além da sessão coord, o Worker exige X-Senha-Presenca. Guardada em
+  // sessionStorage, não localStorage: esta tela descreve pessoas (IP, rede,
+  // aparelho), e faz sentido que fechar o navegador feche a porta.
+  var SENHA_PS = '';
+  try { SENHA_PS = sessionStorage.getItem('ps_senha') || ''; } catch (e) {}
+  function hdrs(token) {
+    return { 'X-Token': token, 'X-Senha-Presenca': SENHA_PS };
+  }
+  // Todas as chamadas passam por aqui: um 401 com `senha_presenca` volta pro
+  // pedido de senha em vez de mandar relogar (a sessão está boa; falta a 2ª
+  // trava). 503 sem_config = secret não configurado no Worker.
+  function pedePresenca(msgErro) {
+    gate.style.display = '';
+    corpo.style.display = 'none';
+    gate.innerHTML = '<h2>Senha da Presença online</h2>'
+      + '<p class="sub" style="margin:0 0 10px">Esta página tem uma segunda senha, além do seu acesso de coordenação.</p>'
+      + '<input id="ps-senha" type="password" autocomplete="off" style="width:100%;max-width:280px;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:15px">'
+      + '<div><button id="ps-entrar" type="button" style="margin-top:10px;padding:9px 16px;border-radius:9px;border:1px solid var(--acc);background:transparent;color:var(--acc);font-size:14px;cursor:pointer">Abrir</button></div>'
+      + '<p id="ps-erro" class="sub" style="margin:8px 0 0;color:var(--vermelho,#c4553d)">' + (msgErro || '') + '</p>';
+    var inp = document.getElementById('ps-senha');
+    var vai = function () {
+      SENHA_PS = inp.value || '';
+      try { sessionStorage.setItem('ps_senha', SENHA_PS); } catch (e) {}
+      inicia();
+    };
+    document.getElementById('ps-entrar').onclick = vai;
+    inp.onkeydown = function (ev) { if (ev.key === 'Enter') vai(); };
+    inp.focus();
+  }
+
   // Apelidos dos aparelhos, vindos do próprio /api/presenca/detalhe (mapa
   // device -> apelido, o MESMO que "Aparelhos conectados agora" usa).
   var APELIDOS = {};
@@ -1366,8 +1397,22 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
 
   function busca(token) {
     msg.textContent = 'Carregando…';
-    fetch(WORKER + '/api/presenca/detalhe', { headers: { 'X-Token': token } }).then(function (r) {
-      if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
+    fetch(WORKER + '/api/presenca/detalhe', { headers: hdrs(token) }).then(function (r) {
+      if (r.status === 503) {
+        gate.innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">A senha desta página ainda não foi configurada no servidor.</p>';
+        return;
+      }
+      if (r.status === 401) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          // Sessão boa, faltando a 2ª senha: pede aqui em vez de mandar
+          // relogar. Só um 401 que NÃO é de senha_presenca derruba a sessão.
+          if (d && d.erro === 'senha_presenca') {
+            pedePresenca(SENHA_PS ? 'Senha incorreta.' : '');
+            return;
+          }
+          window.sessaoLimpar(); window.irParaLogin(SLUG);
+        });
+      }
       if (!r.ok) { msg.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return; }
       r.json().then(desenha);
     }).catch(function () { msg.textContent = 'Sem conexão. Tente de novo.'; });
@@ -1387,7 +1432,7 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     var nome = window.prompt('Apelido para este aparelho (deixe vazio para remover):', atual || '');
     if (nome === null) return; // cancelou
     fetch(WORKER + '/api/presenca/apelido', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': meuToken },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': meuToken, 'X-Senha-Presenca': SENHA_PS },
       body: JSON.stringify({ device: device, apelido: nome.trim() }),
     }).then(function (r) { if (r.ok) buscaDevices(meuToken); }).catch(function () {});
   }
@@ -1397,7 +1442,7 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   function marcaMeu(device, meu) {
     if (!meuToken) return;
     fetch(WORKER + '/api/presenca/apelido', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': meuToken },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': meuToken, 'X-Senha-Presenca': SENHA_PS },
       body: JSON.stringify({ device: device, apelido: (APELIDOS[device] || ''), meu: !!meu }),
     }).then(function (r) { if (r.ok) { buscaDevices(meuToken); busca(meuToken); } }).catch(function () {});
   }
@@ -1687,14 +1732,14 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
     });
   }
   function buscaPistas(token) {
-    fetch(WORKER + '/api/presenca/pistas', { headers: { 'X-Token': token } })
+    fetch(WORKER + '/api/presenca/pistas', { headers: hdrs(token) })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { if (d) desenhaPistas(d); else document.getElementById('ps-hw').innerHTML = '<p class="ps-vazio">Não foi possível carregar as pistas.</p>'; })
       .catch(function () { document.getElementById('ps-hw').innerHTML = '<p class="ps-vazio">Sem conexão para as pistas.</p>'; });
   }
   var ULT_APELIDOS = {}, ULT_MEUS = {};
   function buscaLogins(token) {
-    fetch(WORKER + '/api/presenca/logins?dias=90', { headers: { 'X-Token': token } })
+    fetch(WORKER + '/api/presenca/logins?dias=90', { headers: hdrs(token) })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d) { document.getElementById('ps-logins').innerHTML = '<p class="ps-vazio">Não foi possível carregar o registro de entradas.</p>'; return; }
@@ -1711,7 +1756,7 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   }
   function buscaDevices(token) {
     meuToken = token;
-    fetch(WORKER + '/api/presenca/coord-devices', { headers: { 'X-Token': token } })
+    fetch(WORKER + '/api/presenca/coord-devices', { headers: hdrs(token) })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { if (d) desenhaDevices(d); }).catch(function () {});
   }
@@ -1719,12 +1764,18 @@ senha individual aparece pelo nome; os demais, pela casa e nível.</p>
   // Só coordenação (PLANO_PRESENCA_ONLINE.md) — diferente de atividade.html/
   // doses-painel.html, que chefe também vê.
   var r = window.exigirNivel(['coord'], SLUG);
-  if (r.ok) {
+  function inicia() {
+    gate.style.display = '';
+    msg.textContent = 'Carregando…';
     busca(r.sessao.token);
     buscaDevices(r.sessao.token);
     buscaLogins(r.sessao.token);
     buscaPistas(r.sessao.token);
-    setInterval(function () { buscaDevices(r.sessao.token); }, 60000);
+  }
+  if (r.ok) {
+    if (!SENHA_PS) pedePresenca('');
+    else inicia();
+    setInterval(function () { if (SENHA_PS) buscaDevices(r.sessao.token); }, 60000);
   } else if (!r.redirecionou) {
     msg.innerHTML = window.msgAcessoNegado('a Presença online');
   }
@@ -3077,7 +3128,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c16f2490a0cd';
+  var BUILD = '391aaa900ac4';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
