@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=391aaa900ac4">
+<link rel="stylesheet" href="portal.css?v=bf859bf83444">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -460,6 +460,23 @@ window.loginSenha = function (worker, senha) {
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
     return r.json().then(function (d) {
+      // ── Autocadastro por e-mail (2026-08-07) ─────────────────────────────
+      // Duas respostas 200 que NÃO são login e por isso não gravam sessão
+      // nenhuma. Quem chamou (hoje só a tela de entrada do mural) abre a etapa
+      // correspondente; qualquer outra página que use loginSenha simplesmente
+      // não recebe `token` e não abre o portal — que é o certo.
+      // (a) senha compartilhada com autocadastro ligado: virou bilhete de
+      //     cadastro. `chave` diz QUAL senha foi, e volta ao Worker no
+      //     POST /api/cadastro/codigo.
+      if (d.cadastro) {
+        return { ok: true, cadastro: true, chave: d.chave || null };
+      }
+      // (b) o que foi digitado é um código provisório válido: primeiro acesso.
+      //     `email` é só pra tela confirmar pra quem o código foi mandado.
+      if (d.primeiro_acesso) {
+        // Sem `email`: o Worker deixou de devolvê-lo de propósito (oráculo).
+        return { ok: true, primeiroAcesso: true };
+      }
       // Nível de fora: grava na chave da própria superfície e devolve
       // `externo` + `destino` pra quem chamou desviar.
       if (d.token && window.NIVEIS_EXTERNOS.indexOf(d.nivel) >= 0) {
@@ -700,6 +717,31 @@ window.msgAcessoNegado = function (nomePagina) {
   .ac-pedir { display: flex; align-items: center; gap: 7px; margin: 12px 0 0; padding-top: 11px;
               border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-2); }
   .ac-pedir .ic { color: var(--acc); flex: none; }
+  /* Autocadastro por e-mail (2026-08-07) — as duas etapas novas vivem INLINE
+     no mesmo card, no lugar do campo de senha (nunca numa página à parte:
+     quem digitou a senha compartilhada está no meio do turno). Elas reusam
+     .ac-gate pra herdar o fio e o respiro do bloco da senha. */
+  /* .ac-gate não define display por CLASSE, então o [hidden] nativo já
+     esconde — esta linha é a guarda contra alguém dar um display: a ela
+     depois (foi exatamente o que mordeu o .ac-ok logo acima). */
+  .ac-gate[hidden] { display: none; }
+  .ac-passo { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 700;
+               letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); margin: 0 0 8px; }
+  .ac-passo .ic { color: var(--acc); flex: none; }
+  .ac-cad-txt { font-size: 12.5px; color: var(--text-2); line-height: 1.55; margin: 0 0 11px; }
+  .ac-cad-txt b { color: var(--text); font-weight: 600; }
+  .ac-campos { display: grid; gap: 9px; margin: 0 0 11px; }
+  .ac-campos label { display: block; font-size: 11.5px; color: var(--text-2); }
+  /* 16px no input de propósito: abaixo disso o iOS dá zoom no foco. */
+  .ac-campos input { display: block; width: 100%; box-sizing: border-box; margin-top: 4px;
+                      padding: 11px 12px; font-size: 16px; border: 1.5px solid var(--border);
+                      border-radius: 10px; background: var(--bg); color: var(--text); }
+  .ac-btn { width: 100%; padding: 12px 18px; font-size: 15px; font-weight: 600; border: none;
+             border-radius: 999px; background: var(--acc); color: var(--acc-txt); cursor: pointer; }
+  .ac-btn[disabled] { opacity: .55; cursor: default; }
+  .ac-volta { display: inline-block; margin-top: 10px; background: none; border: none; padding: 0;
+               font: inherit; font-size: 12.5px; color: var(--text-2); text-decoration: underline;
+               cursor: pointer; }
   /* Rodapé "as casas do grupo" (E4) — logos oficiais, discretos, cor só no toque. */
   .casas-rodape { margin-top: 14px; }
   .casas-rodape-lbl { display: flex; align-items: center; gap: 9px; font-size: 10px; font-weight: 700;
@@ -747,6 +789,45 @@ window.msgAcessoNegado = function (nomePagina) {
 <p class="ac-msg" id="nivel-msg" role="status" aria-live="polite"></p>
 <p class="ac-pedir"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M18 8v6M15 11h6"/></svg><span>Ainda não tem senha?</span>
 <a href="pedir-acesso.html">Pedir acesso</a></p>
+</div>
+<!-- Autocadastro por e-mail (2026-08-07) — etapa 1: a senha digitada é
+     compartilhada e o Worker respondeu {cadastro:true} em vez de logar.
+     Pede o e-mail e manda um código. -->
+<div class="ac-gate" id="ac-cadastro" hidden>
+<div class="ac-passo"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.6 7l8.4 6 8.4-6"/></svg><span>Criar seu acesso</span></div>
+<p class="ac-cad-txt">Essa senha é usada por várias pessoas, então ela não diz quem está entrando.
+<b>Cada pessoa passa a ter um acesso próprio.</b> Informe seu e-mail: mandamos um código para você
+criar a sua senha, e é ela que você vai usar daqui pra frente.</p>
+<div class="ac-form">
+<input type="email" id="ac-cad-email" placeholder="Seu e-mail" autocomplete="email" inputmode="email">
+<button id="ac-cad-enviar">Receber código</button>
+</div>
+<p class="ac-msg" id="ac-cad-msg" role="status" aria-live="polite"></p>
+<button type="button" class="ac-volta" id="ac-cad-voltar">Voltar</button>
+</div>
+<!-- Etapa 2: o que foi digitado no campo de senha era um código provisório
+     válido ({primeiro_acesso:true}). Agora a pessoa se nomeia e escolhe a
+     senha definitiva. -->
+<div class="ac-gate" id="ac-primeiro" hidden>
+<div class="ac-passo"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><path d="M9 3h6v3H9z"/><circle cx="12" cy="12" r="2.2"/><path d="M8.5 17c.6-1.5 2-2.3 3.5-2.3s2.9.8 3.5 2.3"/></svg><span>Primeiro acesso</span></div>
+<p class="ac-cad-txt">Código confirmado. Confirme o e-mail para onde ele foi,
+preencha seus dados e escolha uma senha só sua — é com ela que você entra a
+partir de agora.</p>
+<div class="ac-campos">
+<label>E-mail que recebeu o código
+<input type="email" id="ac-pa-email" autocomplete="email" placeholder="voce@exemplo.com"></label>
+<label>Nome completo
+<input type="text" id="ac-pa-nome" autocomplete="name" placeholder="Nome e sobrenome"></label>
+<label>Data de nascimento
+<input type="date" id="ac-pa-nasc" autocomplete="bday"></label>
+<label>Sua nova senha
+<input type="password" id="ac-pa-senha" autocomplete="new-password"></label>
+<label>Repita a nova senha
+<input type="password" id="ac-pa-senha2" autocomplete="new-password"></label>
+</div>
+<button type="button" class="ac-btn" id="ac-pa-salvar">Criar meu acesso</button>
+<p class="ac-msg" id="ac-pa-msg" role="status" aria-live="polite"></p>
+<button type="button" class="ac-volta" id="ac-pa-voltar">Voltar</button>
 </div>
 <div class="ac-ok" id="ac-ok" hidden>
 <div class="ico" id="ac-ok-ico"></div>
@@ -1425,7 +1506,7 @@ window.msgAcessoNegado = function (nomePagina) {
 <summary class="k">MUNDO DA COQUETELARIA<span class="seta" aria-hidden="true">▾</span></summary>
 <div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span><b>Sustentabilidade operacional ganha peso concreto</b> — Batching pra reduzir desperdício por drink, reaproveitamento de cascas/sobras, compostagem com hortas urbanas e fim de descartáveis viram diferencial competitivo citado por múltiplas casas em 2026. (diageobaracademy.com)</span><a class="go" href="https://diageobaracademy.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Dandelion (Nova York)</b> — Bar do West Village pela equipe do Zero Bond e do reformado White Horse Tavern, com serviço dedicado de Martini e cozinha assinada por chef estrelado Michelin. (wwd.com)</span><a class="go" href="https://wwd.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Diageo World Class 2026</b> — Campeões regionais definidos (EUA: Alexis Ortega, Static Bar, Filadélfia; Hong Kong, Tailândia, Líbano, Cingapura já têm campeões); final global em outubro/2026 na Escócia. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Cato (Londres)</b> — Bar de cinco andares do bartender Angelos Bafas em Covent Garden, dedicado ao clássico Julep; toda a produção e destilados são de origem britânica. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Spirited Awards 2026 (Tales of the Cocktail)</b> — 20ª edição; cerimônia marcada para 23/jul/2026 em Nova Orleans. Finalistas Top 4 e vencedores de prêmios especiais (Helen David Lifetime Achievement, Tales Visionary Award) já anunciados. (talesofthecocktail.org)</span><a class="go" href="https://talesofthecocktail.org/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Destilados sem álcool atraem investimento pesado</b> — Lyre&#x27;s é hoje a mais capitalizada do setor (US$53 milhões levantados); previsão de crescimento de 36,7% em valor no segmento entre 2024-2028. (tracxn.com)</span><a class="go" href="https://tracxn.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Asia&#x27;s 50 Best Bars 2026</b> — Cerimônia em Macau em 28/jul/2026. Smoke &amp; Bitters (Sri Lanka) já venceu o Michter&#x27;s Art of Hospitality Award; Shelley Tai (Mius, Hong Kong) o prêmio Altos Bartenders&#x27; Bartender. (ttrweekly.com)</span><a class="go" href="https://ttrweekly.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Agave em transição: mezcal e reposado sobem sobre o blanco</b> — Mercado de agave se estabiliza após colapso de preço (pico ~32 pesos/kg para ~5 pesos/kg); oferta mais previsível, mas replantio baixo pode gerar novo aperto futuro. (theiwsr.com)</span><a class="go" href="https://theiwsr.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Sabor &quot;savory&quot;/umami dominando os menus</b> — Bartenders reportam alta de miso, shoyu, MSG e maior salinidade em coquetéis, criando perfis mais food-forward e complexos. (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Elderflower é eleito &quot;sabor do ano&quot; de 2026</b> — Floral/botânico domina cardápios, puxando também ervas nativas e infusões naturais como categoria em crescimento. (mrsipps.nl)</span><a class="go" href="https://mrsipps.nl/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Volta à simplicidade técnica</b> — Reação contra coquetéis de 5+ componentes e guarnições excessivas; foco em clássicos revisitados com ingredientes melhores (clarificação, soluções salinas, yuzu). (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Low/no-álcool vira parte estrutural do menu</b> — &quot;Zebra striping&quot; (alternar drink alcoólico e não-alcoólico) já é hábito de 78% da Gen Z; spritzes e clássicos com ABV reduzido seguem como base fixa de carta. (tastingtable.com)</span><a class="go" href="https://tastingtable.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div>
 <div class="coq-historico"><p class="titulo">🏆 World&#39;s 50 Best Bars — últimos vencedores</p><ul><li>World&#x27;s 50 Best Bars 2024 — Handshake Speakeasy (Cidade do México)</li><li>World&#x27;s 50 Best Bars 2025 — Bar Leone (Hong Kong)</li><li>World&#x27;s 50 Best Bars 2023 — Sips (Barcelona)</li><li>World&#x27;s 50 Best Bars 2021 — Connaught Bar (Londres)</li><li>World&#x27;s 50 Best Bars 2022 — Paradiso (Barcelona)</li></ul></div>
-<p class="coq-foot">Atualizado em 07/08/2026 04:40.</p>
+<p class="coq-foot">Atualizado em 07/08/2026 11:19.</p>
 </details>
 <script>
 // Cocktail do mês (PLANO_RANKING_COCKTAILS.md §5) — mesmo Worker da presença
@@ -2243,6 +2324,34 @@ window.msgAcessoNegado = function (nomePagina) {
   var okNome = document.getElementById('ac-ok-nome');
   var okCasa = document.getElementById('ac-ok-casa');
   var okDesc = document.getElementById('ac-ok-desc');
+  // Autocadastro por e-mail (2026-08-07) — as duas etapas novas do mesmo card.
+  var cadBox = document.getElementById('ac-cadastro');
+  var cadEmail = document.getElementById('ac-cad-email');
+  var cadEnviar = document.getElementById('ac-cad-enviar');
+  var cadMsg = document.getElementById('ac-cad-msg');
+  var cadVoltar = document.getElementById('ac-cad-voltar');
+  var paBox = document.getElementById('ac-primeiro');
+  var paEmail = document.getElementById('ac-pa-email');
+  var paNome = document.getElementById('ac-pa-nome');
+  var paNasc = document.getElementById('ac-pa-nasc');
+  var paSenha = document.getElementById('ac-pa-senha');
+  var paSenha2 = document.getElementById('ac-pa-senha2');
+  var paSalvar = document.getElementById('ac-pa-salvar');
+  var paMsg = document.getElementById('ac-pa-msg');
+  var paVoltar = document.getElementById('ac-pa-voltar');
+  // Estado do cadastro em andamento. Fica em memória, nunca no DOM nem no
+  // localStorage: `cadSenha` é a senha compartilhada que a pessoa acabou de
+  // digitar e `paCodigo` é o código provisório — os dois valem como
+  // credencial e morrem ao recarregar a página, de propósito.
+  //
+  // Guarda a SENHA, não o nome da chave: a rota /api/cadastro/codigo exige a
+  // senha e deriva a chave no servidor. Mandar o nome da chave, como era na
+  // primeira versão, deixava qualquer um pedir um cadastro de coordenação com
+  // um curl, sem provar credencial nenhuma.
+  var cadSenha = null;
+  var cadEmail = null;
+  var paCodigo = null;
+  var SENHA_PLACEHOLDER = campoSenha.getAttribute('placeholder') || 'Sua senha';
   // Ícone + descrição por nível, do MESMO NIVEIS_ACESSO que monta os cards
   // recolhidos (fonte única — ver portal_gen.py).
   var NIVEL_INFO = {"equipe": {"nome": "Equipe de Bar", "ico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2\"/><circle cx=\"17.2\" cy=\"9\" r=\"2.2\"/><path d=\"M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2\"/></svg>", "desc": "Fichas técnicas, produção, rotinas e treino."}, "chefe": {"nome": "Chefe de Bar", "ico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"5\" width=\"14\" height=\"16\" rx=\"2\"/><path d=\"M9 3h6v4H9z\"/><path d=\"M9 12h6M9 16h4\"/></svg>", "desc": "Tudo o que a equipe vê, mais escala, quadro, consumo e ranking da sua casa."}, "coord": {"nome": "Coordenação", "ico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 20h16\"/><path d=\"M7 20v-6M12 20V7M17 20v-9\"/></svg>", "desc": "Tudo, em todas as casas — inclusive vendas, ranking e o Lab de Drinks."}, "rh": {"nome": "RH", "ico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2\"/><circle cx=\"17.2\" cy=\"9\" r=\"2.2\"/><path d=\"M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2\"/></svg>", "desc": "Rotinas, escala e quadro de equipes — só isso."}, "controladoria": {"nome": "Controladoria & Administração", "ico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 18l5-5 3 3 7-8\"/><path d=\"M15 8h5v5\"/></svg>", "desc": "Ranking, vendas e metas — só isso."}, "suprimentos": {"nome": "Suprimentos", "ico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 8l8-4.5L20 8v9l-8 4.5L4 17z\"/><path d=\"M4 8l8 4.5M12 12.5L20 8M12 12.5V21\"/></svg>", "desc": "Acesso completo de coordenação, com as demandas filtradas em compras e manutenção."}, "treinador": {"nome": "Treinador & Auditoria", "ico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"4.3\"/><path d=\"M12 11.5h.01\"/></svg>", "desc": "Treinamentos aplicados e auditorias de rotina, em todas as casas."}, "marketing": {"nome": "Marketing", "ico": "<svg class=\"ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 8h3l2-2h6l2 2h3v11H4z\"/><circle cx=\"12\" cy=\"13\" r=\"3.2\"/></svg>", "desc": "Captações de foto e vídeo nas 7 casas — roteiro, execução e custo da sessão."}};
@@ -2311,10 +2420,181 @@ window.msgAcessoNegado = function (nomePagina) {
     acesso.removeAttribute('data-nivel');
     gate.hidden = false;
     okBox.hidden = true;
+    // As duas etapas do autocadastro também se fecham aqui — senão "Trocar
+    // acesso" reabriria o card no meio de um cadastro de outra pessoa.
+    fechaCadastro();
     if (niveisBox) niveisBox.style.display = '';
     campoSenha.value = '';
+    campoSenha.setAttribute('placeholder', SENHA_PLACEHOLDER);
     msg.textContent = '';
   }
+
+  // ── Autocadastro por e-mail (2026-08-07) ───────────────────────────────────
+  // Seis senhas do portal são compartilhadas e não identificam ninguém. Quando
+  // o autocadastro está ligado para uma delas, o Worker deixa de emitir token e
+  // responde {cadastro:true} — a senha vira um bilhete de entrada de uso único
+  // por pessoa. Nada disso é uma página nova: são dois estados do MESMO card.
+  function fechaCadastro() {
+    cadSenha = null;
+    paCodigo = null;
+    if (cadBox) cadBox.hidden = true;
+    if (paBox) paBox.hidden = true;
+    if (cadMsg) cadMsg.textContent = '';
+    if (paMsg) paMsg.textContent = '';
+  }
+
+  // Volta ao campo de senha (usado pelos dois "Voltar" e depois de concluir o
+  // cadastro, quando a pessoa entra com a senha nova).
+  function voltaParaSenha(texto, placeholder) {
+    if (cadBox) cadBox.hidden = true;
+    if (paBox) paBox.hidden = true;
+    gate.hidden = false;
+    okBox.hidden = true;
+    campoSenha.setAttribute('placeholder', placeholder || SENHA_PLACEHOLDER);
+    msg.textContent = texto || '';
+  }
+
+  // Etapa 1: pedir o e-mail.
+  function mostraCadastro(senhaCompartilhada) {
+    cadSenha = senhaCompartilhada;
+    paCodigo = null;
+    gate.hidden = true;
+    okBox.hidden = true;
+    if (paBox) paBox.hidden = true;
+    if (cadBox) cadBox.hidden = false;
+    if (niveisBox) niveisBox.style.display = 'none';
+    if (cadMsg) cadMsg.textContent = '';
+    if (cadEmail) cadEmail.focus();
+  }
+
+  // Etapa 2: nome, nascimento e senha definitiva. `codigo` é o que foi digitado
+  // no campo de senha — o Worker já confirmou que vale.
+  function mostraPrimeiroAcesso(codigo, emailConhecido) {
+    paCodigo = codigo;
+    gate.hidden = true;
+    okBox.hidden = true;
+    if (cadBox) cadBox.hidden = true;
+    if (paBox) paBox.hidden = false;
+    if (niveisBox) niveisBox.style.display = 'none';
+    // O e-mail é digitado pela pessoa, não devolvido pelo servidor: um
+    // palpite feliz no código não pode entregar um endereço. Quando ela
+    // acabou de pedir o código nesta mesma sessão, vem preenchido por
+    // conveniência — mas o servidor confere de qualquer forma.
+    if (paEmail) paEmail.value = emailConhecido || '';
+    if (paMsg) paMsg.textContent = '';
+    if (paNome) paNome.focus();
+  }
+
+  // Resposta do Worker como {status, dados} — erro de rede vira status 0, e
+  // corpo que não é JSON vira objeto vazio em vez de derrubar o .then.
+  function postCadastro(rota, corpo) {
+    return fetch(WORKER + rota, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpo),
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        return { status: r.status, dados: d || {} };
+      });
+    }).catch(function () { return { status: 0, dados: {} }; });
+  }
+
+  if (cadEnviar) cadEnviar.addEventListener('click', function () {
+    var email = (cadEmail.value || '').trim();
+    // Conferência mínima de forma, a mesma do Worker. Não restringe domínio.
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]{2,}$/.test(email)) {
+      cadMsg.textContent = 'Escreva um e-mail válido.';
+      cadEmail.focus();
+      return;
+    }
+    cadEnviar.disabled = true;
+    cadMsg.textContent = 'Enviando…';
+    cadEmail = email;
+    postCadastro('/api/cadastro/codigo', { senha: cadSenha, email: email }).then(function (r) {
+      cadEnviar.disabled = false;
+      if (r.status === 0) { cadMsg.textContent = 'Sem conexão. Tente de novo.'; return; }
+      if (r.status !== 200 || !r.dados.ok) {
+        cadMsg.textContent = r.dados.erro || 'Não foi possível abrir seu cadastro agora.';
+        return;
+      }
+      if (r.dados.enviado) {
+        // O código chega por e-mail e é digitado no lugar da senha — por isso
+        // a tela volta pro campo de senha, com o texto explicando isso.
+        voltaParaSenha('Código enviado para ' + email + '. Ele vale 24 horas: cole o código aqui '
+          + 'no lugar da senha para terminar seu cadastro.', 'Cole aqui o código do e-mail');
+        campoSenha.value = '';
+        campoSenha.focus();
+      } else {
+        // `enviado:false` = o provedor de e-mail não está configurado. Dizer
+        // isso é obrigatório: mandar "confira sua caixa" faria a pessoa esperar
+        // um e-mail que não vai chegar.
+        cadMsg.textContent = 'Seu cadastro foi aberto, mas o envio de e-mail ainda não está ligado '
+          + 'no portal — o código NÃO vai chegar na sua caixa. Fale com a coordenação para receber '
+          + 'o seu código e volte aqui para terminar.';
+      }
+    });
+  });
+  if (cadEmail) cadEmail.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') cadEnviar.click();
+  });
+  if (cadVoltar) cadVoltar.addEventListener('click', function () {
+    fechaCadastro();
+    voltaParaSenha('');
+    campoSenha.focus();
+  });
+
+  if (paSalvar) paSalvar.addEventListener('click', function () {
+    var nome = (paNome.value || '').trim();
+    var nasc = (paNasc.value || '').trim();
+    var senha = paSenha.value || '';
+    var senha2 = paSenha2.value || '';
+    // Conferências de forma (as mesmas do Worker) + a repetição da senha, que
+    // só existe aqui. NÃO há regra de força de senha: decisão do Rodrigo.
+    if (nome.split(/\s+/).filter(Boolean).length < 2) {
+      paMsg.textContent = 'Escreva seu nome completo (nome e sobrenome).';
+      paNome.focus();
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nasc)) {
+      paMsg.textContent = 'Informe sua data de nascimento.';
+      paNasc.focus();
+      return;
+    }
+    if (!senha) { paMsg.textContent = 'Escolha uma senha.'; paSenha.focus(); return; }
+    if (senha !== senha2) {
+      paMsg.textContent = 'As duas senhas não são iguais.';
+      paSenha2.focus();
+      return;
+    }
+    paSalvar.disabled = true;
+    paMsg.textContent = 'Criando seu acesso…';
+    postCadastro('/api/cadastro/concluir', {
+      codigo: paCodigo, email: (paEmail && paEmail.value || '').trim().toLowerCase(),
+      nome: nome, nascimento: nasc, senha: senha,
+    }).then(function (r) {
+      paSalvar.disabled = false;
+      if (r.status === 0) { paMsg.textContent = 'Sem conexão. Tente de novo.'; return; }
+      if (r.status !== 200 || !r.dados.ok) {
+        // 409 = senha já em uso; 401 = código expirado; 400 = campo inválido.
+        // O Worker manda a frase pronta em `erro` nos três casos.
+        paMsg.textContent = r.dados.erro || 'Não foi possível criar seu acesso agora.';
+        if (r.status === 409) paSenha.focus();
+        return;
+      }
+      // Cadastro feito: entra com a senha nova pelo caminho normal de login.
+      paCodigo = null;
+      voltaParaSenha('');
+      campoSenha.value = senha;
+      entra(senha);
+    });
+  });
+  if (paSenha2) paSenha2.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') paSalvar.click();
+  });
+  if (paVoltar) paVoltar.addEventListener('click', function () {
+    fechaCadastro();
+    voltaParaSenha('');
+    campoSenha.focus();
+  });
 
   // Banner "Entenda o portal" (deslogado): logado ele some, porque o topo
   // logado (prv-top3) já tem o próprio botão Entenda o portal (v7, 2026-07-23).
@@ -2393,6 +2673,22 @@ window.msgAcessoNegado = function (nomePagina) {
           ? 'Sem conexão. Tente de novo.'
           : 'Senha incorreta.';
         campoSenha.select();
+        return;
+      }
+      // Autocadastro (2026-08-07): duas respostas que NÃO são login.
+      // (a) senha compartilhada com o cadastro ligado — ela não entra mais em
+      //     lugar nenhum, abre o pedido de e-mail.
+      if (r.cadastro) {
+        msg.textContent = '';
+        // A senha digitada é o que segue pro pedido de código — o servidor
+        // reconfere e deriva a chave dela.
+        mostraCadastro(senha);
+        return;
+      }
+      // (b) o que foi digitado era um código provisório: primeiro acesso.
+      if (r.primeiroAcesso) {
+        msg.textContent = '';
+        mostraPrimeiroAcesso(senha, cadEmail);
         return;
       }
       // Senha de parceiro On Trade (gente de fora): não abre o mural interno,
@@ -3836,7 +4132,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '391aaa900ac4';
+  var BUILD = 'bf859bf83444';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;

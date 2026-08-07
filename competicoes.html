@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Competições · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=391aaa900ac4">
+<link rel="stylesheet" href="portal.css?v=bf859bf83444">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -460,6 +460,23 @@ window.loginSenha = function (worker, senha) {
     if (r.status === 401) return { ok: false, status: 401 };
     if (!r.ok) return { ok: false, status: r.status };
     return r.json().then(function (d) {
+      // ── Autocadastro por e-mail (2026-08-07) ─────────────────────────────
+      // Duas respostas 200 que NÃO são login e por isso não gravam sessão
+      // nenhuma. Quem chamou (hoje só a tela de entrada do mural) abre a etapa
+      // correspondente; qualquer outra página que use loginSenha simplesmente
+      // não recebe `token` e não abre o portal — que é o certo.
+      // (a) senha compartilhada com autocadastro ligado: virou bilhete de
+      //     cadastro. `chave` diz QUAL senha foi, e volta ao Worker no
+      //     POST /api/cadastro/codigo.
+      if (d.cadastro) {
+        return { ok: true, cadastro: true, chave: d.chave || null };
+      }
+      // (b) o que foi digitado é um código provisório válido: primeiro acesso.
+      //     `email` é só pra tela confirmar pra quem o código foi mandado.
+      if (d.primeiro_acesso) {
+        // Sem `email`: o Worker deixou de devolvê-lo de propósito (oráculo).
+        return { ok: true, primeiroAcesso: true };
+      }
       // Nível de fora: grava na chave da própria superfície e devolve
       // `externo` + `destino` pra quem chamou desviar.
       if (d.token && window.NIVEIS_EXTERNOS.indexOf(d.nivel) >= 0) {
@@ -2346,7 +2363,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '391aaa900ac4';
+  var BUILD = 'bf859bf83444';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
