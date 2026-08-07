@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Acessos · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=000de5aace03">
+<link rel="stylesheet" href="portal.css?v=7577c0827c83">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -879,6 +879,29 @@ existia nas senhas antigas.</p>
     <button type="button" class="ac-bt" id="ac-revelar">Mostrar senhas</button>
     <button type="button" class="ac-bt" id="ac-recarregar">Atualizar</button>
   </div>
+  <!-- Derrubar sessões da senha compartilhada (2026-08-07). Fica separado dos
+       botões de rotina de propósito: é o único que desloga gente sem avisar
+       antes — quem está com a `_coord` aberta em algum aparelho vai precisar
+       logar de novo (e, se o autocadastro estiver ligado, vai cair no
+       cadastro por e-mail em vez de voltar a entrar direto). -->
+  <div class="ac-card" style="border-color:var(--vermelho,#c4553d);margin-top:10px">
+    <p class="sub" style="margin:0 0 8px;font-size:12.5px">Derruba toda sessão
+    já aberta com a senha de coordenação — inclusive a sua, neste aparelho e em
+    qualquer outro. É o que obriga quem está usando a senha AGORA a logar de
+    novo, e a cair no cadastro por e-mail se ele estiver ligado.</p>
+    <button type="button" class="ac-bt" id="ac-revogar" style="border-color:var(--vermelho,#c4553d);color:var(--vermelho,#c4553d)">Derrubar sessões da senha de coordenação</button>
+    <div id="ac-revogar-box" style="display:none;margin-top:8px">
+      <p class="sub" style="margin:0 0 6px">Confirme digitando sua senha de novo — depois disto ela também será deslogada e você vai precisar entrar de novo.</p>
+      <input type="password" id="ac-revogar-senha" class="pa-input"
+             style="width:100%;font:inherit;padding:9px 12px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text)"
+             autocomplete="current-password">
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button type="button" class="ac-bt sim" id="ac-revogar-ok" style="background:var(--vermelho,#c4553d);border-color:var(--vermelho,#c4553d)">Derrubar agora</button>
+        <button type="button" class="ac-bt" id="ac-revogar-nao">Cancelar</button>
+      </div>
+      <p class="sub" id="ac-revogar-msg" style="margin:6px 0 0;color:var(--vermelho,#c4553d)"></p>
+    </div>
+  </div>
   <div id="ac-revelar-box" style="display:none;margin-top:8px">
     <p class="sub" style="margin:0 0 6px">Digite sua senha do portal para ver as senhas em claro.</p>
     <input type="password" id="ac-revelar-senha" class="pa-input"
@@ -1330,6 +1353,37 @@ existia nas senhas antigas.</p>
     document.getElementById('ac-revelar-box').style.display = 'none';
   };
   document.getElementById('ac-recarregar').onclick = function () { carrega(); };
+  document.getElementById('ac-revogar').onclick = function () {
+    var box = document.getElementById('ac-revogar-box');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    if (box.style.display === 'block') document.getElementById('ac-revogar-senha').focus();
+  };
+  document.getElementById('ac-revogar-nao').onclick = function () {
+    document.getElementById('ac-revogar-box').style.display = 'none';
+  };
+  document.getElementById('ac-revogar-ok').onclick = function () {
+    var campo = document.getElementById('ac-revogar-senha');
+    var m = document.getElementById('ac-revogar-msg');
+    m.textContent = 'Derrubando…';
+    fetch(WORKER + '/api/acessos/revogar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      body: JSON.stringify({ senha: campo.value })
+    })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function () {
+        campo.value = '';
+        // Inclusive a sessão do dono já não vale mais — a chamada seguinte
+        // (qualquer uma) receberia 401. Encerrar aqui em vez de deixar a
+        // tela num estado que parece funcionar e não funciona.
+        window.sessaoLimpar();
+        m.textContent = '';
+        alert('Sessões derrubadas. Você também foi deslogado — faça login de novo.');
+        window.irParaLogin('acessos');
+      })
+      .catch(function (status) {
+        m.textContent = status === 401 ? 'Senha incorreta.' : 'Não foi possível concluir agora.';
+      });
+  };
   document.getElementById('ac-revelar-ok').onclick = function () {
     var campo = document.getElementById('ac-revelar-senha');
     var m = document.getElementById('ac-revelar-msg');
@@ -2759,7 +2813,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '000de5aace03';
+  var BUILD = '7577c0827c83';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   var ultimo = 0, mostrando = false;
