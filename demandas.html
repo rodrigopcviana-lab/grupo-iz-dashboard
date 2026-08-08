@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Central de Demandas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=5834d895ac2b">
+<link rel="stylesheet" href="portal.css?v=09c554b6c129">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -983,38 +983,6 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-kuni b { display: block; font-size: 13px; font-weight: 600; color: var(--text); }
   .dm-kuni span { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 2px; line-height: 1.35; }
   .dm-kuni:hover { background: color-mix(in srgb, var(--kc, var(--acc)) 16%, transparent); }
-  /* Enviadas em Kanban (2026-08-08, pedido do Rodrigo). Reusa .dm-kb/.dm-kcol/
-     .dm-gcard do Kanban de Recebidas de propósito — é a MESMA leitura visual,
-     só que a coluna aqui é também a porta de entrada: "+ Nova demanda" abre um
-     card em branco dentro dela, com a casa já decidida por onde se clicou. */
-  .dm-knova { display: block; width: 100%; box-sizing: border-box; text-align: left;
-              font: inherit; cursor: pointer; border: 1px dashed var(--kc, var(--border));
-              border-radius: 12px; padding: 9px 12px; margin: 0 0 9px; color: var(--text);
-              background: color-mix(in srgb, var(--kc, var(--acc)) 8%, transparent); }
-  .dm-knova b { display: block; font-size: 13px; font-weight: 600; }
-  .dm-knova span { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 2px; line-height: 1.35; }
-  .dm-knova:hover { background: color-mix(in srgb, var(--kc, var(--acc)) 16%, transparent); }
-  .dm-knova:disabled { opacity: .5; cursor: default; }
-  .dm-nf { background: var(--card); border: 1px solid var(--acc); border-radius: 12px;
-           padding: 10px 11px; margin: 0 0 9px; }
-  .dm-nf-tit { font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
-  .dm-nf-tit b { color: var(--text); }
-  .dm-nf-tipos { display: flex; gap: 6px; margin-bottom: 8px; }
-  .dm-nf-tipos button { flex: 1; font: inherit; font-size: 12px; padding: 6px 4px; border-radius: 8px;
-                        border: 1px solid var(--border); background: var(--bg); color: var(--text-2); cursor: pointer; }
-  .dm-nf-tipos button.on { border-color: var(--acc); color: var(--acc); font-weight: 600; }
-  .dm-nf select, .dm-nf textarea, .dm-nf input[type="text"] { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px;
-                                   background: var(--bg); color: var(--text); border: 1px solid var(--border);
-                                   border-radius: 8px; padding: 7px 9px; margin-bottom: 8px; }
-  .dm-nf textarea { min-height: 76px; resize: vertical; }
-  .dm-nf-acoes { display: flex; gap: 6px; }
-  .dm-nf-ok { flex: 1; font: inherit; font-size: 13px; font-weight: 600; padding: 8px; border: 0;
-              border-radius: 8px; background: var(--acc); color: var(--acc-txt); cursor: pointer; }
-  .dm-nf-ok:disabled { opacity: .55; cursor: default; }
-  .dm-nf-cancel { font: inherit; font-size: 13px; padding: 8px 12px; border-radius: 8px;
-                  border: 1px solid var(--border); background: none; color: var(--text-3); cursor: pointer; }
-  .dm-nf-hint { margin: 8px 0 0; font-size: 11.5px; color: var(--text-3); line-height: 1.4; }
-  .dm-env-vhint { font-size: 12px; color: var(--text-3); }
   .dm-tabwrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
   .dm-tab { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 720px; }
   .dm-tab th, .dm-tab td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
@@ -1420,13 +1388,6 @@ prioridade (urgência primeiro, mais antiga depois).</p>
 </div>
 
 <div id="dm-enviadas" style="display:none">
-  <div class="dm-vistas" id="dm-env-vistas">
-    <div class="dm-vseg" id="dm-env-vseg">
-      <button type="button" data-ev="kanban">Kanban</button>
-      <button type="button" data-ev="timeline">Linha do tempo</button>
-    </div>
-    <span class="dm-env-vhint">No Kanban, cada coluna é uma casa — e é por ela que você abre uma demanda nova.</span>
-  </div>
   <div id="dm-env-nome-wrap" style="display:none">
     <label class="dm-env-nome-lbl" for="dm-env-nome">Ver enviadas de</label>
     <div class="dm-env-nome-row">
@@ -1436,7 +1397,6 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     <p class="dm-env-nome-hint">Sem senha individual, o Solicitante é o nome escolhido no Registro Rápido —
     informe o mesmo nome pra ver o histórico dele.</p>
   </div>
-  <div id="dm-env-kb" style="display:none"></div>
   <div id="dm-env-lista"></div>
   <button class="dm-mais" id="dm-env-mais" style="display:none">Carregar mais</button>
 </div>
@@ -1476,12 +1436,6 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   var CASAS = {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "enttres": "Enttres", "fulles": "Fulles", "nip": "NIP"};       // slug -> label
   var STATUS_OPCOES = ["Novo", "Visto", "Em andamento", "Resolvido"];
   var URGENCIAS = {"hoje": "Hoje", "uma_semana": "Uma semana", "um_mes": "Um mês", "tres_meses": "3 meses+"};
-  // Categorias por tipo (config/registro.json) — só o Kanban de Enviadas usa,
-  // pra abrir demanda sem sair da tela. Mesma fonte que o Registro Rápido lê;
-  // o Worker valida de novo contra ela em POST /api/registro, então isto aqui
-  // é conveniência de UI, nunca a garantia.
-  var CATEGORIAS = {"ocorrencia": {"manutencao": "Manutenção", "compras_insumos": "Compras / Insumos", "rh_pessoas": "RH & Pessoas", "gerencia_casa": "Gerência da casa", "operacao_bar": "Operação de bar", "marketing": "Marketing", "coordenacao": "Coordenação"}, "solicitacao": {"manutencao": "Manutenção", "compras_insumos": "Compras / Insumos", "rh_pessoas": "RH & Pessoas", "gerencia_casa": "Gerência da casa", "operacao_bar": "Operação de bar", "marketing": "Marketing", "coordenacao": "Coordenação"}};
-  var TIPO_LABEL = {"ocorrencia": "Ocorrência", "solicitacao": "Solicitação"};
   // Modo triagem: respostas de um toque, editáveis em config/registro.json
   // (nunca hardcoded aqui — ver _nota_respostas_rapidas lá).
   var RESPOSTAS = [{"slug": "aprovado", "label": "Aprovado", "status": "Aprovado", "texto": "Aprovado. Pode seguir."}, {"slug": "analise", "label": "Em análise", "status": "Em análise", "texto": "Recebido, estou avaliando. Retorno em breve."}, {"slug": "agora_nao", "label": "Agora não", "status": "Reprovado", "texto": "Agora não vai dar. Vamos retomar mais pra frente."}, {"slug": "ja_resolvido", "label": "Já resolvido", "status": "Aprovado", "texto": "Já foi resolvido.", "resolve": true}];
@@ -3664,11 +3618,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   function dmFechaOv() {
     elOv.classList.remove('on');
     elOvInner.innerHTML = '';
-    // O overlay agora serve às duas visões (Recebidas e o Kanban de Enviadas).
-    // Redesenhar a errada deixaria o card aberto desatualizado depois de editar
-    // a descrição ou responder na conversa.
-    if (MODO === 'enviadas') redesenhaEnviadas();
-    else redesenhaUni();
+    redesenhaUni();
   }
   // Fecha o overlay pela via certa: triagem precisa da limpeza completa
   // (triFecha reseta a fila e redesenha); card avulso é só dmFechaOv. Antes o
@@ -4082,319 +4032,8 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     return bolha;
   }
 
-  // ---- Enviadas em Kanban (2026-08-08, pedido do Rodrigo) -------------------
-  // Mesma leitura visual do Kanban de Recebidas — .dm-kb/.dm-kcol/.dm-gcard são
-  // reusados de propósito, não copiados. A diferença é o motivo do pedido: aqui
-  // a coluna é também a PORTA de entrada. "+ Nova demanda" abre um card em
-  // branco DENTRO da coluna e a casa já vem decidida por onde se clicou.
-  //
-  // Escreve pela MESMA rota do Registro Rápido (POST /api/registro), com o
-  // mesmo corpo que a fila dele monta. Nenhuma regra nova de quem-pode-o-quê,
-  // nenhum Worker mexido, nenhum deploy: quem valida tipo/casa/categoria/
-  // urgência continua sendo `handleRegistro`, contra o mesmo config.
-  var elEnvKb = document.getElementById('dm-env-kb');
-  var elEnvVseg = document.getElementById('dm-env-vseg');
-  var envVista = 'kanban';
-  try { envVista = localStorage.getItem('demandas_env_vista') || 'kanban'; } catch (e) {}
-  if (envVista !== 'timeline') envVista = 'kanban';
-  // Rascunhos abertos, por slug de casa. Só em memória, de propósito: rascunho
-  // não é demanda, e persistir daria a impressão de que algo já foi registrado.
-  var envNovos = {};
-
-  // Nome padrão pra pré-preencher "Seu nome" no formulário (sem PESSOA): o
-  // último nome usado no Registro Rápido, mesma chave de localStorage que
-  // aquela tela usa. NÃO é o mesmo campo de "Ver enviadas de" — aquele serve
-  // pra LER a lista de outra pessoa (ex.: chefe conferindo o que "João"
-  // registrou), e reusar o valor dele pra ASSINAR uma demanda nova atribuiria
-  // o registro a João mesmo quando quem está de fato digitando é o chefe.
-  function envNomePadrao() {
-    try { return String(localStorage.getItem('registro_nome') || '').trim(); } catch (e) { return ''; }
-  }
-
-  function envCardCompacto(d) {
-    var el = document.createElement('div');
-    el.className = 'dm-gcard';
-    el.style.setProperty('--uc', URG_COR_LABEL[d.urgencia] || 'var(--border)');
-    var ida = idade(d.recebido_em || d.data);
-    var corStatus = d.status === 'Resolvido' ? 'var(--verde)'
-      : (d.status === 'Em andamento' ? 'var(--amarelo)' : 'var(--text-3)');
-    el.innerHTML =
-      '<div class="gl1">' + chipUrgencia(d.urgencia) +
-        '<span class="dm-env-status" style="color:' + corStatus + '">' + esc(d.status || 'Novo') + '</span></div>' +
-      '<div class="gl2"><span class="dm-gtipo">' + esc(d.tipo || '') + '</span> — ' + esc((d.descricao || '').slice(0, 120)) + '</div>' +
-      '<div class="gl3">' + (ida.txt ? '<span class="' + ida.cls + '" title="Chegou em">' + esc(ida.txt) + '</span> · ' : '') +
-        '<span>' + esc(d.setor || d.categoria || '') + '</span>' +
-        (d.resposta ? ' · <span>respondida</span>' : '') + '</div>' +
-      convBadgeUni(d);
-    el.onclick = function () {
-      // Abre a MESMA bolha da linha do tempo no overlay — editar, conversa e
-      // resposta seguem existindo iguais, sem uma segunda tela pra manter.
-      elOvInner.innerHTML = '';
-      elOvInner.appendChild(renderBolhaEnviada(d));
-      elOv.classList.add('on');
-    };
-    return el;
-  }
-
-  // Formulário de demanda nova, dentro da coluna. A casa NÃO é um campo: ela é
-  // a coluna, e é isso que torna o Kanban a porta de entrada em vez de um
-  // atalho pro Registro Rápido.
-  //
-  // `envNovos[casaSlug]` é o RASCUNHO, não só um flag de "está aberto" — o
-  // Kanban inteiro é recriado (innerHTML = '') em vários gatilhos (fechar o
-  // overlay de outro card, "Carregar mais", trocar de vista, o próprio POST
-  // de outra coluna), e sem guardar tipo/categoria/urgência/texto aqui, cada
-  // redesenho devolvia o formulário em branco e apagava o que a pessoa tinha
-  // digitado. `st` abaixo passa a SER esse objeto (por referência), atualizado
-  // a cada troca — não uma cópia local que se perde no próximo redraw.
-  function envFormNovo(casaSlug, casaLabel) {
-    var st = envNovos[casaSlug];
-    if (!st || st === true) {
-      st = { tipo: 'solicitacao', categoria: '', urgencia: 'hoje', desc: '', quem: PESSOA ? '' : envNomePadrao() };
-      envNovos[casaSlug] = st;
-    }
-    var wrap = document.createElement('div');
-    wrap.className = 'dm-nf';
-
-    var tit = document.createElement('div');
-    tit.className = 'dm-nf-tit';
-    tit.innerHTML = 'Nova demanda em <b>' + esc(casaLabel) + '</b>';
-    wrap.appendChild(tit);
-
-    // Sem senha individual, o formulário carrega o PRÓPRIO campo de nome —
-    // nunca o da caixa "Ver enviadas de" (ver envNomePadrao acima). Com
-    // PESSOA, o nome não é campo: a demanda sai sempre assinada pelo token.
-    var elNome = null;
-    if (!PESSOA) {
-      elNome = document.createElement('input');
-      elNome.type = 'text';
-      elNome.placeholder = 'Seu nome';
-      elNome.autocomplete = 'name';
-      elNome.value = st.quem || '';
-      elNome.oninput = function () { st.quem = elNome.value; };
-      wrap.appendChild(elNome);
-    }
-
-    var tipos = document.createElement('div');
-    tipos.className = 'dm-nf-tipos';
-    var selCat = document.createElement('select');
-    function pintaCat() {
-      selCat.innerHTML = '';
-      var vazio = document.createElement('option');
-      vazio.value = ''; vazio.textContent = 'Setor…';
-      selCat.appendChild(vazio);
-      var mapa = CATEGORIAS[st.tipo] || {};
-      Object.keys(mapa).forEach(function (slug) {
-        var o = document.createElement('option');
-        o.value = slug; o.textContent = mapa[slug];
-        selCat.appendChild(o);
-      });
-      // Categoria é por TIPO: trocar de tipo pode invalidar a escolha anterior.
-      // Guardar a antiga daria um 400 "categoria inválida" do Worker no envio.
-      if (!mapa[st.categoria]) st.categoria = '';
-      selCat.value = st.categoria;
-    }
-    ['ocorrencia', 'solicitacao'].forEach(function (t) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = TIPO_LABEL[t] || t;
-      b.className = (t === st.tipo) ? 'on' : '';
-      b.onclick = function () {
-        st.tipo = t;
-        tipos.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
-        pintaCat();
-      };
-      tipos.appendChild(b);
-    });
-    wrap.appendChild(tipos);
-
-    selCat.onchange = function () { st.categoria = selCat.value; };
-    pintaCat();
-    wrap.appendChild(selCat);
-
-    var selUrg = document.createElement('select');
-    Object.keys(URGENCIAS).forEach(function (slug) {
-      var o = document.createElement('option');
-      o.value = slug; o.textContent = 'Necessário desde: ' + URGENCIAS[slug];
-      selUrg.appendChild(o);
-    });
-    selUrg.value = URGENCIAS[st.urgencia] ? st.urgencia : (Object.keys(URGENCIAS)[0] || '');
-    st.urgencia = selUrg.value;
-    selUrg.onchange = function () { st.urgencia = selUrg.value; };
-    wrap.appendChild(selUrg);
-
-    var ta = document.createElement('textarea');
-    ta.maxLength = 1900;
-    ta.placeholder = 'O que precisa ser feito? Desde quando? Afeta o serviço?';
-    ta.value = st.desc || '';
-    ta.oninput = function () { st.desc = ta.value; };
-    wrap.appendChild(ta);
-
-    var acoes = document.createElement('div');
-    acoes.className = 'dm-nf-acoes';
-    var okBtn = document.createElement('button');
-    okBtn.type = 'button'; okBtn.className = 'dm-nf-ok'; okBtn.textContent = 'Registrar';
-    var cancelBtn = document.createElement('button');
-    cancelBtn.type = 'button'; cancelBtn.className = 'dm-nf-cancel'; cancelBtn.textContent = 'Cancelar';
-    acoes.appendChild(okBtn); acoes.appendChild(cancelBtn);
-    wrap.appendChild(acoes);
-
-    var hint = document.createElement('p');
-    hint.className = 'dm-nf-hint';
-    hint.textContent = PESSOA
-      ? ('Vai assinada como ' + PESSOA + '. Foto e áudio só pelo Registro Rápido.')
-      : 'Foto e áudio só pelo Registro Rápido.';
-    wrap.appendChild(hint);
-
-    cancelBtn.onclick = function () { delete envNovos[casaSlug]; redesenhaEnviadas(); };
-
-    okBtn.onclick = function () {
-      var quem = PESSOA || (st.quem || '').trim();
-      if (quem.length < 2) {
-        toast('Diga seu nome pra assinar o registro.', true);
-        if (elNome) elNome.focus();
-        return;
-      }
-      if (!st.categoria) { toast('Escolha o setor da demanda.', true); return; }
-      var desc = ta.value.trim();
-      if (!desc) { toast('Escreva o que precisa ser feito.', true); return; }
-      okBtn.disabled = true; okBtn.textContent = 'Registrando…';
-      var body = {
-        tipo: st.tipo, casa: casaSlug, categoria: st.categoria, urgencia: st.urgencia,
-        descricao: desc, registrado_por: quem,
-        // Sem pessoa no token, é o `solicitante_manual` que atrela a demanda ao
-        // histórico de Enviadas de quem a abriu (mesma regra do Registro
-        // Rápido). Com pessoa, o Worker ignora este campo e usa o token.
-        solicitante_manual: PESSOA ? null : quem,
-        criado_em: new Date().toISOString(),
-        chave_registro: (window.crypto && crypto.randomUUID)
-          ? crypto.randomUUID()
-          : ('env-' + Date.now() + '-' + Math.random().toString(16).slice(2)),
-        anexos: []
-      };
-      fetch(WORKER + '/api/registro', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Token': TOKEN },
-        body: JSON.stringify(body)
-      })
-        .then(function (r) {
-          return r.json().catch(function () { return null; })
-            .then(function (j) { return { ok: r.ok, status: r.status, body: j }; });
-        })
-        .then(function (res) {
-          if (res.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
-          if (!res.ok) throw new Error((res.body && res.body.erro) || 'falhou');
-          delete envNovos[casaSlug];
-          if (!PESSOA) {
-            try { localStorage.setItem('registro_nome', quem); } catch (e) {}
-            // Recarregar filtra pelo nome de "Ver enviadas de" (única forma de
-            // ler sem senha individual). Sem sincronizar aqui, uma demanda
-            // registrada com um nome e listada com outro simplesmente não
-            // aparece de volta — parece que o registro falhou quando não falhou.
-            if (!APENAS_ENVIADAS) {
-              var elVer = document.getElementById('dm-env-nome');
-              if (elVer) elVer.value = quem;
-            }
-          }
-          toast('Demanda registrada em ' + casaLabel + '.');
-          // A listagem é cacheada ~45s no Worker: sem furar o cache, a demanda
-          // recém-criada não apareceria e pareceria que o registro falhou.
-          marcaBust();
-          ENV.carregado = true;
-          carregaEnviadas(true);
-        })
-        .catch(function (err) {
-          okBtn.disabled = false; okBtn.textContent = 'Registrar';
-          toast('Não deu pra registrar: ' + String((err && err.message) || 'tenta de novo') + '.', true);
-        });
-    };
-
-    return wrap;
-  }
-
-  function renderEnvKanban() {
-    var buckets = {};
-    Object.keys(CASAS).forEach(function (s) { buckets[CASAS[s]] = []; });
-    ENV.itens.forEach(function (d) {
-      var k = d.casa || '—';
-      (buckets[k] = buckets[k] || []).push(d);
-    });
-    var keys = grupoOrdena(Object.keys(buckets), 'casa');
-    var kb = document.createElement('div');
-    kb.className = 'dm-kb';
-    keys.forEach(function (k) {
-      var slug = CASA_LABEL_TO_SLUG[k] || null;
-      var c = document.createElement('div');
-      c.className = 'dm-kcol';
-      var h = document.createElement('h4');
-      h.innerHTML = esc(k) + ' <span class="n">' + buckets[k].length + '</span>';
-      c.appendChild(h);
-      if (slug) {
-        var cor = 'var(--casa-' + slug + ')';
-        c.style.setProperty('--kc', cor);
-        if (envNovos[slug]) {
-          c.appendChild(envFormNovo(slug, k));
-        } else {
-          var nova = document.createElement('button');
-          nova.type = 'button';
-          nova.className = 'dm-knova';
-          nova.style.setProperty('--kc', cor);
-          nova.innerHTML = '<b>+ Nova demanda</b><span>abre aqui mesmo, já pra ' + esc(k) + '</span>';
-          nova.onclick = function () { envNovos[slug] = true; redesenhaEnviadas(); };
-          c.appendChild(nova);
-        }
-      }
-      if (!buckets[k].length) {
-        var v = document.createElement('div');
-        v.className = 'dm-conversa-vazia';
-        v.style.padding = '4px 6px';
-        v.textContent = '—';
-        c.appendChild(v);
-      }
-      buckets[k].forEach(function (d) { c.appendChild(envCardCompacto(d)); });
-      kb.appendChild(c);
-    });
-    return kb;
-  }
-
-  // #dm-env-kb começa com `display:none` INLINE (nenhuma classe seta display
-  // pra ele) — só assim `style.display = ''` devolve o valor default do
-  // elemento; uma regra de CLASSE no lugar venceria a string vazia (ver
-  // "Lição de CSS" no CLAUDE.md). #dm-env-lista não precisa do mesmo cuidado:
-  // é um <div> nu, sem classe alguma controlando `display`, então o mesmo
-  // `style.display = ''` já cai no `block` default do navegador.
-  function envAplicaVista() {
-    if (elEnvVseg) {
-      elEnvVseg.querySelectorAll('button').forEach(function (b) {
-        b.classList.toggle('on', b.dataset.ev === envVista);
-      });
-    }
-    var kb = envVista === 'kanban';
-    elEnvKb.style.display = kb ? '' : 'none';
-    elEnvLista.style.display = kb ? 'none' : '';
-  }
-  if (elEnvVseg) {
-    elEnvVseg.querySelectorAll('button').forEach(function (b) {
-      b.onclick = function () {
-        envVista = b.dataset.ev === 'timeline' ? 'timeline' : 'kanban';
-        try { localStorage.setItem('demandas_env_vista', envVista); } catch (e) {}
-        envAplicaVista();
-        redesenhaEnviadas();
-      };
-    });
-  }
-  envAplicaVista();
-
   function redesenhaEnviadas() {
-    elEnvKb.innerHTML = '';
     elEnvLista.innerHTML = '';
-    if (envVista === 'kanban') {
-      // Kanban desenha as colunas MESMO sem nenhuma demanda: elas são o
-      // caminho pra abrir a primeira. Um "você ainda não registrou nada" aqui
-      // esconderia justamente o botão que o Rodrigo pediu.
-      elEnvKb.appendChild(renderEnvKanban());
-      return;
-    }
     if (!ENV.itens.length) {
       elEnvLista.innerHTML = '<p class="dm-vazio">Você ainda não registrou nada por aqui.</p>';
       return;
@@ -4412,22 +4051,9 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     });
   }
 
-  // Container visível no momento: skeleton, aviso e erro precisam cair na vista
-  // que está na tela, senão a mensagem é escrita num elemento escondido e a
-  // página parece travada (sem skeleton, sem erro, sem nada).
-  function envAlvo() { return envVista === 'kanban' ? elEnvKb : elEnvLista; }
-
   function carregaEnviadas(reset) {
-    if (reset) {
-      ENV.itens = [];
-      ENV.cursor = null;
-      // No Kanban o skeleton apagaria um rascunho aberto noutra coluna — texto
-      // que a pessoa digitou e não mandou. Com rascunho em tela, o Kanban fica
-      // como está e só é redesenhado quando a resposta chega.
-      if (envVista !== 'kanban' || !Object.keys(envNovos).length) skeletons(envAlvo(), 3);
-      elEnvMais.style.display = 'none';
-    }
-    if (!WORKER) { envAlvo().innerHTML = '<p class="dm-vazio">Central ainda não configurada.</p>'; return; }
+    if (reset) { ENV.itens = []; ENV.cursor = null; skeletons(elEnvLista, 3); elEnvMais.style.display = 'none'; }
+    if (!WORKER) { elEnvLista.innerHTML = '<p class="dm-vazio">Central ainda não configurada.</p>'; return; }
     elEnvMais.disabled = true;
     var qs = ['modo=enviadas'];
     if (!reset && ENV.cursor) qs.push('cursor=' + encodeURIComponent(ENV.cursor));
@@ -4450,19 +4076,8 @@ prioridade (urgência primeiro, mais antiga depois).</p>
         if (!res) return;
         var d = res.body;
         if (d && d.aviso) {
+          elEnvLista.innerHTML = '<p class="dm-vazio">' + esc(d.aviso) + '</p>';
           elEnvMais.style.display = 'none';
-          if (envVista === 'kanban') {
-            // O aviso ("entre com sua senha individual") explica por que a
-            // LISTA está vazia — não impede abrir demanda nova. As colunas
-            // continuam, com o aviso por cima.
-            redesenhaEnviadas();
-            var nota = document.createElement('p');
-            nota.className = 'dm-vazio';
-            nota.textContent = d.aviso;
-            elEnvKb.insertBefore(nota, elEnvKb.firstChild);
-          } else {
-            elEnvLista.innerHTML = '<p class="dm-vazio">' + esc(d.aviso) + '</p>';
-          }
           return;
         }
         if (!res.ok || !d) throw new Error('http');
@@ -4482,13 +4097,9 @@ prioridade (urgência primeiro, mais antiga depois).</p>
           elEnvMais.disabled = false;
           elEnvMais.textContent = 'Erro — tentar de novo';
         } else {
-          var alvo = envAlvo();
-          alvo.innerHTML = '<p class="dm-erro">Erro ao carregar. <a data-retry>Tentar de novo</a></p>';
-          var a = alvo.querySelector('[data-retry]');
+          elEnvLista.innerHTML = '<p class="dm-erro">Erro ao carregar. <a data-retry>Tentar de novo</a></p>';
+          var a = elEnvLista.querySelector('[data-retry]');
           if (a) a.onclick = function () { carregaEnviadas(reset); };
-          // Kanban: a falha é de LEITURA — as colunas seguem, pra continuar
-          // dando pra abrir demanda mesmo sem conseguir listar as antigas.
-          if (envVista === 'kanban') alvo.appendChild(renderEnvKanban());
         }
       });
   }
@@ -5883,7 +5494,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '5834d895ac2b';
+  var BUILD = '09c554b6c129';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
