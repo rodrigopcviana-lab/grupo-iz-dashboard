@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Central de Demandas · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=b105d133ee53">
+<link rel="stylesheet" href="portal.css?v=dd8cfc4a7772">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -983,6 +983,38 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   .dm-kuni b { display: block; font-size: 13px; font-weight: 600; color: var(--text); }
   .dm-kuni span { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 2px; line-height: 1.35; }
   .dm-kuni:hover { background: color-mix(in srgb, var(--kc, var(--acc)) 16%, transparent); }
+  /* Enviadas em Kanban (2026-08-08, pedido do Rodrigo). Reusa .dm-kb/.dm-kcol/
+     .dm-gcard do Kanban de Recebidas de propósito — é a MESMA leitura visual,
+     só que a coluna aqui é também a porta de entrada: "+ Nova demanda" abre um
+     card em branco dentro dela, com a casa já decidida por onde se clicou. */
+  .dm-knova { display: block; width: 100%; box-sizing: border-box; text-align: left;
+              font: inherit; cursor: pointer; border: 1px dashed var(--kc, var(--border));
+              border-radius: 12px; padding: 9px 12px; margin: 0 0 9px; color: var(--text);
+              background: color-mix(in srgb, var(--kc, var(--acc)) 8%, transparent); }
+  .dm-knova b { display: block; font-size: 13px; font-weight: 600; }
+  .dm-knova span { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 2px; line-height: 1.35; }
+  .dm-knova:hover { background: color-mix(in srgb, var(--kc, var(--acc)) 16%, transparent); }
+  .dm-knova:disabled { opacity: .5; cursor: default; }
+  .dm-nf { background: var(--card); border: 1px solid var(--acc); border-radius: 12px;
+           padding: 10px 11px; margin: 0 0 9px; }
+  .dm-nf-tit { font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
+  .dm-nf-tit b { color: var(--text); }
+  .dm-nf-tipos { display: flex; gap: 6px; margin-bottom: 8px; }
+  .dm-nf-tipos button { flex: 1; font: inherit; font-size: 12px; padding: 6px 4px; border-radius: 8px;
+                        border: 1px solid var(--border); background: var(--bg); color: var(--text-2); cursor: pointer; }
+  .dm-nf-tipos button.on { border-color: var(--acc); color: var(--acc); font-weight: 600; }
+  .dm-nf select, .dm-nf textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px;
+                                   background: var(--bg); color: var(--text); border: 1px solid var(--border);
+                                   border-radius: 8px; padding: 7px 9px; margin-bottom: 8px; }
+  .dm-nf textarea { min-height: 76px; resize: vertical; }
+  .dm-nf-acoes { display: flex; gap: 6px; }
+  .dm-nf-ok { flex: 1; font: inherit; font-size: 13px; font-weight: 600; padding: 8px; border: 0;
+              border-radius: 8px; background: var(--acc); color: var(--acc-txt); cursor: pointer; }
+  .dm-nf-ok:disabled { opacity: .55; cursor: default; }
+  .dm-nf-cancel { font: inherit; font-size: 13px; padding: 8px 12px; border-radius: 8px;
+                  border: 1px solid var(--border); background: none; color: var(--text-3); cursor: pointer; }
+  .dm-nf-hint { margin: 8px 0 0; font-size: 11.5px; color: var(--text-3); line-height: 1.4; }
+  .dm-env-vhint { font-size: 12px; color: var(--text-3); }
   .dm-tabwrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
   .dm-tab { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 720px; }
   .dm-tab th, .dm-tab td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
@@ -1388,6 +1420,13 @@ prioridade (urgência primeiro, mais antiga depois).</p>
 </div>
 
 <div id="dm-enviadas" style="display:none">
+  <div class="dm-vistas" id="dm-env-vistas">
+    <div class="dm-vseg" id="dm-env-vseg">
+      <button type="button" data-ev="kanban">Kanban</button>
+      <button type="button" data-ev="timeline">Linha do tempo</button>
+    </div>
+    <span class="dm-env-vhint">No Kanban, cada coluna é uma casa — e é por ela que você abre uma demanda nova.</span>
+  </div>
   <div id="dm-env-nome-wrap" style="display:none">
     <label class="dm-env-nome-lbl" for="dm-env-nome">Ver enviadas de</label>
     <div class="dm-env-nome-row">
@@ -1397,6 +1436,7 @@ prioridade (urgência primeiro, mais antiga depois).</p>
     <p class="dm-env-nome-hint">Sem senha individual, o Solicitante é o nome escolhido no Registro Rápido —
     informe o mesmo nome pra ver o histórico dele.</p>
   </div>
+  <div id="dm-env-kb" style="display:none"></div>
   <div id="dm-env-lista"></div>
   <button class="dm-mais" id="dm-env-mais" style="display:none">Carregar mais</button>
 </div>
@@ -1436,6 +1476,12 @@ prioridade (urgência primeiro, mais antiga depois).</p>
   var CASAS = {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "enttres": "Enttres", "fulles": "Fulles", "nip": "NIP"};       // slug -> label
   var STATUS_OPCOES = ["Novo", "Visto", "Em andamento", "Resolvido"];
   var URGENCIAS = {"hoje": "Hoje", "uma_semana": "Uma semana", "um_mes": "Um mês", "tres_meses": "3 meses+"};
+  // Categorias por tipo (config/registro.json) — só o Kanban de Enviadas usa,
+  // pra abrir demanda sem sair da tela. Mesma fonte que o Registro Rápido lê;
+  // o Worker valida de novo contra ela em POST /api/registro, então isto aqui
+  // é conveniência de UI, nunca a garantia.
+  var CATEGORIAS = {"ocorrencia": {"manutencao": "Manutenção", "compras_insumos": "Compras / Insumos", "rh_pessoas": "RH & Pessoas", "gerencia_casa": "Gerência da casa", "operacao_bar": "Operação de bar", "marketing": "Marketing", "coordenacao": "Coordenação"}, "solicitacao": {"manutencao": "Manutenção", "compras_insumos": "Compras / Insumos", "rh_pessoas": "RH & Pessoas", "gerencia_casa": "Gerência da casa", "operacao_bar": "Operação de bar", "marketing": "Marketing", "coordenacao": "Coordenação"}};
+  var TIPO_LABEL = {"ocorrencia": "Ocorrência", "solicitacao": "Solicitação"};
   // Modo triagem: respostas de um toque, editáveis em config/registro.json
   // (nunca hardcoded aqui — ver _nota_respostas_rapidas lá).
   var RESPOSTAS = [{"slug": "aprovado", "label": "Aprovado", "status": "Aprovado", "texto": "Aprovado. Pode seguir."}, {"slug": "analise", "label": "Em análise", "status": "Em análise", "texto": "Recebido, estou avaliando. Retorno em breve."}, {"slug": "agora_nao", "label": "Agora não", "status": "Reprovado", "texto": "Agora não vai dar. Vamos retomar mais pra frente."}, {"slug": "ja_resolvido", "label": "Já resolvido", "status": "Aprovado", "texto": "Já foi resolvido.", "resolve": true}];
@@ -5494,7 +5540,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'b105d133ee53';
+  var BUILD = 'dd8cfc4a7772';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
