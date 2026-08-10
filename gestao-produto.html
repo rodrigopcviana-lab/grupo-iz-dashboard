@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Gestão de Produto · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=42856e61ed23">
+<link rel="stylesheet" href="portal.css?v=0c1f95addbb5">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1892,6 +1892,27 @@ a contagem daquela semana.</p>
   .cp-busca { width:100%; padding:9px 12px; font-size:15px; border-radius:10px; border:1px solid var(--border);
     background:var(--card); color:var(--text); margin-bottom:10px; }
   .cp-acoes-massa { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }
+  /* Adicionar produto (2026-08-10, pedido do Rodrigo): a mesma ação que já
+     existe na Contagem de insumos, aqui também — é a MESMA base de dados por
+     trás das duas telas (POST /api/contagem/produto), só a casca muda.
+     Mesmo desenho visual daquela tela, prefixo cp- pra não colidir com o
+     resto do CSS desta página. */
+  .cp-add-linha { display:flex; justify-content:flex-end; margin:0 0 8px; }
+  .cp-add-painel { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; margin:0 0 12px;
+    padding:10px; border:1px solid var(--border); border-radius:10px; background:var(--card); }
+  .cp-add-painel[hidden] { display:none; }
+  .cp-add-campo { display:flex; flex-direction:column; gap:3px; }
+  .cp-add-campo label { font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:.04em; }
+  .cp-add-campo input, .cp-add-campo select { font:inherit; font-size:14px; padding:7px 8px; border-radius:7px;
+    border:1px solid var(--border); background:var(--bg); color:var(--text); }
+  .cp-add-campo.nome { flex:1 1 100%; }
+  .cp-add-campo.nome input { width:100%; }
+  .cp-add-campo.opc { flex:1 1 120px; min-width:0; }
+  .cp-add-campo.opc input, .cp-add-campo.opc select { width:100%; }
+  .cp-add-painel .cp-add-acoes { display:flex; gap:8px; flex:1 1 100%; }
+  .cp-add-msg { flex:1 1 100%; font-size:12px; margin:0; }
+  .cp-add-msg.erro { color:#e08585; }
+  .cp-add-msg.ok { color:var(--verde); }
   .cp-arred-lbl { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-2);
     cursor:pointer; padding:6px 4px; }
   .cp-arred-lbl input { accent-color:var(--acc); width:15px; height:15px; }
@@ -2604,6 +2625,87 @@ a contagem daquela semana.</p>
     velho.replaceWith(wrap.firstChild);
   }
 
+  // --- adicionar produto (2026-08-10, pedido do Rodrigo) -------------------
+  // A mesma ação da Contagem de insumos, aqui também: é a MESMA lista por trás
+  // das duas telas (POST /api/contagem/produto), só a casca muda. Quem está no
+  // Pedido de Compras e percebe que falta uma garrafa na folha não precisa
+  // sair pra outra página pra cadastrá-la.
+  //
+  // Os dois campos opcionais só aparecem quando existe onde gravá-los:
+  //  - categoria: só se a contagem tiver a coluna (o payload manda
+  //    `categorias`, as opções que o Worker aceita). É <select>, não texto
+  //    livre — o Notion cria opção de multi_select em silêncio, então digitar
+  //    "cervejas" ao lado de "Cervejas" partiria a categoria em duas.
+  //  - estoque mínimo: só se a contagem tiver a coluna E a sessão for
+  //    chefe/coord, a MESMA régua do lápis de editar mínimo desta tela. O
+  //    Worker reconfere — isto só evita oferecer um campo que ele recusaria.
+  function blocoAdicionar() {
+    var cats = (DADOS && DADOS.categorias) || [];
+    var temMin = !!(DADOS && DADOS.campo_min) && (NIVEL === 'chefe' || NIVEL === 'coord');
+    return '<div class="cp-add-linha">' +
+        '<button type="button" class="cp-btn oco" id="cp-add-btn">+ Adicionar produto</button>' +
+      '</div>' +
+      '<div class="cp-add-painel" id="cp-add-painel" hidden>' +
+        '<div class="cp-add-campo nome"><label for="cp-add-nome">Nome do produto</label>' +
+          '<input id="cp-add-nome" type="text" maxlength="200" autocomplete="off" ' +
+          'placeholder="Ex.: Aperol 750ml"></div>' +
+        (cats.length ? '<div class="cp-add-campo opc"><label for="cp-add-cat">Categoria (opcional)</label>' +
+          '<select id="cp-add-cat"><option value="">— sem categoria —</option>' +
+          cats.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
+          '</select></div>' : '') +
+        (temMin ? '<div class="cp-add-campo opc"><label for="cp-add-min">Estoque mínimo (opcional)</label>' +
+          '<input id="cp-add-min" type="number" min="0" step="any" inputmode="decimal"></div>' : '') +
+        '<p class="cp-add-msg sub" id="cp-add-msg" hidden></p>' +
+        '<div class="cp-add-acoes">' +
+          '<button type="button" class="cp-btn acc" id="cp-add-salvar">Adicionar</button>' +
+          '<button type="button" class="cp-btn oco" id="cp-add-cancelar">Cancelar</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function addMsg(texto, classe) {
+    var el = document.getElementById('cp-add-msg');
+    if (!el) return;
+    el.textContent = texto || '';
+    el.className = 'cp-add-msg sub' + (classe ? ' ' + classe : '');
+    el.hidden = !texto;
+  }
+
+  function adicionaProduto() {
+    if (!DADOS) return;
+    var elNome = document.getElementById('cp-add-nome');
+    var elCat = document.getElementById('cp-add-cat');
+    var elMin = document.getElementById('cp-add-min');
+    var nome = (elNome.value || '').trim();
+    if (!nome) { addMsg('Escreva o nome do produto.', 'erro'); elNome.focus(); return; }
+
+    var corpo = { nome: nome };
+    if (elCat && elCat.value) corpo.categoria = elCat.value;
+    if (elMin && elMin.value !== '') corpo.minimo = Number(elMin.value);
+    // db_id da contagem que ESTA tela está mostrando — a página sempre trabalha
+    // sobre a semana atual, mas mandar o id explícito evita depender de "a mais
+    // recente" mudar entre o GET e o POST.
+    if (DADOS.semana && DADOS.semana.db_id) corpo.db_id = DADOS.semana.db_id;
+
+    var btn = document.getElementById('cp-add-salvar');
+    if (btn) { btn.disabled = true; btn.textContent = 'Adicionando…'; }
+    addMsg('', '');
+    api('POST', '/api/contagem/produto', corpo).then(function (r) {
+      return r.json().then(function (d) { return r.ok ? d : Promise.reject(d); });
+    }).then(function () {
+      // Recarrega do servidor em vez de inserir a linha na mão: preço do B.D.1,
+      // semana anterior e ordenação por categoria+nome vêm todos do Worker —
+      // montar a linha aqui duplicaria essas regras.
+      carrega();
+    }).catch(function (d) {
+      var msg = (d && d.erro) || 'não deu pra adicionar agora';
+      if (d && d.existente) msg += ' (já está na lista como "' + d.existente + '")';
+      addMsg(msg, 'erro');
+    }).finally(function () {
+      if (btn) { btn.disabled = false; btn.textContent = 'Adicionar'; }
+    });
+  }
+
   // Constrói a lista inteira — só chamado quando os DADOS mudam (carrega()).
   function construir() {
     mobile = window.innerWidth <= 820;
@@ -2645,6 +2747,8 @@ a contagem daquela semana.</p>
       '<button class="cp-btn oco" id="cp-zerar" type="button">Limpar pedido</button>' +
       '<label class="cp-arred-lbl" title="Sobe a Sugestão pro múltiplo da caixa/fardo definido em cada produto">' +
       '<input type="checkbox" id="cp-arred-chk"' + (arredondaEmb ? ' checked' : '') + '> Arredondar p/ embalagem</label></div>';
+
+    html += blocoAdicionar();
 
     if (!mobile) {
       html += '<div class="cp-cab-cols"><span>Produto</span><span>Contado</span><span>Mínimo</span><span>Sug.</span>' +
@@ -2688,6 +2792,27 @@ a contagem daquela semana.</p>
     });
     document.getElementById('cp-aceitar-tudo').onclick = aceitarTudo;
     document.getElementById('cp-zerar').onclick = zerarPedidos;
+    var elAddBtn = document.getElementById('cp-add-btn');
+    if (elAddBtn) {
+      elAddBtn.onclick = function () {
+        var painel = document.getElementById('cp-add-painel');
+        painel.hidden = !painel.hidden;
+        if (!painel.hidden) {
+          addMsg('', '');
+          document.getElementById('cp-add-nome').focus();
+        }
+      };
+      document.getElementById('cp-add-salvar').onclick = adicionaProduto;
+      document.getElementById('cp-add-cancelar').onclick = function () {
+        document.getElementById('cp-add-painel').hidden = true;
+        addMsg('', '');
+      };
+      // Enter no nome adiciona — mesma régua da Contagem: quem está com a
+      // garrafa na mão não vai procurar o botão. Nos outros campos é neutro.
+      document.getElementById('cp-add-nome').onkeydown = function (ev) {
+        if (ev.key === 'Enter') { ev.preventDefault(); adicionaProduto(); }
+      };
+    }
     var arredChk = document.getElementById('cp-arred-chk');
     if (arredChk) arredChk.onchange = function () {
       arredondaEmb = this.checked;
@@ -7343,7 +7468,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '42856e61ed23';
+  var BUILD = '0c1f95addbb5';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
