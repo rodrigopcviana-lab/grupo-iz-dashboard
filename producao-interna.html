@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#16130f">
 <title>Produção interna · Bar.IZ — Grupo IZ</title>
-<link rel="stylesheet" href="portal.css?v=018c460f2773">
+<link rel="stylesheet" href="portal.css?v=6966738b96ef">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -806,6 +806,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .pi-chip.on { background:var(--acc); color:var(--acc-txt,#171310); border-color:var(--acc); font-weight:600; }
   .pi-aviso { font-size:12.5px; color:var(--text-3); border-left:2px solid var(--border);
     padding:2px 0 2px 10px; margin:0 0 16px; }
+  .pi-aviso-forte { font-size:12.5px; color:var(--text-1); border-left:2px solid var(--acc);
+    padding:2px 0 2px 10px; margin:0 0 16px; font-weight:600; }
   .pi-card { background:var(--card); border:1px solid var(--border); border-radius:12px;
     padding:13px 14px; margin:0 0 10px; }
   .pi-card h3 { margin:0 0 3px; font-size:16px; }
@@ -937,15 +939,24 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   // Avisa a PROCEDÊNCIA da lista de preparos desta casa — lista emprestada
-  // do Grá (só a dele foi revisada com o dono) e insumos que a casa ainda
-  // não classificou como comprado-pronto/feito-na-casa. Reage à troca de
-  // casa junto com o resto (chamado de dentro de renderCasa).
+  // (só a do Grá foi revisada com o dono) e insumos que a casa ainda não
+  // classificou como comprado-pronto/feito-na-casa. Reage à troca de casa
+  // junto com o resto (chamado de dentro de renderCasa).
+  //
+  // O que importa de verdade é "pode_ser_preparo" — insumo onde pode haver
+  // um preparo real que esta previsão não cobre (é essa classe que já
+  // escondeu um preparo real de uma casa antes desta mudança).
+  // "falta_confirmar_compra" é ruído (bebida comprada pronta, quase certo —
+  // falta só casar o nome exato) e fica num aviso discreto, sem listar nome
+  // nenhum. Item sem classe reconhecida cai no grupo discreto por padrão —
+  // fail-safe, nunca inventa alarme.
   function renderProcedencia(c) {
     var box = document.getElementById('pi-procedencia');
     box.innerHTML = '';
 
     var origem = c.depara_origem || '';
-    if (origem.indexOf('emprestada:') === 0) {
+    var emprestada = origem.indexOf('emprestada:') === 0;
+    if (emprestada) {
       var slugDoadora = origem.slice('emprestada:'.length);
       var nomeDoadora = (DADOS.casas[slugDoadora] && DADOS.casas[slugDoadora].casa) || slugDoadora;
       box.appendChild(el('p', 'pi-aviso',
@@ -953,14 +964,40 @@ window.msgAcessoNegado = function (nomePagina) {
     }
 
     var semClass = c.insumos_sem_classificacao || [];
-    if (semClass.length) {
+    var podeSerPreparo = semClass.filter(function (i) { return i && i.classe === 'pode_ser_preparo'; });
+    var resto = semClass.filter(function (i) { return !(i && i.classe === 'pode_ser_preparo'); });
+
+    if (emprestada && !semClass.length) {
+      // Lista emprestada sem NENHUM insumo classificado não quer dizer "não
+      // falta nada" — quer dizer que a lista doadora não sabe nada sobre os
+      // insumos desta casa. Nunca silêncio aqui.
+      box.appendChild(el('p', 'pi-aviso-forte',
+        'Os insumos desta casa ainda não foram conferidos um a um — não dá pra afirmar que a lista de preparos acima está completa.'));
+    } else if (podeSerPreparo.length) {
       var LIMITE = 8;
-      var nomes = semClass.map(function (i) { return (i && i.insumo) || '—'; });
+      var nomes = podeSerPreparo.map(function (i) { return (i && i.insumo) || '—'; });
       var listaTxt = nomes.length > LIMITE
         ? nomes.slice(0, LIMITE).join(', ') + ' e mais ' + (nomes.length - LIMITE)
         : nomes.join(', ');
+      // A REDAÇÃO DESCREVE O QUE FOI MEDIDO, não o que se gostaria de ter
+      // classificado (corrigido 2026-08-07, olhando a lista renderizada).
+      // O que estes itens têm em comum é UMA coisa só: são usados em receita
+      // desta casa e não casaram com nada na contagem dela. Isso comporta
+      // três causas diferentes, medidas no dado real — preparo da casa de
+      // verdade, item que a casa usa e nunca cadastrou na contagem, e nome
+      // escrito diferente dos dois lados. Dizer "podem ser preparos"
+      // afirmava a primeira causa para as três, e punha marca de cerveja
+      // numa lista de possíveis preparos: o jeito mais rápido de ensinar a
+      // equipe a ignorar o aviso. (Sem citar produto real aqui — este
+      // comentário vai junto pro HTML publicado.)
+      box.appendChild(el('p', 'pi-aviso-forte',
+        podeSerPreparo.length + ' insumo(s) usados nas receitas desta casa não aparecem na contagem dela: '
+        + listaTxt + '. Pode ser preparo da casa que falta nesta previsão, ou item que falta cadastrar na contagem.'));
+    }
+
+    if (resto.length) {
       box.appendChild(el('p', 'pi-aviso',
-        semClass.length + ' insumo(s) desta casa ainda não foram classificados como comprado pronto ou feito na casa — por isso podem existir preparos fora desta previsão: ' + listaTxt + '.'));
+        'Outros ' + resto.length + ' já têm candidato na contagem — falta só confirmar qual produto são.'));
     }
   }
 
@@ -1124,7 +1161,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 10/08/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 11/08/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -2380,7 +2417,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '018c460f2773';
+  var BUILD = '6966738b96ef';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
