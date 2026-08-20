@@ -34,6 +34,14 @@
   .gate button { width:100%; margin-top:8px; background:var(--acc); color:var(--acc-txt); font-weight:600;
     border:none; border-radius:9px; padding:9px 12px; font-size:13px; cursor:pointer; }
   .gate .msg.erro { color: var(--verm); }
+  .gate { position: relative; }
+  .gate .fechar { position:absolute; top:14px; right:14px; width:26px; height:26px; border-radius:50%;
+    border:1px solid var(--border); background:var(--card2); color:var(--text-2); font-size:14px; line-height:1;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .gate .fechar:hover { color:var(--text); border-color:var(--acc); }
+  .gate .voltar { width:100%; margin-top:8px; background:none; color:var(--text-2); font-weight:500;
+    border:1px solid var(--border); border-radius:9px; padding:9px 12px; font-size:13px; cursor:pointer; }
+  .gate .voltar:hover { color:var(--text); border-color:var(--acc); }
 
   .selo { display:inline-flex; align-items:center; gap:7px; font-size:12px; padding:6px 12px; border-radius:999px;
     border:1px solid color-mix(in srgb, var(--verde) 45%, transparent); color:var(--verde);
@@ -119,6 +127,7 @@
 <body>
 
 <div class="gate" id="gate">
+  <button type="button" class="fechar" aria-label="Fechar" title="Fechar" onclick="voltarTelaAnterior()">✕</button>
   <h2>Grupo IZ — Vendas de bebidas (consolidado)</h2>
   <p class="d">Área restrita — o acesso vem do login do Portal dos Bares.</p>
   <p class="msg" id="gateMsg">Verificando seu acesso…</p>
@@ -126,6 +135,7 @@
     <input type="password" id="gate-senha-input" placeholder="Senha de vendas" autocomplete="off">
     <button type="submit">Entrar</button>
     <p class="msg erro" id="gate-senha-erro"></p>
+    <button type="button" class="voltar" onclick="voltarTelaAnterior()">Não tenho a senha — voltar</button>
   </form>
 </div>
 
@@ -345,6 +355,11 @@ function renderDivergencias(conf) {
     <code>&lt;slug&gt;:&lt;Mês/Ano&gt;</code>) — só então <code>verifica_vendas.py</code> deixa de acusar falha
     nesse mês.</p>
   `;
+}
+
+function voltarTelaAnterior(){
+  if (window.history.length > 1) window.history.back();
+  else window.location.href = '../index.html';
 }
 
 const SESSAO_LS = 'portal_sessao';
