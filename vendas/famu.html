@@ -139,11 +139,24 @@
     .kpi .k-val { font-size:19px; }
     .barh .bh-nome { width:110px; }
   }
+
+  /* Saída do gate — quem não tem a 2ª senha precisa conseguir voltar. */
+  .gate { position: relative; }
+  .gate h2 { padding-right: 34px; }
+  .gate .gate-fechar { position:absolute; top:14px; right:14px; width:28px; height:28px; border-radius:50%;
+    border:1px solid var(--border); background:var(--card2); color:var(--text-2);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  .gate .gate-fechar:hover { color:var(--text); border-color:var(--acc); }
+  .gate .gate-fechar svg { width:13px; height:13px; }
+  .gate .gate-voltar { width:100%; margin-top:8px; background:none; color:var(--text-2); font-weight:500;
+    border:1px solid var(--border); border-radius:9px; padding:9px 12px; font-size:13px; cursor:pointer; }
+  .gate .gate-voltar:hover { color:var(--text); border-color:var(--acc); }
 </style>
 </head>
 <body>
 
 <div class="gate" id="gate">
+  <button type="button" class="gate-fechar" aria-label="Fechar e voltar" title="Fechar e voltar" onclick="voltarTelaAnterior()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>
   <h2>FAMU</h2>
   <p class="d">Área restrita — o acesso vem do login do Portal dos Bares.</p>
   <p class="msg" id="gateMsg">Verificando seu acesso…</p>
@@ -151,6 +164,7 @@
     <input type="password" id="gate-senha-input" placeholder="Senha de vendas" autocomplete="off">
     <button type="submit">Entrar</button>
     <p class="msg erro" id="gate-senha-erro"></p>
+    <button type="button" class="gate-voltar" onclick="voltarTelaAnterior()">Não tenho a senha — voltar</button>
   </form>
 </div>
 
@@ -595,6 +609,12 @@ function aplicaDados(d) {
   document.getElementById('app').style.display = '';
   initialized['p-resumo'] = true;
   initResumo();
+}
+
+// Saída do gate: volta para a tela anterior; sem histórico, cai no portal.
+function voltarTelaAnterior(){
+  if (window.history.length > 1) window.history.back();
+  else window.location.href = '../index.html';
 }
 
 const SESSAO_LS = 'portal_sessao';
