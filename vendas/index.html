@@ -187,6 +187,22 @@ const CORES_CASA = { iz:'var(--casa-iz)', '1929':'var(--casa-1929)', 'gra-bistro
 const ARQUIVO_CASA = { 'gra-bistro':'gra' }; // demais = o próprio slug, ver publica_vendas.sh (E6)
 
 function fmtR(v){ return 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+// mesLinear: índice que cresce 1 por mês de verdade — dá pra saber se dois
+// meses são consecutivos (2026-09-18: Ago/26 entrou colado a Mai/26 no
+// JSON, sem Jun/Jul — mesmo helper do _template_vendas.html).
+const MESES_ORDEM_G = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+function mesLinear(m){ const [n,a]=m.split('/'); return parseInt(a,10)*12+MESES_ORDEM_G.indexOf(n); }
+function mesesFaltantesNaLista(lista){
+  const falt = [];
+  for (let i=1;i<lista.length;i++){
+    const a = mesLinear(lista[i-1]), b = mesLinear(lista[i]);
+    for (let l=a+1;l<b;l++){
+      const ano = Math.floor(l/12), idx = ((l%12)+12)%12;
+      falt.push(MESES_ORDEM_G[idx] + '/' + String(ano).padStart(2,'0'));
+    }
+  }
+  return falt;
+}
 
 function drawBarChart(id, labels, data, colorFn, opts={}, _tentativa) {
   const canvas = document.getElementById(id); if(!canvas || !labels || !labels.length) return;
@@ -222,6 +238,18 @@ function drawBarChart(id, labels, data, colorFn, opts={}, _tentativa) {
     c.fillStyle = '#8f8672'; c.font = '9px system-ui'; c.textAlign = 'center';
     c.fillText(labels[i], x+bwA/2, H-pad.b+11);
   });
+  // hiato no calendário entre um rótulo e o seguinte (ex.: Mai/26 → Ago/26,
+  // sem Jun/Jul) — sem isso as barras ficam coladas e parecem meses seguidos.
+  for (let i=1;i<labels.length;i++){
+    let seguido = true;
+    try { seguido = mesLinear(labels[i]) - mesLinear(labels[i-1]) === 1; } catch(e) {}
+    if (seguido) continue;
+    const xg = pad.l+i*bw;
+    c.save();
+    c.strokeStyle = '#e0b05c'; c.lineWidth = 1; c.setLineDash([3,3]);
+    c.beginPath(); c.moveTo(xg,pad.t); c.lineTo(xg,pad.t+H2); c.stroke();
+    c.restore();
+  }
 }
 
 function render(d) {
@@ -308,7 +336,9 @@ function render(d) {
       }).join('');
   }
 
-  document.getElementById('notasGrupo').textContent = (d.notas || []).join(' · ');
+  const gapsGrupo = mesesFaltantesNaLista(d.meses || []);
+  const notaGapGrupo = gapsGrupo.length ? `Sem dado em ${gapsGrupo.join(', ')} — hiato marcado com linha tracejada no gráfico.` : '';
+  document.getElementById('notasGrupo').textContent = [...(d.notas || []), notaGapGrupo].filter(Boolean).join(' · ');
 
   renderDivergencias(conf);
 }

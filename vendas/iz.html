@@ -212,6 +212,16 @@
 <div class="painel" id="p-comp">
   <div class="card"><h4>Receita por categoria (período completo)</h4><div id="compCatBars"></div></div>
   <div class="card">
+    <h4>Mix por categoria — % do faturamento total, mês a mês</h4>
+    <div class="toggle-qr" style="margin-bottom:10px">
+      <button class="on" data-mx="p" onclick="setMix('p', this)">%</button>
+      <button data-mx="r" onclick="setMix('r', this)">R$</button>
+    </div>
+    <div class="scroll-x"><table class="limpa" id="mixCatTabela"></table></div>
+    <p class="nota" style="margin:8px 0 0">Cada coluna soma 100% (linha Total) — resposta direta pra "categoria X
+    representa quanto % do total do mês Y", sem precisar recalcular fora da página.</p>
+  </div>
+  <div class="card">
     <h4>Todos os produtos</h4>
     <div class="busca-row">
       <input type="text" id="compBusca" placeholder="Buscar produto ou categoria…" oninput="renderCompleto()">
@@ -283,6 +293,28 @@ function fmtPct(v,dec){ dec=dec===undefined?1:dec; if(v===null||v===undefined) r
   return (v>0?'+':'') + v.toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}) + '%'; }
 function tituloCase(s){ return (s||'').toLowerCase().replace(/(^|\s)\S/g, c=>c.toUpperCase()); }
 function mesKey(m){ const [n,a]=m.split('/'); return parseInt(a,10)*100+MESES_ORDEM.indexOf(n); }
+// mesLinear: diferente de mesKey (só serve pra ORDENAR), este dá um índice
+// que cresce 1 por mês de verdade — dá pra subtrair e saber se dois meses
+// são consecutivos no calendário (2026-09-18: Ago/26 entrou colado a Mai/26
+// no JSON — sem Jun/Jul — e "pegar os 2 últimos da lista" parou de ser a
+// mesma coisa que "os 2 últimos meses"; ver conversa da vendas).
+function mesLinear(m){ const [n,a]=m.split('/'); return parseInt(a,10)*12+MESES_ORDEM.indexOf(n); }
+function consecutivos(lista){
+  if (lista.length < 2) return true;
+  for (let i=1;i<lista.length;i++) if (mesLinear(lista[i]) - mesLinear(lista[i-1]) !== 1) return false;
+  return true;
+}
+function mesesFaltantesNaLista(lista){
+  const falt = [];
+  for (let i=1;i<lista.length;i++){
+    const a = mesLinear(lista[i-1]), b = mesLinear(lista[i]);
+    for (let l=a+1;l<b;l++){
+      const ano = Math.floor(l/12), idx = ((l%12)+12)%12;
+      falt.push(MESES_ORDEM[idx] + '/' + String(ano).padStart(2,'0'));
+    }
+  }
+  return falt;
+}
 
 // ── ABAS ──
 function aba(id, btn) {
@@ -310,12 +342,21 @@ function periodo(chave, btn) {
   const { meses, janela } = janelaPeriodo(n);
   if (!janela.length) return;
   const receita = janela.reduce((s,m)=>s+somaReceitaMes(m), 0);
-  const label = janela.length === 1 ? janela[0] : `${janela[0]} – ${janela[janela.length-1]}`;
+  const janelaContigua = consecutivos(janela);
+  const label = janela.length === 1 ? janela[0]
+    : janelaContigua ? `${janela[0]} – ${janela[janela.length-1]}`
+    : janela.join(', ');
 
   const idx0 = meses.indexOf(janela[0]);
   const anterior = meses.slice(Math.max(0, idx0-n), idx0);
+  // Variação só faz sentido comparando dois blocos de meses realmente
+  // colados no calendário (anterior termina exatamente 1 mês antes de
+  // janela começar) — senão "vs mês anterior" compararia, por exemplo,
+  // Mai/26 com Ago/26 e chamaria isso de mês a mês.
+  const blocosColados = janela.length && anterior.length
+    && mesLinear(janela[0]) - mesLinear(anterior[anterior.length-1]) === 1;
   let varPct = null;
-  if (anterior.length === n) {
+  if (anterior.length === n && janelaContigua && consecutivos(anterior) && blocosColados) {
     const receitaAnt = anterior.reduce((s,m)=>s+somaReceitaMes(m), 0);
     if (receitaAnt) varPct = Math.round((receita - receitaAnt) / receitaAnt * 1000) / 10;
   }
@@ -328,11 +369,16 @@ function periodo(chave, btn) {
   });
   const top5 = Object.values(porProduto).sort((a,b)=>b.receita-a.receita).slice(0,5);
 
+  const faltantes = mesesFaltantesNaLista(janela);
   document.getElementById('perLabel').textContent = label;
-  document.getElementById('perNMeses').textContent = janela.length + (janela.length>1?' meses':' mês');
+  document.getElementById('perNMeses').textContent = janela.length + (janela.length>1?' meses':' mês')
+    + (faltantes.length ? ` · sem dado em ${faltantes.join(', ')}` : '');
   document.getElementById('perReceita').textContent = fmtR(receita);
   document.getElementById('perVar').textContent = varPct===null ? '—' : fmtPct(varPct);
-  document.getElementById('perVarSub').textContent = varPct===null ? 'sem período anterior completo' : 'vs período anterior equivalente';
+  document.getElementById('perVarSub').textContent = varPct!==null ? 'vs período anterior equivalente'
+    : !janelaContigua ? 'hiato de dados no período — sem comparação direta'
+    : anterior.length !== n ? 'sem período anterior completo'
+    : 'sem período anterior completo (hiato de dados entre os blocos)';
   document.getElementById('perNProd').textContent = Object.keys(porProduto).length;
   document.getElementById('perTop').innerHTML = top5.map(t =>
     `<tr><td>${tituloCase(t.nome)}</td><td><span class="chip-cat">${tituloCase(t.cat)}</span></td>` +
@@ -358,7 +404,9 @@ function initResumo() {
   }
   periodo('mes', document.querySelector('#selPeriodo button[data-per="mes"]'));
   drawBarChart('revChart', D.MESES_R, D.RECEITA_MES, () => 'rgba(208,163,82,0.75)', {pad:{l:56,r:8,t:8,b:24}, prefix:'R$'});
-  document.getElementById('obsReceita').textContent = D.OBS_RECEITA || '';
+  const gapsSerie = mesesFaltantesNaLista(D.MESES_R || []);
+  const notaGap = gapsSerie.length ? `Sem dado em ${gapsSerie.join(', ')} — a linha tracejada no gráfico marca o hiato; os meses ao lado dela não são consecutivos.` : '';
+  document.getElementById('obsReceita').textContent = [D.OBS_RECEITA, notaGap].filter(Boolean).join(' ');
 }
 
 // ── COMPLETO ──
@@ -382,8 +430,43 @@ function initCompleto() {
     `<span class="bh-val">${fmtR(v)}</span></div>`
   ).join('');
 
+  initMixCategoria();
   renderCompleto();
 }
+
+// Mix por categoria (% do total por mês) — usa CAT_REV, que cobre TODAS as
+// categorias (não só o top-8 do gráfico acima) e é chaveado pelo mês cheio
+// ("Ago/26"), pra não colidir quando a casa repete o nome curto do mês em
+// anos diferentes (ex.: 1929 tem Jan/25 e Jan/26).
+let mixModo = 'p';
+function setMix(v, btn) {
+  mixModo = v;
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  initMixCategoria();
+}
+function initMixCategoria() {
+  const meses = D.MESES_R || [];
+  const catRev = D.CAT_REV || {};
+  const cats = Object.keys(catRev);
+  const totalPorMes = meses.map(m => somaReceitaMes(m));
+  const ultimo = meses.length - 1;
+  cats.sort((a,b) => ((catRev[b]||{})[meses[ultimo]]||0) - ((catRev[a]||{})[meses[ultimo]]||0));
+
+  const cel = (v, tot) => mixModo === 'p'
+    ? (tot ? (v/tot*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) : '0,0') + '%'
+    : fmtR(v);
+
+  const head = '<thead><tr><th>Categoria</th>' + meses.map(m=>`<th class="num">${m}</th>`).join('') + '</tr></thead>';
+  const linhas = cats.map(cat => {
+    const cells = meses.map((m,i) => `<td class="num">${cel((catRev[cat]||{})[m]||0, totalPorMes[i])}</td>`).join('');
+    return `<tr><td>${tituloCase(cat)}</td>${cells}</tr>`;
+  }).join('');
+  const totalRow = '<tr><td><b>Total</b></td>' +
+    meses.map((m,i) => `<td class="num"><b>${cel(totalPorMes[i], totalPorMes[i])}</b></td>`).join('') + '</tr>';
+  document.getElementById('mixCatTabela').innerHTML = head + '<tbody>' + linhas + totalRow + '</tbody>';
+}
+
 function renderCompleto() {
   const q = (document.getElementById('compBusca').value||'').toLowerCase();
   const catF = document.getElementById('compCatFiltro').value;
@@ -475,8 +558,12 @@ function initProjecao() {
   }
   const falta = p.piso_ipca !== null ? Math.round((p.projecao - p.piso_ipca) * 100) / 100 : null;
   let alerta = '';
+  if (!consecutivos(p.base_meses || [])) {
+    alerta += `<div class="banner-cob"><b>Base com hiato:</b> a média usa ${p.base_meses.join(', ')} — não são
+      meses seguidos no calendário, então a "base histórica" mistura períodos distantes, não uma tendência recente.</div>`;
+  }
   if (falta !== null) {
-    alerta = falta < 0
+    alerta += falta < 0
       ? `<div class="banner-cob"><b>Alerta:</b> a projeção histórica fica ${fmtR(Math.abs(falta))} ABAIXO do piso anti-inflação — vender isso é encolher em termos reais.</div>`
       : `<div class="banner-cob ok"><b>Acima do piso:</b> projeção ${fmtR(falta)} acima do piso anti-inflação — crescimento real, se confirmar.</div>`;
   }
@@ -587,6 +674,23 @@ function drawBarChart(id, labels, data, colorFn, opts={}, _tentativa) {
     c.fillStyle = '#8f8672'; c.font = '9px system-ui'; c.textAlign = 'center';
     c.fillText(labels[i], x+bwA/2, H-pad.b+11);
   });
+  // hiato no calendário entre um rótulo e o seguinte (ex.: Mai/26 → Ago/26,
+  // sem Jun/Jul) — sem isso as barras ficam coladas e parecem meses
+  // seguidos. Só desenha quando o rótulo é mesmo "Mmm/AA" (typeof helper
+  // existe nesta página); em telas que reusam este helper sem esse formato
+  // o try/catch abaixo faz nada em vez de quebrar o gráfico.
+  if (typeof mesLinear === 'function') {
+    for (let i=1;i<labels.length;i++){
+      let seguido = true;
+      try { seguido = mesLinear(labels[i]) - mesLinear(labels[i-1]) === 1; } catch(e) {}
+      if (seguido) continue;
+      const xg = pad.l+i*bw;
+      c.save();
+      c.strokeStyle = '#e0b05c'; c.lineWidth = 1; c.setLineDash([3,3]);
+      c.beginPath(); c.moveTo(xg,pad.t); c.lineTo(xg,pad.t+H2); c.stroke();
+      c.restore();
+    }
+  }
 }
 
 // ── carregamento lazy por aba ──
