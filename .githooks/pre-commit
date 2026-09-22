@@ -1,0 +1,9 @@
+#!/bin/sh
+# Barra commit que deixaria o portal com dois build ids — o que faz o banner
+# "Nova versão disponível" aparecer sem fim pra equipe inteira. Confere o
+# ÍNDICE (o que o commit vai gravar), não o disco: o erro clássico é publicar
+# versao.json sozinho e deixar as páginas com o id anterior.
+#
+# Ligado por: git config core.hooksPath .githooks
+# Para pular num caso legítimo: git commit --no-verify
+exec python3 "$(git rev-parse --show-toplevel)/scripts/checa_build.py" --index

@@ -66,6 +66,25 @@ cd ~/Desktop/grupo-iz-dashboard-site
 git add -A && git commit -m "Atualiza portal, vendas e ranking" && git push
 ```
 
+### Publicar inteiro, nunca pela metade
+
+O `git add -A` do passo 6 não é estilo: o `portal_gen.py` carimba todas as páginas,
+o `portal.css?v=`, o `sw.js` e o `versao.json` com o **mesmo** build id, e cada página
+compara o id dela com o `versao.json` a cada poucos minutos. Subir só alguns arquivos
+deixa ids diferentes convivendo, e aí a equipe vê "Nova versão disponível" para sempre —
+clicar em **Atualizar** não resolve, porque a página recarrega com o mesmo id velho e o
+aviso volta em 4 segundos. Aconteceu em 19/08/2026 e ficou 5 semanas no ar.
+
+`scripts/checa_build.py` confere que só existe um build id. O hook em `.githooks/`
+roda essa checagem no índice antes de cada commit:
+
+```bash
+git config core.hooksPath .githooks   # uma vez por clone
+python3 scripts/checa_build.py        # avulso, na árvore de trabalho
+```
+
+Se o hook barrar, o caminho certo é republicar o portal inteiro — não `--no-verify`.
+
 ## Trocar senha de vendas/ranking/contagem
 
 Não é mais aqui — as senhas ficam no Cloudflare Worker (`contagem-bares`),
