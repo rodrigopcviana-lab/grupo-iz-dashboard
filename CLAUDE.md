@@ -48,3 +48,10 @@ terminal, por arquivo, nem pelo contexto de um agente. Achar a referência certa
   `contatos.html`, `contagem.html`, `curva-abc.html` — são gerados por `portal_gen.py` no
   projeto `Code 1`. Editar aqui é trabalho perdido no próximo deploy.
 - `.staticrypt.json` não é mais usado. Mantido por histórico; pode sair.
+
+## Contexto geral (vault)
+
+Visão de negócio, pessoas, prazos e decisões com cliente deste projeto ficam em
+`C:\Users\Rodrigo\OneDrive\Documentos\Obsidian Vault\Profissional\Projetos\grupo-iz-dashboard.md`.
+Consulte quando a tarefa envolver cliente, prazo ou pessoa; registre lá o que for
+de negócio. Aqui fica só o técnico.
