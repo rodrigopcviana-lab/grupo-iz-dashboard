@@ -607,7 +607,7 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
 </div>
 <script>
 (function () {
-  var BUILD = 'c7d35f191dd7';
+  var BUILD = '4d83f408dd21';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -617,6 +617,18 @@ h1{ font-size:1.15rem; margin:0 0 2px; display:flex; align-items:center; gap:8px
   // "<build>|<carimbo>" e o adiamento vence sozinho.
   var ADIA_MS = 86400000;     // 24h
   var ultimo = 0, mostrando = false;
+
+  // Dentro da casca de abas (abas.html, ver ABAS_JS) quem confere versão é a
+  // casca: um aviso por aba empilharia N avisos iguais, e o "Atualizar" de
+  // uma aba só recarregaria ela, deixando as outras no build velho. O botão
+  // manual de meu-perfil.html continua funcionando, repassado pra casca.
+  var casca = null;
+  try { if (window.top !== window.self && window.top.barizAbas) casca = window.top; } catch (e) {}
+  if (casca) {
+    window.barizAtualiza = function () { casca.barizAtualiza(); };
+    window.barizConfere = function () { casca.barizConfere(); };
+    return;
+  }
 
   // Fail-open: qualquer dúvida (localStorage indisponível, valor estranho,
   // formato legado só com o build) resulta em MOSTRAR o aviso.

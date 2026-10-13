@@ -15,12 +15,13 @@
  * uma publicação quem responde ainda é o worker anterior, que serviria o CSS
  * velho do cache dele. Com o ?v= no endereço, a busca no cache antigo erra
  * (endereço novo) e o CSS novo vem da rede já nessa primeira carga. */
-const CACHE = "iz-portal-c7d35f191dd7";
+const CACHE = "iz-portal-4d83f408dd21";
 const CORE = [
   "index.html",
+  "abas.html",
   /* com o ?v= do build, igual ao <link> das páginas — precisa bater byte a
      byte, senão a busca no cache erra e o offline fica sem CSS. */
-  "portal.css?v=c7d35f191dd7",
+  "portal.css?v=4d83f408dd21",
   "manifest.webmanifest",
   "icon-192.png",
   "icon-512.png",
@@ -134,7 +135,10 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((lista) => {
       for (const c of lista) {
-        if (c.url.indexOf(alvo) >= 0 && "focus" in c) return c.focus();
+        // "nested" = página dentro de uma aba da casca (abas.html): focus()
+        // só vale pra janela de verdade. Sem achar janela, openWindow abre a
+        // página, que se coloca numa aba da casca sozinha (ABAS_GUARDA).
+        if (c.frameType !== "nested" && c.url.indexOf(alvo) >= 0 && "focus" in c) return c.focus();
       }
       if (self.clients.openWindow) return self.clients.openWindow(alvo);
     })
