@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=4d83f408dd21">
+<link rel="stylesheet" href="portal.css?v=5705924165ed">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -884,7 +884,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-item:last-child { border-bottom:none; }
   .orev-item .nome { flex:1; }
   .orev-item .custo { color:var(--text-3); font-size:12.5px; font-variant-numeric:tabular-nums; }
-  .orev-item.sem-custo { opacity:.5; }
+  .orev-item.sem-custo .custo { color:var(--urg-hoje, #d99a2b); }
   .orev-item .orev-un { width:66px; padding:5px 6px; border-radius:8px; border:1px solid var(--border);
       background:var(--card); color:var(--text); font:inherit; font-size:12.5px; box-sizing:border-box; }
   .orev-item .orev-un:disabled { opacity:.3; }
@@ -1894,6 +1894,13 @@ window.msgAcessoNegado = function (nomePagina) {
   function fmtBRL(v) {
     return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
+  // Custo unitário de item do cardápio: sem cadastro no Notion é "sem custo",
+  // nunca um valor zerado (dinheiro não se fabrica). Desde 2026-10-13 o item
+  // sem custo PODE ser marcado — entra no tempo de bartender e no volume, fica
+  // fora do insumo, e atualizaAvisos() avisa que o preço sai abaixo do real.
+  function fmtCusto(v) {
+    return v == null ? 'sem custo' : fmtBRL(v);
+  }
   function num(id) {
     return Math.max(0, parseFloat(document.getElementById(id).value) || 0);
   }
@@ -2442,7 +2449,7 @@ window.msgAcessoNegado = function (nomePagina) {
       var nomeEl = linhas[i].querySelector('.nome');
       var nome = nomeEl ? nomeEl.textContent : '';
       var chk = linhas[i].querySelector('input[type=checkbox]');
-      if (!chk || chk.disabled) continue;   // item sem custo: nunca marcável
+      if (!chk || chk.disabled) continue;
       var querMarcado = !!alvo[nome];
       if (chk.checked !== querMarcado) {
         chk.checked = querMarcado;
@@ -2503,7 +2510,7 @@ window.msgAcessoNegado = function (nomePagina) {
         var linha = document.createElement('label');
         linha.className = 'orev-item' + (semCusto ? ' sem-custo' : '');
         var chk = document.createElement('input');
-        chk.type = 'checkbox'; chk.disabled = semCusto;
+        chk.type = 'checkbox';
         var nome = document.createElement('span'); nome.className = 'nome'; nome.textContent = item.nome;
         var un = document.createElement('input');
         un.type = 'number'; un.min = '0'; un.step = '0.1'; un.value = '1';
@@ -2748,7 +2755,8 @@ window.msgAcessoNegado = function (nomePagina) {
     forma.innerHTML = '';
     var detIns = ctx.itensSel.map(function (i) {
       var sub = ctx.convidados * (i.porConvidado || 0) * i.custo;
-      var linha = esc(i.nome) + ' · ' + (i.porConvidado || 0) + ' un./convidado × ' + fmtBRL(i.custo);
+      var linha = esc(i.nome) + ' · ' + (i.porConvidado || 0) + ' un./convidado × ' + fmtCusto(i.custo);
+      if (i.custo == null) return linha + ' = <b>—</b> · fora do insumo até cadastrar o custo no Notion';
       // Item com a chave do contratante ligada aparece com o custo que a casa
       // DEIXA de ter — some do total, mas fica visível pra ninguém achar que
       // o item foi esquecido no cardápio.
@@ -2949,7 +2957,7 @@ window.msgAcessoNegado = function (nomePagina) {
       var un = ctx.convidados * (i.porConvidado || 0);
       var min = i.tipo === 'servido' ? prem.tempoServidoMin : prem.tempoPreparadoMin;
       return {
-        nome: i.nome, cliente: !!i.insumoCliente, un: un,
+        nome: i.nome, cliente: !!i.insumoCliente, semCusto: i.custo == null, un: un,
         ml: volumeMlDoNome(i.nome) * un,
         insumo: i.insumoCliente ? 0 : un * i.custo * (1 + (ctx.bufferPct || 0) / 100),
         peso: modo === 'unidade' ? un : un * min,
@@ -2980,7 +2988,7 @@ window.msgAcessoNegado = function (nomePagina) {
         + (l.cliente ? '<span class="orz-bebida-cli">contratante</span>' : '') + '</td>'
         + '<td>' + Math.round(l.un).toLocaleString('pt-BR') + '</td>'
         + '<td>' + (l.ml > 0 ? (l.ml / 1000).toFixed(0) + ' L' : '—') + '</td>'
-        + '<td>' + (l.cliente ? '—' : fmtBRL(l.un > 0 ? l.insumo / l.un : 0)) + '</td>'
+        + '<td>' + (l.cliente ? '—' : l.semCusto ? 'sem custo' : fmtBRL(l.un > 0 ? l.insumo / l.un : 0)) + '</td>'
         + '<td>' + fmtBRL(l.un > 0 ? oper / l.un : 0) + '</td>'
         + '<td>' + fmtBRL(l.un > 0 ? sub / l.un : 0) + '</td>'
         + '<td>' + fmtBRL(sub) + '</td>';
@@ -3090,6 +3098,14 @@ window.msgAcessoNegado = function (nomePagina) {
     function avisa(txt, cor) { avisos.push({ txt: txt, cor: cor || 'var(--urg-urgente, #e24b4a)' }); }
     if (convidados > 0 && !itensSel.length) {
       avisa('Convidados definidos mas nenhum item do cardápio marcado — o custo de insumo vai ficar zerado.');
+    }
+    var semCusto = itensSel.filter(function (i) {
+      return i.custo == null && !i.insumoCliente && (i.porConvidado || 0) > 0;
+    }).map(function (i) { return i.nome; });
+    if (semCusto.length) {
+      avisa('Sem custo cadastrado no Notion: ' + semCusto.join(', ') + '. Entra no tempo de bartender, '
+        + 'mas o insumo fica fora da conta, então o preço sai abaixo do real até cadastrar a ficha.',
+        'var(--urg-hoje, #d99a2b)');
     }
     if (convidados > 0 && itensSel.length && (diaRef.bartenders || 0) === 0) {
       avisa('Nenhum bartender alocado — confira se algum item tem unidades/convidado > 0 e se o piso de cobertura não está zerado.');
@@ -3926,7 +3942,8 @@ window.msgAcessoNegado = function (nomePagina) {
     var detIns = (det.cardapio || []).map(function (it) {
       var c = custoDoItem(it.nome);
       var sub = convidados * (it.porConvidado || 0) * c;
-      var linha = esc(it.nome) + ' · ' + (it.porConvidado || 0) + ' un./convidado × ' + fmtBRL(c);
+      var linha = esc(it.nome) + ' · ' + (it.porConvidado || 0) + ' un./convidado × ' + fmtCusto(c);
+      if (c == null) return linha + ' = <b>—</b> · fora do insumo até cadastrar o custo no Notion';
       // O TOTAL de insumos aqui já vem certo (soma de dia.custoInsumos, que
       // calculaDia gravou sem os itens do contratante) — só a linha precisava
       // dizer por que o item aparece sem somar.
@@ -4174,7 +4191,7 @@ window.msgAcessoNegado = function (nomePagina) {
         tr.innerHTML = '<td>' + esc(it.nome)
           + (it.insumoCliente ? '<span class="orz-bebida-cli">contratante</span>' : '') + '</td>'
           + '<td>' + (it.porConvidado != null ? it.porConvidado : 1) + '</td>'
-          + '<td>' + (it.insumoCliente ? '—' : fmtBRL(c)) + '</td>';
+          + '<td>' + (it.insumoCliente ? '—' : fmtCusto(c)) + '</td>';
         corpoC.appendChild(tr);
       });
       tabC.appendChild(corpoC); container.appendChild(tabC);
@@ -6149,7 +6166,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '4d83f408dd21';
+  var BUILD = '5705924165ed';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
