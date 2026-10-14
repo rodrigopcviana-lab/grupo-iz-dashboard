@@ -481,6 +481,7 @@ function renderCompleto() {
   const body = '<tbody>' + data.map(p => {
     const serie = qrModo === 'r' ? (p.receita_mes||{}) : (p.qtde_mes||{});
     const cells = meses.map(m => {
+      if (qrModo === 'r' && serie[m] === null) return '<td class="num">—</td>';
       const v = serie[m] || 0;
       return `<td class="num">${qrModo==='r' ? fmtR(v) : v.toLocaleString('pt-BR')}</td>`;
     }).join('');
