@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=c4abd02f2989">
+<link rel="stylesheet" href="portal.css?v=5083bdad9ef3">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -892,6 +892,492 @@ partir de agora.</p>
 <div id="home-conteudo-topo" style="display:none">
 
 <style>
+  /* Murais por nível (PLANO_MURAIS_POR_NIVEL.md). Estilo local: só a home usa. */
+  #mural-nivel { margin: 4px 0 14px; }
+  .mn-perfil[hidden] { display: none; }
+  .mn-cab { display: flex; align-items: center; gap: 10px; margin: 2px 0 10px; }
+  .mn-cab .mn-ic { flex: none; width: 34px; height: 34px; border-radius: 10px; display: flex;
+                   align-items: center; justify-content: center; color: var(--acc);
+                   background: rgba(208,163,82,.12); border: 1px solid rgba(208,163,82,.35); }
+  .mn-cab .mn-tt { min-width: 0; }
+  .mn-cab .mn-t { font-family: var(--serif); font-size: 16px; color: var(--text); }
+  .mn-cab .mn-s { font-size: 11.5px; color: var(--text-2); margin-top: 1px; }
+  .mn-agora { border: 1px solid var(--border); border-left: 3px solid var(--acc); border-radius: 0 12px 12px 0;
+              background: var(--card); padding: 9px 12px; margin-bottom: 10px; }
+  .mn-agora[hidden] { display: none; }
+  .mn-agora .mn-k, .mn-bl .mn-k { font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-3); }
+  .mn-agora ul { list-style: none; margin: 5px 0 0; padding: 0; }
+  .mn-agora li { display: flex; align-items: baseline; gap: 8px; font-size: 13px; color: var(--text); padding: 3px 0; }
+  .mn-agora li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); transform: translateY(-1px); }
+  .mn-agora li.alerta::before { background: #e192a6; }
+  .mn-agora li a { color: inherit; text-decoration: none; }
+  .mn-agora li a:hover { text-decoration: underline; }
+  .mn-blocos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 8px; }
+  .mn-bl { min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--card); padding: 9px 11px; }
+  .mn-bl .mn-bh { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+  .mn-bl .mn-bh .ic { color: var(--acc); flex: none; }
+  .mn-bl .mn-bh .mn-k { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mn-bl .mn-bh a { font-size: 11px; color: var(--acc); text-decoration: none; flex: none; }
+  .mn-corpo { font-size: 12.5px; color: var(--text); }
+  .mn-corpo .mn-r { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+  .mn-corpo .mn-r > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mn-corpo .mn-r > span:last-child { flex: none; font-variant-numeric: tabular-nums; }
+  .mn-corpo .mn-big { font-family: var(--serif); font-size: 20px; color: var(--acc); line-height: 1.1; }
+  .mn-corpo .mn-nota { font-size: 11.5px; color: var(--text-3); margin-top: 3px; }
+  .mn-carr { color: var(--text-3); font-size: 12px; }
+  .mn-ok { color: #8fd0a5; } .mn-wa { color: #e6b866; } .mn-dg { color: #e192a6; } .mn-mu { color: var(--text-3); }
+  .mn-casas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .mn-casas .mn-c { border: 1px solid var(--border); border-radius: 8px; padding: 4px 2px; text-align: center; min-width: 0; }
+  .mn-casas .mn-c b { display: block; font-size: 10.5px; color: var(--text-2); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mn-casas .mn-c span { font-family: var(--serif); font-size: 15px; }
+  .mn-at { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .mn-at a { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px; border-radius: 12px;
+             border: 1px solid var(--border); background: var(--card); color: var(--text); text-decoration: none;
+             font-size: 11.5px; font-weight: 600; text-align: center; }
+  .mn-at a:hover { border-color: var(--acc); }
+  .mn-at a .ic { color: var(--acc); }
+  /* Decisão 1: com mural de nível ativo, as 2 linhas fixas do Painel Rápido
+     saem (os 3 atalhos acima as substituem). Mapa + Criar ficam. */
+  body.mn-ativo .prv-top3, body.mn-ativo .prv-q3 { display: none; }
+  .mn-todas { font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-3); margin: 4px 0 6px; }
+</style>
+<div id="mural-nivel" style="display:none"><section class="mn-perfil" data-perfil="bartender" data-rotulo="Bartender" hidden><div class="mn-cab"><span class="mn-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><div class="mn-tt"><div class="mn-t" id="mn-bartender-titulo">Bartender</div><div class="mn-s" id="mn-bartender-sub"></div></div></div><div class="mn-agora" id="mn-bartender-agora" hidden><div class="mn-k">Para você agora</div><ul></ul></div><div class="mn-blocos"><div class="mn-bl" data-bloco="escala"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg><span class="mn-k">Minha escala</span></div><div class="mn-corpo" id="mn-bartender-escala"></div></div><div class="mn-bl" data-bloco="minhas"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span class="mn-k">Minhas demandas</span><a href="demandas.html">ver ›</a></div><div class="mn-corpo" id="mn-bartender-minhas"></div></div><div class="mn-bl" data-bloco="escola"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="mn-k">Escola de Bar</span><a href="plano.html">ver ›</a></div><div class="mn-corpo" id="mn-bartender-escola"></div></div></div><div class="mn-at"><a href="cocktails.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas</span></a><a href="#avaria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg><span>Avaria</span></a><a href="registro.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Nova demanda</span></a></div></section><section class="mn-perfil" data-perfil="equipe" data-rotulo="Equipe" hidden><div class="mn-cab"><span class="mn-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><div class="mn-tt"><div class="mn-t" id="mn-equipe-titulo">Equipe</div><div class="mn-s" id="mn-equipe-sub"></div></div></div><div class="mn-agora" id="mn-equipe-agora" hidden><div class="mn-k">Para você agora</div><ul></ul></div><div class="mn-blocos"><div class="mn-bl" data-bloco="escola"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="mn-k">Escola de Bar</span><a href="plano.html">ver ›</a></div><div class="mn-corpo" id="mn-equipe-escola"></div></div><div class="mn-bl" data-bloco="eventos"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span class="mn-k">Eventos da semana</span><a href="eventos.html">ver ›</a></div><div class="mn-corpo" id="mn-equipe-eventos"></div></div><div class="mn-bl" data-bloco="senha"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4"/><path d="M10.5 12.5 21 2"/><path d="M15 8l3 3M18 5l2 2"/></svg><span class="mn-k">Sua senha individual</span><a href="pedir-acesso.html">ver ›</a></div><div class="mn-corpo" id="mn-equipe-senha"></div></div></div><div class="mn-at"><a href="cocktails.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas</span></a><a href="#avaria"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg><span>Avaria</span></a><a href="registro.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Nova demanda</span></a></div></section><section class="mn-perfil" data-perfil="chefe" data-rotulo="Chefe de bar" hidden><div class="mn-cab"><span class="mn-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span><div class="mn-tt"><div class="mn-t" id="mn-chefe-titulo">Chefe de bar</div><div class="mn-s" id="mn-chefe-sub"></div></div></div><div class="mn-agora" id="mn-chefe-agora" hidden><div class="mn-k">Para você agora</div><ul></ul></div><div class="mn-blocos"><div class="mn-bl" data-bloco="casa-demandas"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span class="mn-k">Demandas da casa</span><a href="demandas.html">ver ›</a></div><div class="mn-corpo" id="mn-chefe-casa-demandas"></div></div><div class="mn-bl" data-bloco="escala-hoje"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg><span class="mn-k">Escala de hoje</span><a href="escala.html">ver ›</a></div><div class="mn-corpo" id="mn-chefe-escala-hoje"></div></div><div class="mn-bl" data-bloco="compras"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span class="mn-k">Compras da semana</span><a href="conferencia-compras.html">ver ›</a></div><div class="mn-corpo" id="mn-chefe-compras"></div></div><div class="mn-bl" data-bloco="nutricook"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span class="mn-k">Nutricook do bar</span><a href="nutricook.html">ver ›</a></div><div class="mn-corpo" id="mn-chefe-nutricook"></div></div><div class="mn-bl" data-bloco="equipe-treino"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="mn-k">Escola de Bar da equipe</span><a href="plano.html">ver ›</a></div><div class="mn-corpo" id="mn-chefe-equipe-treino"></div></div></div><div class="mn-at"><a href="contagem.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M9 9.5v10"/></svg><span>Contagem</span></a><a href="escala.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg><span>Escala</span></a><a href="demandas.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central</span></a></div></section><section class="mn-perfil" data-perfil="coord" data-rotulo="Coordenação" hidden><div class="mn-cab"><span class="mn-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></span><div class="mn-tt"><div class="mn-t" id="mn-coord-titulo">Coordenação</div><div class="mn-s" id="mn-coord-sub"></div></div></div><div class="mn-agora" id="mn-coord-agora" hidden><div class="mn-k">Para você agora</div><ul></ul></div><div class="mn-blocos"><div class="mn-bl" data-bloco="casas"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span class="mn-k">As casas agora</span><a href="demandas.html">ver ›</a></div><div class="mn-corpo" id="mn-coord-casas"></div></div><div class="mn-bl" data-bloco="mesa"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M7 9h10M7 13h10M7 17h10"/></svg><span class="mn-k">Minha Mesa</span><a href="agenda.html">ver ›</a></div><div class="mn-corpo" id="mn-coord-mesa"></div></div><div class="mn-bl" data-bloco="nutricook-grupo"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span class="mn-k">Nutricook do bar</span><a href="nutricook.html">ver ›</a></div><div class="mn-corpo" id="mn-coord-nutricook-grupo"></div></div><div class="mn-bl" data-bloco="semana"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span class="mn-k">Semana</span><a href="eventos.html">ver ›</a></div><div class="mn-corpo" id="mn-coord-semana"></div></div></div><div class="mn-at"><a href="demandas.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central</span></a><a href="agenda.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M7 9h10M7 13h10M7 17h10"/></svg><span>Minha Mesa</span></a><a href="eventos.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a></div></section><section class="mn-perfil" data-perfil="suprimentos" data-rotulo="Suprimentos" hidden><div class="mn-cab"><span class="mn-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><div class="mn-tt"><div class="mn-t" id="mn-suprimentos-titulo">Suprimentos</div><div class="mn-s" id="mn-suprimentos-sub"></div></div></div><div class="mn-agora" id="mn-suprimentos-agora" hidden><div class="mn-k">Para você agora</div><ul></ul></div><div class="mn-blocos"><div class="mn-bl" data-bloco="setor-demandas"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span class="mn-k">Demandas de compras e manutenção</span><a href="demandas.html">ver ›</a></div><div class="mn-corpo" id="mn-suprimentos-setor-demandas"></div></div><div class="mn-bl" data-bloco="compras-casas"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span class="mn-k">Compras da semana por casa</span><a href="conferencia-compras.html">ver ›</a></div><div class="mn-corpo" id="mn-suprimentos-compras-casas"></div></div><div class="mn-bl" data-bloco="cotacoes"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/></svg><span class="mn-k">Cotações</span><a href="cotacoes.html">ver ›</a></div><div class="mn-corpo" id="mn-suprimentos-cotacoes"></div></div></div><div class="mn-at"><a href="compras.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Pedido de compras</span></a><a href="cotacoes.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/></svg><span>Cotações</span></a><a href="demandas.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central</span></a></div></section><section class="mn-perfil" data-perfil="controladoria" data-rotulo="Controladoria" hidden><div class="mn-cab"><span class="mn-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.8" cy="6.5" r=".9"/><circle cx="4.8" cy="12" r=".9"/><circle cx="4.8" cy="17.5" r=".9"/></svg></span><div class="mn-tt"><div class="mn-t" id="mn-controladoria-titulo">Controladoria</div><div class="mn-s" id="mn-controladoria-sub"></div></div></div><div class="mn-agora" id="mn-controladoria-agora" hidden><div class="mn-k">Para você agora</div><ul></ul></div><div class="mn-blocos"><div class="mn-bl" data-bloco="compras-casas"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.8" cy="6.5" r=".9"/><circle cx="4.8" cy="12" r=".9"/><circle cx="4.8" cy="17.5" r=".9"/></svg><span class="mn-k">Compras da semana por casa</span><a href="conferencia-compras.html">ver ›</a></div><div class="mn-corpo" id="mn-controladoria-compras-casas"></div></div><div class="mn-bl" data-bloco="precos"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg><span class="mn-k">Conciliação de preços</span><a href="conciliacao-precos.html">ver ›</a></div><div class="mn-corpo" id="mn-controladoria-precos"></div></div><div class="mn-bl" data-bloco="cmv"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M8 20h8"/><path d="M3 8h18"/><path d="M6.5 8 3 14h7z"/><path d="M17.5 8 14 14h7z"/></svg><span class="mn-k">CMV mensal</span><a href="cmv.html">ver ›</a></div><div class="mn-corpo" id="mn-controladoria-cmv"></div></div><div class="mn-bl" data-bloco="cotacoes"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/></svg><span class="mn-k">Cotações</span><a href="cotacoes.html">ver ›</a></div><div class="mn-corpo" id="mn-controladoria-cotacoes"></div></div></div><div class="mn-at"><a href="conferencia-compras.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.8" cy="6.5" r=".9"/><circle cx="4.8" cy="12" r=".9"/><circle cx="4.8" cy="17.5" r=".9"/></svg><span>Conferência</span></a><a href="conciliacao-precos.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.3" cy="8.3" r="1.3" fill="currentColor" stroke="none"/></svg><span>Preços</span></a><a href="estoque.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Estoque</span></a></div></section><section class="mn-perfil" data-perfil="treinador" data-rotulo="Treinador" hidden><div class="mn-cab"><span class="mn-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><div class="mn-tt"><div class="mn-t" id="mn-treinador-titulo">Treinador</div><div class="mn-s" id="mn-treinador-sub"></div></div></div><div class="mn-agora" id="mn-treinador-agora" hidden><div class="mn-k">Para você agora</div><ul></ul></div><div class="mn-blocos"><div class="mn-bl" data-bloco="auditorias"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span class="mn-k">Última auditoria por casa</span><a href="auditorias.html">ver ›</a></div><div class="mn-corpo" id="mn-treinador-auditorias"></div></div><div class="mn-bl" data-bloco="aplicacoes"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><path d="M9 3h6v3H9z"/><circle cx="12" cy="12" r="2.2"/><path d="M8.5 17c.6-1.5 2-2.3 3.5-2.3s2.9.8 3.5 2.3"/></svg><span class="mn-k">Treinamentos aplicados</span><a href="treinamentos-aplicados.html">ver ›</a></div><div class="mn-corpo" id="mn-treinador-aplicacoes"></div></div><div class="mn-bl" data-bloco="nutricook-grupo"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span class="mn-k">Nutricook do bar</span><a href="nutricook.html">ver ›</a></div><div class="mn-corpo" id="mn-treinador-nutricook-grupo"></div></div></div><div class="mn-at"><a href="auditorias.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Auditar</span></a><a href="treinamentos-aplicados.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><path d="M9 3h6v3H9z"/><circle cx="12" cy="12" r="2.2"/><path d="M8.5 17c.6-1.5 2-2.3 3.5-2.3s2.9.8 3.5 2.3"/></svg><span>Aplicar treino</span></a><a href="evolucao.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l6-6 4 4 6-7M20 8v4M20 8h-4"/></svg><span>Evolução</span></a></div></section><section class="mn-perfil" data-perfil="marketing" data-rotulo="Marketing" hidden><div class="mn-cab"><span class="mn-ic"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg></span><div class="mn-tt"><div class="mn-t" id="mn-marketing-titulo">Marketing</div><div class="mn-s" id="mn-marketing-sub"></div></div></div><div class="mn-agora" id="mn-marketing-agora" hidden><div class="mn-k">Para você agora</div><ul></ul></div><div class="mn-blocos"><div class="mn-bl" data-bloco="pauta"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg><span class="mn-k">Pauta por casa</span><a href="captacoes.html">ver ›</a></div><div class="mn-corpo" id="mn-marketing-pauta"></div></div><div class="mn-bl" data-bloco="eventos"><div class="mn-bh"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span class="mn-k">Eventos (pauta natural)</span><a href="eventos.html">ver ›</a></div><div class="mn-corpo" id="mn-marketing-eventos"></div></div></div><div class="mn-at"><a href="captacoes.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg><span>Captações</span></a><a href="eventos.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Eventos</span></a><a href="cocktails.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas</span></a></div></section></div>
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var REG = "https://registro-bares.rodrigopcviana.workers.dev";
+  var EV = [{"d": "2026-10-14", "c": "Fulles"}, {"d": "2026-10-14", "c": "NIP"}, {"d": "2026-10-14", "c": "NIP"}, {"d": "2026-10-15", "c": "Fulles"}, {"d": "2026-10-19", "c": "Grá"}, {"d": "2026-10-19", "c": "NIP"}];
+  var SUPR = "Jo\u00e3o Vitor Jorge";
+  var CASAS_REG = {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "enttres": "Enttres", "fulles": "Fulles", "nip": "NIP"};
+  var NUTRI_SLUG = { 'gra-bistro': 'gra', 'gra': 'gra' };
+  var CASA_NOME = {"iz": "IZ", "1929": "1929", "gra": "Grá", "famu": "FAMU", "fulles": "Fulles", "nip": "NIP", "gra-bistro": "Grá"};
+  var LONGAS = ['Um mês', '3 meses+'];
+
+  function el(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function hojeISO() { var d = new Date(Date.now() - 3 * 3600 * 1000); return d.toISOString().slice(0, 10); }
+  function somaDias(iso, n) { var d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function dataCurta(iso) {
+    var d = new Date(iso + 'T12:00:00');
+    return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
+  }
+  function primeiroNome(p) { return String(p || '').trim().split(/\s+/)[0] || ''; }
+  function nCasa(slug) { return CASA_NOME[slug] || slug || ''; }
+
+  // Busca com timeout. Devolve o JSON ou null (rede, 401, 5xx): o bloco decide
+  // o texto de "sem dado". Nunca lança.
+  function busca(url, token, ms) {
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var t = setTimeout(function () { if (ctl) ctl.abort(); }, ms || 12000);
+    return fetch(url, { headers: { 'X-Token': token }, signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { clearTimeout(t); return r.ok ? r.json() : null; })
+      .catch(function () { clearTimeout(t); return null; });
+  }
+
+  var perfilAtual = null;
+  function corpo(id) { return el('mn-' + perfilAtual + '-' + id); }
+  function poe(id, h) { var c = corpo(id); if (c) c.innerHTML = h; }
+  function semDado(id, txt) { poe(id, '<span class="mn-mu">' + esc(txt || 'Não deu pra ler agora.') + '</span>'); }
+  function linha(a, b, cls) { return '<div class="mn-r"><span>' + esc(a) + '</span><span class="' + (cls || '') + '">' + esc(b) + '</span></div>'; }
+  function agora(txt, href, alerta) {
+    var box = el('mn-' + perfilAtual + '-agora'), ul = box && box.querySelector('ul');
+    if (!ul) return;
+    var li = document.createElement('li');
+    if (alerta) li.className = 'alerta';
+    li.innerHTML = href ? '<a href="' + esc(href) + '">' + esc(txt) + '</a>' : esc(txt);
+    ul.appendChild(li);
+    box.hidden = false;
+  }
+
+  // ---------------------------------------------------------------- blocos
+  var B = {};
+
+  B.escala = function (s) {
+    return busca(WORKER + '/api/escala/minha', s.token).then(function (d) {
+      if (!d) return semDado('escala');
+      if (d.sem_config) return semDado('escala', 'Escala ainda não configurada.');
+      if (!d.achou) return semDado('escala', 'Seu nome não aparece na escala oficial destas duas semanas. Fale com seu chefe.');
+      var h = '', hoje = hojeISO();
+      d.dias.slice(0, 7).forEach(function (x) {
+        var folga = !x.turno || x.turno === 'Folga';
+        var hora = folga ? 'folga' : [x.turno, (x.entrada && x.saida) ? x.entrada + '–' + x.saida : ''].join(' ').trim();
+        h += linha(dataCurta(x.data) + (x.data === hoje ? ' · hoje' : ''), hora, folga ? 'mn-mu' : '');
+        if (x.data === hoje && !folga) agora('Hoje você entra: ' + hora, null, false);
+      });
+      poe('escala', h);
+    });
+  };
+
+  B.minhas = function (s) {
+    if (!REG) return Promise.resolve(semDado('minhas'));
+    return busca(REG + '/api/demandas?modo=enviadas', s.token).then(function (d) {
+      if (!d || !d.demandas) return semDado('minhas');
+      var abertas = d.demandas.filter(function (x) { return x.status !== 'Resolvido'; });
+      var respondidas = abertas.filter(function (x) { return x.resposta; });
+      if (respondidas.length) agora(respondidas.length + (respondidas.length === 1 ? ' demanda sua tem resposta' : ' demandas suas têm resposta'), 'demandas.html', false);
+      var h = '<div class="mn-big">' + abertas.length + '</div><div class="mn-nota">' + (abertas.length === 1 ? 'aberta' : 'abertas') + '</div>';
+      d.demandas.slice(0, 3).forEach(function (x) {
+        var st = x.status === 'Resolvido' ? 'mn-ok' : (x.resposta ? 'mn-wa' : '');
+        h += linha(x.descricao || x.nome || x.tipo || 'Demanda', (x.status || '').toLowerCase(), st);
+      });
+      if (!d.demandas.length) h = '<span class="mn-mu">Nenhuma demanda enviada por você.</span>';
+      poe('minhas', h);
+    });
+  };
+
+  B.escola = function (s) {
+    return busca(WORKER + '/api/plano', s.token).then(function (d) {
+      if (!d || !d.etapas) return semDado('escola');
+      var total = d.etapas.length;
+      if (s.nivel !== 'bartender') {
+        poe('escola', '<div class="mn-big">' + total + '</div><div class="mn-nota">etapas na trilha</div>');
+        return;
+      }
+      var regs = d.registros || [];
+      var aprovadas = regs.filter(function (r) { return r.aprovado; }).length;
+      var esperando = regs.filter(function (r) { return r.estudado && !r.aprovado; }).length;
+      var falta = Math.max(0, total - aprovadas - esperando);
+      if (falta > 0) agora(falta + (falta === 1 ? ' lição da Escola de Bar por estudar' : ' lições da Escola de Bar por estudar'), 'plano.html', false);
+      poe('escola', '<div class="mn-big">' + aprovadas + ' de ' + total + '</div><div class="mn-nota">aprovadas</div>' +
+        (esperando ? linha('Esperando aprovação do chefe', String(esperando), 'mn-wa') : ''));
+    });
+  };
+
+  B.eventos = function () {
+    var hoje = hojeISO(), lim = somaDias(hoje, 7);
+    var prox = EV.filter(function (e) { return e.d >= hoje && e.d <= lim; }).sort(function (a, b) { return a.d.localeCompare(b.d); });
+    if (!prox.length) { poe('eventos', '<span class="mn-mu">Nenhum evento nos próximos 7 dias.</span>'); return Promise.resolve(); }
+    var h = '';
+    prox.slice(0, 4).forEach(function (e) { h += linha(dataCurta(e.d), e.c); });
+    if (prox.length > 4) h += '<div class="mn-nota">e mais ' + (prox.length - 4) + '</div>';
+    poe('eventos', h);
+    return Promise.resolve();
+  };
+
+  B.senha = function () {
+    poe('senha', '<span>Com a sua senha individual o mural mostra a sua escala, as suas demandas e o seu progresso na Escola de Bar.</span>');
+    return Promise.resolve();
+  };
+
+  function contaDemandas(lista) {
+    var longas = lista.filter(function (x) { return LONGAS.indexOf(x.urgencia) >= 0; }).length;
+    return { n: lista.length, longas: longas };
+  }
+
+  B['casa-demandas'] = function (s) {
+    if (!REG) return Promise.resolve(semDado('casa-demandas'));
+    return busca(REG + '/api/demandas', s.token).then(function (d) {
+      if (!d || !d.demandas) return semDado('casa-demandas');
+      var c = contaDemandas(d.demandas), mais = d.has_more ? '+' : '';
+      if (c.n) agora(c.n + mais + (c.n === 1 ? ' demanda aberta na casa' : ' demandas abertas na casa'), 'demandas.html', c.longas > 0);
+      poe('casa-demandas', '<div class="mn-big">' + c.n + mais + '</div><div class="mn-nota">abertas</div>' +
+        (c.longas ? linha('Necessárias há um mês ou mais', String(c.longas), 'mn-dg') : ''));
+    });
+  };
+
+  B['escala-hoje'] = function (s) {
+    var hoje = hojeISO(), casa = s.casa && s.casa !== '*' ? s.casa : '';
+    var q = 'casa=' + encodeURIComponent(casa);
+    return busca(WORKER + '/api/escala/versoes?' + q + '&semana=' + hoje, s.token).then(function (v) {
+      var versao = v && typeof v.oficialId === 'string' ? v.oficialId : '';
+      return busca(WORKER + '/api/escala?' + q + '&desde=' + hoje + '&ate=' + hoje + '&versao=' + encodeURIComponent(versao), s.token);
+    }).then(function (d) {
+      if (!d || !d.dias) return semDado('escala-hoje');
+      var dia = d.dias.filter(function (x) { return x.data === hoje; });
+      var turno = dia.filter(function (x) { return x.turno && x.turno !== 'Folga'; });
+      if (!dia.length) return semDado('escala-hoje', 'Nenhuma linha na escala de hoje.');
+      var h = '<div class="mn-big">' + turno.length + '</div><div class="mn-nota">no turno · ' + (dia.length - turno.length) + ' de folga</div>';
+      turno.slice(0, 5).forEach(function (x) { h += linha(x.pessoa, [x.turno, x.entrada].filter(Boolean).join(' '), ''); });
+      poe('escala-hoje', h);
+    });
+  };
+
+  function blocoCompras(id, s, umaCasa) {
+    // A conferência das 6 casas lê o Notion casa a casa (lenta, cache de 1 min
+    // no Worker): prazo maior que o dos outros blocos.
+    return busca(WORKER + '/api/conferencia-compras', s.token, 30000).then(function (d) {
+      if (!d || !d.casas) return semDado(id);
+      if (!d.casas.length) return semDado(id, 'Sem contagem desta semana.');
+      var h = '';
+      d.casas.forEach(function (c) {
+        if (c.erro || !c.resumo) { h += linha(c.casa_label || c.casa, '—', 'mn-mu'); return; }
+        var r = c.resumo, txt = r.pedidos ? (r.comprados + ' de ' + r.pedidos + ' comprados') : 'nada pedido';
+        var cls = r.pct == null ? 'mn-mu' : (r.pct >= 90 ? 'mn-ok' : (r.pct >= 50 ? 'mn-wa' : 'mn-dg'));
+        h += linha(umaCasa ? (c.semana_titulo || 'Semana atual') : (c.casa_label || c.casa), txt, cls);
+      });
+      poe(id, h);
+    });
+  }
+  B.compras = function (s) { return blocoCompras('compras', s, true); };
+  B['compras-casas'] = function (s) { return blocoCompras('compras-casas', s, false); };
+
+  function ultimaAudit(c) {
+    var a = (c && c.auditorias) || [];
+    var com = a.filter(function (x) { return x.setores && x.setores.Bar && typeof x.setores.Bar.nota === 'number'; });
+    com.sort(function (x, y) { return String(y.data).localeCompare(String(x.data)); });
+    return com[0] || null;
+  }
+  function corNota(n) { return n >= 70 ? 'mn-ok' : (n >= 50 ? 'mn-wa' : 'mn-dg'); }
+
+  B.nutricook = function (s) {
+    var slug = NUTRI_SLUG[s.casa] || s.casa;
+    return busca(WORKER + '/api/nutricook', s.token).then(function (d) {
+      if (!d || !d.casas) return semDado('nutricook');
+      if (d.sem_cobertura && d.sem_cobertura[slug]) return semDado('nutricook', 'Esta casa não tem grupo da Nutricook: sem cobertura, não quer dizer sem problema.');
+      var u = ultimaAudit(d.casas[slug]);
+      if (!u) return semDado('nutricook', 'Nenhuma auditoria lida ainda.');
+      var n = Math.round(u.setores.Bar.nota);
+      if (n < 70) agora('Nutricook: bar com nota ' + n + ' na última visita', 'nutricook.html', n < 50);
+      poe('nutricook', '<div class="mn-big ' + corNota(n) + '">' + n + '</div><div class="mn-nota">nota do bar em ' + dataCurta(u.data) +
+        ' · ' + (u.setores.Bar.nao_conformidades || 0) + ' não conformidades</div>');
+    });
+  };
+
+  B['nutricook-grupo'] = function (s) {
+    return busca(WORKER + '/api/nutricook', s.token).then(function (d) {
+      if (!d || !d.casas) return semDado('nutricook-grupo');
+      var h = '<div class="mn-casas">';
+      Object.keys(d.casas).forEach(function (k) {
+        var u = ultimaAudit(d.casas[k]), n = u ? Math.round(u.setores.Bar.nota) : null;
+        h += '<div class="mn-c"><b>' + esc(nCasa(k === 'gra' ? 'gra-bistro' : k)) + '</b><span class="' + (n == null ? 'mn-mu' : corNota(n)) + '">' + (n == null ? '—' : n) + '</span></div>';
+      });
+      h += '</div>';
+      var crit = (d.alertas || []).filter(function (a) { return a.nivel === 'critico'; });
+      if (crit.length) agora(crit.length + (crit.length === 1 ? ' alerta crítico da Nutricook' : ' alertas críticos da Nutricook'), 'nutricook.html', true);
+      poe('nutricook-grupo', h + '<div class="mn-nota">nota do bar na última visita</div>');
+    });
+  };
+
+  B['equipe-treino'] = function (s) {
+    return busca(WORKER + '/api/plano', s.token).then(function (d) {
+      if (!d || !d.etapas) return semDado('equipe-treino');
+      var regs = d.registros || [];
+      var esperando = regs.filter(function (r) { return r.estudado && !r.aprovado; });
+      var pessoas = {};
+      regs.forEach(function (r) { if (r.aprovado) pessoas[r.pessoa] = (pessoas[r.pessoa] || 0) + 1; });
+      if (esperando.length && d.pode_aprovar) agora(esperando.length + (esperando.length === 1 ? ' lição esperando sua aprovação' : ' lições esperando sua aprovação'), 'plano.html', false);
+      var h = linha('Etapas na trilha', String(d.etapas.length)) + linha('Esperando aprovação', String(esperando.length), esperando.length ? 'mn-wa' : 'mn-mu');
+      var top = Object.keys(pessoas).sort(function (a, b) { return pessoas[b] - pessoas[a]; }).slice(0, 3);
+      top.forEach(function (p) { h += linha(p, pessoas[p] + ' aprovadas'); });
+      poe('equipe-treino', h);
+    });
+  };
+
+  B.casas = function (s) {
+    if (!REG) return Promise.resolve(semDado('casas'));
+    var slugs = Object.keys(CASAS_REG);
+    return Promise.all(slugs.map(function (k) {
+      return busca(REG + '/api/demandas?casa=' + encodeURIComponent(CASAS_REG[k]), s.token);
+    })).then(function (rs) {
+      var h = '<div class="mn-casas">', algum = false, total = 0, longas = 0;
+      rs.forEach(function (d, i) {
+        var n = d && d.demandas ? d.demandas.length : null;
+        if (n != null) { algum = true; total += n; longas += contaDemandas(d.demandas).longas; }
+        var txt = n == null ? '—' : (n + (d.has_more ? '+' : ''));
+        var cls = n == null ? 'mn-mu' : (n === 0 ? 'mn-ok' : (n >= 10 ? 'mn-dg' : 'mn-wa'));
+        h += '<div class="mn-c"><b>' + esc(CASAS_REG[slugs[i]]) + '</b><span class="' + cls + '">' + txt + '</span></div>';
+      });
+      if (!algum) return semDado('casas');
+      if (longas) agora(longas + (longas === 1 ? ' demanda necessária há um mês ou mais' : ' demandas necessárias há um mês ou mais'), 'demandas.html', true);
+      poe('casas', h + '</div><div class="mn-nota">demandas abertas por casa</div>');
+    });
+  };
+
+  B.mesa = function (s) {
+    var hoje = hojeISO();
+    var acessos = busca(WORKER + '/api/acessos/pendentes', s.token).then(function (d) {
+      var n = d && d.itens ? d.itens.length : 0;
+      if (n) agora(n + (n === 1 ? ' pedido de acesso esperando' : ' pedidos de acesso esperando'), 'acessos.html', false);
+    });
+    var mesa = busca(WORKER + '/api/agenda?de=' + somaDias(hoje, -30) + '&ate=' + somaDias(hoje, 7), s.token).then(function (d) {
+      if (!d || !d.itens) return semDado('mesa');
+      if (d.aviso) return semDado('mesa', d.aviso);
+      var tarefas = d.itens.filter(function (x) { return x.tipo === 'Tarefa' && !/conclu|feit/i.test(x.status || ''); });
+      var vencidas = tarefas.filter(function (x) { return x.prazo && x.prazo.slice(0, 10) < hoje; });
+      var doDia = tarefas.filter(function (x) { return (x.prazo && x.prazo.slice(0, 10) === hoje) || (x.inicio && x.inicio.slice(0, 10) === hoje); });
+      var semPlano = tarefas.filter(function (x) { return x.prazo && !x.inicio; });
+      if (vencidas.length) agora(vencidas.length + (vencidas.length === 1 ? ' tarefa com prazo vencido' : ' tarefas com prazo vencido'), 'agenda.html', true);
+      poe('mesa', linha('Para hoje', String(doDia.length)) + linha('Prazo vencido', String(vencidas.length), vencidas.length ? 'mn-dg' : 'mn-mu') +
+        linha('Prazo sem plano', String(semPlano.length), semPlano.length ? 'mn-wa' : 'mn-mu'));
+    });
+    return Promise.all([acessos, mesa]);
+  };
+
+  B.semana = function (s) {
+    var hoje = hojeISO(), lim = somaDias(hoje, 7);
+    var ev = EV.filter(function (e) { return e.d >= hoje && e.d <= lim; }).length;
+    poe('semana', linha('Eventos nos próximos 7 dias', String(ev)) + linha('Online agora', '…'));
+    return busca(WORKER + '/api/presenca', s.token).then(function (d) {
+      var on = d && typeof d.online === 'number' ? String(d.online) : '—';
+      poe('semana', linha('Eventos nos próximos 7 dias', String(ev)) + linha('Online agora', on));
+    });
+  };
+
+  B['setor-demandas'] = function (s) {
+    if (!REG) return Promise.resolve(semDado('setor-demandas'));
+    return busca(REG + '/api/demandas', s.token).then(function (d) {
+      if (!d || !d.demandas) return semDado('setor-demandas');
+      var c = contaDemandas(d.demandas), mais = d.has_more ? '+' : '';
+      if (c.n) agora(c.n + mais + (c.n === 1 ? ' demanda de compras/manutenção aberta' : ' demandas de compras/manutenção abertas'), 'demandas.html', c.longas > 0);
+      var porCasa = {};
+      d.demandas.forEach(function (x) { porCasa[x.casa || '?'] = (porCasa[x.casa || '?'] || 0) + 1; });
+      var h = '<div class="mn-big">' + c.n + mais + '</div><div class="mn-nota">abertas</div>';
+      Object.keys(porCasa).sort(function (a, b) { return porCasa[b] - porCasa[a]; }).slice(0, 4).forEach(function (k) { h += linha(k, String(porCasa[k])); });
+      poe('setor-demandas', h);
+    });
+  };
+
+  B.cotacoes = function (s) {
+    return busca(WORKER + '/api/cotacoes', s.token).then(function (d) {
+      if (!d || !d.cotacoes) return semDado('cotacoes');
+      var hoje = hojeISO();
+      var vencidas = d.cotacoes.filter(function (c) { return c.validade && c.validade < hoje; }).length;
+      var semana = d.cotacoes.filter(function (c) { return c.data && c.data >= somaDias(hoje, -7); }).length;
+      poe('cotacoes', linha('Recebidas nos últimos 7 dias', String(semana)) + linha('Com validade vencida', String(vencidas), vencidas ? 'mn-wa' : 'mn-mu') +
+        linha('Total no banco', String(d.cotacoes.length)));
+    });
+  };
+
+  B.precos = function (s) {
+    return busca(WORKER + '/api/conciliacao-precos', s.token).then(function (d) {
+      if (!d || !d.casas) return semDado('precos');
+      var alertas = 0, atencao = 0, h = '';
+      Object.keys(d.casas).forEach(function (k) {
+        var c = d.casas[k], r = c.resumo || {};
+        alertas += r.alertas || 0; atencao += r.atencao || 0;
+        if (r.alertas || r.atencao) h += linha(c.nome || k, (r.alertas || 0) + ' alertas · ' + (r.atencao || 0) + ' atenção', r.alertas ? 'mn-dg' : 'mn-wa');
+      });
+      if (alertas) agora(alertas + (alertas === 1 ? ' preço praticado fora do cardápio' : ' preços praticados fora do cardápio'), 'conciliacao-precos.html', true);
+      poe('precos', (h || '<span class="mn-ok">Nenhuma divergência acima da régua.</span>') +
+        (d.foto_cardapio ? '<div class="mn-nota">foto do cardápio de ' + esc(dataCurta(d.foto_cardapio)) + '</div>' : ''));
+    });
+  };
+
+  B.cmv = function (s) {
+    return busca(WORKER + '/api/cmv-mensal', s.token).then(function (d) {
+      if (!d || !d.casas) return semDado('cmv');
+      var meses = d.meses || [], ult = meses[meses.length - 1];
+      if (!d.compras_ligado) {
+        poe('cmv', '<span class="mn-mu">Compras ainda não lançadas na janela: o CMV fica em "—" até entrar nota de compra.</span>' +
+          (ult ? '<div class="mn-nota">último mês com venda: ' + esc(ult) + '</div>' : ''));
+        return;
+      }
+      var h = '';
+      Object.keys(d.casas).forEach(function (k) {
+        var c = d.casas[k], v = c.cmv_pct && c.cmv_pct[ult];
+        h += linha(c.nome || k, v == null ? '—' : (Math.round(v * 10) / 10).toLocaleString('pt-BR') + '%', v == null ? 'mn-mu' : '');
+      });
+      poe('cmv', '<div class="mn-nota">' + esc(ult || '') + '</div>' + h);
+    });
+  };
+
+  B.auditorias = function (s) {
+    return busca(WORKER + '/api/auditorias', s.token).then(function (d) {
+      if (!d || !d.itens) return semDado('auditorias');
+      if (d.sem_config) return semDado('auditorias', 'Auditorias ainda não configuradas.');
+      var hoje = hojeISO(), ultima = {};
+      d.itens.forEach(function (a) { if (a.casa && (!ultima[a.casa] || a.data > ultima[a.casa].data)) ultima[a.casa] = a; });
+      var casas = d.casas ? Object.keys(d.casas) : Object.keys(ultima), h = '', atrasadas = 0;
+      casas.forEach(function (k) {
+        var a = ultima[k], nome = (d.casas && d.casas[k] && (d.casas[k].nome || d.casas[k])) || k;
+        if (typeof nome !== 'string') nome = k;
+        if (!a) { h += linha(nome, 'nunca auditada', 'mn-wa'); atrasadas++; return; }
+        var dias = Math.round((new Date(hoje) - new Date(String(a.data).slice(0, 10))) / 86400000);
+        var reprov = /reprov/i.test(a.resultado || '');
+        if (dias > 30) atrasadas++;
+        h += linha(nome, reprov ? 'reprovada' : (a.nota != null ? Math.round(a.nota) + '% · há ' + dias + 'd' : 'há ' + dias + 'd'), reprov ? 'mn-dg' : (dias > 30 ? 'mn-wa' : 'mn-ok'));
+        if (reprov) agora(nome + ': última auditoria reprovada', 'auditorias.html', true);
+      });
+      if (atrasadas) agora(atrasadas + (atrasadas === 1 ? ' casa sem auditoria há mais de 30 dias' : ' casas sem auditoria há mais de 30 dias'), 'auditorias.html', false);
+      poe('auditorias', h || '<span class="mn-mu">Nenhuma auditoria registrada.</span>');
+    });
+  };
+
+  B.aplicacoes = function (s) {
+    return busca(WORKER + '/api/treinamento/aplicacoes', s.token).then(function (d) {
+      if (!d || !d.itens) return semDado('aplicacoes');
+      var lim = somaDias(hojeISO(), -30);
+      var mes = d.itens.filter(function (a) { return a.data && a.data >= lim; });
+      var pessoas = mes.reduce(function (t, a) { return t + (a.participantes || 0); }, 0);
+      var h = '<div class="mn-big">' + mes.length + '</div><div class="mn-nota">nos últimos 30 dias · ' + pessoas + ' participações</div>';
+      mes.slice(0, 3).forEach(function (a) { h += linha(a.modulo || a.trilha || 'Treino', dataCurta(String(a.data).slice(0, 10))); });
+      poe('aplicacoes', h);
+    });
+  };
+
+  B.pauta = function (s) {
+    return busca(WORKER + '/api/captacoes/pauta', s.token).then(function (d0) {
+      if (!d0) return semDado('pauta');
+      var casas = Array.isArray(d0.casas) ? d0.casas : (d0.casas ? Object.keys(d0.casas).map(function (k) { return { slug: k, label: d0.casas[k] }; }) : []);
+      casas = casas.map(function (c) { return typeof c === 'string' ? { slug: c, label: c } : { slug: c.slug || c.casa, label: c.label || c.nome || c.slug }; });
+      if (!casas.length) return semDado('pauta');
+      return Promise.all(casas.map(function (c) { return busca(WORKER + '/api/captacoes/pauta?casa=' + encodeURIComponent(c.slug), s.token); }))
+        .then(function (rs) {
+          var h = '', pend = 0;
+          rs.forEach(function (d, i) {
+            if (!d) { h += linha(casas[i].label, '—', 'mn-mu'); return; }
+            var p = (d.pendencias || []).length, l = (d.lacunas || []).length;
+            pend += p;
+            h += linha(casas[i].label, p + ' pendências · ' + l + ' lacunas', p ? 'mn-wa' : 'mn-ok');
+          });
+          if (pend) agora(pend + (pend === 1 ? ' pendência de captação' : ' pendências de captação'), 'captacoes.html', false);
+          poe('pauta', h);
+        });
+    });
+  };
+
+  // ---------------------------------------------------------------- perfis
+  function perfilDe(s) {
+    if (!s || !s.nivel) return null;
+    if (s.nivel === 'coord' && SUPR && s.pessoa === SUPR) return 'suprimentos';
+    var ok = ['bartender', 'equipe', 'chefe', 'coord', 'controladoria', 'treinador', 'marketing'];
+    return ok.indexOf(s.nivel) >= 0 ? s.nivel : null;
+  }
+
+  window.carregaMuralNivel = function () {
+    var s = null;
+    try { s = window.sessaoLer && window.sessaoLer(); } catch (e) {}
+    var caixa = el('mural-nivel');
+    var perfil = perfilDe(s);
+    document.querySelectorAll('.mn-perfil').forEach(function (sec) { sec.hidden = true; });
+    if (!caixa || !perfil) { if (caixa) caixa.style.display = 'none'; document.body.classList.remove('mn-ativo'); return; }
+    var sec = document.querySelector('.mn-perfil[data-perfil="' + perfil + '"]');
+    if (!sec) { caixa.style.display = 'none'; return; }
+    perfilAtual = perfil;
+    var sub = [];
+    if (s.casa && s.casa !== '*') sub.push(nCasa(s.casa));
+    sub.push(sec.getAttribute('data-rotulo'));
+    el('mn-' + perfil + '-titulo').textContent = s.pessoa ? 'Olá, ' + primeiroNome(s.pessoa) : sec.getAttribute('data-rotulo');
+    el('mn-' + perfil + '-sub').textContent = sub.join(' · ');
+    var ul = sec.querySelector('.mn-agora ul');
+    if (ul) ul.innerHTML = '';
+    var box = el('mn-' + perfil + '-agora');
+    if (box) box.hidden = true;
+    sec.hidden = false;
+    caixa.style.display = 'block';
+    document.body.classList.add('mn-ativo');
+    sec.querySelectorAll('.mn-bl').forEach(function (bl) {
+      var id = bl.getAttribute('data-bloco'), fn = B[id];
+      var c = corpo(id);
+      if (c) c.innerHTML = '<span class="mn-carr">Carregando…</span>';
+      if (!fn) return;
+      try { Promise.resolve(fn(s)).catch(function () { semDado(id); }); } catch (e) { semDado(id); }
+    });
+  };
+
+  // Atalho "Avaria": abre a mesma gaveta de avarias do Painel Rápido.
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest && ev.target.closest('a[href="#avaria"]');
+    if (!a) return;
+    ev.preventDefault();
+    var b = el('pr-avarias-btn');
+    if (b) { b.click(); var sub = el('pr-avarias-sub'); if (sub && sub.scrollIntoView) sub.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  });
+})();
+</script>
+
+
+<style>
   .pr-toggle-wrap { position: relative; margin-bottom: 14px; padding-top: 1px; }
   .pr-toggle-wrap::before { content: ""; display: block; border-top: 2px solid var(--border); }
   .pr-tabs-row { display: flex; justify-content: center; gap: 8px; }
@@ -1685,6 +2171,7 @@ partir de agora.</p>
   .hsec-sw.on { border-color: var(--acc); color: var(--text); background: rgba(208,163,82,.1); }
   .hsec-swdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 </style>
+<div class="mn-todas">Todas as páginas</div>
 <div class="hsecs"><button type="button" class="hsec" data-sec="dia" data-niveis="chefe coord equipe marketing rh treinador" data-nome="Dia a dia"><span class="hsec-ai" style="background:#17352b;color:var(--verde)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span><span class="hsec-an">Dia a dia</span><span class="hsec-ad" id="hsec-ct-dia"></span></button><button type="button" class="hsec" data-sec="carta" data-niveis="chefe coord equipe marketing treinador" data-nome="Bar &amp; Carta"><span class="hsec-ai" style="background:#362a15;color:var(--acc)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="hsec-an">Bar & Carta</span><span class="hsec-ad" id="hsec-ct-carta"></span></button><button type="button" class="hsec" data-sec="estoque" data-niveis="chefe controladoria coord equipe" data-nome="Estoque &amp; Compras"><span class="hsec-ai" style="background:#33290f;color:var(--amarelo)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span class="hsec-an">Estoque & Compras</span><span class="hsec-ad" id="hsec-ct-estoque"></span></button><button type="button" class="hsec" data-sec="numeros" data-niveis="chefe controladoria coord equipe" data-nome="Números &amp; Análise"><span class="hsec-ai" style="background:#152c3d;color:#86b6d8"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></span><span class="hsec-an">Números & Análise</span><span class="hsec-ad" id="hsec-ct-numeros"></span></button><button type="button" class="hsec" data-sec="equipe" data-niveis="chefe controladoria coord equipe marketing rh treinador" data-nome="Equipe"><span class="hsec-ai" style="background:#302743;color:var(--lilas)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="hsec-an">Equipe</span><span class="hsec-ad" id="hsec-ct-equipe"></span></button><button type="button" class="hsec" data-sec="padrao" data-niveis="chefe coord equipe rh treinador" data-nome="Padrão &amp; Acompanhamento"><span class="hsec-ai" style="background:#1d3330;color:var(--verde)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span class="hsec-an">Padrão & Acompanhamento</span><span class="hsec-ad" id="hsec-ct-padrao"></span></button></div>
 <div class="hsec-ov" id="hsec-ov" hidden>
   <div class="hsec-sheet" role="dialog" aria-modal="true">
@@ -2683,6 +3170,7 @@ partir de agora.</p>
     } else {
       escondeMuralRh();
       mostraPortal();
+      if (typeof window.carregaMuralNivel === 'function') window.carregaMuralNivel();
     }
   }
 
@@ -2691,6 +3179,7 @@ partir de agora.</p>
   function modoEscolha() {
     escondePortal();
     escondeMuralRh();
+    document.body.classList.remove('mn-ativo');
     acesso.style.display = '';
     ajuda.style.display = '';
     if (tutBanner) tutBanner.style.display = '';
@@ -4199,7 +4688,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c4abd02f2989';
+  var BUILD = '5083bdad9ef3';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),

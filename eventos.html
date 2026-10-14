@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=c4abd02f2989">
+<link rel="stylesheet" href="portal.css?v=5083bdad9ef3">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -921,6 +921,11 @@ window.msgAcessoNegado = function (nomePagina) {
       text-overflow: ellipsis; white-space: nowrap; }
   .ec-chevron { flex: none; color: var(--text-3); font-size: 20px; }
   @media (max-width: 360px) { .ec-resumo { white-space: normal; } }
+  .ev-orcar { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 14px; padding: 8px 14px;
+              border-radius: 999px; border: 1px solid var(--acc); color: var(--acc); font-weight: 600;
+              font-size: 13.5px; text-decoration: none; }
+  .badge-orc { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+               color: var(--acc); border: 1px solid var(--acc); border-radius: 999px; padding: 1px 7px; }
   .ec-resumo .ic, .ev-local .ic, .ev-comida summary .ic, .passados summary .ic, .vtoggle .ic { vertical-align: -2px; }
   .tabwrap { overflow-x: auto; }
   table.ev-tab { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 380px; }
@@ -1056,6 +1061,12 @@ window.iniciaMural = function (EVENTOS) {
       '<div><div class="k">Pax</div><div class="v">' + esc(e.pax || '—') + '</div></div>' +
       '<div><div class="k">Contratante</div><div class="v">' + esc(e.contr || '—') + '</div></div></div>';
     var local = e.local ? '<div class="ev-local"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg> ' + esc(e.local) + '</div>' : '';
+    // Orçar a partir da OS (2026-10-14) — só chefe/coord, que são quem abre o
+    // Orçamento de Eventos. A mesma URL reabre o orçamento já ligado a esta OS.
+    var orc = (window.__muralOrcados || {})[e.id];
+    var orcar = (window.__muralPodeOrcar && e.id && !e.canc)
+      ? '<a class="ev-orcar" href="orcamento-eventos.html?os=' + encodeURIComponent(e.id) + '"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg> ' +
+        (orc ? 'Abrir orçamento (' + esc(orc) + ')' : 'Orçar este evento') + '</a>' : '';
     var beb = (e.beb || []).map(function (g) {
       return '<div class="build"><div class="build-head"><span class="lbl">' + esc(g[0] || 'Bebidas') + '</span></div>' +
         g[1].map(function (x) { return '<div class="row nodose"><span class="ingr">' + esc(x) + '</span></div>'; }).join('') +
@@ -1070,7 +1081,7 @@ window.iniciaMural = function (EVENTOS) {
         '<div class="d-kicker">' + esc(e.df) + ' · ' + esc(e.dd) + '</div>' +
         '<h2 class="d-nome">' + esc(e.tipo) + '</h2>' +
         '<div class="badges" style="margin-top:6px">' + badges + '</div></div></div>' +
-        meta + local + beb + comida +
+        meta + local + orcar + beb + comida +
         '<div class="d-foot">Dúvida sobre este evento ou OS desatualizada? Fale com a coordenação.</div>' +
       '</div></div>';
   }
@@ -1326,11 +1337,38 @@ window.iniciaMural = function (EVENTOS) {
       document.getElementById('ev-passados').innerHTML = d.passados_html || '';
       msg.hidden = true;
       document.getElementById('ev-conteudo').hidden = false;
+      window.__muralPodeOrcar = ['chefe', 'coord'].indexOf(r.sessao.nivel) >= 0;
       window.iniciaMural(d.eventos || {});
+      if (window.__muralPodeOrcar) marcaOrcados(d.eventos || {});
     })
     .catch(function () {
       msg.textContent = 'Não foi possível carregar os eventos agora. Confira a conexão e recarregue a página.';
     });
+
+  // Selo "orçado" nos cards cuja OS já tem orçamento em Meus Eventos. Falha
+  // aqui não afeta o mural — só não aparece o selo.
+  function marcaOrcados(evs) {
+    fetch(WORKER + '/api/orcamento-eventos', { headers: { 'X-Token': r.sessao.token } })
+      .then(function (res) { return res.ok ? res.json() : { itens: [] }; })
+      .then(function (o) {
+        var mapa = {};
+        (o.itens || []).forEach(function (it) {
+          var os = it.detalhe && it.detalhe.os;
+          if (os && it.status !== 'Perdido') mapa[os] = it.status;
+        });
+        window.__muralOrcados = mapa;
+        document.querySelectorAll('#sec-lista .evento-card').forEach(function (c) {
+          var e = evs[c.dataset.ev];
+          if (!e || !mapa[e.id] || c.querySelector('.badge-orc')) return;
+          var s = document.createElement('span');
+          s.className = 'badge-orc'; s.textContent = 'orçado';
+          s.title = 'Orçamento em Meus Eventos: ' + mapa[e.id];
+          var l1 = c.querySelector('.ec-linha1');
+          if (l1) l1.appendChild(s);
+        });
+      })
+      .catch(function () {});
+  }
 })();
 </script>
 
@@ -2680,7 +2718,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c4abd02f2989';
+  var BUILD = '5083bdad9ef3';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
