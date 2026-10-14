@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=ba0fe676ceab">
+<link rel="stylesheet" href="portal.css?v=c4abd02f2989">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -921,6 +921,7 @@ window.msgAcessoNegado = function (nomePagina) {
       text-overflow: ellipsis; white-space: nowrap; }
   .ec-chevron { flex: none; color: var(--text-3); font-size: 20px; }
   @media (max-width: 360px) { .ec-resumo { white-space: normal; } }
+  .ec-resumo .ic, .ev-local .ic, .ev-comida summary .ic, .passados summary .ic, .vtoggle .ic { vertical-align: -2px; }
   .tabwrap { overflow-x: auto; }
   table.ev-tab { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 380px; }
   table.ev-tab thead th { text-align: left; font-size: 10px; letter-spacing: .05em; text-transform: uppercase;
@@ -1012,7 +1013,7 @@ window.msgAcessoNegado = function (nomePagina) {
 <div id="ev-avisos"></div>
 <p class="sub" id="ev-msg">Carregando eventos…</p>
 <div id="ev-conteudo" hidden>
-<div class="vtoggle"><button id="v-lista" class="on">☰ Lista</button><button id="v-tabela">▦ Tabela</button><button id="v-cal"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg> Calendário</button></div>
+<div class="vtoggle"><button id="v-lista" class="on"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.8" cy="6.5" r=".9"/><circle cx="4.8" cy="12" r=".9"/><circle cx="4.8" cy="17.5" r=".9"/></svg> Lista</button><button id="v-tabela"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M9 9.5v10"/></svg> Tabela</button><button id="v-cal"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg> Calendário</button></div>
 <div class="chips"><button class="chip on" data-casa="todas">Todas as casas</button><button class="chip" data-casa="iz">IZ</button><button class="chip" data-casa="1929">1929</button><button class="chip" data-casa="gra">Grá</button><button class="chip" data-casa="famu">FAMU</button><button class="chip" data-casa="fulles">Fulles</button><button class="chip" data-casa="nip">NIP</button></div>
 <div id="sec-lista">
 <h2>Próximos (<span id="ev-nfut">0</span>)</h2>
@@ -1054,14 +1055,14 @@ window.iniciaMural = function (EVENTOS) {
       '<div><div class="k">Horário</div><div class="v">' + esc(e.hora || '—') + '</div></div>' +
       '<div><div class="k">Pax</div><div class="v">' + esc(e.pax || '—') + '</div></div>' +
       '<div><div class="k">Contratante</div><div class="v">' + esc(e.contr || '—') + '</div></div></div>';
-    var local = e.local ? '<div class="ev-local">📍 ' + esc(e.local) + '</div>' : '';
+    var local = e.local ? '<div class="ev-local"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg> ' + esc(e.local) + '</div>' : '';
     var beb = (e.beb || []).map(function (g) {
       return '<div class="build"><div class="build-head"><span class="lbl">' + esc(g[0] || 'Bebidas') + '</span></div>' +
         g[1].map(function (x) { return '<div class="row nodose"><span class="ingr">' + esc(x) + '</span></div>'; }).join('') +
         '</div>';
     }).join('');
     var comida = (e.com && e.com.length)
-      ? '<details class="ev-comida" open><summary>🍽️ Menu de comida — ' + e.com.length + ' linhas</summary>' +
+      ? '<details class="ev-comida" open><summary><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v7.5M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 10.5V21"/><path d="M17 21V3c-2 1.2-3 3.6-3 7v3h3"/></svg> Menu de comida — ' + e.com.length + ' linhas</summary>' +
         e.com.map(function (c) { return '<p>' + esc(c) + '</p>'; }).join('') + '</details>' : '';
     return '<div class="d-inner"><div class="d-top">' +
       '<button class="back" type="button">← Eventos</button><span class="crumb">Evento</span></div>' +
@@ -2679,7 +2680,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'ba0fe676ceab';
+  var BUILD = 'c4abd02f2989';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
