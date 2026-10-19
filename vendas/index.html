@@ -237,18 +237,22 @@
   table.bc-tab th.bc-sem.bc-sem-fim, table.bc-tab td.bc-sem.bc-sem-fim { border-right:2px solid color-mix(in srgb, var(--acc) 55%, transparent); }
   table.bc-tab th.bc-sem { color:var(--acc); }
   table.bc-tab td.bc-sem.bc-velha { color:var(--text-2); }
+  table.bc-tab th.bc-grp { text-align:center; border-bottom:1px solid var(--border); color:var(--text-2); }
+  table.bc-tab td.bc-sug { background:color-mix(in srgb, var(--verde) 6%, var(--card)); }
+  table.bc-tab th.bc-sug { background:color-mix(in srgb, var(--verde) 6%, var(--card)); color:var(--verde); }
   .bc-semnota { font-size:12px; color:var(--text-2); margin:-4px 0 10px; }
   .bc-semnota button { background:none; border:1px solid var(--border); color:var(--acc); border-radius:999px; padding:4px 10px; font-size:12px; cursor:pointer; margin-left:6px; }
 </style>
 
 <div class="painel" id="p-base">
-  <p class="nota">Base para o <b>estoque mínimo da compra semanal</b>: o que sai por semana de cada item, pelo histórico de
-  vendas. Escolha o período, veja a média semanal e some a margem de risco, orientada pela semana de maior e de menor venda.</p>
+  <p class="nota">Base para o <b>pedido de compras semanal</b>: três sugestões de mínimo lado a lado para cada item, pela
+  <b>média histórica</b>, pelos <b>últimos 3 meses</b> e pela <b>venda real da semana passada</b>, todas com a mesma margem de risco,
+  orientada pela semana de maior e de menor venda.</p>
   <div class="banner-cob" id="bcAviso"></div>
 
   <div class="bc-ctrl">
     <div class="bc-bloco">
-      <div class="bc-lab">Período da média</div>
+      <div class="bc-lab">Base histórica (1ª sugestão)</div>
       <div class="bc-seg" id="bcPerTipo">
         <button data-t="tudo" class="on">Tudo</button><button data-t="ano">Ano</button><button data-t="tri">Trimestre</button><button data-t="mes">Mês</button>
       </div>
@@ -397,59 +401,77 @@ function bcRender(){
 
   const comMin = BC.visao === 'itens';
   const SF = bcSemFonte();
+  // semana passada = a semana real mais recente; com o botão, as anteriores vêm junto
   const semCols = SF && SF.semanas ? SF.semanas.slice(0, BC.hist ? 8 : 1) : [];
+  const ultSem = semCols[0] || null;
+  // últimos 3 meses com relatório (no grupo, os 3 últimos em que alguma casa tem relatório)
+  const tres = (B.meses_com_dado || B.meses || []).slice(-3);
   const nota = document.getElementById('bcSemNota');
-  if (BC_SEM_ERRO) nota.innerHTML = 'Venda real por semana: ' + bcEsc(BC_SEM_ERRO) + '.';
-  else if (!BC_SEM) nota.innerHTML = 'Carregando a venda real da última semana…';
-  else if (SF && SF.semCobertura) nota.innerHTML = '<b>Última semana real:</b> ' + bcEsc(SF.semCobertura) + '.';
-  else if (!semCols.length) nota.innerHTML = 'Ainda não há semana real recebida da Manu.';
+  if (BC_SEM_ERRO) nota.innerHTML = 'Semana passada: ' + bcEsc(BC_SEM_ERRO) + '.';
+  else if (!BC_SEM) nota.innerHTML = 'Carregando a venda real da semana passada…';
+  else if (SF && SF.semCobertura) nota.innerHTML = '<b>Semana passada:</b> ' + bcEsc(SF.semCobertura) + '. A 3ª sugestão fica vazia.';
+  else if (!ultSem) nota.innerHTML = 'Ainda não há semana real recebida da Manu: a 3ª sugestão fica vazia.';
   else {
-    const u = semCols[0];
-    nota.innerHTML = `<b>Coluna em destaque: venda real da semana ${bcDiaMes(u.ini)} a ${bcDiaMes(u.fim)}</b> (relatório da Manu, segunda a domingo),
-      ao lado só como orientação: não entra na média nem no mínimo.` + (B.grupo ? ' Soma das 5 casas do BI da Manu, sem a FAMU.' : '') +
-      (u.parcial ? ` <span class="bc-sobe">Semana parcial: ${bcEsc(u.parcial.replace(/^Cobertura parcial:\s*/i,''))}</span>` : '') +
+    nota.innerHTML = `<b>Semana passada = venda real de ${bcDiaMes(ultSem.ini)} a ${bcDiaMes(ultSem.fim)}</b> (relatório da Manu, segunda a domingo, atualizado toda terça).` +
+      ` Últimos 3 meses: ${tres.join(', ')}.` + (B.grupo ? ' No grupo, a semana passada soma as 5 casas do BI da Manu, sem a FAMU.' : '') +
+      (ultSem.parcial ? ` <span class="bc-sobe">Semana parcial: ${bcEsc(ultSem.parcial.replace(/^Cobertura parcial:\s*/i,''))}</span>` : '') +
       (SF.semanas.length > 1 ? `<button type="button" id="bcHistBtn">${BC.hist ? 'Esconder semanas anteriores' : 'Ver semanas anteriores (' + Math.min(7, SF.semanas.length-1) + ')'}</button>` : '');
     const hb = document.getElementById('bcHistBtn');
     if (hb) hb.onclick = () => { BC.hist = !BC.hist; bcRender(); };
   }
-  const semHead = semCols.map((w, i) => `<th class="num bc-sem${i===0?' bc-sem-1':''}${i===semCols.length-1?' bc-sem-fim':''}">${i===0?'Última semana':'Semana'}<span class="bc-mes">${bcDiaMes(w.ini)}–${bcDiaMes(w.fim)}${w.parcial?' · parcial':''}</span></th>`).join('');
-  const semCel = (x, c) => semCols.map((w, i) => {
-    const serie = SF.mapa[x.nome] || SF.norm[bcNormNome(x.nome)] || {};
-    const v = serie[w.ini];
-    let sub = '';
-    // no grupo a semana é de 5 casas e a média de 6 (com a FAMU): comparar enganaria
-    if (i === 0 && v && c.media && !B.grupo) { const p = (v / c.media - 1) * 100; sub = `<span class="bc-mes">${p>=0?'+':''}${bcNum(p,0)}% da média</span>`; }
-    return `<td class="num bc-sem${i===0?' bc-sem-1':' bc-velha'}${i===semCols.length-1?' bc-sem-fim':''}">${v ? bcNum(v, v % 1 ? 1 : 0) : '—'}${sub}</td>`;
-  }).join('');
-  const head = '<thead><tr><th>' + (comMin ? 'Item da contagem' : 'Produto') + '</th>' + semHead +
-    '<th class="num">Média/semana</th><th class="num">Menor semana</th><th class="num">Maior semana</th>' +
-    '<th class="num">Margem p/ maior</th><th class="num">Mínimo sugerido</th>' +
-    (comMin ? '<th class="num">Mínimo atual</th><th class="num">Diferença</th>' : '') + '</tr></thead>';
+  const semVal = (x, w) => { if (!SF || !SF.mapa || !w) return null;
+    const serie = SF.mapa[x.nome] || SF.norm[bcNormNome(x.nome)] || {}; return serie[w.ini] || null; };
+  const nVenda = 2 + Math.max(1, semCols.length);
+  const head = '<thead><tr>' +
+    `<th rowspan="2">${comMin ? 'Item da contagem' : 'Produto'}</th>` +
+    `<th colspan="${nVenda}" class="bc-grp">Venda por semana</th>` +
+    '<th colspan="3" class="bc-grp">Orientação da margem</th>' +
+    `<th colspan="3" class="bc-grp" style="color:var(--verde)">Sugestão de mínimo</th>` +
+    (comMin ? '<th rowspan="2" class="num">Mínimo atual</th>' : '') + '</tr><tr>' +
+    '<th class="num">Média histórica</th><th class="num">Últimos 3 meses</th>' +
+    (semCols.length ? semCols.map((w, i) => `<th class="num bc-sem${i===0?' bc-sem-1':''}${i===semCols.length-1?' bc-sem-fim':''}">${i===0?'Semana passada':'Semana'}<span class="bc-mes">${bcDiaMes(w.ini)}–${bcDiaMes(w.fim)}${w.parcial?' · parcial':''}</span></th>`).join('')
+      : '<th class="num bc-sem bc-sem-1 bc-sem-fim">Semana passada</th>') +
+    '<th class="num">Menor semana</th><th class="num">Maior semana</th><th class="num">Margem p/ maior</th>' +
+    '<th class="num bc-sug">Pela média histórica</th><th class="num bc-sug">Pelos últimos 3 meses</th><th class="num bc-sug">Pela semana passada</th>' +
+    '</tr></thead>';
   const body = linhas.map(({x, c}) => {
+    const c3 = bcLinha(x.mes || {}, tres, hist, sem, x, B);
     const gap = c.media && c.pico ? (c.pico.v / c.media - 1) * 100 : null;
     const m = BC.marg === 'pico' ? Math.max(0, gap || 0) : (BC.pct || 0);
-    const sug = c.media === null ? null : Math.ceil(c.media * (1 + m/100) - 1e-9);
+    const sug = v => (v === null || v === undefined) ? null : Math.ceil(v * (1 + m/100) - 1e-9);
+    const vSem = semVal(x, ultSem);
     const atual = comMin ? x.min_atual : null;
-    const dif = comMin && sug !== null && atual !== null && atual !== undefined ? sug - atual : null;
+    const celSug = v => {
+      const cls = comMin && v !== null && atual !== null && atual !== undefined ? (v > atual ? ' bc-sobe' : v < atual ? ' bc-desce' : '') : '';
+      return `<td class="num bc-sug${cls}"><b>${v === null ? '—' : bcNum(v,0)}</b></td>`;
+    };
     const fontes = comMin && x.fontes ? `<details class="bc-fontes"><summary>de onde vem</summary><ul>${
       x.fontes.slice(0,8).map(f => `<li>${bcEsc(f.produto)}: ${bcEsc(f.via)} · ${bcNum(f.por_venda, f.por_venda < 1 ? 3 : 0)} un por venda</li>`).join('')
     }${x.fontes.length > 8 ? `<li>e mais ${x.fontes.length-8}</li>` : ''}</ul></details>`
       : (x.casas ? `<span class="bc-mes">${x.casas.map(c => BC_CASAS[c] || c).join(', ')}</span>` : '');
     const semana = v => v ? `${bcNum(v.v)}<span class="bc-mes">${v.m}</span>` : '—';
-    return `<tr><td class="bc-nome">${bcEsc(x.nome)}${x.na_contagem === false ? ' <span class="bc-mes">fora da contagem atual</span>' : ''}${fontes}</td>` + semCel(x, c) +
-      `<td class="num"><b>${bcNum(c.media)}</b>${c.zerosPer && !B.grupo ? `<span class="bc-mes">sem venda em ${c.zerosPer} de ${c.nPer}</span>` : ''}</td><td class="num">${semana(c.vale)}</td><td class="num">${semana(c.pico)}</td>` +
-      `<td class="num">${gap === null ? '—' : '+' + bcNum(gap,0) + '%'}</td><td class="num"><b>${sug === null ? '—' : bcNum(sug,0)}</b></td>` +
-      (comMin ? `<td class="num">${atual === null || atual === undefined ? '—' : bcNum(atual,0)}</td>` +
-        `<td class="num ${dif > 0 ? 'bc-sobe' : dif < 0 ? 'bc-desce' : ''}">${dif === null ? '—' : (dif > 0 ? '+' : '') + bcNum(dif,0)}</td>` : '') + '</tr>';
+    const celSem = (semCols.length ? semCols : [null]).map((w, i, arr) => {
+      const v = semVal(x, w);
+      return `<td class="num bc-sem${i===0?' bc-sem-1':' bc-velha'}${i===arr.length-1?' bc-sem-fim':''}">${v ? bcNum(v, v % 1 ? 1 : 0) : '—'}</td>`;
+    }).join('');
+    return `<tr><td class="bc-nome">${bcEsc(x.nome)}${x.na_contagem === false ? ' <span class="bc-mes">fora da contagem atual</span>' : ''}${fontes}</td>` +
+      `<td class="num"><b>${bcNum(c.media)}</b>${c.zerosPer && !B.grupo ? `<span class="bc-mes">sem venda em ${c.zerosPer} de ${c.nPer}</span>` : ''}</td>` +
+      `<td class="num">${c3.media ? bcNum(c3.media) : '—'}</td>` + celSem +
+      `<td class="num">${semana(c.vale)}</td><td class="num">${semana(c.pico)}</td>` +
+      `<td class="num">${gap === null ? '—' : '+' + bcNum(gap,0) + '%'}</td>` +
+      celSug(sug(c.media)) + celSug(c3.media ? sug(c3.media) : null) + celSug(vSem ? sug(vSem) : null) +
+      (comMin ? `<td class="num">${atual === null || atual === undefined ? '—' : bcNum(atual,0)}</td>` : '') + '</tr>';
   }).join('');
-  tab.innerHTML = head + '<tbody>' + (body || `<tr><td colspan="${(comMin?8:6)+semCols.length}" class="vazio">Nada vendido neste período.</td></tr>`) + '</tbody>';
+  const nCols = 1 + nVenda + 3 + 3 + (comMin ? 1 : 0);
+  tab.innerHTML = head + '<tbody>' + (body || `<tr><td colspan="${nCols}" class="vazio">Nada vendido neste período.</td></tr>`) + '</tbody>';
 
   const unidade = comMin
-    ? 'Números em unidade do item da contagem (garrafa, lata), arredondados para cima no mínimo. Dose e coquetel já convertidos pela ficha técnica.'
+    ? 'Números em unidade do item da contagem (garrafa, lata), arredondados para cima na sugestão. Dose e coquetel já convertidos pela ficha técnica.'
     : 'Números em unidade de venda (drink, dose, garrafa vendida).';
   const minEm = B.minimo_em ? ` Mínimo atual: contagem de ${B.minimo_em.split('-').reverse().join('/')}.` : '';
   document.getElementById('bcRodape').textContent = `${linhas.length} ${BC.visao==='itens'?'itens':'produtos'}. ${unidade}${comMin ? minEm : ''}` +
-    (comMin ? ' Diferença: amarelo = sugere subir o mínimo, verde = dá para baixar.' : '');
+    ' A margem de risco é a mesma nas três sugestões.' +
+    (comMin ? ' Sugestão em amarelo = acima do mínimo atual, em verde = abaixo.' : '');
 }
 
 function bcPendencias(){
