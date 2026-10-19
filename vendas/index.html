@@ -301,6 +301,17 @@ function bcSemFonte(){
   const sems = (slug ? c.semanas : BC_SEM.semanas.map(x => ({...x, tem:true}))).filter(x => x.tem !== false).slice().reverse();
   return { mapa, norm, semanas: sems };
 }
+function bcGrupoSemNota(w){
+  const tem = w.casas || [];
+  const faltam = Object.keys(BC_CASAS).filter(c => !tem.includes(c)).map(c => BC_CASAS[c]);
+  return faltam.length ? ` No grupo, a semana passada soma ${tem.length} casas: falta ${faltam.join(', ')}.` : ' No grupo, a semana passada soma as 6 casas.';
+}
+function bcEstimadaTxt(w){
+  if (!w) return '';
+  if (w.estimada) return 'Semana ' + w.estimada + '.';
+  const e = (w.estimadas || []).map(c => BC_CASAS[c] || c);
+  return e.length ? `${e.join(', ')}: semana estimada pela média diária de outro período.` : '';
+}
 function bcDiaMes(iso){ const [a,m,d] = iso.split('-'); return d + '/' + m; }
 const BC_CASAS = { iz:'IZ', '1929':'1929', 'gra-bistro':'Grá', famu:'FAMU', fulles:'Fulles', nip:'NIP' };
 const BC_MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -412,8 +423,8 @@ function bcRender(){
   else if (SF && SF.semCobertura) nota.innerHTML = '<b>Semana passada:</b> ' + bcEsc(SF.semCobertura) + '. A 3ª sugestão fica vazia.';
   else if (!ultSem) nota.innerHTML = 'Ainda não há semana real recebida da Manu: a 3ª sugestão fica vazia.';
   else {
-    nota.innerHTML = `<b>Semana passada = venda real de ${bcDiaMes(ultSem.ini)} a ${bcDiaMes(ultSem.fim)}</b> (relatório da Manu, segunda a domingo, atualizado toda terça).` +
-      ` Últimos 3 meses: ${tres.join(', ')}.` + (B.grupo ? ' No grupo, a semana passada soma as 5 casas do BI da Manu, sem a FAMU.' : '') +
+    nota.innerHTML = `<b>Semana passada = venda ${ultSem.estimada ? 'estimada' : 'real'} de ${bcDiaMes(ultSem.ini)} a ${bcDiaMes(ultSem.fim)}</b> (${!B.grupo && typeof CASA_SLUG !== 'undefined' && CASA_SLUG === 'famu' ? 'planilha da Fernanda, de Suprimentos' : 'relatório da Manu, atualizado toda terça'}, domingo a domingo).` + (bcEstimadaTxt(ultSem) ? ` <span class="bc-sobe">${bcEsc(bcEstimadaTxt(ultSem))}</span>` : '') + `` +
+      ` Últimos 3 meses: ${tres.join(', ')}.` + (B.grupo ? bcGrupoSemNota(ultSem) : '') +
       (ultSem.parcial ? ` <span class="bc-sobe">Semana parcial: ${bcEsc(ultSem.parcial.replace(/^Cobertura parcial:\s*/i,''))}</span>` : '') +
       (SF.semanas.length > 1 ? `<button type="button" id="bcHistBtn">${BC.hist ? 'Esconder semanas anteriores' : 'Ver semanas anteriores (' + Math.min(7, SF.semanas.length-1) + ')'}</button>` : '');
     const hb = document.getElementById('bcHistBtn');
@@ -429,7 +440,7 @@ function bcRender(){
     `<th colspan="3" class="bc-grp" style="color:var(--verde)">Sugestão de mínimo</th>` +
     (comMin ? '<th rowspan="2" class="num">Mínimo atual</th>' : '') + '</tr><tr>' +
     '<th class="num">Média histórica</th><th class="num">Últimos 3 meses</th>' +
-    (semCols.length ? semCols.map((w, i) => `<th class="num bc-sem${i===0?' bc-sem-1':''}${i===semCols.length-1?' bc-sem-fim':''}">${i===0?'Semana passada':'Semana'}<span class="bc-mes">${bcDiaMes(w.ini)}–${bcDiaMes(w.fim)}${w.parcial?' · parcial':''}</span></th>`).join('')
+    (semCols.length ? semCols.map((w, i) => `<th class="num bc-sem${i===0?' bc-sem-1':''}${i===semCols.length-1?' bc-sem-fim':''}">${i===0?'Semana passada':'Semana'}<span class="bc-mes">${bcDiaMes(w.ini)}–${bcDiaMes(w.fim)}${w.parcial?' · parcial':''}${(w.estimada || (w.estimadas||[]).length)?' · estimada':''}</span></th>`).join('')
       : '<th class="num bc-sem bc-sem-1 bc-sem-fim">Semana passada</th>') +
     '<th class="num">Menor semana</th><th class="num">Maior semana</th><th class="num">Margem p/ maior</th>' +
     '<th class="num bc-sug">Pela média histórica</th><th class="num bc-sug">Pelos últimos 3 meses</th><th class="num bc-sug">Pela semana passada</th>' +
