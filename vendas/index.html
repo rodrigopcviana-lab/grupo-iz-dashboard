@@ -169,6 +169,7 @@
 <div class="estado-tabs">
   <button class="on" onclick="aba('p-resumo', this)">Resumo</button>
   <button onclick="aba('p-diverg', this)">Divergências <span id="qtdDivergTab"></span></button>
+  <button onclick="aba('p-base', this)">Base de compra</button>
 </div>
 
 <div class="painel on" id="p-resumo">
@@ -193,6 +194,337 @@
   <code>config/conferencia_sugestoes.json</code>, preenchida a partir de investigação real, não é chute automático.</p>
   <div id="divergConteudo"></div>
 </div>
+
+<!-- ═══ BASE DE COMPRA (vendas_base_compra.py) ═══
+     Trecho compartilhado: entra no _template_vendas.html (casa) e no
+     _template_grupo.html (todas as casas) pelo marcador {{VISTA_BASE_COMPRA}}.
+     O dado vem pronto em BASE_COMPRA no mesmo JSON da página; aqui só se
+     reamostra (período, margem). Sem R$ nenhum: é quantidade. -->
+<style>
+  /* iguais aos do _template_vendas.html: o template do grupo não tem */
+  .busca-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+  .busca-row input[type=text] { flex:1; min-width:180px; background:var(--card2); border:1px solid var(--border);
+    border-radius:9px; padding:9px 12px; color:var(--text); font-size:13px; }
+  .vazio { font-size:12.5px; color:var(--text-3); padding:8px 0; }
+  #p-base code { font-size:11.5px; background:var(--card2); border:1px solid var(--border); padding:1.5px 6px; border-radius:6px; color:var(--text-2); }
+  .bc-ctrl { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; margin:6px 0 14px; }
+  @media (min-width:760px) { .bc-ctrl { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+  .bc-bloco { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; min-width:0; }
+  .bc-bloco .bc-lab { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); margin-bottom:8px; }
+  .bc-seg { display:inline-flex; flex-wrap:wrap; gap:4px; border:1px solid var(--border); border-radius:999px; padding:3px; }
+  .bc-seg button { background:none; border:none; color:var(--text-2); font-size:12.5px; padding:6px 12px; border-radius:999px; cursor:pointer; min-height:32px; }
+  .bc-seg button.on { background:var(--acc); color:var(--acc-txt); font-weight:600; }
+  .bc-linha { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
+  .bc-linha select, .bc-linha input { background:var(--card2); border:1px solid var(--border); border-radius:9px;
+    padding:8px 10px; color:var(--text); font-size:13px; }
+  .bc-linha input[type=number] { width:84px; }
+  .bc-dica { font-size:12px; color:var(--text-2); margin-top:8px; }
+  .bc-dica b { color:var(--text); }
+  table.bc-tab td { white-space:nowrap; }
+  table.bc-tab th { white-space:normal; line-height:1.25; vertical-align:bottom; min-width:64px; }
+  table.bc-tab td.bc-nome { white-space:normal; min-width:150px; max-width:260px; }
+  table.bc-tab th:first-child, table.bc-tab td:first-child { position:sticky; left:0; background:var(--card); z-index:1; }
+  .bc-mes { display:block; font-size:10.5px; color:var(--text-3); }
+  .bc-sobe { color:var(--amarelo); font-weight:600; }
+  .bc-desce { color:var(--verde); font-weight:600; }
+  .bc-fontes { margin-top:4px; font-size:11.5px; color:var(--text-3); }
+  .bc-fontes summary { cursor:pointer; color:var(--text-3); }
+  .bc-fontes ul { margin:4px 0 0; padding-left:16px; }
+  .bc-fora { color:var(--text-3); }
+  /* coluna em paralelo: venda REAL da semana (Manu), separada da conta mensal */
+  table.bc-tab th.bc-sem, table.bc-tab td.bc-sem { background:color-mix(in srgb, var(--acc) 9%, var(--card)); }
+  table.bc-tab th.bc-sem.bc-sem-1, table.bc-tab td.bc-sem.bc-sem-1 { border-left:2px solid color-mix(in srgb, var(--acc) 55%, transparent); }
+  table.bc-tab th.bc-sem.bc-sem-fim, table.bc-tab td.bc-sem.bc-sem-fim { border-right:2px solid color-mix(in srgb, var(--acc) 55%, transparent); }
+  table.bc-tab th.bc-sem { color:var(--acc); }
+  table.bc-tab td.bc-sem.bc-velha { color:var(--text-2); }
+  .bc-semnota { font-size:12px; color:var(--text-2); margin:-4px 0 10px; }
+  .bc-semnota button { background:none; border:1px solid var(--border); color:var(--acc); border-radius:999px; padding:4px 10px; font-size:12px; cursor:pointer; margin-left:6px; }
+</style>
+
+<div class="painel" id="p-base">
+  <p class="nota">Base para o <b>estoque mínimo da compra semanal</b>: o que sai por semana de cada item, pelo histórico de
+  vendas. Escolha o período, veja a média semanal e some a margem de risco, orientada pela semana de maior e de menor venda.</p>
+  <div class="banner-cob" id="bcAviso"></div>
+
+  <div class="bc-ctrl">
+    <div class="bc-bloco">
+      <div class="bc-lab">Período da média</div>
+      <div class="bc-seg" id="bcPerTipo">
+        <button data-t="tudo" class="on">Tudo</button><button data-t="ano">Ano</button><button data-t="tri">Trimestre</button><button data-t="mes">Mês</button>
+      </div>
+      <div class="bc-linha"><select id="bcPerQual" aria-label="Qual período"></select></div>
+      <div class="bc-dica" id="bcPerInfo"></div>
+    </div>
+    <div class="bc-bloco">
+      <div class="bc-lab">Margem de risco</div>
+      <div class="bc-seg" id="bcMargTipo">
+        <button data-m="fixa" class="on">Margem fixa</button><button data-m="pico">Cobrir a maior semana</button>
+      </div>
+      <div class="bc-linha" id="bcMargLinha"><input type="number" id="bcMargPct" min="0" max="300" step="5" value="20" aria-label="Margem em %"><span>% acima da média</span></div>
+      <div class="bc-dica" id="bcMargDica"></div>
+    </div>
+  </div>
+
+  <div class="busca-row">
+    <div class="bc-seg" id="bcVisao">
+      <button data-v="itens" class="on">Itens de estoque</button><button data-v="prod">Produtos vendidos</button>
+    </div>
+    <input type="text" id="bcBusca" placeholder="Buscar item ou produto…">
+  </div>
+
+  <p class="bc-semnota" id="bcSemNota"></p>
+  <div class="card"><div class="scroll-x"><table class="limpa bc-tab" id="bcTabela"></table></div>
+    <p class="nota" id="bcRodape" style="margin:8px 0 0"></p></div>
+
+  <div id="bcPendencias"></div>
+</div>
+
+<script>
+// ── BASE DE COMPRA ──
+const BC = { tipo:'tudo', qual:null, marg:'fixa', pct:20, visao:'itens', busca:'', hist:false };
+// venda REAL por semana (vendas_semanal.py, pedida à Manu toda semana):
+// coluna em paralelo, nunca entra na média nem no mínimo sugerido
+let BC_SEM = null, BC_SEM_ERRO = null;
+function bcNormNome(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+function bcSemFonte(){
+  if (!BC_SEM) return null;
+  const B = bcDados() || {};
+  const slug = B.grupo ? null : (typeof CASA_SLUG !== 'undefined' ? CASA_SLUG : null);
+  if (slug && !BC_SEM.casas[slug]) return { semCobertura: (BC_SEM.sem_cobertura||{})[slug] || 'sem relatório semanal desta casa', semanas: [] };
+  const c = slug ? BC_SEM.casas[slug] : BC_SEM.grupo;
+  const mapa = BC.visao === 'itens' ? (c.itens||{}) : (c.produtos||{});
+  const norm = {}; Object.keys(mapa).forEach(k => norm[bcNormNome(k)] = mapa[k]);
+  const sems = (slug ? c.semanas : BC_SEM.semanas.map(x => ({...x, tem:true}))).filter(x => x.tem !== false).slice().reverse();
+  return { mapa, norm, semanas: sems };
+}
+function bcDiaMes(iso){ const [a,m,d] = iso.split('-'); return d + '/' + m; }
+const BC_CASAS = { iz:'IZ', '1929':'1929', 'gra-bistro':'Grá', famu:'FAMU', fulles:'Fulles', nip:'NIP' };
+const BC_MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+function bcDados(){ return window.BASE_DADOS || (typeof D !== 'undefined' && D && D.BASE_COMPRA) || null; }
+function bcAno(m){ return 2000 + parseInt(m.split('/')[1],10); }
+function bcTri(m){ return Math.floor(BC_MESES.indexOf(m.split('/')[0]) / 3) + 1; }
+function bcNum(v, dec){ if (v === null || v === undefined || isNaN(v)) return '—';
+  return v.toLocaleString('pt-BR', {minimumFractionDigits:dec===undefined?1:dec, maximumFractionDigits:dec===undefined?1:dec}); }
+function bcEsc(s){ return String(s===null||s===undefined?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function bcOpcoes(B){
+  const m = B.meses_com_dado || B.meses || [];
+  if (BC.tipo === 'tudo') return [];
+  if (BC.tipo === 'ano') return [...new Set(m.map(bcAno))].sort((a,b)=>b-a).map(a=>({v:String(a), t:String(a)}));
+  if (BC.tipo === 'tri') {
+    const vis = []; m.forEach(x => { const k = bcAno(x)+'-T'+bcTri(x); if (!vis.includes(k)) vis.push(k); });
+    return vis.sort().reverse().map(k => { const [a,t]=k.split('-T');
+      const nomes = BC_MESES.slice((t-1)*3, t*3).join(', ');
+      return {v:k, t:`${t}º trimestre de ${a} (${nomes})`}; });
+  }
+  return m.slice().reverse().map(x=>({v:x, t:x}));
+}
+function bcMesesPeriodo(B){
+  const m = B.meses_com_dado || B.meses || [];
+  if (BC.tipo === 'tudo') return m.slice();
+  if (BC.tipo === 'ano') return m.filter(x => String(bcAno(x)) === BC.qual);
+  if (BC.tipo === 'tri') return m.filter(x => (bcAno(x)+'-T'+bcTri(x)) === BC.qual);
+  return m.filter(x => x === BC.qual);
+}
+// calendário do período escolhido: meses que deveriam existir e não têm dado
+function bcFaltantes(B){
+  const tem = new Set(B.meses_com_dado || B.meses || []);
+  let alvo = [];
+  if (BC.tipo === 'ano') alvo = BC_MESES.map(n => n + '/' + BC.qual.slice(2));
+  else if (BC.tipo === 'tri') { const [a,t] = BC.qual.split('-T'); alvo = BC_MESES.slice((t-1)*3, t*3).map(n => n + '/' + a.slice(2)); }
+  const ultimo = (B.meses_com_dado || B.meses || []).slice(-1)[0];
+  const lin = m => { const [n,a]=m.split('/'); return parseInt(a,10)*12 + BC_MESES.indexOf(n); };
+  return alvo.filter(m => !tem.has(m) && (!ultimo || lin(m) <= lin(ultimo)));
+}
+
+function bcLinha(serie, mesesPer, mesesHist, sem, x, B){
+  let soma = 0, media = null;
+  if (B && B.grupo && x && x.pc) {
+    // grupo: soma das médias de cada casa, cada uma sobre os meses que ela tem
+    Object.entries(x.pc).forEach(([slug, s]) => {
+      const ms = mesesPer.filter(m => (B.meses_casa[slug] || []).includes(m));
+      let sc = 0; ms.forEach(m => sc += s[m] || 0);
+      soma += sc;
+      if (ms.length) media = (media || 0) + sc / (ms.length * sem);
+    });
+  } else {
+    mesesPer.forEach(m => soma += serie[m] || 0);
+    media = mesesPer.length ? soma / (mesesPer.length * sem) : null;
+  }
+  let pico = null, vale = null, zeros = 0, zerosPer = 0;
+  mesesPer.forEach(m => { if (!((serie[m] || 0) > 0)) zerosPer++; });
+  mesesHist.forEach(m => { const v = serie[m] || 0; if (v <= 0) { zeros++; return; }
+    if (!pico || v > pico.v) pico = {v, m}; if (!vale || v < vale.v) vale = {v, m}; });
+  return { soma, media, zeros, zerosPer, nPer: mesesPer.length, nHist: mesesHist.length,
+    pico: pico ? {v: pico.v/sem, m: pico.m} : null, vale: vale ? {v: vale.v/sem, m: vale.m} : null };
+}
+
+function bcRender(){
+  const B = bcDados();
+  const tab = document.getElementById('bcTabela');
+  if (!B || !B.disponivel) {
+    document.getElementById('bcAviso').innerHTML = '<b>Base de compra indisponível:</b> ' + bcEsc((B && B.motivo) || 'esta casa ainda não tem a base gerada.');
+    tab.innerHTML = ''; return;
+  }
+  const sem = B.semanas_por_mes || 4.345;
+  const hist = B.grupo ? (B.meses_completos || []) : (B.meses_com_dado || B.meses || []);
+  const per = bcMesesPeriodo(B);
+  const falt = bcFaltantes(B);
+  document.getElementById('bcPerInfo').innerHTML = per.length
+    ? `Média sobre <b>${per.length} ${per.length>1?'meses':'mês'}</b> com dado (${per.join(', ')})` +
+      (falt.length ? ` · sem dado em ${falt.join(', ')}, fora da conta` : '') +
+      (B.grupo ? '. No grupo, a média é a soma das médias de cada casa, cada uma sobre os meses de relatório que ela tem; ' +
+        `a maior e a menor semana só olham os meses com relatório de todas as casas (${(B.meses_completos||[]).join(', ') || 'nenhum'}).` : '')
+    : 'Sem dado neste período.';
+
+  const lista = (BC.visao === 'itens' ? (B.itens || []) : (B.produtos || []))
+    .filter(x => !BC.busca || (x.nome||'').toLowerCase().includes(BC.busca) || (x.cat||'').toLowerCase().includes(BC.busca));
+  const linhas = lista.map(x => ({ x, c: bcLinha(x.mes || {}, per, hist, sem, x, B) })).filter(r => r.c.soma > 0);
+
+  // orientação da margem: quanto a maior semana fica acima da média, na
+  // mediana dos itens REGULARES (vendidos em 80%+ dos meses do histórico) —
+  // item que entrou ou saiu da carta no meio tem média baixa e pico alto, e
+  // puxaria a orientação para cima sem dizer nada sobre o giro normal
+  const regulares = linhas.filter(r => r.c.media && r.c.pico && r.c.nHist && (r.c.nHist - r.c.zeros) / r.c.nHist >= 0.8);
+  const gaps = regulares.map(r => (r.c.pico.v / r.c.media - 1) * 100).sort((a,b)=>a-b);
+  const med = gaps.length ? gaps[Math.floor(gaps.length/2)] : null;
+  const p75 = gaps.length ? gaps[Math.floor(gaps.length*0.75)] : null;
+  document.getElementById('bcMargLinha').style.display = BC.marg === 'fixa' ? 'flex' : 'none';
+  document.getElementById('bcMargDica').innerHTML = med === null ? '' :
+    `Pelo histórico, a maior semana fica <b>${bcNum(med,0)}%</b> acima da média no item típico` +
+    ` e até ${bcNum(p75,0)}% em 3 de cada 4 itens (${gaps.length} itens vendidos em quase todo mês).` +
+    (BC.marg === 'pico' ? ' Cada item recebe a margem que cobre a própria maior semana.' : '');
+
+  const comMin = BC.visao === 'itens';
+  const SF = bcSemFonte();
+  const semCols = SF && SF.semanas ? SF.semanas.slice(0, BC.hist ? 8 : 1) : [];
+  const nota = document.getElementById('bcSemNota');
+  if (BC_SEM_ERRO) nota.innerHTML = 'Venda real por semana: ' + bcEsc(BC_SEM_ERRO) + '.';
+  else if (!BC_SEM) nota.innerHTML = 'Carregando a venda real da última semana…';
+  else if (SF && SF.semCobertura) nota.innerHTML = '<b>Última semana real:</b> ' + bcEsc(SF.semCobertura) + '.';
+  else if (!semCols.length) nota.innerHTML = 'Ainda não há semana real recebida da Manu.';
+  else {
+    const u = semCols[0];
+    nota.innerHTML = `<b>Coluna em destaque: venda real da semana ${bcDiaMes(u.ini)} a ${bcDiaMes(u.fim)}</b> (relatório da Manu, segunda a domingo),
+      ao lado só como orientação: não entra na média nem no mínimo.` + (B.grupo ? ' Soma das 5 casas do BI da Manu, sem a FAMU.' : '') +
+      (u.parcial ? ` <span class="bc-sobe">Semana parcial: ${bcEsc(u.parcial.replace(/^Cobertura parcial:\s*/i,''))}</span>` : '') +
+      (SF.semanas.length > 1 ? `<button type="button" id="bcHistBtn">${BC.hist ? 'Esconder semanas anteriores' : 'Ver semanas anteriores (' + Math.min(7, SF.semanas.length-1) + ')'}</button>` : '');
+    const hb = document.getElementById('bcHistBtn');
+    if (hb) hb.onclick = () => { BC.hist = !BC.hist; bcRender(); };
+  }
+  const semHead = semCols.map((w, i) => `<th class="num bc-sem${i===0?' bc-sem-1':''}${i===semCols.length-1?' bc-sem-fim':''}">${i===0?'Última semana':'Semana'}<span class="bc-mes">${bcDiaMes(w.ini)}–${bcDiaMes(w.fim)}${w.parcial?' · parcial':''}</span></th>`).join('');
+  const semCel = (x, c) => semCols.map((w, i) => {
+    const serie = SF.mapa[x.nome] || SF.norm[bcNormNome(x.nome)] || {};
+    const v = serie[w.ini];
+    let sub = '';
+    // no grupo a semana é de 5 casas e a média de 6 (com a FAMU): comparar enganaria
+    if (i === 0 && v && c.media && !B.grupo) { const p = (v / c.media - 1) * 100; sub = `<span class="bc-mes">${p>=0?'+':''}${bcNum(p,0)}% da média</span>`; }
+    return `<td class="num bc-sem${i===0?' bc-sem-1':' bc-velha'}${i===semCols.length-1?' bc-sem-fim':''}">${v ? bcNum(v, v % 1 ? 1 : 0) : '—'}${sub}</td>`;
+  }).join('');
+  const head = '<thead><tr><th>' + (comMin ? 'Item da contagem' : 'Produto') + '</th>' + semHead +
+    '<th class="num">Média/semana</th><th class="num">Menor semana</th><th class="num">Maior semana</th>' +
+    '<th class="num">Margem p/ maior</th><th class="num">Mínimo sugerido</th>' +
+    (comMin ? '<th class="num">Mínimo atual</th><th class="num">Diferença</th>' : '') + '</tr></thead>';
+  const body = linhas.map(({x, c}) => {
+    const gap = c.media && c.pico ? (c.pico.v / c.media - 1) * 100 : null;
+    const m = BC.marg === 'pico' ? Math.max(0, gap || 0) : (BC.pct || 0);
+    const sug = c.media === null ? null : Math.ceil(c.media * (1 + m/100) - 1e-9);
+    const atual = comMin ? x.min_atual : null;
+    const dif = comMin && sug !== null && atual !== null && atual !== undefined ? sug - atual : null;
+    const fontes = comMin && x.fontes ? `<details class="bc-fontes"><summary>de onde vem</summary><ul>${
+      x.fontes.slice(0,8).map(f => `<li>${bcEsc(f.produto)}: ${bcEsc(f.via)} · ${bcNum(f.por_venda, f.por_venda < 1 ? 3 : 0)} un por venda</li>`).join('')
+    }${x.fontes.length > 8 ? `<li>e mais ${x.fontes.length-8}</li>` : ''}</ul></details>`
+      : (x.casas ? `<span class="bc-mes">${x.casas.map(c => BC_CASAS[c] || c).join(', ')}</span>` : '');
+    const semana = v => v ? `${bcNum(v.v)}<span class="bc-mes">${v.m}</span>` : '—';
+    return `<tr><td class="bc-nome">${bcEsc(x.nome)}${x.na_contagem === false ? ' <span class="bc-mes">fora da contagem atual</span>' : ''}${fontes}</td>` + semCel(x, c) +
+      `<td class="num"><b>${bcNum(c.media)}</b>${c.zerosPer && !B.grupo ? `<span class="bc-mes">sem venda em ${c.zerosPer} de ${c.nPer}</span>` : ''}</td><td class="num">${semana(c.vale)}</td><td class="num">${semana(c.pico)}</td>` +
+      `<td class="num">${gap === null ? '—' : '+' + bcNum(gap,0) + '%'}</td><td class="num"><b>${sug === null ? '—' : bcNum(sug,0)}</b></td>` +
+      (comMin ? `<td class="num">${atual === null || atual === undefined ? '—' : bcNum(atual,0)}</td>` +
+        `<td class="num ${dif > 0 ? 'bc-sobe' : dif < 0 ? 'bc-desce' : ''}">${dif === null ? '—' : (dif > 0 ? '+' : '') + bcNum(dif,0)}</td>` : '') + '</tr>';
+  }).join('');
+  tab.innerHTML = head + '<tbody>' + (body || `<tr><td colspan="${(comMin?8:6)+semCols.length}" class="vazio">Nada vendido neste período.</td></tr>`) + '</tbody>';
+
+  const unidade = comMin
+    ? 'Números em unidade do item da contagem (garrafa, lata), arredondados para cima no mínimo. Dose e coquetel já convertidos pela ficha técnica.'
+    : 'Números em unidade de venda (drink, dose, garrafa vendida).';
+  const minEm = B.minimo_em ? ` Mínimo atual: contagem de ${B.minimo_em.split('-').reverse().join('/')}.` : '';
+  document.getElementById('bcRodape').textContent = `${linhas.length} ${BC.visao==='itens'?'itens':'produtos'}. ${unidade}${comMin ? minEm : ''}` +
+    (comMin ? ' Diferença: amarelo = sugere subir o mínimo, verde = dá para baixar.' : '');
+}
+
+function bcPendencias(){
+  const B = bcDados(); const el = document.getElementById('bcPendencias');
+  if (!B || !B.disponivel) { el.innerHTML = ''; return; }
+  const cob = B.cobertura || {};
+  let html = '';
+  if (B.grupo) {
+    html += `<div class="card"><h4>Cobertura por casa</h4><table class="limpa"><tr><th>Casa</th><th class="num">Vendas convertidas</th><th class="num">Mínimo atual de</th></tr>` +
+      Object.entries(B.por_casa || {}).map(([s, c]) => `<tr><td>${bcEsc(BC_CASAS[s] || s)}</td><td class="num">${c.cobertura.pct_convertido===null?'—':bcNum(c.cobertura.pct_convertido)+'%'}</td>` +
+        `<td class="num">${c.minimo_em ? c.minimo_em.split('-').reverse().join('/') : '—'}</td></tr>`).join('') + '</table>' +
+      `<p class="nota" style="margin:8px 0 0">O que não converteu em cada casa está na aba Base de compra da própria casa.</p></div>`;
+    el.innerHTML = html; return;
+  }
+  const pend = (B.sem_conversao || []).filter(s => s.tipo !== 'fora');
+  const fora = (B.sem_conversao || []).filter(s => s.tipo === 'fora');
+  html += `<h3>Vendas que ainda não viram item de estoque</h3>
+    <div class="banner-cob${cob.pct_convertido >= 80 ? ' ok' : ''}"><b>${cob.pct_convertido===null?'—':bcNum(cob.pct_convertido)+'%'}</b> das vendas
+    (fora serviço e voucher) já viram item de estoque. O resto está abaixo, do maior volume para o menor: cada linha fica de fora da conta até ganhar
+    um casamento em <code>config/base_compra.json</code> (produto do PDV para item da contagem) ou uma ficha técnica com o mesmo nome.</div>
+    <div class="card"><div class="scroll-x"><table class="limpa"><tr><th>Produto</th><th class="num">Vendido</th><th>Por quê</th><th>Possíveis itens</th></tr>` +
+    pend.map(s => `<tr><td>${bcEsc(s.produto)}<span class="bc-mes">${bcEsc(s.cat)}</span></td><td class="num">${bcNum(s.vendas,0)}</td>` +
+      `<td style="white-space:normal">${bcEsc(s.motivo)}${s.tipo==='parcial'?' <span class="bc-mes">o resto da ficha já entrou</span>':''}</td>` +
+      `<td style="white-space:normal">${(s.candidatos||[]).map(bcEsc).join(' · ') || '—'}</td></tr>`).join('') +
+    `</table></div></div>`;
+  if ((B.preparos || []).length)
+    html += `<p class="nota">Preparo da casa (não é compra, entra na Produção interna): ${B.preparos.map(bcEsc).join(', ')}.</p>`;
+  if (fora.length)
+    html += `<p class="nota bc-fora">Fora da base, porque não sai do estoque de bebidas: ${fora.map(s => bcEsc(s.produto) + ' (' + bcNum(s.vendas,0) + ')').join(', ')}.</p>`;
+  el.innerHTML = html;
+}
+
+function initBaseCompra(){
+  const B = bcDados();
+  const aviso = document.getElementById('bcAviso');
+  if (B && B.disponivel) {
+    const sem = (B.semanas_por_mes || 4.345).toLocaleString('pt-BR');
+    aviso.innerHTML = `<b>Semana estimada:</b> o PDV só entrega venda por mês. Toda "semana" aqui é o mês dividido por ${sem},
+      inclusive a maior e a menor (são a semana média do melhor e do pior mês do histórico inteiro, nunca uma semana real).
+      O pico de uma semana boa dentro de um mês bom fica escondido nessa média.`;
+  }
+  const seg = (id, attr, fn) => document.querySelectorAll('#' + id + ' button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('#' + id + ' button').forEach(x => x.classList.remove('on')); b.classList.add('on'); fn(b.dataset[attr]);
+  }));
+  const preencheQual = () => {
+    const sel = document.getElementById('bcPerQual'); const ops = B ? bcOpcoes(B) : [];
+    sel.style.display = ops.length ? '' : 'none';
+    sel.innerHTML = ops.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+    BC.qual = ops.length ? ops[0].v : null;
+  };
+  seg('bcPerTipo', 't', v => { BC.tipo = v; preencheQual(); bcRender(); });
+  seg('bcMargTipo', 'm', v => { BC.marg = v; bcRender(); });
+  seg('bcVisao', 'v', v => { BC.visao = v; bcRender(); });
+  if (B && B.grupo === undefined && !(B.produtos && B.produtos.length) && typeof D !== 'undefined')
+    B.produtos = (D.ALL_PRODS || []).map(p => ({ nome: p.nome, cat: p.cat, mes: p.qtde_mes || {} }));
+  document.getElementById('bcPerQual').addEventListener('change', e => { BC.qual = e.target.value; bcRender(); });
+  document.getElementById('bcMargPct').addEventListener('input', e => { BC.pct = Math.max(0, parseFloat(e.target.value) || 0); bcRender(); });
+  document.getElementById('bcBusca').addEventListener('input', e => { BC.busca = e.target.value.trim().toLowerCase(); bcRender(); });
+  preencheQual();
+  bcRender();
+  bcPendencias();
+  bcCarregaSemanal();
+}
+
+function bcCarregaSemanal(){
+  if (window.BASE_SEMANAL) { BC_SEM = window.BASE_SEMANAL; bcRender(); return; }
+  const s = typeof sessaoLer === 'function' ? sessaoLer() : null;
+  if (!s || !WORKER_URL) { BC_SEM_ERRO = 'sem sessão'; bcRender(); return; }
+  fetch(`${WORKER_URL}/api/vendas?casa=semanal`, { headers: { 'X-Token': s.token, 'X-Senha-Vendas': senhaVendasLer() } })
+    .then(r => r.status === 404 ? Promise.reject('ainda não publicada') : r.ok ? r.json() : Promise.reject('erro ' + r.status))
+    .then(d => { BC_SEM = d; bcRender(); })
+    .catch(e => { BC_SEM_ERRO = typeof e === 'string' ? e : 'sem conexão'; bcRender(); });
+}
+</script>
+
 </div>
 
 <script>
@@ -270,6 +602,7 @@ function drawBarChart(id, labels, data, colorFn, opts={}, _tentativa) {
 }
 
 function render(d) {
+  window.BASE_DADOS = d.BASE_COMPRA || null;
   // mostra #app ANTES de desenhar o canvas — offsetWidth do card dá 0
   // enquanto o container está display:none, e o gráfico sai espremido.
   document.getElementById('gate').style.display = 'none';
@@ -366,6 +699,7 @@ function aba(id, btn) {
   document.querySelectorAll('.estado-tabs > button').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
   window.scrollTo({top:0});
+  if (id === 'p-base' && !window._bcIniciada && typeof initBaseCompra === 'function') { window._bcIniciada = true; initBaseCompra(); }
 }
 
 function renderDivergencias(conf) {
