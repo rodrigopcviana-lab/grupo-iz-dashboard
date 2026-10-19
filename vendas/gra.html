@@ -315,6 +315,13 @@
   .bc-linha select, .bc-linha input { background:var(--card2); border:1px solid var(--border); border-radius:9px;
     padding:8px 10px; color:var(--text); font-size:13px; }
   .bc-linha input[type=number] { width:84px; }
+  .bc-filtros { display:flex; gap:8px; flex-wrap:wrap; margin:-4px 0 12px; align-items:center; }
+  .bc-filtros label { display:flex; flex-direction:column; gap:3px; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--text-3); min-width:0; flex:1 1 150px; max-width:260px; }
+  .bc-filtros select { background:var(--card2); border:1px solid var(--border); border-radius:9px; padding:8px 10px;
+    color:var(--text); font-size:13px; text-transform:none; letter-spacing:0; min-width:0; width:100%; }
+  .bc-filtros .bc-limpa { background:none; border:1px solid var(--border); color:var(--text-2); border-radius:999px;
+    padding:6px 12px; font-size:12.5px; cursor:pointer; align-self:flex-end; min-height:34px; }
   .bc-dica { font-size:12px; color:var(--text-2); margin-top:8px; }
   .bc-dica b { color:var(--text); }
   table.bc-tab td { white-space:nowrap; }
@@ -373,6 +380,13 @@
     <input type="text" id="bcBusca" placeholder="Buscar item ou produto…">
   </div>
 
+  <div class="bc-filtros" id="bcFiltros">
+    <label>Curva ABC<select id="bcFAbc"></select></label>
+    <label>Categoria<select id="bcFCat"></select></label>
+    <label id="bcFFornLab">Fornecedor<select id="bcFForn"></select></label>
+    <button type="button" class="bc-limpa" id="bcFLimpa" hidden>Limpar filtros</button>
+  </div>
+
   <p class="bc-semnota" id="bcSemNota"></p>
   <div class="card"><div class="scroll-x"><table class="limpa bc-tab" id="bcTabela"></table></div>
     <p class="nota" id="bcRodape" style="margin:8px 0 0"></p></div>
@@ -382,7 +396,22 @@
 
 <script>
 // ── BASE DE COMPRA ──
-const BC = { tipo:'tudo', qual:null, marg:'fixa', pct:20, visao:'itens', busca:'', hist:false };
+const BC = { tipo:'tudo', qual:null, marg:'fixa', pct:20, visao:'itens', busca:'', hist:false, fAbc:'', fCat:'', fForn:'' };
+// filtros por curva ABC, categoria e fornecedor (2026-10-19). Curva do item
+// de estoque = a melhor entre os produtos que o consomem (calculada no
+// gerador); fornecedor vem da contagem semanal. Valor ausente vira "Sem ...",
+// nunca some da lista.
+const BC_SEM_CAT = 'Sem categoria', BC_SEM_FORN = 'Sem fornecedor';
+function bcCatDe(x){ return x.cat || BC_SEM_CAT; }
+function bcFornDe(x){ return (x.forn && x.forn.length) ? x.forn : [BC_SEM_FORN]; }
+function bcSalvaFiltros(){ try { localStorage.setItem('bc_filtros', JSON.stringify({ a:BC.fAbc, c:BC.fCat, f:BC.fForn })); } catch (e) {} }
+function bcOpcoesFiltro(id, valores, atual, rotuloTodos){
+  const sel = document.getElementById(id);
+  const ops = [...new Set(valores)].sort((a,b) => a.localeCompare(b,'pt-BR'));
+  sel.innerHTML = `<option value="">${rotuloTodos}</option>` + ops.map(v => `<option value="${bcEsc(v)}">${bcEsc(v)}</option>`).join('');
+  sel.value = ops.includes(atual) ? atual : '';
+  return sel.value;
+}
 // venda REAL por semana (vendas_semanal.py, pedida à Manu toda semana):
 // coluna em paralelo, nunca entra na média nem no mínimo sugerido
 let BC_SEM = null, BC_SEM_ERRO = null;
@@ -489,8 +518,23 @@ function bcRender(){
         `a maior e a menor semana só olham os meses com relatório de todas as casas (${(B.meses_completos||[]).join(', ') || 'nenhum'}).` : '')
     : 'Sem dado neste período.';
 
-  const lista = (BC.visao === 'itens' ? (B.itens || []) : (B.produtos || []))
-    .filter(x => !BC.busca || (x.nome||'').toLowerCase().includes(BC.busca) || (x.cat||'').toLowerCase().includes(BC.busca));
+  const base = BC.visao === 'itens' ? (B.itens || []) : (B.produtos || []);
+  // listas dos filtros montadas do que existe nesta vista; escolha que não
+  // existe nela (ex.: fornecedor em "Produtos vendidos") é ignorada
+  const temAbc = base.some(x => x.abc);
+  const temForn = BC.visao === 'itens';
+  document.getElementById('bcFAbc').parentElement.style.display = temAbc ? '' : 'none';
+  document.getElementById('bcFFornLab').style.display = temForn ? '' : 'none';
+  BC.fAbc = temAbc ? bcOpcoesFiltro('bcFAbc', base.filter(x => x.abc).map(x => x.abc), BC.fAbc, 'Todas') : '';
+  BC.fCat = bcOpcoesFiltro('bcFCat', base.map(bcCatDe), BC.fCat, 'Todas');
+  BC.fForn = temForn ? bcOpcoesFiltro('bcFForn', base.flatMap(bcFornDe), BC.fForn, 'Todos') : '';
+  document.getElementById('bcFLimpa').hidden = !(BC.fAbc || BC.fCat || BC.fForn);
+  document.querySelectorAll('#bcFiltros select').forEach(e => e.style.borderColor = e.value ? 'var(--acc)' : '');
+  const lista = base
+    .filter(x => !BC.busca || (x.nome||'').toLowerCase().includes(BC.busca) || (x.cat||'').toLowerCase().includes(BC.busca))
+    .filter(x => !BC.fAbc || x.abc === BC.fAbc)
+    .filter(x => !BC.fCat || bcCatDe(x) === BC.fCat)
+    .filter(x => !BC.fForn || bcFornDe(x).includes(BC.fForn));
   const linhas = lista.map(x => ({ x, c: bcLinha(x.mes || {}, per, hist, sem, x, B) })).filter(r => r.c.soma > 0);
 
   // orientação da margem: quanto a maior semana fica acima da média, na
@@ -641,9 +685,14 @@ function initBaseCompra(){
   seg('bcMargTipo', 'm', v => { BC.marg = v; salvaMarg(); bcRender(); });
   seg('bcVisao', 'v', v => { BC.visao = v; bcRender(); });
   if (B && B.grupo === undefined && !(B.produtos && B.produtos.length) && typeof D !== 'undefined')
-    B.produtos = (D.ALL_PRODS || []).map(p => ({ nome: p.nome, cat: p.cat, mes: p.qtde_mes || {} }));
+    B.produtos = (D.ALL_PRODS || []).map(p => ({ nome: p.nome, cat: p.cat, abc: p.abc || null, mes: p.qtde_mes || {} }));
   document.getElementById('bcPerQual').addEventListener('change', e => { BC.qual = e.target.value; bcRender(); });
   document.getElementById('bcMargPct').addEventListener('input', e => { BC.pct = Math.max(0, parseFloat(e.target.value) || 0); salvaMarg(); bcRender(); });
+  try { const f = JSON.parse(localStorage.getItem('bc_filtros') || 'null');
+    if (f) { BC.fAbc = f.a || ''; BC.fCat = f.c || ''; BC.fForn = f.f || ''; } } catch (e) {}
+  [['bcFAbc','fAbc'],['bcFCat','fCat'],['bcFForn','fForn']].forEach(([id,k]) =>
+    document.getElementById(id).addEventListener('change', e => { BC[k] = e.target.value; bcSalvaFiltros(); bcRender(); }));
+  document.getElementById('bcFLimpa').addEventListener('click', () => { BC.fAbc = BC.fCat = BC.fForn = ''; bcSalvaFiltros(); bcRender(); });
   document.getElementById('bcBusca').addEventListener('input', e => { BC.busca = e.target.value.trim().toLowerCase(); bcRender(); });
   preencheQual();
   bcRender();
