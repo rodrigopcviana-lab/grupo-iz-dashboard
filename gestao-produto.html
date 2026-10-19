@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=7392352891da">
+<link rel="stylesheet" href="portal.css?v=21a30150fef5">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -2990,7 +2990,6 @@ a contagem daquela semana.</p>
     try { m = JSON.parse(localStorage.getItem('bc_margem') || 'null'); } catch (e) {}
     return (m && (m.modo === 'pico' || m.modo === 'fixa')) ? m : { modo: 'fixa', pct: 20 };
   }
-  function sugvSenha() { try { return sessionStorage.getItem('vendas_senha') || ''; } catch (e) { return ''; } }
   function sugvMonta(B, S) {
     var marg = sugvMargem(), sem = B.semanas_por_mes || 4.345;
     var meses = B.meses_com_dado || B.meses || [], tres = meses.slice(-3);
@@ -3020,55 +3019,32 @@ a contagem daquela semana.</p>
   }
   function carregaSugVendas() {
     if (!PODE_APROVAR || !casaSel) return;
-    var senha = sugvSenha();
+    // Sem 2ª senha (decisão do Rodrigo, 2026-10-19): /api/vendas-base entrega
+    // só a Base de compra e a semana passada da casa, sem faturamento.
     SUGV = null;
-    if (!senha) { SUGV_EST = 'senha'; sugvBox(); return; }
     SUGV_EST = 'carregando'; sugvBox();
     var casa = casaSel;
-    var h = { 'X-Token': TOKEN, 'X-Senha-Vendas': senha };
-    Promise.all([
-      fetch(WORKER + '/api/vendas?casa=' + encodeURIComponent(casa), { headers: h }),
-      fetch(WORKER + '/api/vendas?casa=semanal', { headers: h })
-    ]).then(function (resps) {
-      if (casa !== casaSel) return;
-      // 401 aqui NÃO é sessão inválida: é a 2ª senha. Nunca chamar
-      // sessaoLimpar() por ela (vira loop de logout, ver CLAUDE.md).
-      if (resps[0].status === 401) {
-        try { sessionStorage.removeItem('vendas_senha'); } catch (e) {}
-        SUGV_EST = 'senha-errada'; sugvBox(); return;
-      }
-      if (resps[0].status === 404) { SUGV_EST = 'sem-base'; sugvBox(); return; }
-      if (!resps[0].ok) { SUGV_EST = 'erro'; sugvBox(); return; }
-      return Promise.all([resps[0].json(), resps[1].ok ? resps[1].json() : null]).then(function (d) {
+    fetch(WORKER + '/api/vendas-base?casa=' + encodeURIComponent(casa), { headers: { 'X-Token': TOKEN } })
+      .then(function (r) {
         if (casa !== casaSel) return;
-        var B = d[0] && d[0].BASE_COMPRA;
-        if (!B || !B.disponivel) { SUGV_EST = 'sem-base'; sugvBox(); return; }
-        SUGV = sugvMonta(B, d[1]);
-        SUGV_EST = 'ok';
-        sugvBox();
-        revisao();
-      });
-    }).catch(function () { SUGV_EST = 'erro'; sugvBox(); });
+        // 401 aqui só deixa a caixa em erro; nunca sessaoLimpar() (loop de logout).
+        if (r.status === 404) { SUGV_EST = 'sem-base'; sugvBox(); return; }
+        if (!r.ok) { SUGV_EST = 'erro'; sugvBox(); return; }
+        return r.json().then(function (d) {
+          if (casa !== casaSel) return;
+          var B = d && d.BASE_COMPRA;
+          if (!B || !B.disponivel) { SUGV_EST = 'sem-base'; sugvBox(); return; }
+          SUGV = sugvMonta(B, d.semanal);
+          SUGV_EST = 'ok';
+          sugvBox();
+          revisao();
+        });
+      }).catch(function () { SUGV_EST = 'erro'; sugvBox(); });
   }
   function sugvBox() {
     var el = document.getElementById('cp-rev-sugv');
     if (!el) return;
     if (!PODE_APROVAR) { el.innerHTML = ''; return; }
-    if (SUGV_EST === 'senha' || SUGV_EST === 'senha-errada') {
-      el.innerHTML = '<div class="cp-sugv-box"><b>Sugestões pelas vendas</b> (média histórica, últimos 3 meses e semana passada): ' +
-        'digite a senha de vendas para ver ao lado de cada item.' +
-        (SUGV_EST === 'senha-errada' ? ' <span style="color:var(--verm)">Senha de vendas incorreta.</span>' : '') +
-        '<form id="cp-sugv-form" class="cp-sugv-form"><input type="password" id="cp-sugv-senha" autocomplete="off" placeholder="Senha de vendas">' +
-        '<button class="cp-btn acc" type="submit">Mostrar</button></form></div>';
-      document.getElementById('cp-sugv-form').onsubmit = function (ev) {
-        ev.preventDefault();
-        var v = document.getElementById('cp-sugv-senha').value;
-        if (!v) return;
-        try { sessionStorage.setItem('vendas_senha', v); } catch (e) {}
-        carregaSugVendas();
-      };
-      return;
-    }
     var txt = {
       carregando: 'Carregando as sugestões pelas vendas…',
       'sem-base': 'Esta casa não tem Base de compra em Vendas: só a sugestão do Notion.',
@@ -7693,7 +7669,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '7392352891da';
+  var BUILD = '21a30150fef5';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
