@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=68853bfd58b3">
+<link rel="stylesheet" href="portal.css?v=062dfed32a1a">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1004,14 +1004,46 @@ window.msgAcessoNegado = function (nomePagina) {
   table.cd-tabela .cd-del { background:none; border:none; cursor:pointer; color:var(--text-3); display:flex; padding:2px; }
   table.cd-tabela .cd-del:hover { color:#e08585; }
 
+  /* Vista Preços: a carta de hoje (preco_antes, só leitura) ao lado do campo
+     do preço novo (preco). Mesma tabela da vista Tabela, com colunas de
+     número alinhadas à direita e o campo com cara de campo — aqui digitar é
+     a tarefa inteira, não um detalhe da linha. */
+  table.cd-tabela.cd-precos td.cd-num, table.cd-tabela.cd-precos th.cd-num { text-align:right; white-space:nowrap; }
+  /* Largura fixa: cada seção é uma tabela própria, e sem isto a coluna Hoje
+     de Clássicos não alinha com a de Autorais logo abaixo. */
+  table.cd-tabela.cd-precos { table-layout:fixed; }
+  table.cd-tabela.cd-precos .cd-col-item { width:36%; }
+  table.cd-tabela.cd-precos .cd-col-atual { width:13%; }
+  table.cd-tabela.cd-precos .cd-col-novo { width:17%; }
+  table.cd-tabela.cd-precos .cd-col-var { width:13%; }
+  table.cd-tabela.cd-precos .cd-col-cmv { width:21%; }
+  table.cd-tabela.cd-precos .cd-pnovo { width:88px; max-width:100%; padding:5px 7px; border-radius:6px;
+      border:1px solid var(--border); background:var(--card); color:var(--text); font-family:inherit;
+      font-size:inherit; text-align:right; }
+  table.cd-tabela.cd-precos .cd-pnovo:focus { outline:none; border-color:var(--acc); }
+  table.cd-tabela.cd-precos .cd-pnovo.mudou { border-color:var(--acc); }
+  table.cd-tabela.cd-precos .cd-pnovo[readonly] { border-color:transparent; background:none; }
+  .cd-var.sobe { color:var(--verde); }
+  .cd-var.desce { color:var(--amarelo); }
+  .cd-var.neutro, .cd-cmv.neutro { color:var(--text-3); }
+  .cd-cmv.piora { color:var(--amarelo); }
+  .cd-precos-resumo { font-size:12px; color:var(--text-3); margin:2px 0 10px; }
+
   /* Celular: SEMPRE a tabela fina, e ela cabe em 375px sem rolar pro lado —
      duas colunas somem (mesmo recurso do Banco de Horas). Card com respiro
      dá 1 por linha no celular, que é justamente o rolar item a item que se
      quis resolver; por isso o seletor some nesta largura, em vez de oferecer
      uma escolha que a tela não honra (quem decide é vistaEfetiva()). */
   @media (max-width: 640px) {
-    .cd-vista-sel { display:none; }
+    .cd-vista-sel button[data-v="cards"] { display:none; }
+    .cd-vista-sel button[data-v="tabela"] { border-left:none; }
     table.cd-tabela { table-layout:fixed; font-size:12px; }
+    table.cd-tabela.cd-precos .cd-col-cmv { display:none; }
+    table.cd-tabela.cd-precos .cd-col-item { width:38%; }
+    table.cd-tabela.cd-precos .cd-col-atual { width:19%; }
+    table.cd-tabela.cd-precos .cd-col-novo { width:24%; }
+    table.cd-tabela.cd-precos .cd-col-var { width:19%; }
+    table.cd-tabela.cd-precos .cd-pnovo { width:100%; padding:5px 4px; }
     table.cd-tabela th, table.cd-tabela td { padding:5px 4px; }
     table.cd-tabela .cd-col-desc, table.cd-tabela .cd-col-nota { display:none; }
     table.cd-tabela .cd-col-item { width:46%; }
@@ -1119,6 +1151,7 @@ window.msgAcessoNegado = function (nomePagina) {
         <div class="cd-vista-sel" id="cd-vista-sel">
           <button type="button" data-v="cards"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg> Cards</button>
           <button type="button" data-v="tabela"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M9 9.5v10"/></svg> Tabela</button>
+          <button type="button" data-v="precos"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg> Preços</button>
         </div>
       </div>
       <div class="cd-filtros-linha cd-linha2">
@@ -1851,7 +1884,10 @@ function nomeArquivoSeguro(base) {
   // é multi-seleção e mora só na memória da tela: ele é o recorte "do que eu
   // quero olhar AGORA", não um estado do cardápio.
   var VISTA = 'cards';
-  try { if (localStorage.getItem('cd_vista') === 'tabela') VISTA = 'tabela'; } catch (e) {}
+  try {
+    var vistaSalva = localStorage.getItem('cd_vista');
+    if (vistaSalva === 'tabela' || vistaSalva === 'precos') VISTA = vistaSalva;
+  } catch (e) {}
   var SECOES_OFF = {};
   var vistaAplicada = null;
   // Recortes "do que eu quero olhar agora" — memória de tela, nunca estado do
@@ -1884,10 +1920,11 @@ function nomeArquivoSeguro(base) {
   }
 
   function vistaEfetiva() {
-    // No celular é SEMPRE a tabela fina: card com respiro cabe um por linha e
-    // devolve exatamente o rolar item a item que se quis resolver. O seletor
-    // some nessa largura (CSS) em vez de oferecer uma escolha não honrada.
-    return (window.innerWidth <= 640) ? 'tabela' : VISTA;
+    // No celular a vista Cards vira a tabela fina: card com respiro cabe um
+    // por linha e devolve exatamente o rolar item a item que se quis resolver.
+    // Só o botão Cards some nessa largura (CSS); Preços continua valendo,
+    // porque ela já é uma tabela fina.
+    return (window.innerWidth <= 640 && VISTA === 'cards') ? 'tabela' : VISTA;
   }
 
   window.addEventListener('resize', function () {
@@ -2006,10 +2043,11 @@ function nomeArquivoSeguro(base) {
   function desenhaVistaSel() {
     var sel = document.getElementById('cd-vista-sel');
     if (!sel) return;
+    var efetiva = vistaEfetiva();
     Array.prototype.forEach.call(sel.querySelectorAll('button'), function (b) {
       var meu = b.getAttribute('data-v');
-      b.className = (meu === VISTA) ? 'on' : '';
-      b.setAttribute('aria-pressed', meu === VISTA ? 'true' : 'false');
+      b.className = (meu === efetiva) ? 'on' : '';
+      b.setAttribute('aria-pressed', meu === efetiva ? 'true' : 'false');
       b.onclick = function () {
         VISTA = meu;
         try { localStorage.setItem('cd_vista', meu); } catch (e) {}
@@ -2050,6 +2088,8 @@ function nomeArquivoSeguro(base) {
       return;
     }
 
+    if (vista === 'precos') alvo.appendChild(resumoPrecos());
+
     // Seção que existe mas cujos itens foram todos filtrados não vira caixa
     // vazia — some, e o contador embaixo diz quantos o recorte escondeu.
     var mostrados = 0;
@@ -2078,6 +2118,8 @@ function nomeArquivoSeguro(base) {
       box.appendChild(t);
       if (vista === 'tabela') {
         box.appendChild(tabelaSecao(itens, sec));
+      } else if (vista === 'precos') {
+        box.appendChild(tabelaPrecos(itens));
       } else {
         var grade = document.createElement('div');
         grade.className = 'cd-secao-grade';
@@ -2150,8 +2192,14 @@ function nomeArquivoSeguro(base) {
     preco.value = soNumero(it.preco);
     preco.placeholder = 'sem preço';
     preco.readOnly = !PODE;
+    // Mesma leitura da vista Preços (lePreco): "46.5" é 46,50, não 465.
     preco.onchange = function () {
-      var v = preco.value.trim().replace(/\./g, '').replace(',', '.');
+      var v = lePreco(preco.value);
+      if (typeof v === 'number' && isNaN(v)) {
+        aviso('Preço inválido em "' + it.nome + '": use só números, como 46 ou 46,50.', true);
+        preco.value = soNumero(it.preco);
+        return;
+      }
       salvaItem(it, { preco: v === '' ? null : v });
     };
     return preco;
@@ -2232,7 +2280,10 @@ function nomeArquivoSeguro(base) {
   // naquela página); item sem par não ganha link NENHUM — é o que faz o
   // cabeçalho poder declarar quantos ficaram de fora (trava 2). Preço
   // diferente do impresso é AVISO, nunca correção automática (trava 3).
-  function refImpresso(it) {
+  // `base` é o preço comparado com o impresso: o do projeto por padrão; a
+  // vista Preços passa o de HOJE, senão digitar o preço novo acenderia um
+  // "impresso está" que só repete a mudança que a pessoa acabou de fazer.
+  function refImpresso(it, base) {
     var par = parDoItem(it);
     if (!par) return null;
     var ref = document.createElement('div');
@@ -2250,7 +2301,7 @@ function nomeArquivoSeguro(base) {
     b.title = 'Ver esta página do cardápio atual impresso';
     b.onclick = function () { cartaAbre(par.pagina); };
     ref.appendChild(b);
-    var pi = par.preco, pp = it.preco;
+    var pi = par.preco, pp = (base === undefined) ? it.preco : base;
     if (pi !== null && pi !== undefined && pp !== null && pp !== undefined
         && Math.abs(Number(pi) - Number(pp)) >= 0.01) {
       var d = document.createElement('span');
@@ -2429,6 +2480,207 @@ function nomeArquivoSeguro(base) {
         tdX.appendChild(botaoApagar(it));
         tr.appendChild(tdX);
       }
+      corpo.appendChild(tr);
+    });
+    tb.appendChild(corpo);
+    wrap.appendChild(tb);
+    return wrap;
+  }
+
+  // ---------- vista Preços (2026-10-19, pedido do Rodrigo) ----------
+  // "Ver o cardápio atual e do lado um campo para digitar o novo preço."
+  // Hoje = preco_antes (foto do cardápio digital no dia em que o projeto foi
+  // criado, só leitura); o campo grava em preco pelo MESMO salvaItem das
+  // outras vistas. Campo vazio = mantém o preço de hoje (grava preco_antes de
+  // volta), nunca zero: preço não é fabricado (trava 3).
+  function numOuNull(v) {
+    if (v === null || v === undefined || v === '') return null;
+    var n = Number(v);
+    return isFinite(n) ? n : null;
+  }
+  // Aceita "46", "46,5", "46,50", "46.5", "1.250,00" e o "R$" na frente.
+  // Devolve '' pra campo vazio e NaN pra qualquer outra letra — "x9" não vira
+  // 9 em silêncio.
+  function lePreco(s) {
+    s = String(s == null ? '' : s).replace('R$', '').split(' ').join('');
+    if (!s) return '';
+    if (/[^0-9.,]/.test(s)) return NaN;
+    if (s.indexOf(',') >= 0) s = s.split('.').join('').replace(',', '.');
+    else if (s.split('.').length > 2 || /[.][0-9]{3}$/.test(s)) s = s.split('.').join('');
+    var n = Number(s);
+    return (isFinite(n) && n >= 0) ? Math.round(n * 100) / 100 : NaN;
+  }
+  function fmtPct(v, comSinal) {
+    return (comSinal && v > 0 ? '+' : '')
+      + v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+  }
+  function precoMudou(it) {
+    var antes = numOuNull(it.preco_antes), novo = numOuNull(it.preco);
+    return novo !== null && (antes === null || Math.abs(novo - antes) >= 0.005);
+  }
+  // Custo da dose reconstruído do que o Cérebro congelou na semente:
+  // margem = preço × (1 − cmv), logo custo = margem × cmv / (1 − cmv). Não
+  // depende de qual preço o Cérebro usou. Sem CMV ou sem margem: null, e a
+  // tela mostra "—" (dinheiro nunca é fabricado).
+  function custoEstimado(it) {
+    var cmv = numOuNull(it.cmv_pct), m = numOuNull(it.margem_un);
+    if (it.sem_cmv || cmv === null || m === null || cmv <= 0 || cmv >= 100 || m <= 0) return null;
+    return m * cmv / (100 - cmv);
+  }
+
+  function pintaPreco(it, inp, tdVar, tdCmv) {
+    var antes = numOuNull(it.preco_antes), novo = numOuNull(it.preco);
+    var mudou = precoMudou(it);
+    inp.classList.toggle('mudou', mudou);
+
+    tdVar.className = 'cd-num cd-col-var cd-var';
+    if (antes === null) {
+      tdVar.textContent = novo !== null ? 'novo' : '—';
+      tdVar.classList.add('neutro');
+    } else if (!mudou || antes === 0) {
+      tdVar.textContent = '—';
+      tdVar.classList.add('neutro');
+    } else {
+      var pct = (novo / antes - 1) * 100;
+      tdVar.textContent = fmtPct(pct, true);
+      tdVar.classList.add(pct > 0 ? 'sobe' : 'desce');
+    }
+
+    tdCmv.className = 'cd-num cd-col-cmv cd-cmv';
+    tdCmv.title = '';
+    var custo = custoEstimado(it), hoje = numOuNull(it.cmv_pct);
+    if (custo === null) {
+      tdCmv.textContent = it.sem_cmv ? 'sem CMV' : '—';
+      tdCmv.classList.add('neutro');
+      return;
+    }
+    if (!mudou) {
+      tdCmv.textContent = hoje !== null ? fmtPct(hoje) : '—';
+      return;
+    }
+    var cmvNovo = custo / novo * 100;
+    tdCmv.textContent = (hoje !== null ? fmtPct(hoje) + ' → ' : '') + fmtPct(cmvNovo);
+    tdCmv.title = 'CMV estimado no preço novo: custo da dose (do Cérebro) dividido pelo preço novo.';
+    if (hoje !== null && cmvNovo > hoje + 0.05) tdCmv.classList.add('piora');
+  }
+
+  function textoResumoPrecos() {
+    var naCarta = ITENS.filter(function (i) { return i.decisao !== 'sai'; });
+    var alterados = naCarta.filter(function (i) {
+      return numOuNull(i.preco_antes) !== null && precoMudou(i);
+    }).length;
+    var semHoje = naCarta.filter(function (i) { return numOuNull(i.preco_antes) === null; }).length;
+    var partes = [alterados + (alterados === 1 ? ' preço alterado' : ' preços alterados')];
+    if (semHoje) partes.push(semHoje + (semHoje === 1 ? ' item sem preço' : ' itens sem preço') + ' na carta de hoje');
+    var t = partes.join(' · ') + '. "Hoje" é o cardápio digital no dia em que este projeto foi criado.';
+    if (PODE) t += ' Campo vazio mantém o preço de hoje; Enter pula para o próximo.';
+    return t;
+  }
+  function resumoPrecos() {
+    var p = document.createElement('p');
+    p.className = 'cd-precos-resumo';
+    p.id = 'cd-precos-resumo';
+    p.textContent = textoResumoPrecos();
+    return p;
+  }
+
+  function campoPrecoNovo(it, tdVar, tdCmv) {
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.inputMode = 'decimal';
+    inp.autocomplete = 'off';
+    inp.className = 'cd-pnovo';
+    inp.setAttribute('aria-label', 'Preço novo de ' + it.nome);
+    var antes = numOuNull(it.preco_antes);
+    inp.value = precoMudou(it) ? soNumero(it.preco) : '';
+    // Só leitura (chefe): sem placeholder, senão o preço de hoje aparece duas
+    // vezes na linha e parece proposta.
+    inp.placeholder = !PODE ? '' : (antes !== null ? soNumero(antes) : 'digite');
+    inp.readOnly = !PODE;
+    inp.onchange = function () {
+      var v = lePreco(inp.value);
+      if (typeof v === 'number' && isNaN(v)) {
+        aviso('Preço inválido em "' + it.nome + '": use só números, como 46 ou 46,50.', true);
+        inp.value = precoMudou(it) ? soNumero(it.preco) : '';
+        return;
+      }
+      var valor = (v === '') ? antes : v;
+      if (valor === numOuNull(it.preco)) {
+        inp.value = precoMudou(it) ? soNumero(it.preco) : '';
+        return;
+      }
+      salvaItem(it, { preco: valor }, function () {
+        inp.value = precoMudou(it) ? soNumero(it.preco) : '';
+        pintaPreco(it, inp, tdVar, tdCmv);
+        var r = document.getElementById('cd-precos-resumo');
+        if (r) r.textContent = textoResumoPrecos();
+      });
+    };
+    // Enter pula pro próximo campo: digitar a carta inteira sem mouse. O
+    // change dispara no blur, então gravar continua sendo o onchange.
+    inp.onkeydown = function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      var todos = Array.prototype.slice.call(document.querySelectorAll('#cd-itens .cd-pnovo'));
+      var prox = todos[todos.indexOf(inp) + 1];
+      if (prox) { prox.focus(); prox.select(); } else inp.blur();
+    };
+    return inp;
+  }
+
+  function tabelaPrecos(itens) {
+    var wrap = document.createElement('div');
+    wrap.className = 'cd-tabela-wrap';
+    var tb = document.createElement('table');
+    tb.className = 'cd-tabela cd-precos';
+    var thead = document.createElement('thead');
+    var trh = document.createElement('tr');
+    [['Item', 'cd-col-item'], ['Hoje', 'cd-col-atual cd-num'], ['Preço novo', 'cd-col-novo'],
+     ['Variação', 'cd-col-var cd-num'], ['CMV', 'cd-col-cmv cd-num']].forEach(function (c) {
+      var th = document.createElement('th');
+      th.className = c[1]; th.textContent = c[0];
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh); tb.appendChild(thead);
+
+    var corpo = document.createElement('tbody');
+    itens.forEach(function (it) {
+      var tr = document.createElement('tr');
+      tr.className = it.decisao === 'sai' ? 'sai' : '';
+      tr.dataset.id = it.id;
+
+      var tdN = document.createElement('td');
+      tdN.className = 'cd-col-item';
+      var nome = document.createElement('span');
+      nome.className = 'cd-nome-txt';
+      nome.textContent = it.nome;
+      tdN.appendChild(nome);
+      if (it.decisao === 'entra') {
+        var tag = document.createElement('span');
+        tag.className = 'cd-novo'; tag.textContent = 'novo';
+        tag.style.marginLeft = '6px';
+        tdN.appendChild(tag);
+      }
+      var ref = refImpresso(it, it.preco_antes);
+      if (ref) tdN.appendChild(ref);
+      tr.appendChild(tdN);
+
+      var tdA = document.createElement('td');
+      tdA.className = 'cd-col-atual cd-num';
+      var antes = numOuNull(it.preco_antes);
+      tdA.textContent = antes !== null ? soNumero(antes) : '—';
+      tr.appendChild(tdA);
+
+      var tdVar = document.createElement('td');
+      var tdCmv = document.createElement('td');
+      var tdNovo = document.createElement('td');
+      tdNovo.className = 'cd-col-novo';
+      var inp = campoPrecoNovo(it, tdVar, tdCmv);
+      tdNovo.appendChild(inp);
+      tr.appendChild(tdNovo);
+      tr.appendChild(tdVar);
+      tr.appendChild(tdCmv);
+      pintaPreco(it, inp, tdVar, tdCmv);
       corpo.appendChild(tr);
     });
     tb.appendChild(corpo);
@@ -4128,7 +4380,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '68853bfd58b3';
+  var BUILD = '062dfed32a1a';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
