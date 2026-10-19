@@ -631,12 +631,19 @@ function initBaseCompra(){
     BC.qual = ops.length ? ops[0].v : null;
   };
   seg('bcPerTipo', 't', v => { BC.tipo = v; preencheQual(); bcRender(); });
-  seg('bcMargTipo', 'm', v => { BC.marg = v; bcRender(); });
+  // a margem escolhida fica neste aparelho e vale também para as sugestões
+  // da aprovação no Pedido de Compras (compras.html lê bc_margem)
+  const salvaMarg = () => { try { localStorage.setItem('bc_margem', JSON.stringify({ modo: BC.marg, pct: BC.pct })); } catch (e) {} };
+  try { const m = JSON.parse(localStorage.getItem('bc_margem') || 'null');
+    if (m && (m.modo === 'fixa' || m.modo === 'pico')) { BC.marg = m.modo; BC.pct = Number(m.pct) || 0;
+      document.getElementById('bcMargPct').value = BC.pct;
+      document.querySelectorAll('#bcMargTipo button').forEach(b => b.classList.toggle('on', b.dataset.m === BC.marg)); } } catch (e) {}
+  seg('bcMargTipo', 'm', v => { BC.marg = v; salvaMarg(); bcRender(); });
   seg('bcVisao', 'v', v => { BC.visao = v; bcRender(); });
   if (B && B.grupo === undefined && !(B.produtos && B.produtos.length) && typeof D !== 'undefined')
     B.produtos = (D.ALL_PRODS || []).map(p => ({ nome: p.nome, cat: p.cat, mes: p.qtde_mes || {} }));
   document.getElementById('bcPerQual').addEventListener('change', e => { BC.qual = e.target.value; bcRender(); });
-  document.getElementById('bcMargPct').addEventListener('input', e => { BC.pct = Math.max(0, parseFloat(e.target.value) || 0); bcRender(); });
+  document.getElementById('bcMargPct').addEventListener('input', e => { BC.pct = Math.max(0, parseFloat(e.target.value) || 0); salvaMarg(); bcRender(); });
   document.getElementById('bcBusca').addEventListener('input', e => { BC.busca = e.target.value.trim().toLowerCase(); bcRender(); });
   preencheQual();
   bcRender();

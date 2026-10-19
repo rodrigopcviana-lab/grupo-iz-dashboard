@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=26c6a740a1c2">
+<link rel="stylesheet" href="portal.css?v=7a1be8b8a50b">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -2046,6 +2046,18 @@ a contagem daquela semana.</p>
   table.cp-rev-tab td.sug { color:var(--azul); font-family:var(--serif); font-size:14px; }
   table.cp-rev-tab td.venda { color:var(--roxo); }
   table.cp-rev-tab td.pd1 { color:var(--text-2); }
+  /* sugestões pelas vendas (Base de compra), só para quem aprova */
+  table.cp-rev-tab th.vs { color:var(--verde); }
+  table.cp-rev-tab td.vs { background:color-mix(in srgb, var(--verde) 6%, transparent); }
+  .cp-sugv-q { background:none; border:1px solid color-mix(in srgb, var(--verde) 45%, transparent); color:var(--verde);
+    border-radius:7px; padding:2px 7px; min-width:34px; font:inherit; font-family:var(--serif); font-size:13.5px; cursor:pointer; }
+  .cp-sugv-q:disabled { cursor:default; opacity:.8; }
+  .cp-sugv-box { font-size:12px; color:var(--text-2); border:1px solid color-mix(in srgb, var(--verde) 35%, transparent);
+    border-radius:10px; padding:9px 12px; margin:0 0 12px; }
+  .cp-sugv-box a { color:var(--acc); }
+  .cp-sugv-form { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .cp-sugv-form input { flex:1; min-width:140px; background:var(--card2); border:1px solid var(--border); border-radius:8px;
+    padding:7px 10px; color:var(--text); font-size:13px; }
   table.cp-rev-tab td.rs { color:var(--text-3); font-size:11.5px; white-space:nowrap; }
   table.cp-rev-tab td.rs .sem { color:var(--amarelo); }
   table.cp-rev-tab tr.dif td.ap { background:color-mix(in srgb, var(--amarelo) 12%, transparent); }
@@ -2149,6 +2161,7 @@ a contagem daquela semana.</p>
   <p class="sub" style="margin:-4px 0 10px">Mude a quantidade só do que precisa ajustar —
   <b>0 tira o item da compra</b>. Ao clicar em <b>Aprovar ajustes</b>, quem ficou em branco
   é aprovado com a quantidade do <b>Pedido 1</b>, e é essa lista que vai para o everloja.</p>
+  <div id="cp-rev-sugv"></div>
   <div id="cp-rev"></div>
   <h2 style="font-size:15px">Sobras — candidatas a transferência</h2>
   <div class="cp-sobra-bloco">
@@ -2307,7 +2320,7 @@ a contagem daquela semana.</p>
     if (elEscolha) elEscolha.style.display = 'none';
     elTela.innerHTML = '<p class="sub">Carregando…</p>';
     document.getElementById('cp-rev-cob').textContent = 'Carregando…';
-    falhas = []; reintento = 0;
+    falhas = []; reintento = 0; SUGV = null;
     try { fila = JSON.parse(localStorage.getItem('cp_fila_' + casaSel) || '[]'); } catch (e) { fila = []; }
     api('GET', '/api/compras?casa=' + encodeURIComponent(casaSel)).then(function (resp) {
       if (resp.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); return; }
@@ -2316,7 +2329,7 @@ a contagem daquela semana.</p>
         DADOS = d;
         carregaEmb();
         PRODUTOS = d.produtos.map(prep);
-        construir(); filtra(); kpis(); renderRodape(); statusRodape(); revisao();
+        construir(); filtra(); kpis(); renderRodape(); statusRodape(); revisao(); carregaSugVendas();
       });
     }).catch(function () { erroCarregar(null); });
   }
@@ -2931,6 +2944,130 @@ a contagem daquela semana.</p>
   // WhatsApp saíam sempre do Pedido 1 — se a coord aprovou outra quantidade,
   // o fornecedor recebia a NÃO aprovada (divergência silenciosa).
   function qEff(p) { return (p.pd_aprovado != null) ? p.pd_aprovado : p.pedido; }
+
+  // --- Sugestões pelas vendas (2026-10-19) ----------------------------------
+  // Pedido do Rodrigo: na aprovação, ver ao lado da sugestão do Notion as três
+  // da aba "Base de compra" de Vendas (média histórica, últimos 3 meses e
+  // semana passada). O dado é o MESMO de Vendas, pela MESMA rota e as MESMAS
+  // duas travas (sessão coord + 2ª senha de vendas): nada de venda sai daqui
+  // para quem não abre Vendas. A conta é a da Base de compra
+  // (dashboards/_vista_base_compra.html), com a margem que o Rodrigo deixou
+  // escolhida lá (localStorage bc_margem); aqui ela vira QUANTIDADE A COMPRAR:
+  // mínimo sugerido − contado.
+  var SUGV = null, SUGV_EST = '';
+  function sugvNorm(s) {
+    return String(s || '').normalize('NFD').split('').filter(function (c) { return c.charCodeAt(0) < 128; })
+      .join('').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function sugvMargem() {
+    var m = null;
+    try { m = JSON.parse(localStorage.getItem('bc_margem') || 'null'); } catch (e) {}
+    return (m && (m.modo === 'pico' || m.modo === 'fixa')) ? m : { modo: 'fixa', pct: 20 };
+  }
+  function sugvSenha() { try { return sessionStorage.getItem('vendas_senha') || ''; } catch (e) { return ''; } }
+  function sugvMonta(B, S) {
+    var marg = sugvMargem(), sem = B.semanas_por_mes || 4.345;
+    var meses = B.meses_com_dado || B.meses || [], tres = meses.slice(-3);
+    var semInfo = null, semItens = {};
+    var sc = S && S.casas ? S.casas[casaSel] : null;
+    if (sc) {
+      var ws = (sc.semanas || []).filter(function (w) { return w.tem !== false; });
+      semInfo = ws.length ? ws[ws.length - 1] : null;
+      Object.keys(sc.itens || {}).forEach(function (k) { semItens[sugvNorm(k)] = sc.itens[k]; });
+    }
+    var media = function (serie, ms) {
+      if (!ms.length) return null;
+      var s = 0; ms.forEach(function (m) { s += serie[m] || 0; });
+      return s / (ms.length * sem);
+    };
+    var porNome = {};
+    (B.itens || []).forEach(function (it) {
+      var serie = it.mes || {}, mh = media(serie, meses), mt = media(serie, tres), pico = 0;
+      meses.forEach(function (m) { if ((serie[m] || 0) > pico) pico = serie[m]; });
+      pico = pico / sem;
+      var m = marg.modo === 'pico' ? Math.max(0, mh && pico ? pico / mh - 1 : 0) : (marg.pct || 0) / 100;
+      var vs = semInfo ? ((semItens[sugvNorm(it.nome)] || {})[semInfo.ini] || null) : null;
+      var minimo = function (v) { return v ? Math.ceil(v * (1 + m) - 1e-9) : null; };
+      porNome[sugvNorm(it.nome)] = { h: minimo(mh), t: minimo(mt), s: minimo(vs) };
+    });
+    return { porNome: porNome, semInfo: semInfo, tres: tres, marg: marg };
+  }
+  function carregaSugVendas() {
+    if (!PODE_APROVAR || !casaSel) return;
+    var senha = sugvSenha();
+    SUGV = null;
+    if (!senha) { SUGV_EST = 'senha'; sugvBox(); return; }
+    SUGV_EST = 'carregando'; sugvBox();
+    var casa = casaSel;
+    var h = { 'X-Token': TOKEN, 'X-Senha-Vendas': senha };
+    Promise.all([
+      fetch(WORKER + '/api/vendas?casa=' + encodeURIComponent(casa), { headers: h }),
+      fetch(WORKER + '/api/vendas?casa=semanal', { headers: h })
+    ]).then(function (resps) {
+      if (casa !== casaSel) return;
+      // 401 aqui NÃO é sessão inválida: é a 2ª senha. Nunca chamar
+      // sessaoLimpar() por ela (vira loop de logout, ver CLAUDE.md).
+      if (resps[0].status === 401) {
+        try { sessionStorage.removeItem('vendas_senha'); } catch (e) {}
+        SUGV_EST = 'senha-errada'; sugvBox(); return;
+      }
+      if (resps[0].status === 404) { SUGV_EST = 'sem-base'; sugvBox(); return; }
+      if (!resps[0].ok) { SUGV_EST = 'erro'; sugvBox(); return; }
+      return Promise.all([resps[0].json(), resps[1].ok ? resps[1].json() : null]).then(function (d) {
+        if (casa !== casaSel) return;
+        var B = d[0] && d[0].BASE_COMPRA;
+        if (!B || !B.disponivel) { SUGV_EST = 'sem-base'; sugvBox(); return; }
+        SUGV = sugvMonta(B, d[1]);
+        SUGV_EST = 'ok';
+        sugvBox();
+        revisao();
+      });
+    }).catch(function () { SUGV_EST = 'erro'; sugvBox(); });
+  }
+  function sugvBox() {
+    var el = document.getElementById('cp-rev-sugv');
+    if (!el) return;
+    if (!PODE_APROVAR) { el.innerHTML = ''; return; }
+    if (SUGV_EST === 'senha' || SUGV_EST === 'senha-errada') {
+      el.innerHTML = '<div class="cp-sugv-box"><b>Sugestões pelas vendas</b> (média histórica, últimos 3 meses e semana passada): ' +
+        'digite a senha de vendas para ver ao lado de cada item.' +
+        (SUGV_EST === 'senha-errada' ? ' <span style="color:var(--verm)">Senha de vendas incorreta.</span>' : '') +
+        '<form id="cp-sugv-form" class="cp-sugv-form"><input type="password" id="cp-sugv-senha" autocomplete="off" placeholder="Senha de vendas">' +
+        '<button class="cp-btn acc" type="submit">Mostrar</button></form></div>';
+      document.getElementById('cp-sugv-form').onsubmit = function (ev) {
+        ev.preventDefault();
+        var v = document.getElementById('cp-sugv-senha').value;
+        if (!v) return;
+        try { sessionStorage.setItem('vendas_senha', v); } catch (e) {}
+        carregaSugVendas();
+      };
+      return;
+    }
+    var txt = {
+      carregando: 'Carregando as sugestões pelas vendas…',
+      'sem-base': 'Esta casa não tem Base de compra em Vendas: só a sugestão do Notion.',
+      erro: 'Não deu para carregar as sugestões pelas vendas agora.'
+    }[SUGV_EST];
+    if (txt) { el.innerHTML = '<div class="cp-sugv-box">' + txt + '</div>'; return; }
+    var mg = SUGV.marg.modo === 'pico' ? 'margem que cobre a maior semana de cada item' : 'margem de ' + SUGV.marg.pct + '%';
+    var w = SUGV.semInfo;
+    el.innerHTML = '<div class="cp-sugv-box"><b>Hist. · 3 meses · Sem. passada</b> = quanto comprar pelas três sugestões da ' +
+      '<a href="vendas/' + portalSlug(casaSel) + '.html" target="_top">Base de compra</a>: mínimo sugerido (' + mg + ') menos o contado. ' +
+      'Últimos 3 meses: ' + esc(SUGV.tres.join(', ')) + '. ' +
+      (w ? 'Semana passada: ' + w.ini.split('-').reverse().slice(0, 2).join('/') + ' a ' + w.fim.split('-').reverse().slice(0, 2).join('/') +
+        (w.estimada ? ' (estimada)' : w.parcial ? ' (parcial)' : '') + '. ' : 'Sem semana passada desta casa. ') +
+      'Toque num número para usá-lo como quantidade ajustada.</div>';
+  }
+  function sugvCel(p, idx, chave) {
+    if (!SUGV) return '';
+    var s = SUGV.porNome[sugvNorm(p.nome)];
+    var minimo = s ? s[chave] : null;
+    if (minimo == null) return '<td class="n vs"><span class="ctx">—</span></td>';
+    var q = Math.max(0, Math.ceil(minimo - (p.contado || 0) - 1e-9));
+    return '<td class="n vs"><button type="button" class="cp-sugv-q" data-i="' + idx + '" data-q="' + q + '"' +
+      (PODE_APROVAR && DADOS.campo_pd_aprovado ? '' : ' disabled') +
+      ' title="Mínimo sugerido ' + minimo + ' menos o contado">' + fmt(q) + '</button></td>';
+  }
   function revisao() {
     if (!DADOS) return;
     document.getElementById('cp-rev-titulo').textContent = 'Revisão do pedido — ' + nomeCasa(casaSel) + ' · ' + (DADOS.semana.titulo || '');
@@ -2993,7 +3130,10 @@ a contagem daquela semana.</p>
       // navegador, um item por vez.
       h += '<div class="cp-rev-tab-wrap"><table class="cp-rev-tab"><thead><tr>' +
         '<th>Produto</th><th class="n">Cont.</th><th class="n op">Mín</th>' +
-        '<th class="n op">Venda ~</th><th class="n">Sug.</th><th class="n">Pd 1</th>' +
+        '<th class="n op">Venda ~</th><th class="n">Sug.</th>' +
+        (SUGV ? '<th class="n vs" title="Pela média histórica de vendas">Hist.</th><th class="n vs" title="Pelos últimos 3 meses de vendas">3 meses</th>' +
+          '<th class="n vs" title="Pela venda da semana passada">Sem. pass.</th>' : '') +
+        '<th class="n">Pd 1</th>' +
         '<th class="n ap">Pd ajustado</th><th class="n op">R$</th></tr></thead><tbody>';
       porForn[f].forEach(function (p) {
         var idx = PRODUTOS.indexOf(p);
@@ -3016,6 +3156,7 @@ a contagem daquela semana.</p>
           '<td class="n op">' + (p.min != null ? fmt(p.min) : '—') + '</td>' +
           '<td class="n op venda">' + (p.venda != null ? fmt(p.venda) : '—') + '</td>' +
           '<td class="n sug">' + (p.sug != null ? fmt(p.sug) : '—') + '</td>' +
+          sugvCel(p, idx, 'h') + sugvCel(p, idx, 't') + sugvCel(p, idx, 's') +
           '<td class="n pd1">' + fmt(p.pedido) + '</td>' +
           '<td class="n ap">' + aprCel + '</td>' +
           '<td class="n op rs" id="cp-rs-' + idx + '">' +
@@ -3099,6 +3240,14 @@ a contagem daquela semana.</p>
       montaTexto();
     }
 
+    document.querySelectorAll('.cp-sugv-q').forEach(function (b) {
+      b.onclick = function () {
+        var inp = document.querySelector('.cp-apr-inp[data-i="' + b.dataset.i + '"]');
+        if (!inp) return;
+        inp.value = b.dataset.q;
+        inp.dispatchEvent(new Event('change'));
+      };
+    });
     document.querySelectorAll('.cp-apr-inp').forEach(function (inp) {
       // 'change' (não 'input'): dispara ao sair do campo, então não grava um
       // valor pela metade enquanto a pessoa ainda digita.
@@ -6258,7 +6407,7 @@ a contagem daquela semana.</p>
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 18/10/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 19/10/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -7514,7 +7663,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '26c6a740a1c2';
+  var BUILD = '7a1be8b8a50b';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
