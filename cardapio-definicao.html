@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=7b86c38a035a">
+<link rel="stylesheet" href="portal.css?v=721c3b9605be">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1019,11 +1019,29 @@ window.msgAcessoNegado = function (nomePagina) {
   /* Largura fixa: cada seção é uma tabela própria, e sem isto a coluna Hoje
      de Clássicos não alinha com a de Autorais logo abaixo. */
   table.cd-tabela.cd-precos { table-layout:fixed; }
-  table.cd-tabela.cd-precos .cd-col-item { width:36%; }
-  table.cd-tabela.cd-precos .cd-col-atual { width:13%; }
-  table.cd-tabela.cd-precos .cd-col-novo { width:17%; }
-  table.cd-tabela.cd-precos .cd-col-var { width:13%; }
+  table.cd-tabela.cd-precos .cd-col-item { width:31%; }
+  table.cd-tabela.cd-precos .cd-col-atual { width:10%; }
+  table.cd-tabela.cd-precos .cd-col-novo { width:15%; }
+  table.cd-tabela.cd-precos .cd-col-custo { width:10%; }
   table.cd-tabela.cd-precos .cd-col-cmv { width:21%; }
+  table.cd-tabela.cd-precos .cd-col-var { width:13%; }
+  /* Linha da ficha vinculada embaixo do nome (custo ligado à ficha, 2026-10-20). */
+  .cd-ficha { font-size:11px; color:var(--text-3); margin-top:2px; line-height:1.4; }
+  .cd-ficha.aten { color:var(--amarelo); }
+  .cd-ficha-bt { background:none; border:none; padding:0 0 0 6px; color:var(--acc); cursor:pointer;
+      font:inherit; font-size:11px; text-decoration:underline; }
+  tr.cd-picker-tr td { background:var(--card); }
+  .cd-picker { padding:4px 2px 6px; }
+  .cd-picker-tit { font-size:12px; color:var(--text-2); margin-bottom:6px; }
+  .cd-picker input[type=search] { width:100%; max-width:420px; padding:7px 10px; border-radius:8px;
+      border:1px solid var(--border); background:var(--bg); color:var(--text); font:inherit; font-size:13px; }
+  .cd-picker-lista { display:flex; flex-direction:column; gap:2px; margin:8px 0; max-width:620px; }
+  .cd-picker-op { text-align:left; background:none; border:1px solid transparent; border-radius:7px;
+      padding:6px 8px; color:var(--text-2); cursor:pointer; font:inherit; font-size:12.5px; }
+  .cd-picker-op b { color:var(--text); font-weight:500; }
+  .cd-picker-op:hover, .cd-picker-op.on { border-color:var(--acc); }
+  .cd-picker-vazio { font-size:12px; color:var(--text-3); padding:4px 8px; }
+  .cd-picker-acoes { display:flex; gap:8px; }
   table.cd-tabela.cd-precos .cd-pnovo { width:88px; max-width:100%; padding:5px 7px; border-radius:6px;
       border:1px solid var(--border); background:var(--card); color:var(--text); font-family:inherit;
       font-size:inherit; text-align:right; }
@@ -1045,11 +1063,12 @@ window.msgAcessoNegado = function (nomePagina) {
     .cd-vista-sel button[data-v="cards"] { display:none; }
     .cd-vista-sel button[data-v="tabela"] { border-left:none; }
     table.cd-tabela { table-layout:fixed; font-size:12px; }
-    table.cd-tabela.cd-precos .cd-col-cmv { display:none; }
-    table.cd-tabela.cd-precos .cd-col-item { width:38%; }
-    table.cd-tabela.cd-precos .cd-col-atual { width:19%; }
-    table.cd-tabela.cd-precos .cd-col-novo { width:24%; }
-    table.cd-tabela.cd-precos .cd-col-var { width:19%; }
+    /* Celular: Custo e Variação somem; o CMV fica, que é a pergunta da tela. */
+    table.cd-tabela.cd-precos .cd-col-custo, table.cd-tabela.cd-precos .cd-col-var { display:none; }
+    table.cd-tabela.cd-precos .cd-col-item { width:36%; }
+    table.cd-tabela.cd-precos .cd-col-atual { width:17%; }
+    table.cd-tabela.cd-precos .cd-col-novo { width:22%; }
+    table.cd-tabela.cd-precos .cd-col-cmv { width:25%; white-space:normal; }
     table.cd-tabela.cd-precos .cd-pnovo { width:100%; padding:5px 4px; }
     table.cd-tabela th, table.cd-tabela td { padding:5px 4px; }
     table.cd-tabela .cd-col-desc, table.cd-tabela .cd-col-nota { display:none; }
@@ -3731,17 +3750,80 @@ function nomeArquivoSeguro(base) {
     var antes = numOuNull(it.preco_antes), novo = numOuNull(it.preco);
     return novo !== null && (antes === null || Math.abs(novo - antes) >= 0.005);
   }
-  // Custo da dose reconstruído do que o Cérebro congelou na semente:
-  // margem = preço × (1 − cmv), logo custo = margem × cmv / (1 − cmv). Não
-  // depende de qual preço o Cérebro usou. Sem CMV ou sem margem: null, e a
-  // tela mostra "—" (dinheiro nunca é fabricado).
-  function custoEstimado(it) {
-    var cmv = numOuNull(it.cmv_pct), m = numOuNull(it.margem_un);
-    if (it.sem_cmv || cmv === null || m === null || cmv <= 0 || cmv >= 100 || m <= 0) return null;
-    return m * cmv / (100 - cmv);
+  // ---- Custo vinculado à ficha (2026-10-20, pedido do Rodrigo) ----
+  // "Isso deve ser linkado realmente ao custo e à ficha técnica para que se
+  // atualize automaticamente caso algo mude." O projeto guarda só o VÍNCULO
+  // (ficha_id = page_id da ficha no Notion, ou do insumo do B.D.1 para dose);
+  // o número sai do índice GET /api/cardapio-custos, que o robô das 7h
+  // reescreve todo dia (motor B.D.2 x B.D.1 + rentabilidade_gen.py). Nada de
+  // custo congelado no item: mudou o preço do insumo ou a ficha, o CMV daqui
+  // muda junto. Item sem vínculo casa pela ficha de nome IGUAL (nunca por
+  // parecença, e nunca com o B.D.1, que só entra por vínculo manual).
+  var CUSTOS = null, CUSTOS_ESTADO = 'vazio';   // vazio | carregando | ok | falhou
+  var PICKER_ID = null;                         // item com o "vincular" aberto
+
+  function carregaCustos() {
+    if (CUSTOS_ESTADO !== 'vazio') return;
+    CUSTOS_ESTADO = 'carregando';
+    api('/api/cardapio-custos').then(function (d) {
+      var F = d.fichas || {};
+      // Chave de busca calculada uma vez: o vincular procura em ~1.500 nomes
+      // a cada tecla.
+      d._lista = Object.keys(F).map(function (id) { return { id: id, e: F[id], k: normChave(F[id].n) }; });
+      CUSTOS = d; CUSTOS_ESTADO = 'ok';
+    }).catch(function () {
+      CUSTOS_ESTADO = 'falhou';
+    }).then(function () {
+      if (vistaAplicada === 'precos') desenhaItens();
+    });
+  }
+  // O índice usa o slug do portal ("gra"); o projeto, o do contagem-worker
+  // ("gra-bistro"). Mesma divergência do Grá de sempre.
+  function casaIndice() {
+    return PROJ && PROJ.casa === 'gra-bistro' ? 'gra' : (PROJ ? PROJ.casa : '');
+  }
+  function fichaDoItem(it) {
+    if (!CUSTOS) return null;
+    var F = CUSTOS.fichas || {};
+    if (it.ficha_id) {
+      return F[it.ficha_id] ? { id: it.ficha_id, e: F[it.ficha_id], modo: 'vinculo' }
+                            : { id: it.ficha_id, e: null, modo: 'sumiu' };
+    }
+    var ids = (CUSTOS.nomes || {})[normChave(it.nome)] || [];
+    if (ids.length > 1) {
+      // Homônimo: só desempata pela casa do projeto. Sobrou mais de um, a
+      // página não escolhe — pede o vínculo.
+      var casa = casaIndice();
+      var daCasa = ids.filter(function (id) { return F[id] && (F[id].c || []).indexOf(casa) >= 0; });
+      if (daCasa.length === 1) ids = daCasa;
+    }
+    if (ids.length === 1 && F[ids[0]]) return { id: ids[0], e: F[ids[0]], modo: 'nome' };
+    if (ids.length > 1) return { id: null, e: null, modo: 'homonimo', n: ids.length };
+    return null;
+  }
+  function custoDoItem(it) {
+    var f = fichaDoItem(it);
+    return (f && f.e && f.e.custo !== null && f.e.custo !== undefined) ? Number(f.e.custo) : null;
+  }
+  function textoFicha(it) {
+    if (CUSTOS_ESTADO === 'carregando' || CUSTOS_ESTADO === 'vazio') return { t: 'buscando o custo…', c: '' };
+    if (CUSTOS_ESTADO === 'falhou') return { t: 'custo indisponível agora', c: 'aten' };
+    var f = fichaDoItem(it);
+    if (!f) return { t: 'sem ficha vinculada', c: '' };
+    if (f.modo === 'sumiu') return { t: 'a ficha vinculada não existe mais no Notion', c: 'aten' };
+    if (f.modo === 'homonimo') return { t: f.n + ' fichas com este nome: vincule a certa', c: 'aten' };
+    var e = f.e, quem = (e.t === 'insumo' ? 'dose B.D.1: ' : 'ficha: ') + e.n;
+    var pelo = f.modo === 'nome' ? ' (pelo nome)' : '';
+    if (e.custo === null || e.custo === undefined) return { t: quem + pelo + ' · sem custo na ficha', c: '' };
+    if (e.f === 'calculado') {
+      return { t: quem + pelo + ' · custo calculado' + (e.em ? ' em ' + dataCurta(e.em) : ''), c: '' };
+    }
+    if (e.f === 'digitado') return { t: quem + pelo + ' · custo digitado à mão', c: '' };
+    if (e.f === 'suspeito') return { t: quem + pelo + ' · custo com suspeita: ' + (e.a || 'confira a ficha'), c: 'aten' };
+    return { t: quem + pelo + ' · custo do B.D.1', c: '' };
   }
 
-  function pintaPreco(it, inp, tdVar, tdCmv) {
+  function pintaPreco(it, inp, tdVar, tdCusto, tdCmv) {
     var antes = numOuNull(it.preco_antes), novo = numOuNull(it.preco);
     var mudou = precoMudou(it);
     inp.classList.toggle('mudou', mudou);
@@ -3759,22 +3841,26 @@ function nomeArquivoSeguro(base) {
       tdVar.classList.add(pct > 0 ? 'sobe' : 'desce');
     }
 
+    var custo = custoDoItem(it), f = fichaDoItem(it);
+    tdCusto.className = 'cd-num cd-col-custo cd-cmv' + (custo === null ? ' neutro' : '')
+      + (f && f.e && f.e.f === 'suspeito' ? ' piora' : '');
+    tdCusto.textContent = custo === null ? '—' : soNumero(custo);
+
     tdCmv.className = 'cd-num cd-col-cmv cd-cmv';
     tdCmv.title = '';
-    var custo = custoEstimado(it), hoje = numOuNull(it.cmv_pct);
     if (custo === null) {
-      tdCmv.textContent = it.sem_cmv ? 'sem CMV' : '—';
+      tdCmv.textContent = '—';
       tdCmv.classList.add('neutro');
       return;
     }
-    if (!mudou) {
-      tdCmv.textContent = hoje !== null ? fmtPct(hoje) : '—';
-      return;
-    }
-    var cmvNovo = custo / novo * 100;
-    tdCmv.textContent = (hoje !== null ? fmtPct(hoje) + ' → ' : '') + fmtPct(cmvNovo);
-    tdCmv.title = 'CMV estimado no preço novo: custo da dose (do Cérebro) dividido pelo preço novo.';
-    if (hoje !== null && cmvNovo > hoje + 0.05) tdCmv.classList.add('piora');
+    var hoje = (antes !== null && antes > 0) ? custo / antes * 100 : null;
+    var cmvNovo = (mudou && novo > 0) ? custo / novo * 100 : null;
+    if (hoje !== null && cmvNovo !== null) tdCmv.textContent = fmtPct(hoje) + ' → ' + fmtPct(cmvNovo);
+    else if (hoje !== null) tdCmv.textContent = fmtPct(hoje);
+    else if (cmvNovo !== null) tdCmv.textContent = fmtPct(cmvNovo);
+    else { tdCmv.textContent = '—'; tdCmv.classList.add('neutro'); return; }
+    tdCmv.title = 'CMV = custo da ficha de hoje dividido pelo preço (de hoje e o novo).';
+    if (hoje !== null && cmvNovo !== null && cmvNovo > hoje + 0.05) tdCmv.classList.add('piora');
   }
 
   function textoResumoPrecos() {
@@ -3785,6 +3871,11 @@ function nomeArquivoSeguro(base) {
     var semHoje = naCarta.filter(function (i) { return numOuNull(i.preco_antes) === null; }).length;
     var partes = [alterados + (alterados === 1 ? ' preço alterado' : ' preços alterados')];
     if (semHoje) partes.push(semHoje + (semHoje === 1 ? ' item sem preço' : ' itens sem preço') + ' na carta de hoje');
+    if (CUSTOS) {
+      var comCusto = naCarta.filter(function (i) { return custoDoItem(i) !== null; }).length;
+      partes.push(comCusto + ' de ' + naCarta.length + ' com custo (fichas e doses do B.D.1, atualizado em '
+        + dataCurta(String(CUSTOS.gerado_em || '').slice(0, 10)) + ')');
+    }
     var t = partes.join(' · ') + '. "Hoje" é o cardápio digital no dia em que este projeto foi criado.';
     if (PODE) t += ' Campo vazio mantém o preço de hoje; Enter pula para o próximo.';
     return t;
@@ -3797,7 +3888,7 @@ function nomeArquivoSeguro(base) {
     return p;
   }
 
-  function campoPrecoNovo(it, tdVar, tdCmv) {
+  function campoPrecoNovo(it, repinta) {
     var inp = document.createElement('input');
     inp.type = 'text';
     inp.inputMode = 'decimal';
@@ -3824,7 +3915,7 @@ function nomeArquivoSeguro(base) {
       }
       salvaItem(it, { preco: valor }, function () {
         inp.value = precoMudou(it) ? soNumero(it.preco) : '';
-        pintaPreco(it, inp, tdVar, tdCmv);
+        repinta();
         var r = document.getElementById('cd-precos-resumo');
         if (r) r.textContent = textoResumoPrecos();
       });
@@ -3841,7 +3932,108 @@ function nomeArquivoSeguro(base) {
     return inp;
   }
 
+  // "Vincular ficha": linha aberta logo abaixo do item, com busca em todas as
+  // fichas e doses do índice. Gravar é o PATCH de sempre, com ficha_id.
+  function linhaPicker(it) {
+    var tr = document.createElement('tr');
+    tr.className = 'cd-picker-tr';
+    var td = document.createElement('td');
+    td.colSpan = 6;
+    var cx = document.createElement('div');
+    cx.className = 'cd-picker';
+    var tit = document.createElement('div');
+    tit.className = 'cd-picker-tit';
+    tit.textContent = 'Vincular "' + it.nome + '" a uma ficha técnica ou dose do B.D.1';
+    var busca = document.createElement('input');
+    busca.type = 'search';
+    busca.placeholder = 'Buscar pelo nome da ficha';
+    busca.setAttribute('aria-label', 'Buscar ficha');
+    busca.value = it.nome;
+    var lista = document.createElement('div');
+    lista.className = 'cd-picker-lista';
+    var acoes = document.createElement('div');
+    acoes.className = 'cd-picker-acoes';
+    if (it.ficha_id) {
+      var desv = document.createElement('button');
+      desv.type = 'button';
+      desv.className = 'cd-btn sec';
+      desv.textContent = 'Desvincular';
+      desv.onclick = function () {
+        salvaItem(it, { ficha_id: null }, function () { PICKER_ID = null; desenhaItens(); });
+      };
+      acoes.appendChild(desv);
+    }
+    var fechar = document.createElement('button');
+    fechar.type = 'button';
+    fechar.className = 'cd-btn sec';
+    fechar.textContent = 'Fechar';
+    fechar.onclick = function () { PICKER_ID = null; desenhaItens(); };
+    acoes.appendChild(fechar);
+
+    function procura() {
+      var q = normChave(busca.value);
+      var casa = casaIndice();
+      var achados = (CUSTOS ? CUSTOS._lista : []).filter(function (x) {
+        return q && x.k.indexOf(q) >= 0;
+      });
+      // A palavra inteira digitada pode não existir; cai pra busca por cada
+      // palavra (todas precisam aparecer), que é como se procura "gin tonica".
+      if (!achados.length && q) {
+        var partes = q.split(' ').filter(function (s) { return s.length > 1; });
+        achados = (CUSTOS ? CUSTOS._lista : []).filter(function (x) {
+          return partes.length && partes.every(function (s) { return x.k.indexOf(s) >= 0; });
+        });
+      }
+      achados.sort(function (a, b) {
+        var ca = (a.e.c || []).indexOf(casa) >= 0 ? 0 : 1, cb = (b.e.c || []).indexOf(casa) >= 0 ? 0 : 1;
+        if (ca !== cb) return ca - cb;
+        var ta = a.e.t === 'ficha' ? 0 : 1, tb = b.e.t === 'ficha' ? 0 : 1;
+        if (ta !== tb) return ta - tb;
+        var ka = a.e.custo === null ? 1 : 0, kb = b.e.custo === null ? 1 : 0;
+        if (ka !== kb) return ka - kb;
+        return a.e.n.length - b.e.n.length;
+      });
+      lista.innerHTML = '';
+      achados.slice(0, 12).forEach(function (x) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cd-picker-op' + (x.id === it.ficha_id ? ' on' : '');
+        var n = document.createElement('b');
+        n.textContent = x.e.n;
+        var d = document.createElement('span');
+        d.textContent = ' · ' + (x.e.t === 'insumo' ? 'dose B.D.1' : ((x.e.c || []).join(', ') || 'sem casa'))
+          + ' · ' + (x.e.custo === null || x.e.custo === undefined ? 'sem custo' : 'custo ' + soNumero(x.e.custo))
+          + (x.e.f === 'suspeito' ? ' (com suspeita)' : '');
+        b.appendChild(n); b.appendChild(d);
+        b.onclick = function () {
+          salvaItem(it, { ficha_id: x.id }, function () { PICKER_ID = null; desenhaItens(); });
+        };
+        lista.appendChild(b);
+      });
+      if (!achados.length) {
+        var v = document.createElement('div');
+        v.className = 'cd-picker-vazio';
+        v.textContent = q ? 'Nenhuma ficha com esse nome.' : 'Digite parte do nome da ficha.';
+        lista.appendChild(v);
+      } else if (achados.length > 12) {
+        var m = document.createElement('div');
+        m.className = 'cd-picker-vazio';
+        m.textContent = (achados.length - 12) + ' outras: refine a busca.';
+        lista.appendChild(m);
+      }
+    }
+    var tBusca = null;
+    busca.oninput = function () { clearTimeout(tBusca); tBusca = setTimeout(procura, 120); };
+    busca.onkeydown = function (e) { if (e.key === 'Escape') fechar.onclick(); };
+    cx.appendChild(tit); cx.appendChild(busca); cx.appendChild(lista); cx.appendChild(acoes);
+    td.appendChild(cx); tr.appendChild(td);
+    procura();
+    setTimeout(function () { busca.focus(); busca.select(); }, 0);
+    return tr;
+  }
+
   function tabelaPrecos(itens) {
+    carregaCustos();
     var wrap = document.createElement('div');
     wrap.className = 'cd-tabela-wrap';
     var tb = document.createElement('table');
@@ -3849,7 +4041,8 @@ function nomeArquivoSeguro(base) {
     var thead = document.createElement('thead');
     var trh = document.createElement('tr');
     [['Item', 'cd-col-item'], ['Hoje', 'cd-col-atual cd-num'], ['Preço novo', 'cd-col-novo'],
-     ['Variação', 'cd-col-var cd-num'], ['CMV', 'cd-col-cmv cd-num']].forEach(function (c) {
+     ['Custo', 'cd-col-custo cd-num'], ['CMV hoje → novo', 'cd-col-cmv cd-num'],
+     ['Variação', 'cd-col-var cd-num']].forEach(function (c) {
       var th = document.createElement('th');
       th.className = c[1]; th.textContent = c[0];
       trh.appendChild(th);
@@ -3874,6 +4067,20 @@ function nomeArquivoSeguro(base) {
         tag.style.marginLeft = '6px';
         tdN.appendChild(tag);
       }
+      var tf = textoFicha(it);
+      var lf = document.createElement('div');
+      lf.className = 'cd-ficha' + (tf.c ? ' ' + tf.c : '');
+      lf.appendChild(document.createTextNode(tf.t));
+      if (PODE && CUSTOS) {
+        var bv = document.createElement('button');
+        bv.type = 'button';
+        bv.className = 'cd-ficha-bt';
+        var f = fichaDoItem(it);
+        bv.textContent = (f && f.e && f.modo !== 'homonimo') ? 'trocar' : 'vincular ficha';
+        bv.onclick = function () { PICKER_ID = (PICKER_ID === it.id) ? null : it.id; desenhaItens(); };
+        lf.appendChild(bv);
+      }
+      tdN.appendChild(lf);
       var ref = refImpresso(it, it.preco_antes);
       if (ref) tdN.appendChild(ref);
       tr.appendChild(tdN);
@@ -3885,16 +4092,19 @@ function nomeArquivoSeguro(base) {
       tr.appendChild(tdA);
 
       var tdVar = document.createElement('td');
+      var tdCusto = document.createElement('td');
       var tdCmv = document.createElement('td');
       var tdNovo = document.createElement('td');
       tdNovo.className = 'cd-col-novo';
-      var inp = campoPrecoNovo(it, tdVar, tdCmv);
+      var inp = campoPrecoNovo(it, function () { pintaPreco(it, inp, tdVar, tdCusto, tdCmv); });
       tdNovo.appendChild(inp);
       tr.appendChild(tdNovo);
-      tr.appendChild(tdVar);
+      tr.appendChild(tdCusto);
       tr.appendChild(tdCmv);
-      pintaPreco(it, inp, tdVar, tdCmv);
+      tr.appendChild(tdVar);
+      pintaPreco(it, inp, tdVar, tdCusto, tdCmv);
       corpo.appendChild(tr);
+      if (PICKER_ID === it.id && CUSTOS) corpo.appendChild(linhaPicker(it));
     });
     tb.appendChild(corpo);
     wrap.appendChild(tb);
@@ -4350,7 +4560,7 @@ function nomeArquivoSeguro(base) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 19/10/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 20/10/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -5606,7 +5816,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '7b86c38a035a';
+  var BUILD = '721c3b9605be';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
