@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=721c3b9605be">
+<link rel="stylesheet" href="portal.css?v=101cc290f58a">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -5277,9 +5277,12 @@ a contagem daquela semana.</p>
   function td(txt, cls, label) { var e = el('td', cls, txt); if (label) e.setAttribute('data-label', label); return e; }
   function menosDias(iso, d) { var t = new Date(iso + 'T12:00:00'); t.setDate(t.getDate() - d); return t.toISOString().slice(0, 10); }
 
-  // Pontos: [data, casa, preco, fonte, quantidade, fornecedor, conversao]
+  // Pontos: [data, casa, preco, fonte, quantidade, fornecedor, conversao, conta]
+  // conta = 0: fica fora de toda conta (unidade incerta, ou fonte do everloja,
+  // fora desde 2026-10-20 por custo errado de cadastro antigo).
+  function entra(x) { return x[7] !== 0; }
   function calcula(p, casa, ref, janela) {
-    var pts = p.pontos.filter(function (x) { return x[6] !== 'incerto' && (!casa || x[1] === casa); });
+    var pts = p.pontos.filter(function (x) { return entra(x) && (!casa || x[1] === casa); });
     if (!pts.length) return null;
     var ini = menosDias(ref, janela);
     var vistos = {}, jan = [];
@@ -5305,7 +5308,7 @@ a contagem daquela semana.</p>
   }
 
   function sparkline(p, casa) {
-    var pts = p.pontos.filter(function (x) { return x[6] !== 'incerto' && (!casa || x[1] === casa); });
+    var pts = p.pontos.filter(function (x) { return entra(x) && (!casa || x[1] === casa); });
     var porData = {};
     pts.forEach(function (x) { (porData[x[0]] = porData[x[0]] || []).push(x[2]); });
     var datas = Object.keys(porData).sort();
@@ -5348,11 +5351,11 @@ a contagem daquela semana.</p>
     var FONTE = {};
     D.fontes.forEach(function (f) { FONTE[f.id] = f; });
 
-    var comPreco = D.produtos.filter(function (p) { return p.pontos.some(function (x) { return x[6] !== 'incerto'; }); });
+    var comPreco = D.produtos.filter(function (p) { return p.pontos.some(entra); });
     var kp = [
       [String(comPreco.length), 'produtos com preço pago'],
       [dataBR(D.referencia), 'compra mais recente na base'],
-      [String(D.fontes.length), 'planilhas lidas'],
+      [String(D.fontes.filter(function (f) { return f.conta !== false; }).length), 'planilhas na conta'],
       [D.janela_media_dias + ' dias', 'janela da média (base de preço)']
     ];
     var kEl = document.getElementById('pc-kpis');
@@ -5401,12 +5404,13 @@ a contagem daquela semana.</p>
       ['Data', 'Casa', 'Preço', 'Origem', 'Qtd'].forEach(function (x, i) { h.appendChild(el('th', i === 2 || i === 4 ? 'n' : null, x)); });
       t.appendChild(h);
       p.pontos.filter(function (x) { return !casa || x[1] === casa; }).slice().reverse().forEach(function (x) {
-        var r = el('tr', x[6] === 'incerto' ? 'inc' : null);
+        var r = el('tr', entra(x) ? null : 'inc');
         r.appendChild(el('td', null, dataBR(x[0])));
         r.appendChild(el('td', null, D.casas[x[1]] || x[1] || '—'));
         r.appendChild(el('td', 'n', rs(x[2])));
         var f = FONTE[x[3]];
-        var orig = (f ? f.rotulo : x[3]) + (x[5] ? ' · ' + x[5] : '') + (x[6] === 'incerto' ? ' · unidade não fecha, fora da média' : (x[6] ? ' · ' + x[6] : ''));
+        var fora = f && f.conta === false ? ' · everloja, fora da conta' : (x[6] === 'incerto' ? ' · unidade não fecha, fora da conta' : '');
+        var orig = (f ? f.rotulo : x[3]) + (x[5] ? ' · ' + x[5] : '') + (fora || (x[6] ? ' · ' + x[6] : ''));
         r.appendChild(el('td', null, orig));
         r.appendChild(el('td', 'n', x[4] == null ? '—' : String(Math.round(x[4] * 100) / 100).replace('.', ',')));
         t.appendChild(r);
@@ -5473,9 +5477,17 @@ a contagem daquela semana.</p>
     var foot = document.getElementById('pc-foot');
     foot.appendChild(el('div', null, 'Como ler: "Último pago" é o preço mais recente encontrado nas planilhas; "Média 30 dias" conta uma vez cada preço distinto de cada casa nos 30 dias até ' + dataBR(D.referencia) + ' e é a base para estimar o custo. Preço de caixa ou fardo é dividido pelo tamanho da embalagem; quando a unidade não fecha com o resto do produto, o ponto aparece riscado e fica fora das contas. Cotação é o que o fornecedor pediu, não o que foi pago.'));
     var fl = el('div'); fl.style.marginTop = '8px';
-    fl.appendChild(el('b', null, 'Planilhas lidas: '));
-    fl.appendChild(document.createTextNode(D.fontes.map(function (f) { return f.rotulo + ' (' + f.linhas + ')'; }).join('; ') + '.'));
+    fl.appendChild(el('b', null, 'Planilhas na conta: '));
+    fl.appendChild(document.createTextNode(D.fontes.filter(function (f) { return f.conta !== false; }).map(function (f) { return f.rotulo + ' (' + f.linhas + ')'; }).join('; ') + '.'));
     foot.appendChild(fl);
+    var guard = D.fontes.filter(function (f) { return f.conta === false; });
+    if (guard.length) {
+      var fg = el('div'); fg.style.marginTop = '6px';
+      fg.appendChild(el('b', null, 'Guardadas, fora da conta: '));
+      fg.appendChild(document.createTextNode(guard.map(function (f) { return f.rotulo; }).join('; ') +
+        '. O custo do everloja está errado por cadastro antigo; aparece riscado no detalhe só para revisão.'));
+      foot.appendChild(fg);
+    }
   }
 
   function buscaDados(token) {
@@ -6982,7 +6994,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '721c3b9605be';
+  var BUILD = '101cc290f58a';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
