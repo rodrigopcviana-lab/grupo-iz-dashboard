@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=1e8def656340">
+<link rel="stylesheet" href="portal.css?v=b2f6c1b0fbad">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1209,6 +1209,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .cd-ca-rev-res { display:grid; grid-template-columns:auto 1fr; gap:3px 10px; font-size:12px; margin:0 0 10px; }
   .cd-ca-rev-res .k { color:var(--text-3); }
   .cd-ca-rev .grande { color:var(--amarelo); }
+  .cd-ca-trava { margin-top:10px; padding:10px 12px; border:1px solid var(--amarelo); border-radius:10px; font-size:12.5px; }
+  .cd-ca-trava p { margin:0 0 4px; }
   .cd-ver { border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--card); }
   .cd-ver-it { padding:9px 12px; border-top:1px solid var(--border); font-size:12.5px; }
   .cd-ver-it.primeira { border-top:none; }
@@ -3832,7 +3834,7 @@ function nomeArquivoSeguro(base) {
     var cab = cel('div', 'cd-cl-linha cab');
     cab.appendChild(cel('div', null, 'item'));
     cab.appendChild(cel('div', 'n fonte', FONTE_CURTO[FONTE || 'digital']));
-    if (pode) cab.appendChild(cel('div', 'n', 'novo'));
+    if (pode) cab.appendChild(cel('div', 'n', 'sugerido'));
     if (verCusto) { cab.appendChild(cel('div', 'n', 'custo')); cab.appendChild(cel('div', 'n', 'CMV')); }
     box.appendChild(cab);
 
@@ -3971,6 +3973,15 @@ function nomeArquivoSeguro(base) {
     var lim = cel('button', 'lim', 'limpar');
     lim.type = 'button'; lim.onclick = limpaNovos;
     t.appendChild(lim);
+    var sug = cel('button', 'cd-btn sec', 'Salvar sugestão');
+    sug.type = 'button';
+    sug.onclick = function () {
+      if (inv) { avisoErro('Corrija os valores marcados em vermelho antes de salvar.'); return; }
+      salvaRascunho();
+      avisoOk(m.length + (m.length === 1 ? ' preço sugerido salvo' : ' preços sugeridos salvos')
+        + ' neste aparelho. Os preços atuais não mudaram: continue quando quiser.');
+      window.scrollTo(0, 0);
+    };
     var bt = cel('button', 'cd-btn', 'Revisar e confirmar');
     bt.type = 'button';
     bt.onclick = function () {
@@ -3978,7 +3989,9 @@ function nomeArquivoSeguro(base) {
       if (!m.length) return;
       REVISANDO = true; desenhaTudo(); window.scrollTo(0, 0);
     };
-    b.appendChild(t); b.appendChild(bt);
+    var bs = cel('div'); bs.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end';
+    bs.appendChild(sug); bs.appendChild(bt);
+    b.appendChild(t); b.appendChild(bs);
   }
   function avisoErro(t) {
     var a = document.getElementById('cd-ca-aviso');
@@ -4041,8 +4054,7 @@ function nomeArquivoSeguro(base) {
     var volta = cel('button', 'cd-btn sec', 'Voltar');
     volta.type = 'button';
     volta.onclick = function () { REVISANDO = false; desenhaTudo(); };
-    ok.onclick = function () {
-      if (grandes && !window.confirm(grandes + ' preço(s) mudam ' + MUDANCA_GRANDE + '% ou mais. Confirmar mesmo assim?')) return;
+    function enviar() {
       ok.disabled = true; volta.disabled = true;
       msg.className = 'cd-msg'; txt(msg, 'Salvando a nova versão…');
       var base = CV.vigente.id, casa = CV_CASA;
@@ -4066,9 +4078,29 @@ function nomeArquivoSeguro(base) {
           acoes.appendChild(rec);
         }
       });
-    };
+    }
+    // Segunda trava: mudança de preço é importante e não se desfaz (a versão
+    // anterior só fica no histórico). O botão abre uma caixa que pede para
+    // digitar CONFIRMAR; sem isso nada é enviado.
+    var caixa = cel('div', 'cd-ca-trava'); caixa.style.display = 'none';
+    caixa.appendChild(cel('p', null, 'Estes ' + m.length + (m.length === 1 ? ' preço passa' : ' preços passam')
+      + ' a valer como o cardápio atual de ' + casaNome(CV_CASA) + '. A carta de hoje fica só no histórico. '
+      + (grandes ? grandes + ' mudam ' + MUDANCA_GRANDE + '% ou mais. ' : '') + 'Digite CONFIRMAR para continuar.'));
+    var campo = cel('input', 'cd-busca'); campo.type = 'text'; campo.autocomplete = 'off';
+    campo.placeholder = 'CONFIRMAR'; campo.setAttribute('aria-label', 'Digite CONFIRMAR');
+    campo.style.cssText = 'max-width:none;width:100%;margin:6px 0';
+    var go = cel('button', 'cd-btn', 'Aplicar agora'); go.type = 'button'; go.disabled = true;
+    var cancela = cel('button', 'cd-btn sec', 'Cancelar'); cancela.type = 'button';
+    campo.oninput = function () { go.disabled = campo.value.trim().toUpperCase() !== 'CONFIRMAR'; };
+    go.onclick = function () { if (campo.value.trim().toUpperCase() === 'CONFIRMAR') enviar(); };
+    cancela.onclick = function () { caixa.style.display = 'none'; campo.value = ''; go.disabled = true; ok.style.display = ''; };
+    var ac2 = cel('div'); ac2.style.cssText = 'display:flex;gap:8px';
+    ac2.appendChild(go); ac2.appendChild(cancela);
+    caixa.appendChild(campo); caixa.appendChild(ac2);
+    ok.onclick = function () { ok.style.display = 'none'; caixa.style.display = ''; campo.focus(); };
     acoes.appendChild(ok); acoes.appendChild(volta);
     raiz.appendChild(acoes);
+    raiz.appendChild(caixa);
   }
 
   // ---- versões ----
@@ -7255,7 +7287,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '1e8def656340';
+  var BUILD = 'b2f6c1b0fbad';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
