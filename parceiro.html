@@ -633,6 +633,55 @@ function nomeArquivoSeguro(base) {
   var SETORES_DEMANDA = {"coordenacao": "Coordenação", "compras_insumos": "Compras / Insumos", "gerencia_casa": "Gerência da casa", "manutencao": "Manutenção", "operacao_bar": "Operação de bar", "marketing": "Marketing"};
   var URGENCIAS_DEMANDA = {"hoje": "Hoje", "uma_semana": "Uma semana", "um_mes": "Um mês", "tres_meses": "3 meses+"};
   var CHAVE_SESSAO = 'parceiro_sessao';
+
+  // Prévia da coordenação (PLANO_PARCERIAS.md, E4): `?previa=<marca>` abre o
+  // painel daquela marca com a sessão INTERNA de coord ('portal_sessao'),
+  // nunca com a do parceiro. Os servidores só aceitam `?marca=` de token coord
+  // (para o parceiro o parâmetro é ignorado), então isto aqui é conveniência
+  // de tela, não fronteira. Na prévia:
+  // - todo GET das rotas do painel ganha `marca=`;
+  // - nenhum POST/PUT sai (resposta 403 local): prévia é só leitura;
+  // - notas pessoais da marca não são lidas (são dela, como a tarefa privada);
+  // - a sessão do parceiro neste navegador nunca é lida, gravada nem apagada.
+  var PREVIA = (function () {
+    try {
+      var m = new URLSearchParams(location.search).get('previa') || '';
+      return /^[a-z0-9-]{2,40}$/.test(m) ? m : '';
+    } catch (e) { return ''; }
+  })();
+  function sessaoCoord() {
+    try {
+      var s = JSON.parse(localStorage.getItem('portal_sessao') || 'null');
+      if (s && s.token && s.exp && s.exp > Date.now() && s.nivel === 'coord') return s;
+    } catch (e) {}
+    return null;
+  }
+  var _fetchReal = window.fetch.bind(window);
+  function respostaLocal(status, corpo) {
+    return Promise.resolve(new Response(JSON.stringify(corpo), {
+      status: status, headers: { 'Content-Type': 'application/json' },
+    }));
+  }
+  var fetch = !PREVIA ? _fetchReal : function (url, opts) {
+    var metodo = String((opts && opts.method) || 'GET').toUpperCase();
+    if (metodo !== 'GET') return respostaLocal(403, { erro: 'Prévia da coordenação: só leitura.' });
+    var u = String(url);
+    if (/\/api\/notas(\?|$)/.test(u)) return respostaLocal(200, { notas: [], recebidas: [] });
+    if (/\/api\/push\//.test(u)) return respostaLocal(200, {});
+    if (/\/api\/(parceiro|agenda-parceiro|demandas|ideias)(\/|\?|$)/.test(u)) {
+      u += (u.indexOf('?') >= 0 ? '&' : '?') + 'marca=' + encodeURIComponent(PREVIA);
+    }
+    return _fetchReal(u, opts);
+  };
+  function mostraFaixaPrevia() {
+    if (!PREVIA || document.getElementById('previa-faixa')) return;
+    var f = document.createElement('div');
+    f.id = 'previa-faixa';
+    f.setAttribute('role', 'status');
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:#5a3fa0;color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.textContent = 'Prévia da coordenação · o painel como a marca vê, só leitura · notas pessoais e tarefas privadas da marca não aparecem';
+    document.body.insertBefore(f, document.body.firstChild);
+  }
   var gate = document.getElementById('gate');
   var app = document.getElementById('app');
   var abasWrap = document.getElementById('abas-wrap');
@@ -673,14 +722,18 @@ function nomeArquivoSeguro(base) {
   };
 
   function sessaoLer() {
+    if (PREVIA) {
+      var c = sessaoCoord();
+      return c ? { token: c.token, exp: c.exp, marca: PREVIA, pessoa: null, previa: true } : null;
+    }
     try {
       var s = JSON.parse(localStorage.getItem(CHAVE_SESSAO) || 'null');
       if (s && s.exp && s.exp > Date.now()) return s;
     } catch (e) {}
     return null;
   }
-  function sessaoSalvar(s) { localStorage.setItem(CHAVE_SESSAO, JSON.stringify(s)); }
-  function sessaoLimpar() { localStorage.removeItem(CHAVE_SESSAO); }
+  function sessaoSalvar(s) { if (PREVIA) return; localStorage.setItem(CHAVE_SESSAO, JSON.stringify(s)); }
+  function sessaoLimpar() { if (PREVIA) return; localStorage.removeItem(CHAVE_SESSAO); }
 
   function fmtData(iso) {
     if (!iso) return '—';
@@ -2512,6 +2565,7 @@ function nomeArquivoSeguro(base) {
   }
   function ativarPush(e) {
     var bt = e.target;
+    if (PREVIA) { bt.textContent = 'Na prévia os avisos ficam com a marca.'; return; }
     if (!VAPID_PUBLIC || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
       bt.textContent = 'Notificações não são suportadas neste navegador.';
       bt.disabled = true;
@@ -2884,6 +2938,12 @@ function nomeArquivoSeguro(base) {
     sessaoAtualGlobal = sessao;
     fetch(WORKER + '/api/parceiro', { headers: { 'X-Token': sessao.token } })
       .then(function (r) {
+        if (r.status === 401 && PREVIA) {
+          // Sem isto, o reload da linha de baixo viraria laço: a sessão de
+          // coord não é apagada aqui (não é desta página).
+          falhaDeCarga('Sua sessão de coordenação venceu. Entre de novo no portal e abra a prévia pela página Parcerias.', sessao);
+          return;
+        }
         if (r.status === 401) { sessaoLimpar(); location.reload(); return; }
         if (!r.ok) {
           falhaDeCarga(r.status === 404
@@ -2895,7 +2955,8 @@ function nomeArquivoSeguro(base) {
           ULTIMO_D = d;
           gate.style.display = 'none';
           app.style.display = '';
-          criarTab.style.display = '';
+          criarTab.style.display = PREVIA ? 'none' : '';
+          mostraFaixaPrevia();
           renderiza(d);
           renderPill();
           buscarAgenda();
@@ -2938,6 +2999,13 @@ function nomeArquivoSeguro(base) {
 
   if (!WORKER) { erro.textContent = 'Em configuração.'; return; }
   var sessaoAtual = sessaoLer();
+  if (PREVIA && !sessaoAtual) {
+    // Prévia sem sessão de coord: nunca oferecer o login de parceiro aqui.
+    document.getElementById('g-senha').style.display = 'none';
+    document.getElementById('g-entrar').style.display = 'none';
+    erro.textContent = 'A prévia é só para a coordenação. Entre no portal com a senha de coordenação e abra pela página Parcerias.';
+    return;
+  }
   if (sessaoAtual) { gate.style.display = 'none'; app.style.display = ''; buscar(sessaoAtual); }
 })();
 </script>
