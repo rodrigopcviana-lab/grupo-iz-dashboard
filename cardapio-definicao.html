@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=91d56e51041e">
+<link rel="stylesheet" href="portal.css?v=3b6cee704dfd">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -842,8 +842,8 @@ window.msgAcessoNegado = function (nomePagina) {
 })();</script>
 
 
-<h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg> Cardápios</h1>
-<p class="sub">O cardápio que está na mesa hoje, conferido contra o que foi vendido, e a carta nova que está sendo decidida. Chefe de bar vê a própria casa; coordenação vê todas.</p>
+<h1 id="cd-titulo"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg> Cardápios</h1>
+<p class="sub" id="cd-intro">O cardápio que está na mesa hoje, conferido contra o que foi vendido, e a carta nova que está sendo decidida. Chefe de bar vê a própria casa; coordenação vê todas.</p>
 
 <div class="panel" id="cd-gate">
   <h2>Acesso restrito</h2>
@@ -1136,6 +1136,101 @@ window.msgAcessoNegado = function (nomePagina) {
     .cd-obra.ampliada .cd-carta-folha { max-width:860px; margin-left:auto; margin-right:auto; }
     .cd-obra.ampliada .cd-carta-folha img { cursor:zoom-out; }
   }
+  /* ---- Cardápio atual da casa (PLANO_CARDAPIO_ATUAL_CASA.md, 2026-10-21):
+     a casa abre na carta dela; as análises viram abas no topo. ---- */
+  .cd-ca-topo { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 4px; }
+  .cd-ca-topo h2 { font-family:var(--serif); font-size:20px; margin:0; }
+  .cd-ca-casa { font:inherit; font-size:12.5px; padding:4px 10px; border-radius:999px; background:var(--card);
+      color:var(--text); border:1px solid var(--border); max-width:60%; }
+  .cd-ca-meta { font-size:11.5px; color:var(--text-3); margin:0 0 8px; line-height:1.5; }
+  .cd-ca-abas { display:flex; gap:6px; overflow-x:auto; padding:2px 0 8px; margin:0 0 6px;
+      scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .cd-ca-abas::-webkit-scrollbar { display:none; }
+  .cd-ca-aba { flex:none; font:inherit; font-size:12px; padding:5px 11px; border-radius:999px; cursor:pointer;
+      border:1px solid var(--border); background:var(--card); color:var(--text-2); white-space:nowrap; }
+  .cd-ca-aba b { font-weight:500; color:var(--amarelo); margin-left:4px; }
+  .cd-ca-aba.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); }
+  .cd-ca-aba.on b { color:var(--acc-txt); }
+  .cd-ca-ferr { display:flex; align-items:center; gap:8px; margin:0 0 8px; font-size:12px; }
+  .cd-ca-ferr .cd-busca { max-width:none; }
+  .cd-ca-tog { flex:none; font:inherit; font-size:11.5px; padding:5px 9px; border-radius:999px; cursor:pointer;
+      border:1px solid var(--border); background:none; color:var(--text-2); }
+  .cd-ca-tog.on { border-color:var(--acc); color:var(--acc); }
+  .cd-ca-ok { font-size:12.5px; color:var(--verde); background:var(--card); border:1px solid var(--border);
+      border-left:3px solid var(--verde); padding:8px 12px; margin:0 0 8px; }
+  .cd-ca-erro { font-size:12.5px; color:#e08585; margin:6px 0; min-height:1em; }
+  .cd-cl { border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--card); }
+  .cd-cl-cat { display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px; font:inherit;
+      font-size:12.5px; color:var(--text); background:var(--bg); border:none; border-top:1px solid var(--border);
+      cursor:pointer; text-align:left; }
+  .cd-cl-cat.primeira { border-top:none; }
+  .cd-cl-cat .seta { color:var(--text-3); width:12px; flex:none; }
+  .cd-cl-cat.aberta .seta { color:var(--acc); }
+  .cd-cl-cat .nome { flex:1; min-width:0; font-weight:500; }
+  .cd-cl-cat .res { color:var(--text-3); font-size:11.5px; white-space:nowrap; }
+  .cd-cl-linha { display:grid; align-items:center; gap:4px; padding:5px 10px; font-size:12.5px;
+      border-top:1px solid var(--border); grid-template-columns:minmax(0,1fr) 46px; }
+  .cd-cl.pode .cd-cl-linha { grid-template-columns:minmax(0,1fr) 46px 60px; }
+  .cd-cl.custo .cd-cl-linha { grid-template-columns:minmax(0,1fr) 46px 40px 50px; }
+  .cd-cl.pode.custo .cd-cl-linha { grid-template-columns:minmax(0,1fr) 46px 60px 40px 50px; }
+  .cd-cl-linha.cab { font-size:10.5px; color:var(--text-3); padding-top:4px; padding-bottom:2px; border-top:none; }
+  .cd-cl-linha .n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .cd-cl-linha .mut { color:var(--text-3); }
+  .cd-cl-linha.mudou { background:rgba(208,163,82,.08); }
+  .cd-cl-nome { min-width:0; overflow-wrap:anywhere; line-height:1.3; }
+  .cd-cl-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--amarelo);
+      margin-left:5px; border:none; padding:0; cursor:pointer; }
+  .cd-cl-in { width:100%; min-width:0; padding:3px 5px; font:inherit; font-size:12px; text-align:right;
+      border-radius:6px; border:1px dashed var(--border); background:var(--bg); color:var(--text);
+      font-variant-numeric:tabular-nums; }
+  .cd-cl-in:focus { outline:none; border-color:var(--acc); border-style:solid; }
+  .cd-cl-in.mudou { border:1px solid var(--acc); color:var(--acc); }
+  .cd-cl-in.err { border:1px solid #e08585; color:#e08585; }
+  .cd-cl-cmv { font-size:11px; text-align:center; border-radius:999px; padding:1px 4px; white-space:nowrap; }
+  .cd-cl-cmv.g { background:#1f3a2f; color:#9fe1cb; }
+  .cd-cl-cmv.a { background:#4a3a14; color:#fac775; }
+  .cd-cl-cmv.r { background:#4a1f1f; color:#f7c1c1; }
+  .cd-cl-cmv.n { color:var(--text-3); }
+  .cd-ca-barra { position:sticky; bottom:0; z-index:5; display:flex; align-items:center; justify-content:space-between;
+      gap:8px; padding:9px 12px; margin-top:10px; background:#2a2316; border:1px solid var(--acc);
+      border-radius:10px; font-size:12.5px; }
+  .cd-ca-barra .lim { background:none; border:none; color:var(--text-3); cursor:pointer; font:inherit;
+      font-size:12px; text-decoration:underline; padding:0 0 0 6px; }
+  .cd-ca-rev { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+  .cd-ca-rev h3 { font-family:var(--serif); font-size:17px; margin:0 0 4px; font-weight:400; }
+  .cd-ca-rev .sub { font-size:12px; color:var(--text-3); margin:0 0 10px; }
+  .cd-ca-rev-l { display:grid; grid-template-columns:minmax(0,1fr) auto auto 64px; gap:4px 8px; font-size:12.5px;
+      align-items:center; margin:0 0 10px; }
+  .cd-ca-rev-l .cab { font-size:10.5px; color:var(--text-3); }
+  .cd-ca-rev-l .n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .cd-ca-rev-res { display:grid; grid-template-columns:auto 1fr; gap:3px 10px; font-size:12px; margin:0 0 10px; }
+  .cd-ca-rev-res .k { color:var(--text-3); }
+  .cd-ca-rev .grande { color:var(--amarelo); }
+  .cd-ver { border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--card); }
+  .cd-ver-it { padding:9px 12px; border-top:1px solid var(--border); font-size:12.5px; }
+  .cd-ver-it.primeira { border-top:none; }
+  .cd-ver-topo { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .cd-ver-sub { font-size:11.5px; color:var(--text-3); margin-top:2px; }
+  .cd-ver-tag { font-size:10.5px; padding:1px 7px; border-radius:999px; border:1px solid var(--acc); color:var(--acc);
+      margin-left:6px; }
+  .cd-ver-det { margin-top:8px; font-size:12px; }
+  .cd-ver-det div { display:flex; justify-content:space-between; gap:8px; padding:2px 0; }
+  .cd-cl-linha.sel { box-shadow:inset 2px 0 0 var(--acc); background:rgba(208,163,82,.08); }
+  .cd-ca-det { font-size:12.5px; }
+  .cd-ca-det.inline { padding:8px 12px 10px; background:var(--bg); border-top:1px solid var(--border); }
+  .cd-ca-det.lado { border:1px solid var(--border); border-radius:10px; background:var(--card); padding:12px 14px;
+      align-self:start; position:sticky; top:8px; }
+  .cd-ca-duas { display:block; }
+  @media (min-width:900px) {
+    .cd-ca-duas { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr); gap:12px; align-items:start; }
+  }
+  @media (min-width:700px) {
+    .cd-cl-linha { grid-template-columns:minmax(0,1fr) 70px; font-size:13px; }
+    .cd-cl.pode .cd-cl-linha { grid-template-columns:minmax(0,1fr) 70px 90px; }
+    .cd-cl.custo .cd-cl-linha { grid-template-columns:minmax(0,1fr) 70px 60px 64px; }
+    .cd-cl.pode.custo .cd-cl-linha { grid-template-columns:minmax(0,1fr) 70px 90px 60px 64px; }
+    .cd-cl-in { font-size:13px; }
+  }
   @media (max-width:640px) {
     .cd-item { flex-wrap:wrap; }
     .cd-dec { width:100%; }
@@ -1173,14 +1268,44 @@ window.msgAcessoNegado = function (nomePagina) {
      próprios; esta página só abre a casa e oferece criar a carta nova. -->
 <div id="cd-atual" style="display:none">
   <div class="cd-barra">
-    <button class="cd-btn sec" id="cd-atual-voltar"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg> Todos os cardápios</button>
-    <button class="cd-btn" id="cd-atual-nova" style="display:none"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Criar carta nova a partir desta</button>
+    <button class="cd-btn sec" id="cd-atual-voltar"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg> Cardápios</button>
+    <button class="cd-btn" id="cd-atual-nova" style="display:none"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nova carta a partir desta</button>
   </div>
-  <h2 style="font-family:var(--serif); font-size:20px; margin:2px 0 12px">Cardápio atual</h2>
+  <div class="cd-ca-topo">
+    <h2>Cardápio atual</h2>
+    <select class="cd-ca-casa" id="cd-ca-casa" aria-label="Trocar de casa"></select>
+  </div>
+  <div class="cd-ca-meta" id="cd-ca-meta"></div>
+  <div class="cd-ca-abas" id="cd-ca-abas" role="tablist" aria-label="Análises do cardápio"></div>
+
+  <div id="cd-aba-cardapio">
+    <div id="cd-ca-aviso"></div>
+    <div id="cd-ca-carta">
+      <div class="cd-ca-ferr">
+        <input type="search" id="cd-ca-busca" class="cd-busca" placeholder="Buscar item…"
+               autocomplete="off" aria-label="Buscar item na carta">
+        <button type="button" class="cd-ca-tog on" id="cd-ca-custo" aria-pressed="true">Custo e CMV</button>
+      </div>
+      <div id="cd-ca-lista"></div>
+      <div id="cd-ca-barra" class="cd-ca-barra" style="display:none"></div>
+    </div>
+    <div id="cd-ca-revisao" class="cd-ca-rev" style="display:none"></div>
+  </div>
+  <div id="cd-aba-versoes" style="display:none">
+    <div class="cd-ver" id="cd-ver-lista"></div>
+  </div>
   
 
 
 <style>
+  /* Embutida em Cardápios: as abas da página escolhem o que aparece
+     (`data-cnc-aba` + .cd-aba-oculta); KPIs e chips de casa ficam de fora
+     (os números vão no nome das abas, a casa se troca no cabeçalho). */
+  .cd-aba-oculta { display:none !important; }
+  .cnc-kpis, .cnc-chips { display:none !important; }
+  .cnc-fis-outra { display:none; }
+  .cnc-fis-mais { font:inherit; font-size:12.5px; color:var(--text-2); background:none; border:none;
+    padding:8px 2px 0; cursor:pointer; }
   .cnc-guia { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 16px;
     font-size:12.5px; color:var(--text-3); }
   .cnc-guia .p { border:1px solid var(--border); border-radius:999px; padding:4px 11px; background:var(--card); }
@@ -1272,7 +1397,7 @@ window.msgAcessoNegado = function (nomePagina) {
      escondia junto a única coisa que a casa ainda podia fazer aqui: enviar o
      cardápio impresso. As duas fontes são independentes e agora falham
      independentemente. -->
-<div class="cnc-fis-faixa" id="cnc-fis-faixa" style="display:none">
+<div class="cnc-fis-faixa" id="cnc-fis-faixa" data-cnc-aba="impresso" style="display:none">
   <div class="cnc-fis-cab">
     <div>
       <div class="cnc-fis-tit">Cardápio físico — envio do mês</div>
@@ -1285,13 +1410,6 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <div id="cnc-wrap" style="display:none">
 
-  <div class="cnc-guia">
-    <span class="p"><b>Cardápio digital</b> — o que o cliente vê no Tagme</span>
-    <span class="p"><b>Cardápio físico</b> — o que está impresso na mesa</span>
-    <span class="p"><b>Ficha</b> — o preço cadastrado no Notion</span>
-    <span class="p"><b>Sistema de vendas</b> — o que foi cobrado no mês</span>
-  </div>
-
   <div class="cnc-chips" id="cnc-casas"></div>
 
   <div class="cnc-kpis">
@@ -1302,6 +1420,13 @@ window.msgAcessoNegado = function (nomePagina) {
     <div class="cnc-kpi"><div class="v" id="cnc-k-conf">—</div><div class="l">Itens conferidos</div></div>
   </div>
 
+  <div data-cnc-aba="divergencias">
+  <div class="cnc-guia">
+    <span class="p"><b>Cardápio digital</b> — o que o cliente vê no Tagme</span>
+    <span class="p"><b>Cardápio físico</b> — o que está impresso na mesa</span>
+    <span class="p"><b>Ficha</b> — o preço cadastrado no Notion</span>
+    <span class="p"><b>Sistema de vendas</b> — o que foi cobrado no mês</span>
+  </div>
   <p class="cnc-sec">Divergências de preço</p>
   <p class="cnc-sec-sub" id="cnc-sub-div"></p>
   <div class="panel" style="padding:8px 10px;overflow-x:auto">
@@ -1311,7 +1436,9 @@ window.msgAcessoNegado = function (nomePagina) {
     </tr></thead><tbody id="cnc-lista-div"></tbody></table>
     <p class="cnc-vazio" id="cnc-vazio-div" style="display:none"></p>
   </div>
+  </div>
 
+  <div data-cnc-aba="impresso" data-cnc-con="1">
   <p class="cnc-sec">Cardápio físico</p>
   <p class="cnc-sec-sub" id="cnc-sub-fis"></p>
   <div class="panel" style="padding:8px 10px;overflow-x:auto">
@@ -1331,7 +1458,9 @@ window.msgAcessoNegado = function (nomePagina) {
     </tr></thead><tbody id="cnc-lista-exe"></tbody></table>
     <p class="cnc-vazio" id="cnc-vazio-exe" style="display:none"></p>
   </div>
+  </div>
 
+  <div data-cnc-aba="entre">
   <p class="cnc-sec">Mesmo produto, preço diferente entre casas</p>
   <p class="cnc-sec-sub">O preço de venda deve ser igual em todas as casas — diferença aqui é indicativo de correção. Compara o praticado de cada casa no mês dela; só entra diferença acima do ruído de desconto.</p>
   <div class="panel" style="padding:8px 10px;overflow-x:auto">
@@ -1340,7 +1469,9 @@ window.msgAcessoNegado = function (nomePagina) {
     </tr></thead><tbody id="cnc-lista-casas"></tbody></table>
     <p class="cnc-vazio" id="cnc-vazio-casas" style="display:none"></p>
   </div>
+  </div>
 
+  <div data-cnc-aba="sumiram">
   <p class="cnc-sec">Sumiram do cardápio digital</p>
   <p class="cnc-sec-sub">Itens que estavam numa foto anterior do cardápio e não estão na atual. Pode ser pausa por falta de produto — que precisa ser religada quando regularizar — ou saída definitiva. O quanto vendia mostra o que está deixando de entrar.</p>
   <div class="panel" style="padding:8px 10px;overflow-x:auto">
@@ -1349,12 +1480,15 @@ window.msgAcessoNegado = function (nomePagina) {
     </tr></thead><tbody id="cnc-lista-fora"></tbody></table>
     <p class="cnc-vazio" id="cnc-vazio-fora" style="display:none"></p>
   </div>
+  </div>
 
+  <div data-cnc-aba="nao">
   <p class="cnc-sec">O que esta página NÃO conseguiu conferir</p>
   <p class="cnc-sec-sub">Silêncio se lê como "está tudo certo". Então o que ficou de fora aparece aqui, explicitamente.</p>
   <div class="cnc-cov" id="cnc-cov"></div>
 
   <p class="cnc-foot" id="cnc-foot"></p>
+  </div>
 </div>
 
 <div class="cnc-modal" id="cnc-modal" style="display:none">
@@ -1408,6 +1542,7 @@ window.msgAcessoNegado = function (nomePagina) {
 <script>
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var EMBUTIDO = true;
   var NIVEIS_OK = ['chefe', 'coord', 'controladoria'];
   var SLUG = 'cardapio-definicao.html';
   var msg = document.getElementById('cnc-msg');
@@ -1486,6 +1621,7 @@ window.msgAcessoNegado = function (nomePagina) {
     // está aberta.
     window.cncMostraCasa = seleciona;
     window.cncCasaAtual = function () { return atual; };
+    window.cncRedesenhaFaixa = function () { if (ENVIOS && ENVIOS.casas) desenhaFaixa(); };
 
     function desenha() {
       var c = casas[atual] || {};
@@ -1869,6 +2005,11 @@ window.msgAcessoNegado = function (nomePagina) {
     // Chefe vê só a própria casa (o Worker manda casa_fixa) — listar as outras
     // como "não enviado" seria cobrar dele algo que ele não pode fazer.
     var slugsCasa = ENVIOS.casa_fixa ? [ENVIOS.casa_fixa] : Object.keys(casasCfg);
+    // Embutida em Cardápios: só a casa aberta fica à vista, as outras ficam
+    // atrás de "Ver outras casas". Casa aberta que não está na lista (ou
+    // chefe, que já vê só a dele): mostra tudo, sem inventar filtro.
+    var aberta = EMBUTIDO && window.cdCasaAberta && slugsCasa.indexOf(window.cdCasaAberta) >= 0 && slugsCasa.length > 1
+      ? window.cdCasaAberta : null;
     var doMes = (ENVIOS.envios || []).filter(function (e) { return e.mes === mes; });
 
     grid.textContent = '';
@@ -1879,6 +2020,7 @@ window.msgAcessoNegado = function (nomePagina) {
       if (!meus.length) {
         var cel = document.createElement('div');
         cel.className = 'cnc-fis-cel falta';
+        cel.dataset.casa = slug;
         var q = document.createElement('div');
         q.className = 'q';
         q.textContent = casasCfg[slug] || slug;
@@ -1892,6 +2034,7 @@ window.msgAcessoNegado = function (nomePagina) {
       meus.forEach(function (e) {
         var cel2 = document.createElement('div');
         cel2.className = 'cnc-fis-cel ok';
+        cel2.dataset.casa = slug;
         var q2 = document.createElement('div');
         q2.className = 'q';
         q2.textContent = (casasCfg[slug] || slug) + ' · ' + (e.tipo || '');
@@ -1905,6 +2048,29 @@ window.msgAcessoNegado = function (nomePagina) {
       });
     });
 
+    var maisAnt = document.getElementById('cnc-fis-mais');
+    if (maisAnt) maisAnt.parentNode.removeChild(maisAnt);
+    if (aberta) {
+      var outras = 0;
+      Array.prototype.forEach.call(grid.children, function (c) {
+        if (c.dataset.casa !== aberta) { c.classList.add('cnc-fis-outra'); outras++; }
+      });
+      var mais = document.createElement('button');
+      mais.type = 'button';
+      mais.id = 'cnc-fis-mais';
+      mais.className = 'cnc-fis-mais';
+      mais.setAttribute('aria-expanded', 'false');
+      mais.textContent = 'Ver outras casas (' + (slugsCasa.length - 1) + ')';
+      mais.onclick = function () {
+        var abre = mais.getAttribute('aria-expanded') !== 'true';
+        mais.setAttribute('aria-expanded', abre ? 'true' : 'false');
+        mais.textContent = abre ? 'Esconder outras casas' : 'Ver outras casas (' + (slugsCasa.length - 1) + ')';
+        Array.prototype.forEach.call(grid.children, function (c) {
+          if (c.dataset.casa !== aberta) c.classList.toggle('cnc-fis-outra', !abre);
+        });
+      };
+      grid.parentNode.appendChild(mais);
+    }
     document.getElementById('cnc-fis-resumo').textContent =
       mesBonito(mes) + ' — ' + enviaram + ' de ' + slugsCasa.length
       + (slugsCasa.length === 1 ? ' casa enviou.' : ' casas enviaram.')
@@ -2269,6 +2435,413 @@ window.msgAcessoNegado = function (nomePagina) {
   </div>
 </div>
 </div>
+
+
+<script>
+// bh_xlsx.py :: JS_XLSX — escritor de .xlsx sem biblioteca (Etapa E3,
+// PLANO_BH_V2.md). ZIP em método store (sem compressão) + OOXML mínimo.
+// Roda em navegador (window.*) e em Node para o harness de teste, que
+// injeta `global.window = global` antes de carregar este bloco.
+(function (window) {
+  'use strict';
+
+  // ---------- bytes / util ----------
+
+  function u16LE(n) { return new Uint8Array([n & 0xFF, (n >>> 8) & 0xFF]); }
+  function u32LE(n) {
+    return new Uint8Array([
+      n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF,
+    ]);
+  }
+  function utf8Bytes(str) { return new TextEncoder().encode(str); }
+
+  function concatBytes(arrays) {
+    var total = 0;
+    for (var i = 0; i < arrays.length; i++) total += arrays[i].length;
+    var out = new Uint8Array(total);
+    var offset = 0;
+    for (var j = 0; j < arrays.length; j++) {
+      out.set(arrays[j], offset);
+      offset += arrays[j].length;
+    }
+    return out;
+  }
+
+  function xmlEsc(s) {
+    return String(s).replace(/[&<>'"]/g, function (c) {
+      if (c === '&') return '&amp;';
+      if (c === '<') return '&lt;';
+      if (c === '>') return '&gt;';
+      if (c === "'") return '&apos;';
+      return '&quot;';
+    });
+  }
+
+  // Letra de coluna do Excel a partir do índice 1-based (1->A, 27->AA).
+  function colLetra(n) {
+    var s = '';
+    while (n > 0) {
+      var m = (n - 1) % 26;
+      s = String.fromCharCode(65 + m) + s;
+      n = Math.floor((n - 1) / 26);
+    }
+    return s;
+  }
+
+  // ---------- CRC-32 (necessário mesmo em store — vai no cabeçalho) ----------
+
+  var CRC32_TABELA = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(bytes) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) {
+      c = CRC32_TABELA[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  // ---------- ZIP (método store — 0, sem DEFLATE) ----------
+
+  function dosHora(d) {
+    return ((d.getHours() & 0x1F) << 11) | ((d.getMinutes() & 0x3F) << 5) | ((d.getSeconds() >> 1) & 0x1F);
+  }
+  function dosData(d) {
+    var ano = d.getFullYear() - 1980;
+    if (ano < 0) ano = 0;
+    return ((ano & 0x7F) << 9) | (((d.getMonth() + 1) & 0xF) << 5) | (d.getDate() & 0x1F);
+  }
+
+  // arquivos: [{ nome: 'xl/workbook.xml', dados: Uint8Array }, ...]
+  function empacotarZip(arquivos) {
+    var agora = new Date();
+    var dTime = dosHora(agora), dDate = dosData(agora);
+    var locais = [];
+    var centrais = [];
+    var offset = 0;
+
+    for (var i = 0; i < arquivos.length; i++) {
+      var nomeBytes = utf8Bytes(arquivos[i].nome);
+      var dados = arquivos[i].dados;
+      var crc = crc32(dados);
+
+      var lfh = concatBytes([
+        u32LE(0x04034b50),
+        u16LE(20),      // version needed to extract
+        u16LE(0),       // flags
+        u16LE(0),       // método: 0 = store (sem compressão)
+        u16LE(dTime),
+        u16LE(dDate),
+        u32LE(crc),
+        u32LE(dados.length), // compressed size == uncompressed em store
+        u32LE(dados.length),
+        u16LE(nomeBytes.length),
+        u16LE(0),       // extra field length
+        nomeBytes,
+      ]);
+      locais.push(lfh, dados);
+
+      var cdh = concatBytes([
+        u32LE(0x02014b50),
+        u16LE(20),      // version made by
+        u16LE(20),      // version needed to extract
+        u16LE(0),       // flags
+        u16LE(0),       // método: store
+        u16LE(dTime),
+        u16LE(dDate),
+        u32LE(crc),
+        u32LE(dados.length),
+        u32LE(dados.length),
+        u16LE(nomeBytes.length),
+        u16LE(0),       // extra field length
+        u16LE(0),       // comment length
+        u16LE(0),       // disk number start
+        u16LE(0),       // internal file attrs
+        u32LE(0),       // external file attrs
+        u32LE(offset),  // offset do local header
+        nomeBytes,
+      ]);
+      centrais.push(cdh);
+
+      offset += lfh.length + dados.length;
+    }
+
+    var centralDirOffset = offset;
+    var centralDirBytes = concatBytes(centrais);
+    var eocd = concatBytes([
+      u32LE(0x06054b50),
+      u16LE(0), u16LE(0),               // nº do disco / disco do central dir
+      u16LE(arquivos.length),           // entradas neste disco
+      u16LE(arquivos.length),           // entradas totais
+      u32LE(centralDirBytes.length),    // tamanho do central directory
+      u32LE(centralDirOffset),          // offset de início do central directory
+      u16LE(0),                         // comment length
+    ]);
+
+    return concatBytes(locais.concat([centralDirBytes, eocd]));
+  }
+
+  // ---------- OOXML: partes fixas ----------
+
+  var RELS_RAIZ =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" ' +
+    'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" ' +
+    'Target="xl/workbook.xml"/>' +
+    '</Relationships>';
+
+  // numFmtId: builtins usados sem declarar (49=Texto "@", 2="0.00", 1="0").
+  // 164/165 são customizados (moeda/data), únicos que precisam de <numFmt>.
+  var STYLES_XML =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="2">' +
+    '<numFmt numFmtId="164" formatCode="&quot;R$&quot;\ #,##0.00"/>' +
+    '<numFmt numFmtId="165" formatCode="dd/mm/yyyy"/>' +
+    '</numFmts>' +
+    '<fonts count="2">' +
+    '<font><sz val="11"/><name val="Calibri"/></font>' +
+    '<font><b/><sz val="11"/><name val="Calibri"/></font>' +
+    '</fonts>' +
+    '<fills count="3">' +
+    '<fill><patternFill patternType="none"/></fill>' +
+    '<fill><patternFill patternType="gray125"/></fill>' +
+    '<fill><patternFill patternType="solid">' +
+    '<fgColor rgb="FFE8E1D0"/><bgColor indexed="64"/></patternFill></fill>' +
+    '</fills>' +
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="7">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +                              // 0 padrão
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>' +  // 1 cabeçalho
+    '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +       // 2 texto
+    '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +        // 3 número (0.00)
+    '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +        // 4 inteiro
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +      // 5 moeda
+    '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +      // 6 data
+    '</cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+    '</styleSheet>';
+
+  var ESTILO_POR_TIPO = { texto: 2, numero: 3, inteiro: 4, moeda: 5, data: 6 };
+  var ESTILO_CABECALHO = 1;
+  var ESTILO_AUSENTE = 2; // "—" sempre em célula de texto, nunca 0 fabricado
+
+  function montaContentTypes(nAbas) {
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+      '<Default Extension="xml" ContentType="application/xml"/>',
+      '<Override PartName="/xl/workbook.xml" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
+      '<Override PartName="/xl/styles.xml" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>',
+    ];
+    for (var i = 1; i <= nAbas; i++) {
+      partes.push(
+        '<Override PartName="/xl/worksheets/sheet' + i + '.xml" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+      );
+    }
+    partes.push('</Types>');
+    return partes.join('');
+  }
+
+  function montaWorkbookXml(nomesAbas) {
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
+      '<sheets>',
+    ];
+    for (var i = 0; i < nomesAbas.length; i++) {
+      partes.push(
+        '<sheet name="' + xmlEsc(nomesAbas[i]) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'
+      );
+    }
+    partes.push('</sheets>', '</workbook>');
+    return partes.join('');
+  }
+
+  function montaWorkbookRels(nAbas) {
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
+    ];
+    for (var i = 1; i <= nAbas; i++) {
+      partes.push(
+        '<Relationship Id="rId' + i + '" ' +
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" ' +
+        'Target="worksheets/sheet' + i + '.xml"/>'
+      );
+    }
+    partes.push(
+      '<Relationship Id="rId' + (nAbas + 1) + '" ' +
+      'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" ' +
+      'Target="styles.xml"/>'
+    );
+    partes.push('</Relationships>');
+    return partes.join('');
+  }
+
+  // Nome de aba: até 31 chars, sem \ / ? * [ ] : , único dentro do arquivo.
+  function nomeAbaSeguro(nome, usados) {
+    var s = String(nome == null ? 'Aba' : nome).replace(/[\\/\?\*\[\]:]/g, ' ').trim();
+    if (!s) s = 'Aba';
+    if (s.length > 31) s = s.substring(0, 31);
+    var base = s, i = 2;
+    while (usados[s]) {
+      var suf = '_' + i;
+      s = base.substring(0, Math.max(1, 31 - suf.length)) + suf;
+      i++;
+    }
+    usados[s] = true;
+    return s;
+  }
+
+  // Serial de data do Excel: dias desde 1899-12-30 (epoch deslocado que já
+  // absorve o bug histórico do "29/02/1900" do Lotus 1-2-3).
+  function dataParaSerial(valor) {
+    var d;
+    if (valor instanceof Date) {
+      d = valor;
+    } else {
+      var partes = String(valor).split('-');
+      d = new Date(Date.UTC(+partes[0], +partes[1] - 1, +partes[2]));
+    }
+    var epoch = Date.UTC(1899, 11, 30);
+    var ms = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - epoch;
+    return Math.round(ms / 86400000);
+  }
+
+  function celulaAusenteXml(ref) {
+    // Nunca 0 fabricado (regra do Controle de Doses): ausência vira "—",
+    // sempre em célula de TEXTO — não pode ser somada como se fosse zero.
+    return '<c r="' + ref + '" t="inlineStr" s="' + ESTILO_AUSENTE + '"><is><t>&#8212;</t></is></c>';
+  }
+
+  function celulaXml(ref, tipo, valor) {
+    var ausente = valor === null || valor === undefined || valor === '';
+    var s = ESTILO_POR_TIPO[tipo] != null ? ESTILO_POR_TIPO[tipo] : 0;
+
+    if (tipo === 'texto') {
+      var texto = ausente ? '' : String(valor);
+      return '<c r="' + ref + '" t="inlineStr" s="' + s + '">' +
+        '<is><t xml:space="preserve">' + xmlEsc(texto) + '</t></is></c>';
+    }
+
+    if (ausente) return celulaAusenteXml(ref);
+
+    if (tipo === 'data') {
+      return '<c r="' + ref + '" s="' + s + '"><v>' + dataParaSerial(valor) + '</v></c>';
+    }
+
+    var num = Number(valor);
+    if (!isFinite(num)) return celulaAusenteXml(ref);
+    return '<c r="' + ref + '" s="' + s + '"><v>' + num + '</v></c>';
+  }
+
+  function montaSheetXml(aba) {
+    var colunas = aba.colunas || [];
+    var linhas = aba.linhas || [];
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    ];
+
+    if (colunas.length) {
+      partes.push('<cols>');
+      for (var c = 0; c < colunas.length; c++) {
+        var largura = colunas[c].largura || Math.max(10, String(colunas[c].titulo || '').length + 4);
+        partes.push('<col min="' + (c + 1) + '" max="' + (c + 1) + '" width="' + largura + '" customWidth="1"/>');
+      }
+      partes.push('</cols>');
+    }
+
+    partes.push('<sheetData>');
+
+    partes.push('<row r="1">');
+    for (var ci = 0; ci < colunas.length; ci++) {
+      var refc = colLetra(ci + 1) + '1';
+      partes.push(
+        '<c r="' + refc + '" t="inlineStr" s="' + ESTILO_CABECALHO + '">' +
+        '<is><t xml:space="preserve">' + xmlEsc(colunas[ci].titulo || '') + '</t></is></c>'
+      );
+    }
+    partes.push('</row>');
+
+    for (var r = 0; r < linhas.length; r++) {
+      var linha = linhas[r] || [];
+      var rn = r + 2;
+      partes.push('<row r="' + rn + '">');
+      for (var cj = 0; cj < colunas.length; cj++) {
+        var ref = colLetra(cj + 1) + rn;
+        partes.push(celulaXml(ref, colunas[cj].tipo, linha[cj]));
+      }
+      partes.push('</row>');
+    }
+
+    partes.push('</sheetData>', '</worksheet>');
+    return partes.join('');
+  }
+
+  // ---------- API pública ----------
+
+  // abas: [{ nome, colunas: [{titulo, tipo, largura?}], linhas: [[...]] }]
+  function xlsxGerar(abas) {
+    if (!abas || !abas.length) throw new Error('xlsxGerar: nenhuma aba informada');
+
+    var usados = {};
+    var nomesSeguros = [];
+    var sheetsXml = [];
+    for (var i = 0; i < abas.length; i++) {
+      nomesSeguros.push(nomeAbaSeguro(abas[i].nome, usados));
+      sheetsXml.push(montaSheetXml(abas[i]));
+    }
+
+    var arquivos = [];
+    arquivos.push({ nome: '[Content_Types].xml', dados: utf8Bytes(montaContentTypes(abas.length)) });
+    arquivos.push({ nome: '_rels/.rels', dados: utf8Bytes(RELS_RAIZ) });
+    arquivos.push({ nome: 'xl/workbook.xml', dados: utf8Bytes(montaWorkbookXml(nomesSeguros)) });
+    arquivos.push({ nome: 'xl/_rels/workbook.xml.rels', dados: utf8Bytes(montaWorkbookRels(abas.length)) });
+    arquivos.push({ nome: 'xl/styles.xml', dados: utf8Bytes(STYLES_XML) });
+    for (var j = 0; j < sheetsXml.length; j++) {
+      arquivos.push({ nome: 'xl/worksheets/sheet' + (j + 1) + '.xml', dados: utf8Bytes(sheetsXml[j]) });
+    }
+
+    return empacotarZip(arquivos);
+  }
+
+  function xlsxBaixa(abas, nomeArquivo) {
+    var bytes = xlsxGerar(abas);
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (nomeArquivo || 'banco-horas') + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  window.xlsxGerar = xlsxGerar;
+  window.xlsxBaixa = xlsxBaixa;
+})(window);
+</script>
 
 <script>
 
@@ -2951,8 +3524,10 @@ function nomeArquivoSeguro(base) {
     }
     if (ATUAL_PEDIDO) {
       var p = ATUAL_PEDIDO;
-      ATUAL_PEDIDO = null;
-      abreAtual(casas[p] ? p : null);
+      var aba = ABA_PEDIDA;
+      ATUAL_PEDIDO = null; ABA_PEDIDA = null;
+      var conhecida = !!casas[p] || (d.sem_cobertura || []).some(function (x) { return x.casa === p; });
+      abreAtual(conhecida ? p : null, aba);
     }
   }
   function falhaAtuais(texto) {
@@ -2964,24 +3539,773 @@ function nomeArquivoSeguro(base) {
     alvo.appendChild(v);
   }
 
-  function abreAtual(slug) {
+  // ---------- carta da casa (PLANO_CARDAPIO_ATUAL_CASA.md, E5 a E7) ----------
+  // A casa abre na carta dela: a versão vigente que o Worker guarda
+  // (GET /api/cardapio-versoes) com o custo do índice do dia. As análises da
+  // Conciliação (divergências, entre casas, sumiram, impresso, não conferido)
+  // viram abas no topo; elas continuam sendo a conciliação embutida, só
+  // mostradas uma de cada vez (data-cnc-aba + .cd-aba-oculta).
+  // Preço atual é só leitura. O "novo" é um campo à parte; confirmar cria uma
+  // versão nova no Worker e a anterior fica guardada (aba Versões).
+  var CV = null, CV_CASA = null, CV_ESTADO = 'vazio', CV_ERRO = '';
+  var NOVOS = {};              // slug do item -> texto digitado no campo "novo"
+  var ABA = 'cardapio', ABA_PEDIDA = null;
+  var VER_CUSTO = true, BUSCA_CARTA = '', REVISANDO = false, PREVIA = false;
+  var CATS_EST = {};           // 'casa|categoria' -> true aberta / false fechada (escolha da pessoa)
+  var VER_DET = {}, VER_ITENS = {};
+  var LS_CUSTO = 'cd_carta_custo', LS_CATS = 'cd_carta_cats', LS_RASC = 'cd_carta_rascunho_';
+  var CMV_VERDE = 25, CMV_AMARELO = 32;   // D7: verde até 25%, amarelo até 32%, vermelho acima
+  var MUDANCA_GRANDE = 30;                // % de variação que pede confirmação extra
+
+  function lsLe(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsGrava(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function lsApaga(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  function cel(tag, cls, texto) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (texto !== undefined && texto !== null) e.textContent = String(texto);
+    return e;
+  }
+  function p2(n) { return ('0' + n).slice(-2); }
+  function diaBr(iso) {
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : p2(d.getDate()) + '/' + p2(d.getMonth() + 1);
+  }
+  function diaHoraBr(iso) {
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? '—'
+      : p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+  }
+  function rotuloVersao(v) {
+    return v.origem === 'tagme' ? 'cardápio digital de ' + dataCurta(v.foto_tagme) : diaBr(v.criada_em);
+  }
+  function casaNome(slug) {
+    var d = window.cncDados || {};
+    if (d.casas && d.casas[slug] && d.casas[slug].nome) return d.casas[slug].nome;
+    var sc = (d.sem_cobertura || []).filter(function (s) { return s.casa === slug; })[0];
+    return (sc && sc.nome) || CASAS[slug] || slug;
+  }
+  function conciliacaoDa(casa) {
+    var d = window.cncDados || {};
+    return (d.casas || {})[casa] || null;
+  }
+
+  // ---- CMV ----
+  function cmvDe(custo, preco) {
+    return (custo !== null && custo !== undefined && preco > 0) ? custo / preco * 100 : null;
+  }
+  function cmvCls(v) { return v === null ? 'n' : v <= CMV_VERDE ? 'g' : v <= CMV_AMARELO ? 'a' : 'r'; }
+  function cmvTxt(v) { return v === null ? '—' : Math.round(v) + '%'; }
+  function novoValido(it) {
+    var b = NOVOS[it.slug];
+    if (b === undefined || b === '') return { estado: 'vazio' };
+    var v = lePreco(b);
+    if (v !== v || v === '' || v <= 0) return { estado: 'invalido' };
+    return { estado: 'ok', valor: v };
+  }
+  function mudou(it, n) {
+    return n.estado === 'ok' && (it.preco === null || Math.abs(n.valor - it.preco) >= 0.005);
+  }
+  function mudancas() {
+    var r = [];
+    if (!CV || !CV.vigente) return r;
+    CV.vigente.itens.forEach(function (it) {
+      var n = novoValido(it);
+      if (mudou(it, n)) r.push({ it: it, novo: n.valor });
+    });
+    return r;
+  }
+  function invalidos() {
+    var c = 0;
+    if (!CV || !CV.vigente) return c;
+    CV.vigente.itens.forEach(function (it) { if (novoValido(it).estado === 'invalido') c++; });
+    return c;
+  }
+  function cmvMedio(comNovos) {
+    if (!CV || !CV.vigente) return null;
+    var soma = 0, n = 0;
+    CV.vigente.itens.forEach(function (it) {
+      var preco = it.preco;
+      if (comNovos) { var nv = novoValido(it); if (mudou(it, nv)) preco = nv.valor; }
+      var v = cmvDe(custoDoItem(it, CV_CASA), preco);
+      if (v !== null) { soma += v; n++; }
+    });
+    return n ? soma / n : null;
+  }
+  function divSet() {
+    var c = conciliacaoDa(CV_CASA), s = {};
+    ((c && c.divergencias) || []).forEach(function (x) { if (x.classe !== 'ok' && x.slug) s[x.slug] = true; });
+    return s;
+  }
+
+  // ---- rascunho: o que foi digitado e ainda não confirmado, por casa ----
+  function rascunhoLe(casa, d) {
+    try {
+      var r = JSON.parse(lsLe(LS_RASC + casa) || 'null');
+      if (r && d && d.vigente && r.base === d.vigente.id && r.novos && typeof r.novos === 'object') return r.novos;
+    } catch (e) {}
+    return {};
+  }
+  function salvaRascunho() {
+    if (!CV || !CV.vigente) return;
+    if (!Object.keys(NOVOS).length) { lsApaga(LS_RASC + CV_CASA); return; }
+    lsGrava(LS_RASC + CV_CASA, JSON.stringify({ base: CV.vigente.id, novos: NOVOS }));
+  }
+
+  // ---- carregar ----
+  function semCartaLocal(casa) {
+    var d = window.cncDados || {};
+    var sc = (d.sem_cobertura || []).filter(function (s) { return s.casa === casa; })[0];
+    return { casa: casa, vigente: null, versoes: [], pode_confirmar: false,
+             sem_carta: (sc && sc.motivo) || 'casa sem cardápio digital de bebidas' };
+  }
+  function carregaCarta(casa) {
+    CV_CASA = casa; CV = null; CV_ESTADO = 'carregando'; CV_ERRO = '';
+    NOVOS = {}; BUSCA_CARTA = ''; VER_DET = {}; VER_ITENS = {}; ITEM_SEL = null; VER_FULL = {};
+    var b = document.getElementById('cd-ca-busca'); if (b) b.value = '';
+    desenhaTudo();
+    if (!CASAS[casa]) {
+      // Casa que o Worker não conhece (Enttres): sem carta digital, e o motivo
+      // já vem da conciliação.
+      CV = semCartaLocal(casa); CV_ESTADO = 'ok';
+      desenhaTudo();
+      return;
+    }
+    api('/api/cardapio-versoes?casa=' + encodeURIComponent(casa)).then(function (d) {
+      if (CV_CASA !== casa) return;
+      if (PREVIA) d.pode_confirmar = false;
+      CV = d; CV_ESTADO = 'ok';
+      NOVOS = d.pode_confirmar ? rascunhoLe(casa, d) : {};
+    }).catch(function (e) {
+      if (CV_CASA !== casa) return;
+      CV_ESTADO = 'falhou'; CV_ERRO = e.message;
+    }).then(function () {
+      if (CV_CASA === casa) desenhaTudo();
+    });
+  }
+  function aoCarregarCustos() {
+    if (CV_ESTADO === 'ok' && document.getElementById('cd-atual').style.display !== 'none') desenhaTudo();
+  }
+  function desenhaTudo() {
+    desenhaMeta();
+    desenhaAbas();
+    if (REVISANDO) desenhaRevisao(); else desenhaCarta();
+    desenhaVersoes();
+    aplicaRevisao();
+    mostraAbaPainel();
+  }
+
+  // ---- cabeçalho: casa, meta e abas ----
+  function casasAbertas() {
+    var d = window.cncDados || {}, lista = {};
+    Object.keys(d.casas || {}).forEach(function (s) { lista[s] = casaNome(s); });
+    (d.sem_cobertura || []).forEach(function (s) { if (!lista[s.casa]) lista[s.casa] = s.nome || casaNome(s.casa); });
+    if (CV_CASA && !lista[CV_CASA]) lista[CV_CASA] = casaNome(CV_CASA);
+    return Object.keys(lista).sort(function (a, b) { return lista[a].localeCompare(lista[b], 'pt-BR'); })
+      .map(function (s) { return { slug: s, nome: lista[s] }; });
+  }
+  function desenhaSelCasa() {
+    var sel = document.getElementById('cd-ca-casa'), lista = casasAbertas();
+    sel.textContent = '';
+    lista.forEach(function (c) {
+      var o = cel('option', null, c.nome); o.value = c.slug; sel.appendChild(o);
+    });
+    sel.value = CV_CASA;
+    sel.style.display = lista.length > 1 ? '' : 'none';
+    sel.onchange = function () { abreAtual(sel.value, ABA); };
+    var h = document.querySelector('#cd-atual .cd-ca-topo h2');
+    txt(h, lista.length > 1 ? 'Cardápio atual' : 'Cardápio atual · ' + casaNome(CV_CASA));
+  }
+  function desenhaMeta() {
+    var d = window.cncDados || {}, c = conciliacaoDa(CV_CASA), partes = [];
+    if (CV && CV.vigente) {
+      partes.push('versão: ' + rotuloVersao(CV.vigente));
+      partes.push(CV.vigente.n_itens + ' itens');
+      var cm = cmvMedio(false);
+      if (cm !== null) partes.push('CMV médio ' + Math.round(cm) + '%');
+    }
+    if (c && c.mes) partes.push('vendas ' + c.mes);
+    if (d.foto_cardapio) partes.push('digital ' + dataCurta(d.foto_cardapio));
+    txt(document.getElementById('cd-ca-meta'), partes.join(' · '));
+  }
+  function abasDefs() {
+    var d = window.cncDados || {}, c = conciliacaoDa(CV_CASA);
+    var r = [{ id: 'cardapio', l: 'Cardápio' }];
+    if (c) r.push({ id: 'divergencias', l: 'Divergências', n: (c.resumo || {}).alertas || 0 });
+    r.push({ id: 'entre', l: 'Entre casas', n: (d.entre_casas || []).length });
+    if (c) r.push({ id: 'sumiram', l: 'Sumiram', n: (c.resumo || {}).pausados || 0 });
+    r.push({ id: 'impresso', l: 'Impresso' });
+    if (c) r.push({ id: 'nao', l: 'Não conferido' });
+    r.push({ id: 'versoes', l: 'Versões', n: CV && CV.versoes ? CV.versoes.length : 0 });
+    return r;
+  }
+  function desenhaAbas() {
+    var raiz = document.getElementById('cd-ca-abas'), defs = abasDefs();
+    if (!defs.some(function (x) { return x.id === ABA; })) ABA = 'cardapio';
+    raiz.textContent = '';
+    defs.forEach(function (x) {
+      var b = cel('button', 'cd-ca-aba' + (x.id === ABA ? ' on' : ''), x.l);
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', x.id === ABA ? 'true' : 'false');
+      if (x.n) b.appendChild(cel('b', null, x.n));
+      b.onclick = function () { mostraAba(x.id); };
+      raiz.appendChild(b);
+    });
+  }
+  function mostraAbaPainel() {
+    var c = conciliacaoDa(CV_CASA);
+    document.getElementById('cd-aba-cardapio').style.display = ABA === 'cardapio' ? '' : 'none';
+    document.getElementById('cd-aba-versoes').style.display = ABA === 'versoes' ? '' : 'none';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-cnc-aba]'), function (e) {
+      var fora = e.getAttribute('data-cnc-aba') !== ABA || (e.hasAttribute('data-cnc-con') && !c);
+      e.classList.toggle('cd-aba-oculta', fora);
+    });
+  }
+  function mostraAba(id) {
+    ABA = id;
+    desenhaAbas();
+    mostraAbaPainel();
+    try { history.replaceState(null, '', '?atual=' + encodeURIComponent(CV_CASA) + (id !== 'cardapio' ? '&aba=' + id : '')); } catch (e) {}
+  }
+
+  // ---- a carta ----
+  function gruposDaCarta() {
+    var ordem = [], por = {};
+    CV.vigente.itens.forEach(function (it) {
+      if (!por[it.secao]) { por[it.secao] = []; ordem.push(it.secao); }
+      por[it.secao].push(it);
+    });
+    return ordem.map(function (n) { return { nome: n, itens: por[n] }; });
+  }
+  function catAberta(chave, indice, buscando) {
+    if (buscando) return true;
+    return CATS_EST[chave] !== undefined ? CATS_EST[chave] : indice === 0;
+  }
+  function salvaCats() { lsGrava(LS_CATS, JSON.stringify(CATS_EST)); }
+
+  function desenhaCarta() {
+    var raiz = document.getElementById('cd-ca-lista');
+    var ferr = document.querySelector('#cd-ca-carta .cd-ca-ferr');
+    raiz.textContent = '';
+    if (CV_ESTADO !== 'ok') {
+      ferr.style.display = 'none';
+      raiz.appendChild(cel('p', 'cd-vazio', CV_ESTADO === 'falhou'
+        ? 'Não consegui carregar a carta: ' + CV_ERRO : 'Carregando a carta…'));
+      atualizaBarra();
+      return;
+    }
+    if (!CV.vigente) {
+      ferr.style.display = 'none';
+      var v = cel('div', 'cd-vazio');
+      v.appendChild(cel('p', null, casaNome(CV_CASA) + ' sem carta para mostrar: '
+        + (CV.sem_carta || 'carta digital não publicada') + '.'));
+      var bt = cel('button', 'cd-btn sec', 'Ver o cardápio impresso');
+      bt.type = 'button';
+      bt.onclick = function () { mostraAba('impresso'); };
+      v.appendChild(bt);
+      raiz.appendChild(v);
+      atualizaBarra();
+      return;
+    }
+    ferr.style.display = '';
+    var pode = !!CV.pode_confirmar, verCusto = VER_CUSTO;
+    var tog = document.getElementById('cd-ca-custo');
+    tog.classList.toggle('on', VER_CUSTO);
+    tog.setAttribute('aria-pressed', VER_CUSTO ? 'true' : 'false');
+
+    var box = cel('div', 'cd-cl' + (pode ? ' pode' : '') + (verCusto ? ' custo' : ''));
+    var cab = cel('div', 'cd-cl-linha cab');
+    cab.appendChild(cel('div', null, 'item'));
+    cab.appendChild(cel('div', 'n', 'atual'));
+    if (pode) cab.appendChild(cel('div', 'n', 'novo'));
+    if (verCusto) { cab.appendChild(cel('div', 'n', 'custo')); cab.appendChild(cel('div', 'n', 'CMV')); }
+    box.appendChild(cab);
+
+    var busca = BUSCA_CARTA, div = divSet(), algum = false;
+    gruposDaCarta().forEach(function (g, i) {
+      var itens = busca ? g.itens.filter(function (it) { return normChave(it.nome).indexOf(busca) >= 0; }) : g.itens;
+      if (!itens.length) return;
+      algum = true;
+      var chave = CV_CASA + '|' + g.nome, aberta = catAberta(chave, i, !!busca);
+      var bt2 = cel('button', 'cd-cl-cat' + (aberta ? ' aberta' : ''));
+      bt2.type = 'button';
+      bt2.setAttribute('aria-expanded', aberta ? 'true' : 'false');
+      var seta = cel('span', 'seta'); seta.innerHTML = "<svg class=\"ic\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6l6 6-6 6\"/></svg>";
+      if (aberta) seta.firstChild.style.transform = 'rotate(90deg)';
+      bt2.appendChild(seta);
+      bt2.appendChild(cel('span', 'nome', g.nome));
+      var cmvs = [];
+      g.itens.forEach(function (it) {
+        var x = cmvDe(custoDoItem(it, CV_CASA), it.preco);
+        if (x !== null) cmvs.push(x);
+      });
+      var soma = 0; cmvs.forEach(function (x) { soma += x; });
+      bt2.appendChild(cel('span', 'res', g.itens.length + (cmvs.length ? ' · CMV ' + Math.round(soma / cmvs.length) + '%' : '')));
+      bt2.onclick = function () {
+        if (busca) return;
+        CATS_EST[chave] = !aberta; salvaCats(); desenhaCarta();
+      };
+      box.appendChild(bt2);
+      if (aberta) itens.forEach(function (it) {
+        box.appendChild(linhaCarta(it, pode, verCusto, div));
+        if (ITEM_SEL === it.slug && !larguraTablet()) {
+          var emb = cel('div', 'cd-ca-det inline');
+          emb.appendChild(conteudoDetalhe(it));
+          box.appendChild(emb);
+        }
+      });
+    });
+    if (!algum) raiz.appendChild(cel('p', 'cd-vazio', 'Nenhum item com esse nome.'));
+    else if (larguraTablet()) {
+      // Tablet deitado: a carta à esquerda e o item tocado à direita.
+      var duas = cel('div', 'cd-ca-duas');
+      var lado = cel('aside', 'cd-ca-det lado');
+      lado.setAttribute('aria-label', 'Detalhe do item');
+      lado.appendChild(conteudoDetalhe(itemPorSlug(ITEM_SEL)));
+      duas.appendChild(box); duas.appendChild(lado);
+      raiz.appendChild(duas);
+    } else raiz.appendChild(box);
+    atualizaBarra();
+  }
+
+  function linhaCarta(it, pode, verCusto, div) {
+    var row = cel('div', 'cd-cl-linha');
+    var nome = cel('div', 'cd-cl-nome');
+    nome.appendChild(document.createTextNode(it.nome));
+    nome.style.cursor = 'pointer';
+    nome.onclick = function () {
+      ITEM_SEL = ITEM_SEL === it.slug ? null : it.slug;
+      if (ITEM_SEL) carregaVersoesCompletas();
+      desenhaCarta();
+    };
+    if (ITEM_SEL === it.slug) row.classList.add('sel');
+    if (div[it.slug]) {
+      var dot = cel('button', 'cd-cl-dot');
+      dot.type = 'button';
+      dot.title = 'Tem divergência de preço: abrir a aba Divergências';
+      dot.setAttribute('aria-label', 'Divergência de preço em ' + it.nome);
+      dot.onclick = function (ev) { ev.stopPropagation(); mostraAba('divergencias'); };
+      nome.appendChild(dot);
+    }
+    row.appendChild(nome);
+    row.appendChild(cel('div', 'n', it.preco === null ? '—' : soNumero(it.preco)));
+    var inp = null, cCusto = null, cCmv = null;
+    if (pode) {
+      inp = cel('input', 'cd-cl-in');
+      inp.type = 'text'; inp.inputMode = 'decimal'; inp.autocomplete = 'off';
+      inp.placeholder = '—';
+      inp.value = NOVOS[it.slug] || '';
+      inp.setAttribute('aria-label', 'Preço novo de ' + it.nome);
+      row.appendChild(inp);
+    }
+    if (verCusto) {
+      cCusto = cel('div', 'n mut');
+      cCmv = cel('div', 'cd-cl-cmv');
+      row.appendChild(cCusto); row.appendChild(cCmv);
+    }
+    function pinta() {
+      var n = novoValido(it), mud = mudou(it, n);
+      if (inp) {
+        inp.classList.toggle('mudou', mud);
+        inp.classList.toggle('err', n.estado === 'invalido');
+      }
+      row.classList.toggle('mudou', mud);
+      if (!verCusto) return;
+      var custo = custoDoItem(it, CV_CASA);
+      txt(cCusto, custo === null ? '—' : soNumero(custo));
+      var a = cmvDe(custo, it.preco), b = mud ? cmvDe(custo, n.valor) : null;
+      var t = (mud && b !== null) ? (a !== null ? Math.round(a) + '→' : '') + Math.round(b) + '%' : cmvTxt(a);
+      txt(cCmv, t);
+      cCmv.className = 'cd-cl-cmv ' + cmvCls(mud && b !== null ? b : a);
+    }
+    pinta();
+    if (inp) {
+      inp.oninput = function () {
+        var v = inp.value.trim();
+        if (v === '') delete NOVOS[it.slug]; else NOVOS[it.slug] = v;
+        salvaRascunho();
+        pinta();
+        atualizaBarra();
+        desenhaMeta();
+      };
+      inp.onkeydown = function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        var todos = Array.prototype.slice.call(document.querySelectorAll('#cd-ca-lista .cd-cl-in'));
+        var prox = todos[todos.indexOf(inp) + 1];
+        if (prox) prox.focus(); else inp.blur();
+      };
+    }
+    return row;
+  }
+
+  function limpaNovos() {
+    NOVOS = {}; salvaRascunho(); desenhaTudo();
+  }
+  function atualizaBarra() {
+    var b = document.getElementById('cd-ca-barra');
+    var m = mudancas(), inv = invalidos();
+    if (REVISANDO || !CV || !CV.vigente || !CV.pode_confirmar || (!m.length && !inv)) { b.style.display = 'none'; return; }
+    b.style.display = '';
+    b.textContent = '';
+    var t = cel('span');
+    t.appendChild(document.createTextNode(
+      (m.length ? m.length + (m.length === 1 ? ' preço novo' : ' preços novos') : 'nenhum preço novo')
+      + (inv ? ' · ' + inv + (inv === 1 ? ' valor inválido' : ' valores inválidos') : '')));
+    var lim = cel('button', 'lim', 'limpar');
+    lim.type = 'button'; lim.onclick = limpaNovos;
+    t.appendChild(lim);
+    var bt = cel('button', 'cd-btn', 'Revisar e confirmar');
+    bt.type = 'button';
+    bt.onclick = function () {
+      if (inv) { avisoErro('Corrija os valores marcados em vermelho antes de revisar.'); return; }
+      if (!m.length) return;
+      REVISANDO = true; desenhaTudo(); window.scrollTo(0, 0);
+    };
+    b.appendChild(t); b.appendChild(bt);
+  }
+  function avisoErro(t) {
+    var a = document.getElementById('cd-ca-aviso');
+    a.textContent = '';
+    if (t) a.appendChild(cel('p', 'cd-ca-erro', t));
+  }
+  function avisoOk(t) {
+    var a = document.getElementById('cd-ca-aviso');
+    a.textContent = '';
+    if (t) a.appendChild(cel('p', 'cd-ca-ok', t));
+  }
+
+  // ---- revisar e confirmar ----
+  function aplicaRevisao() {
+    document.getElementById('cd-ca-carta').style.display = REVISANDO ? 'none' : '';
+    document.getElementById('cd-ca-revisao').style.display = REVISANDO ? '' : 'none';
+  }
+  function pctVar(antes, novo) { return (antes === null || antes === 0) ? null : (novo / antes - 1) * 100; }
+  function desenhaRevisao() {
+    var raiz = document.getElementById('cd-ca-revisao'), m = mudancas();
+    raiz.textContent = '';
+    if (!m.length) { REVISANDO = false; desenhaCarta(); return; }
+    raiz.appendChild(cel('h3', null, 'Confirmar ' + m.length + (m.length === 1 ? ' preço novo' : ' preços novos')));
+    raiz.appendChild(cel('p', 'sub', 'A versão atual (' + rotuloVersao(CV.vigente)
+      + ') fica guardada no histórico. Os preços novos passam a ser o cardápio atual de ' + casaNome(CV_CASA) + '.'));
+    var l = cel('div', 'cd-ca-rev-l'), grandes = 0;
+    ['item', 'antes', 'novo', 'CMV'].forEach(function (h, i) { l.appendChild(cel('div', 'cab' + (i ? ' n' : ''), h)); });
+    m.forEach(function (x) {
+      var pv = pctVar(x.it.preco, x.novo), grande = pv !== null && Math.abs(pv) >= MUDANCA_GRANDE;
+      if (grande) grandes++;
+      var nome = cel('div', null, x.it.nome);
+      if (pv !== null) nome.appendChild(cel('span', 'cd-ver-sub', ' ' + fmtPct(pv, true)));
+      l.appendChild(nome);
+      l.appendChild(cel('div', 'n', x.it.preco === null ? '—' : soNumero(x.it.preco)));
+      l.appendChild(cel('div', 'n' + (grande ? ' grande' : ''), soNumero(x.novo)));
+      var custo = custoDoItem(x.it, CV_CASA), a = cmvDe(custo, x.it.preco), b = cmvDe(custo, x.novo);
+      var c = cel('div', 'n cd-cl-cmv ' + cmvCls(b),
+        b === null ? '—' : (a !== null ? Math.round(a) + '→' : '') + Math.round(b) + '%');
+      l.appendChild(c);
+    });
+    raiz.appendChild(l);
+    var res = cel('div', 'cd-ca-rev-res');
+    var antes = cmvMedio(false), depois = cmvMedio(true);
+    res.appendChild(cel('span', 'k', 'CMV médio'));
+    res.appendChild(cel('span', null, antes === null ? '—' : fmtPct(antes, false) + (depois !== null ? ' para ' + fmtPct(depois, false) : '')));
+    res.appendChild(cel('span', 'k', 'Vale a partir de'));
+    res.appendChild(cel('span', null, 'hoje, ' + diaHoraBr(new Date().toISOString())));
+    var ses = window.sessaoLer ? window.sessaoLer() : null;
+    res.appendChild(cel('span', 'k', 'Quem confirma'));
+    res.appendChild(cel('span', null, (ses && ses.pessoa) || 'coordenação'));
+    raiz.appendChild(res);
+    if (grandes) raiz.appendChild(cel('p', 'sub grande', grandes + (grandes === 1 ? ' preço muda' : ' preços mudam')
+      + ' ' + MUDANCA_GRANDE + '% ou mais: confira se não é erro de digitação.'));
+    var msg = cel('p', 'cd-ca-erro'); msg.setAttribute('role', 'status'); msg.setAttribute('aria-live', 'polite');
+    raiz.appendChild(msg);
+    var acoes = cel('div', null); acoes.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+    var ok = cel('button', 'cd-btn', 'Confirmar ' + m.length + (m.length === 1 ? ' preço' : ' preços'));
+    ok.type = 'button';
+    var volta = cel('button', 'cd-btn sec', 'Voltar');
+    volta.type = 'button';
+    volta.onclick = function () { REVISANDO = false; desenhaTudo(); };
+    ok.onclick = function () {
+      if (grandes && !window.confirm(grandes + ' preço(s) mudam ' + MUDANCA_GRANDE + '% ou mais. Confirmar mesmo assim?')) return;
+      ok.disabled = true; volta.disabled = true;
+      msg.className = 'cd-msg'; txt(msg, 'Salvando a nova versão…');
+      var base = CV.vigente.id, casa = CV_CASA;
+      api('/api/cardapio-versoes/confirmar', {
+        method: 'POST',
+        body: JSON.stringify({ casa: casa, versao_base: base,
+          precos: m.map(function (x) { return { slug: x.it.slug, novo: x.novo }; }) }),
+      }).then(function (d) {
+        CV = d; NOVOS = {}; lsApaga(LS_RASC + casa); REVISANDO = false; VER_DET = {}; VER_ITENS = {}; VER_FULL = {};
+        desenhaTudo();
+        avisoOk('Nova versão de ' + diaBr(d.vigente.criada_em) + ' salva: ' + d.vigente.n_mudados
+          + (d.vigente.n_mudados === 1 ? ' preço mudou.' : ' preços mudaram.') + ' A anterior ficou guardada em Versões.');
+        window.scrollTo(0, 0);
+      }).catch(function (e) {
+        ok.disabled = false; volta.disabled = false;
+        msg.className = 'cd-msg err'; txt(msg, e.message);
+        if (/recarregue/.test(e.message)) {
+          var rec = cel('button', 'cd-btn sec', 'Recarregar a carta');
+          rec.type = 'button';
+          rec.onclick = function () { REVISANDO = false; carregaCarta(casa); };
+          acoes.appendChild(rec);
+        }
+      });
+    };
+    acoes.appendChild(ok); acoes.appendChild(volta);
+    raiz.appendChild(acoes);
+  }
+
+  // ---- versões ----
+  function desenhaVersoes() {
+    var raiz = document.getElementById('cd-ver-lista');
+    raiz.textContent = '';
+    if (!CV || !CV.versoes || !CV.versoes.length) {
+      raiz.appendChild(cel('div', 'cd-ver-it primeira', 'Ainda não há versão guardada desta casa.'));
+      return;
+    }
+    CV.versoes.forEach(function (v, i) {
+      var it = cel('div', 'cd-ver-it' + (i === 0 ? ' primeira' : ''));
+      var topo = cel('div', 'cd-ver-topo');
+      var esq = cel('div');
+      var tit = cel('b', null, v.origem === 'tagme' ? 'Cardápio digital de ' + dataCurta(v.foto_tagme) : diaHoraBr(v.criada_em));
+      tit.style.fontWeight = '500';
+      esq.appendChild(tit);
+      if (i === 0) esq.appendChild(cel('span', 'cd-ver-tag', 'atual'));
+      esq.appendChild(cel('div', 'cd-ver-sub', v.origem === 'tagme'
+        ? 'Primeira versão: copiada do cardápio digital (Tagme) · ' + v.n_itens + ' itens'
+        : v.n_mudados + (v.n_mudados === 1 ? ' preço mudou' : ' preços mudaram') + ' · ' + v.autor));
+      topo.appendChild(esq);
+      var acoes = cel('div'); acoes.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap';
+      if (v.origem !== 'tagme') {
+        var bt = cel('button', 'cd-btn sec', VER_DET[v.id] ? 'Esconder' : 'O que mudou');
+        bt.type = 'button';
+        bt.onclick = function () { VER_DET[v.id] = !VER_DET[v.id]; carregaDetalheVersao(v.id); desenhaVersoes(); };
+        acoes.appendChild(bt);
+      }
+      ['pdf', 'xlsx'].forEach(function (fmt) {
+        var be = cel('button', 'cd-btn sec', fmt === 'pdf' ? 'PDF' : 'Excel');
+        be.type = 'button';
+        be.setAttribute('aria-label', (fmt === 'pdf' ? 'Baixar PDF' : 'Baixar Excel') + ' da versão ' + rotuloVersao(v));
+        be.onclick = function () { exportaVersao(v, fmt, be); };
+        acoes.appendChild(be);
+      });
+      topo.appendChild(acoes);
+      it.appendChild(topo);
+      if (VER_DET[v.id]) {
+        var det = cel('div', 'cd-ver-det');
+        var itens = VER_ITENS[v.id];
+        if (!itens) det.textContent = 'Carregando…';
+        else if (itens.erro) det.textContent = itens.erro;
+        else itens.forEach(function (x) {
+          var l = cel('div');
+          l.appendChild(cel('span', null, x.nome));
+          var pv = pctVar(x.preco_antes, x.preco);
+          l.appendChild(cel('span', 'n', soNumero(x.preco_antes) + ' para ' + soNumero(x.preco)
+            + (pv === null ? '' : ' (' + fmtPct(pv, true) + ')')));
+          det.appendChild(l);
+        });
+        it.appendChild(det);
+      }
+      raiz.appendChild(it);
+    });
+  }
+  function carregaDetalheVersao(id) {
+    if (!VER_DET[id] || VER_ITENS[id]) return;
+    api('/api/cardapio-versoes/' + encodeURIComponent(id)).then(function (d) {
+      VER_ITENS[id] = (d.itens || []).filter(function (x) { return x.preco_antes !== null && x.preco_antes !== undefined; });
+    }).catch(function (e) {
+      VER_ITENS[id] = { erro: 'Não consegui abrir esta versão: ' + e.message };
+    }).then(function () {
+      if (ABA === 'versoes') desenhaVersoes();
+    });
+  }
+
+  // ---- exportar uma versão em PDF ou Excel (E8) ----
+  // O PDF é a carta como o cliente a lê (categoria, item, preço): sem custo
+  // nem CMV, que são do time. O Excel leva o custo e o CMV do DIA da
+  // exportação (o custo muda todo dia; a data vai no cabeçalho da coluna).
+  // Versão antiga também exporta: busca os itens dela no Worker.
+  function itensDaVersao(v) {
+    if (CV && CV.vigente && CV.vigente.id === v.id) return Promise.resolve(CV.vigente.itens);
+    if (VER_FULL[v.id]) return Promise.resolve(VER_FULL[v.id]);
+    return api('/api/cardapio-versoes/' + encodeURIComponent(v.id)).then(function (d) {
+      VER_FULL[v.id] = d.itens || [];
+      return VER_FULL[v.id];
+    });
+  }
+  function dataArquivo(v) {
+    var iso = v.origem === 'tagme' ? String(v.foto_tagme || '') : new Date(v.criada_em).toISOString().slice(0, 10);
+    return iso.slice(0, 10);
+  }
+  function exportaVersao(v, formato, botao) {
+    var rot = botao ? botao.textContent : '';
+    if (botao) { botao.disabled = true; botao.textContent = 'Gerando…'; }
+    function volta() { if (botao) { botao.disabled = false; botao.textContent = rot; } }
+    itensDaVersao(v).then(function (itens) {
+      var nomeCasa = casaNome(CV_CASA), dia = dataArquivo(v);
+      var base = nomeArquivoSeguro(CV_CASA + ' cardapio ' + dia);
+      var ordem = itens.slice().sort(function (a, b) { return a.ordem - b.ordem; });
+      if (formato === 'pdf') {
+        var blocos = [], atual = null;
+        ordem.forEach(function (i) {
+          if (i.secao !== atual) {
+            if (atual !== null) blocos.push({ tipo: 'sep' });
+            blocos.push({ tipo: 'h1', texto: String(i.secao).toUpperCase(), centro: true });
+            atual = i.secao;
+          }
+          blocos.push({ tipo: 'linha', esq: i.nome, dir: i.preco === null ? '—' : soNumero(i.preco), tam: 11.5 });
+        });
+        blocos.push({ tipo: 'sep' });
+        blocos.push({ tipo: 'nota', texto: 'Versão do cardápio: ' + (v.origem === 'tagme'
+          ? 'cardápio digital de ' + dataCurta(v.foto_tagme) : diaHoraBr(v.criada_em)) + '. Gerado em ' + diaHoraBr(new Date().toISOString()) + '.' });
+        pdfBaixa(base + '.pdf', nomeCasa, 'CARDÁPIO ATUAL · ' + dia.split('-').reverse().join('/'), blocos,
+          { logo: LOGOS[CV_CASA] || null, tituloCentro: true });
+        return;
+      }
+      var hoje = new Date().toLocaleDateString('pt-BR');
+      var linhas = ordem.map(function (i) {
+        var custo = custoDoItem(i, CV_CASA), cmv = cmvDe(custo, i.preco);
+        return [i.secao, i.nome, i.preco, custo, cmv === null ? null : Math.round(cmv * 10) / 10];
+      });
+      var abas = [{
+        nome: 'Carta',
+        colunas: [
+          { titulo: 'Categoria', tipo: 'texto', largura: 26 },
+          { titulo: 'Item', tipo: 'texto', largura: 38 },
+          { titulo: 'Preço', tipo: 'moeda', largura: 12 },
+          { titulo: 'Custo em ' + hoje, tipo: 'moeda', largura: 16 },
+          { titulo: 'CMV %', tipo: 'numero', largura: 10 },
+        ],
+        linhas: linhas,
+      }];
+      var mud = ordem.filter(function (i) { return i.preco_antes !== null && i.preco_antes !== undefined; });
+      if (mud.length) {
+        abas.push({
+          nome: 'O que mudou',
+          colunas: [
+            { titulo: 'Item', tipo: 'texto', largura: 38 },
+            { titulo: 'Antes', tipo: 'moeda', largura: 12 },
+            { titulo: 'Depois', tipo: 'moeda', largura: 12 },
+            { titulo: 'Variação %', tipo: 'numero', largura: 12 },
+          ],
+          linhas: mud.map(function (i) {
+            var pv = pctVar(i.preco_antes, i.preco);
+            return [i.nome, i.preco_antes, i.preco, pv === null ? null : Math.round(pv * 10) / 10];
+          }),
+        });
+      }
+      xlsxBaixa(abas, base + '.xlsx');
+    }).catch(function (e) {
+      avisoErro('Não consegui exportar: ' + e.message);
+      mostraAba('cardapio');
+    }).then(volta);
+  }
+
+  // ---- detalhe do item (E9): painel ao lado no tablet deitado, embaixo da
+  // linha no celular ----
+  var ITEM_SEL = null, VER_FULL = {};
+  var LARGO_ITEM = '(min-width:900px)';
+  function larguraTablet() { return window.matchMedia && window.matchMedia(LARGO_ITEM).matches; }
+  function carregaVersoesCompletas() {
+    (CV && CV.versoes || []).forEach(function (v) {
+      if (VER_FULL[v.id] || (CV.vigente && CV.vigente.id === v.id)) return;
+      itensDaVersao(v).then(function () { if (ITEM_SEL) desenhaDetalhe(); }).catch(function () {});
+    });
+  }
+  function desenhaDetalhe() {
+    Array.prototype.forEach.call(document.querySelectorAll('#cd-atual .cd-ca-det'), function (alvo) {
+      var it = itemPorSlug(ITEM_SEL);
+      alvo.textContent = '';
+      alvo.appendChild(conteudoDetalhe(it));
+    });
+  }
+  function itemPorSlug(slug) {
+    var r = null;
+    if (CV && CV.vigente) CV.vigente.itens.forEach(function (i) { if (i.slug === slug) r = i; });
+    return r;
+  }
+  function conteudoDetalhe(it) {
+    var raiz = cel('div');
+    if (!it) { raiz.appendChild(cel('p', 'cd-ver-sub', 'Toque num item para ver os detalhes.')); return raiz; }
+    var d = window.cncDados || {}, c = conciliacaoDa(CV_CASA), chave = normChave(it.nome);
+    var conc = null;
+    ((c && c.divergencias) || []).forEach(function (x) { if (x.slug === it.slug) conc = x; });
+    var nomes = {}; nomes[chave] = true;
+    if (conc) (conc.produtos_pos || []).forEach(function (n) { nomes[normChave(n)] = true; });
+    var topo = cel('div', null, it.nome); topo.style.cssText = 'font-size:14px;font-weight:500;margin-bottom:2px';
+    raiz.appendChild(topo);
+    if (conc && conc.classe && conc.classe !== 'ok') {
+      raiz.appendChild(cel('div', 'cd-ver-sub', conc.classe === 'acima' ? 'vendido acima do cardápio'
+        : conc.classe === 'abaixo' ? 'vendido abaixo do cardápio' : 'atenção: praticado diferente do cardápio'));
+    }
+    var g = cel('div', 'cd-ca-rev-res'); g.style.marginTop = '8px';
+    function par(k, v) { g.appendChild(cel('span', 'k', k)); g.appendChild(cel('span', null, v)); }
+    par('Atual', it.preco === null ? '—' : rs(it.preco));
+    var f = fichaDoItem(it, CV_CASA);
+    par('Ficha', textoFicha(it, CV_CASA).t);
+    if (conc) {
+      par('Praticado', rs(conc.praticado) + ' · ' + conc.qtde + ' vendidos');
+      if (conc.notion !== null && conc.notion !== undefined) par('Preço na ficha', rs(conc.notion));
+    }
+    var custo = custoDoItem(it, CV_CASA), n = novoValido(it), mud = mudou(it, n);
+    par('Custo', custo === null ? '—' : rs(custo));
+    var a = cmvDe(custo, it.preco), b = mud ? cmvDe(custo, n.valor) : null;
+    par('CMV', a === null ? '—' : fmtPct(a, false) + (b !== null ? ' para ' + fmtPct(b, false) + ' no preço novo' : ''));
+    var outras = [];
+    (d.entre_casas || []).forEach(function (e) {
+      if (!nomes[normChave(e.produto)]) return;
+      (e.casas || []).forEach(function (x) { if (x.casa !== CV_CASA) outras.push(x.nome + ' ' + rs(x.preco)); });
+    });
+    if (outras.length) par('Outras casas', outras.join(' · '));
+    var hist = [];
+    (CV && CV.versoes || []).slice().reverse().forEach(function (v) {
+      var itens = (CV.vigente && CV.vigente.id === v.id) ? CV.vigente.itens : VER_FULL[v.id];
+      if (!itens) return;
+      var x = null; itens.forEach(function (i) { if (i.slug === it.slug) x = i; });
+      if (x && x.preco !== null) hist.push((v.origem === 'tagme' ? dataCurta(v.foto_tagme) : diaBr(v.criada_em)) + ' ' + soNumero(x.preco));
+    });
+    if (hist.length > 1) par('Nas versões', hist.join(' · '));
+    raiz.appendChild(g);
+    var ok = f && f.id;
+    if (!ok) raiz.appendChild(cel('p', 'cd-ver-sub', 'Sem ficha ligada: o custo vem só quando há ficha de nome igual.'));
+    return raiz;
+  }
+
+  // ---- abrir e fechar a casa ----
+  function abreAtual(slug, aba) {
     document.getElementById('cd-galeria').style.display = 'none';
     document.getElementById('cd-projeto').style.display = 'none';
     document.getElementById('cd-atual').style.display = '';
+    // Com a casa aberta o título da página e a frase de apresentação só
+    // ocupam a tela que a carta precisa (pedido de compactar, 2026-10-21).
+    document.getElementById('cd-titulo').style.display = 'none';
+    document.getElementById('cd-intro').style.display = 'none';
     if (slug && window.cncMostraCasa) window.cncMostraCasa(slug);
-    var aberta = (window.cncCasaAtual && window.cncCasaAtual()) || slug || '1';
-    try { history.replaceState(null, '', '?atual=' + encodeURIComponent(aberta)); } catch (e) {}
+    var casa = slug || (window.cncCasaAtual && window.cncCasaAtual()) || null;
+    if (!casa) { var l = casasAbertas(); casa = l.length ? l[0].slug : null; }
+    if (!casa) return;
+    window.cdCasaAberta = casa;
+    if (window.cncRedesenhaFaixa) window.cncRedesenhaFaixa();
+    ABA = aba || 'cardapio'; REVISANDO = false; CV_CASA = casa;
+    avisoErro('');
+    desenhaSelCasa();
+    carregaCustos();
+    carregaCarta(casa);
+    try { history.replaceState(null, '', '?atual=' + encodeURIComponent(casa) + (ABA !== 'cardapio' ? '&aba=' + ABA : '')); } catch (e) {}
     window.scrollTo(0, 0);
   }
   function fechaAtual() {
     document.getElementById('cd-atual').style.display = 'none';
     document.getElementById('cd-galeria').style.display = '';
+    document.getElementById('cd-titulo').style.display = '';
+    document.getElementById('cd-intro').style.display = '';
+    window.cdCasaAberta = null; CV = null; CV_CASA = null; REVISANDO = false;
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
   }
   // Casa sem nenhuma fonte (IZ, Enttres sem impresso): o único gesto útil é
-  // enviar o impresso. Abre o painel e o envio já com a casa escolhida.
+  // enviar o impresso. Abre a casa na aba Impresso e o envio já com ela escolhida.
   function abreEnvio(casa) {
-    abreAtual(null);
+    abreAtual(casa, 'impresso');
     var bt = document.getElementById('cnc-fis-enviar');
     if (!bt || bt.style.display === 'none') return;
     bt.click();
@@ -2995,13 +4319,26 @@ function nomeArquivoSeguro(base) {
   // projeto novo aberto e a casa já escolhida. A semente continua sendo a de
   // sempre (cardápio digital + Cérebro), feita pelo Worker.
   function novaAPartir() {
-    var casa = window.cncCasaAtual ? window.cncCasaAtual() : null;
+    var casa = CV_CASA;
     fechaAtual();
     document.getElementById('cd-form-novo').style.display = 'block';
     montaFormNovo();
     var sel = document.getElementById('cd-f-casa');
     if (casa && sel.querySelector('option[value="' + casa + '"]')) sel.value = casa;
     document.getElementById('cd-f-titulo').focus();
+  }
+  function iniciaCartaCasa() {
+    try { CATS_EST = JSON.parse(lsLe(LS_CATS) || '{}') || {}; } catch (e) { CATS_EST = {}; }
+    VER_CUSTO = lsLe(LS_CUSTO) !== '0';
+    document.getElementById('cd-ca-custo').onclick = function () {
+      VER_CUSTO = !VER_CUSTO; lsGrava(LS_CUSTO, VER_CUSTO ? '1' : '0'); desenhaCarta();
+    };
+    var t = null;
+    document.getElementById('cd-ca-busca').oninput = function (e) {
+      var v = normChave(e.target.value);
+      clearTimeout(t);
+      t = setTimeout(function () { if (v !== BUSCA_CARTA) { BUSCA_CARTA = v; desenhaCarta(); } }, 180);
+    };
   }
 
   // ---------- criar ----------
@@ -3782,14 +5119,16 @@ function nomeArquivoSeguro(base) {
       CUSTOS_ESTADO = 'falhou';
     }).then(function () {
       if (vistaAplicada === 'precos') desenhaItens();
+      aoCarregarCustos();
     });
   }
   // O índice usa o slug do portal ("gra"); o projeto, o do contagem-worker
   // ("gra-bistro"). Mesma divergência do Grá de sempre.
-  function casaIndice() {
-    return PROJ && PROJ.casa === 'gra-bistro' ? 'gra' : (PROJ ? PROJ.casa : '');
+  function casaIndice(casaSlug) {
+    var c = casaSlug || (PROJ ? PROJ.casa : '');
+    return c === 'gra-bistro' ? 'gra' : c;
   }
-  function fichaDoItem(it) {
+  function fichaDoItem(it, casaSlug) {
     if (!CUSTOS) return null;
     var F = CUSTOS.fichas || {};
     if (it.ficha_id) {
@@ -3800,7 +5139,7 @@ function nomeArquivoSeguro(base) {
     if (ids.length > 1) {
       // Homônimo: só desempata pela casa do projeto. Sobrou mais de um, a
       // página não escolhe — pede o vínculo.
-      var casa = casaIndice();
+      var casa = casaIndice(casaSlug);
       var daCasa = ids.filter(function (id) { return F[id] && (F[id].c || []).indexOf(casa) >= 0; });
       if (daCasa.length === 1) ids = daCasa;
     }
@@ -3808,14 +5147,14 @@ function nomeArquivoSeguro(base) {
     if (ids.length > 1) return { id: null, e: null, modo: 'homonimo', n: ids.length };
     return null;
   }
-  function custoDoItem(it) {
-    var f = fichaDoItem(it);
+  function custoDoItem(it, casaSlug) {
+    var f = fichaDoItem(it, casaSlug);
     return (f && f.e && f.e.custo !== null && f.e.custo !== undefined) ? Number(f.e.custo) : null;
   }
-  function textoFicha(it) {
+  function textoFicha(it, casaSlug) {
     if (CUSTOS_ESTADO === 'carregando' || CUSTOS_ESTADO === 'vazio') return { t: 'buscando o custo…', c: '' };
     if (CUSTOS_ESTADO === 'falhou') return { t: 'custo indisponível agora', c: 'aten' };
-    var f = fichaDoItem(it);
+    var f = fichaDoItem(it, casaSlug);
     if (!f) return { t: 'sem ficha vinculada', c: '' };
     if (f.modo === 'sumiu') return { t: 'a ficha vinculada não existe mais no Notion', c: 'aten' };
     if (f.modo === 'homonimo') return { t: f.n + ' fichas com este nome: vincule a certa', c: 'aten' };
@@ -4395,7 +5734,12 @@ function nomeArquivoSeguro(base) {
   function inicia(sessao) {
     TOKEN = sessao.token || '';
     SO_ATUAIS = sessao.nivel === 'controladoria';
-    try { ATUAL_PEDIDO = new URLSearchParams(location.search).get('atual'); } catch (e) {}
+    try {
+      var qs = new URLSearchParams(location.search);
+      ATUAL_PEDIDO = qs.get('atual'); ABA_PEDIDA = qs.get('aba');
+    } catch (e) {}
+    PREVIA = !!sessao.previa;
+    iniciaCartaCasa();
     document.getElementById('cd-atual-voltar').onclick = fechaAtual;
     document.getElementById('cd-atual-nova').onclick = novaAPartir;
     document.getElementById('cd-novo').onclick = function () {
@@ -5823,7 +7167,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '91d56e51041e';
+  var BUILD = '3b6cee704dfd';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
