@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=3b6cee704dfd">
+<link rel="stylesheet" href="portal.css?v=1e8def656340">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1151,6 +1151,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .cd-ca-aba b { font-weight:500; color:var(--amarelo); margin-left:4px; }
   .cd-ca-aba.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); }
   .cd-ca-aba.on b { color:var(--acc-txt); }
+  .cd-ca-fonte { display:flex; align-items:center; gap:8px; margin:0 0 4px; font-size:12px; color:var(--text-2); }
+  .cd-ca-fonte select { max-width:none; flex:1; }
+  .cd-cl-linha.cab .fonte { color:var(--acc); font-weight:500; }
   .cd-ca-ferr { display:flex; align-items:center; gap:8px; margin:0 0 8px; font-size:12px; }
   .cd-ca-ferr .cd-busca { max-width:none; }
   .cd-ca-tog { flex:none; font:inherit; font-size:11.5px; padding:5px 9px; border-radius:999px; cursor:pointer;
@@ -1281,6 +1284,11 @@ window.msgAcessoNegado = function (nomePagina) {
   <div id="cd-aba-cardapio">
     <div id="cd-ca-aviso"></div>
     <div id="cd-ca-carta">
+      <div class="cd-ca-fonte">
+        <label for="cd-ca-fonte">Preço de referência</label>
+        <select id="cd-ca-fonte" class="cd-ca-casa" aria-label="Fonte do preço de referência"></select>
+      </div>
+      <div class="cd-ver-sub" id="cd-ca-fonte-nota" style="margin:0 0 8px"></div>
       <div class="cd-ca-ferr">
         <input type="search" id="cd-ca-busca" class="cd-busca" placeholder="Buscar item…"
                autocomplete="off" aria-label="Buscar item na carta">
@@ -3668,6 +3676,7 @@ function nomeArquivoSeguro(base) {
       // Casa que o Worker não conhece (Enttres): sem carta digital, e o motivo
       // já vem da conciliação.
       CV = semCartaLocal(casa); CV_ESTADO = 'ok';
+      escolheFonte();
       desenhaTudo();
       return;
     }
@@ -3676,6 +3685,7 @@ function nomeArquivoSeguro(base) {
       if (PREVIA) d.pode_confirmar = false;
       CV = d; CV_ESTADO = 'ok';
       NOVOS = d.pode_confirmar ? rascunhoLe(casa, d) : {};
+      escolheFonte();
     }).catch(function (e) {
       if (CV_CASA !== casa) return;
       CV_ESTADO = 'falhou'; CV_ERRO = e.message;
@@ -3687,6 +3697,10 @@ function nomeArquivoSeguro(base) {
     if (CV_ESTADO === 'ok' && document.getElementById('cd-atual').style.display !== 'none') desenhaTudo();
   }
   function desenhaTudo() {
+    var temCarta = CV_ESTADO === 'ok' && CV && CV.vigente;
+    if (temCarta) desenhaFonte();
+    document.querySelector('#cd-ca-carta .cd-ca-fonte').style.display = temCarta ? '' : 'none';
+    document.getElementById('cd-ca-fonte-nota').style.display = temCarta ? '' : 'none';
     desenhaMeta();
     desenhaAbas();
     if (REVISANDO) desenhaRevisao(); else desenhaCarta();
@@ -3817,7 +3831,7 @@ function nomeArquivoSeguro(base) {
     var box = cel('div', 'cd-cl' + (pode ? ' pode' : '') + (verCusto ? ' custo' : ''));
     var cab = cel('div', 'cd-cl-linha cab');
     cab.appendChild(cel('div', null, 'item'));
-    cab.appendChild(cel('div', 'n', 'atual'));
+    cab.appendChild(cel('div', 'n fonte', FONTE_CURTO[FONTE || 'digital']));
     if (pode) cab.appendChild(cel('div', 'n', 'novo'));
     if (verCusto) { cab.appendChild(cel('div', 'n', 'custo')); cab.appendChild(cel('div', 'n', 'CMV')); }
     box.appendChild(cab);
@@ -3837,7 +3851,7 @@ function nomeArquivoSeguro(base) {
       bt2.appendChild(cel('span', 'nome', g.nome));
       var cmvs = [];
       g.itens.forEach(function (it) {
-        var x = cmvDe(custoDoItem(it, CV_CASA), it.preco);
+        var x = cmvDe(custoDoItem(it, CV_CASA), refPreco(it));
         if (x !== null) cmvs.push(x);
       });
       var soma = 0; cmvs.forEach(function (x) { soma += x; });
@@ -3889,7 +3903,8 @@ function nomeArquivoSeguro(base) {
       nome.appendChild(dot);
     }
     row.appendChild(nome);
-    row.appendChild(cel('div', 'n', it.preco === null ? '—' : soNumero(it.preco)));
+    var refp = refPreco(it);
+    row.appendChild(cel('div', 'n', refp === null ? '—' : soNumero(refp)));
     var inp = null, cCusto = null, cCmv = null;
     if (pode) {
       inp = cel('input', 'cd-cl-in');
@@ -3914,7 +3929,7 @@ function nomeArquivoSeguro(base) {
       if (!verCusto) return;
       var custo = custoDoItem(it, CV_CASA);
       txt(cCusto, custo === null ? '—' : soNumero(custo));
-      var a = cmvDe(custo, it.preco), b = mud ? cmvDe(custo, n.valor) : null;
+      var a = cmvDe(custo, refp), b = mud ? cmvDe(custo, n.valor) : null;
       var t = (mud && b !== null) ? (a !== null ? Math.round(a) + '→' : '') + Math.round(b) + '%' : cmvTxt(a);
       txt(cCmv, t);
       cCmv.className = 'cd-cl-cmv ' + cmvCls(mud && b !== null ? b : a);
@@ -3990,16 +4005,17 @@ function nomeArquivoSeguro(base) {
     raiz.appendChild(cel('p', 'sub', 'A versão atual (' + rotuloVersao(CV.vigente)
       + ') fica guardada no histórico. Os preços novos passam a ser o cardápio atual de ' + casaNome(CV_CASA) + '.'));
     var l = cel('div', 'cd-ca-rev-l'), grandes = 0;
-    ['item', 'antes', 'novo', 'CMV'].forEach(function (h, i) { l.appendChild(cel('div', 'cab' + (i ? ' n' : ''), h)); });
+    ['item', FONTE_CURTO[FONTE || 'digital'], 'novo', 'CMV'].forEach(function (h, i) { l.appendChild(cel('div', 'cab' + (i ? ' n' : ''), h)); });
     m.forEach(function (x) {
-      var pv = pctVar(x.it.preco, x.novo), grande = pv !== null && Math.abs(pv) >= MUDANCA_GRANDE;
+      var pv = pctVar(refPreco(x.it), x.novo), grande = pv !== null && Math.abs(pv) >= MUDANCA_GRANDE;
       if (grande) grandes++;
       var nome = cel('div', null, x.it.nome);
       if (pv !== null) nome.appendChild(cel('span', 'cd-ver-sub', ' ' + fmtPct(pv, true)));
       l.appendChild(nome);
-      l.appendChild(cel('div', 'n', x.it.preco === null ? '—' : soNumero(x.it.preco)));
+      var rp = refPreco(x.it);
+      l.appendChild(cel('div', 'n', rp === null ? '—' : soNumero(rp)));
       l.appendChild(cel('div', 'n' + (grande ? ' grande' : ''), soNumero(x.novo)));
-      var custo = custoDoItem(x.it, CV_CASA), a = cmvDe(custo, x.it.preco), b = cmvDe(custo, x.novo);
+      var custo = custoDoItem(x.it, CV_CASA), a = cmvDe(custo, rp), b = cmvDe(custo, x.novo);
       var c = cel('div', 'n cd-cl-cmv ' + cmvCls(b),
         b === null ? '—' : (a !== null ? Math.round(a) + '→' : '') + Math.round(b) + '%');
       l.appendChild(c);
@@ -4204,6 +4220,75 @@ function nomeArquivoSeguro(base) {
   // ---- detalhe do item (E9): painel ao lado no tablet deitado, embaixo da
   // linha no celular ----
   var ITEM_SEL = null, VER_FULL = {};
+  // ---- fonte do preço de referência (a coluna "atual") ----
+  // O preço de referência é o do cardápio IMPRESSO quando a casa enviou um
+  // (é o que o cliente lê na mesa e o que decide a mudança de preço); sem ele,
+  // o do digital (Tagme). Ficha (Notion) e vendas (praticado) também podem ser
+  // escolhidos. A coluna diz a fonte no cabeçalho e no seletor.
+  var FONTE = null, FONTE_ROT = { impresso: 'Cardápio impresso', digital: 'Cardápio digital (Tagme)',
+                                  ficha: 'Ficha (Notion)', vendas: 'Praticado nas vendas' };
+  var FONTE_CURTO = { impresso: 'impresso', digital: 'digital', ficha: 'ficha', vendas: 'vendas' };
+  var LS_FONTE = 'cd_carta_fonte_';
+  function mapaImpresso() {
+    var c = conciliacaoDa(CV_CASA), m = {}, ruim = {};
+    ((c && c.fisico && c.fisico.comparacoes) || []).forEach(function (x) {
+      if (typeof x.fisico !== 'number') return;
+      var k = normChave(x.nome);
+      if (m[k] !== undefined && m[k] !== x.fisico) ruim[k] = true;
+      m[k] = x.fisico;
+    });
+    // Mesmo nome com preços diferentes no impresso: não escolho um (ambíguo).
+    Object.keys(ruim).forEach(function (k) { delete m[k]; });
+    return m;
+  }
+  function concDoItem(it) {
+    var c = conciliacaoDa(CV_CASA), r = null;
+    ((c && c.divergencias) || []).forEach(function (x) { if (x.slug === it.slug) r = x; });
+    return r;
+  }
+  function precoDaFonte(it, fonte) {
+    if (fonte === 'digital') return it.preco;
+    if (fonte === 'impresso') { var v = IMPRESSO[normChave(it.nome)]; return v === undefined ? null : v; }
+    var x = concDoItem(it);
+    if (!x) return null;
+    var n = fonte === 'ficha' ? x.notion : x.praticado;
+    return typeof n === 'number' ? n : null;
+  }
+  var IMPRESSO = {};
+  function refPreco(it) { return precoDaFonte(it, FONTE || 'digital'); }
+  function fontesDisp() {
+    var itens = (CV && CV.vigente) ? CV.vigente.itens : [], r = [];
+    ['impresso', 'digital', 'ficha', 'vendas'].forEach(function (f) {
+      var n = 0;
+      itens.forEach(function (it) { if (precoDaFonte(it, f) !== null) n++; });
+      if (f === 'impresso') { var c = conciliacaoDa(CV_CASA); if (!(c && c.fisico)) return; }
+      if (f !== 'digital' && !n) return;
+      r.push({ id: f, n: n, de: itens.length });
+    });
+    return r;
+  }
+  function escolheFonte() {
+    IMPRESSO = mapaImpresso();
+    var disp = fontesDisp(), ids = disp.map(function (x) { return x.id; });
+    var salva = lsLe(LS_FONTE + CV_CASA);
+    FONTE = ids.indexOf(salva) >= 0 ? salva : (ids.indexOf('impresso') >= 0 ? 'impresso' : 'digital');
+  }
+  function desenhaFonte() {
+    var sel = document.getElementById('cd-ca-fonte'), nota = document.getElementById('cd-ca-fonte-nota');
+    sel.textContent = '';
+    var disp = fontesDisp(), c = conciliacaoDa(CV_CASA);
+    disp.forEach(function (f) {
+      var o = cel('option', null, FONTE_ROT[f.id] + ' · ' + f.n + ' de ' + f.de + ' itens');
+      o.value = f.id; sel.appendChild(o);
+    });
+    sel.value = FONTE;
+    sel.onchange = function () { FONTE = sel.value; lsGrava(LS_FONTE + CV_CASA, FONTE); desenhaTudo(); };
+    var t = 'A coluna "' + FONTE_CURTO[FONTE] + '" mostra o ' + FONTE_ROT[FONTE].toLowerCase();
+    if (FONTE === 'impresso' && c && c.fisico && c.fisico.mes) t += ' de ' + c.fisico.mes;
+    t += '. Item que a fonte não traz aparece com traço.';
+    if (!(c && c.fisico)) t += ' Esta casa ainda não enviou o cardápio impresso: na falta dele a referência é o digital.';
+    txt(nota, t);
+  }
   var LARGO_ITEM = '(min-width:900px)';
   function larguraTablet() { return window.matchMedia && window.matchMedia(LARGO_ITEM).matches; }
   function carregaVersoesCompletas() {
@@ -4240,16 +4325,19 @@ function nomeArquivoSeguro(base) {
     }
     var g = cel('div', 'cd-ca-rev-res'); g.style.marginTop = '8px';
     function par(k, v) { g.appendChild(cel('span', 'k', k)); g.appendChild(cel('span', null, v)); }
-    par('Atual', it.preco === null ? '—' : rs(it.preco));
+    ['impresso', 'digital', 'ficha', 'vendas'].forEach(function (f) {
+      var v = precoDaFonte(it, f);
+      if (f === 'impresso' && !Object.keys(IMPRESSO).length) return;
+      par(FONTE_CURTO[f].charAt(0).toUpperCase() + FONTE_CURTO[f].slice(1) + (f === FONTE ? ' (referência)' : ''), v === null ? '—' : rs(v));
+    });
     var f = fichaDoItem(it, CV_CASA);
-    par('Ficha', textoFicha(it, CV_CASA).t);
+    par('Custo da ficha', textoFicha(it, CV_CASA).t);
     if (conc) {
-      par('Praticado', rs(conc.praticado) + ' · ' + conc.qtde + ' vendidos');
-      if (conc.notion !== null && conc.notion !== undefined) par('Preço na ficha', rs(conc.notion));
+      par('Vendidos no mês', conc.qtde + ' un.');
     }
     var custo = custoDoItem(it, CV_CASA), n = novoValido(it), mud = mudou(it, n);
     par('Custo', custo === null ? '—' : rs(custo));
-    var a = cmvDe(custo, it.preco), b = mud ? cmvDe(custo, n.valor) : null;
+    var a = cmvDe(custo, refPreco(it)), b = mud ? cmvDe(custo, n.valor) : null;
     par('CMV', a === null ? '—' : fmtPct(a, false) + (b !== null ? ' para ' + fmtPct(b, false) + ' no preço novo' : ''));
     var outras = [];
     (d.entre_casas || []).forEach(function (e) {
@@ -7167,7 +7255,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '3b6cee704dfd';
+  var BUILD = '1e8def656340';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
