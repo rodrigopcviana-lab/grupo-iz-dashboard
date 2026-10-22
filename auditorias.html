@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=8a6a0d997b17">
+<link rel="stylesheet" href="portal.css?v=64213e625751">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1094,6 +1094,40 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     y -= tam * 1.42;
   }
 
+  // Tabela de colunas fixas (2026-10-22, prévia de preços do Cardápio):
+  // b.colunas [{t, larg, dir}] em pontos, b.linhas [[...]] (texto já
+  // formatado; linha {secao: 'X'} vira faixa de categoria). O cabeçalho se
+  // repete em cada página nova; texto que não cabe na coluna é cortado.
+  function escreveTabela(b) {
+    var tam = b.tam || 7.5, alt = tam * 1.55;
+    function corta(t, w) {
+      t = String(t == null ? '' : t);
+      while (t.length > 1 && pdfLarguraAprox(t, tam) > w - 3) t = t.slice(0, -2) + '…';
+      return t;
+    }
+    function linha(cels, negrito) {
+      if (y < PDF_MARGEM + 28) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
+      var x = PDF_MARGEM;
+      b.colunas.forEach(function (c, i) {
+        var t = corta(cels[i], c.larg);
+        if (t) atual.push({ x: c.dir ? x + c.larg - pdfLarguraAprox(t, tam) - 2 : x, y: y, tam: tam, negrito: negrito, txt: t });
+        x += c.larg;
+      });
+      y -= alt;
+    }
+    linha(b.colunas.map(function (c) { return c.t; }), true);
+    b.linhas.forEach(function (l) {
+      if (l && l.secao !== undefined) {
+        if (y < PDF_MARGEM + 40) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
+        y -= 3;
+        atual.push({ x: PDF_MARGEM, y: y, tam: tam + 1, negrito: true, txt: String(l.secao).toUpperCase() });
+        y -= alt + 1;
+        return;
+      }
+      linha(l, false);
+    });
+  }
+
   // Espaço reservado pro logo ANTES de qualquer texto (só na página 1). A
   // imagem em si é desenhada na emissão do fluxo, mas o espaço tem que sair
   // daqui, senão o título nasceria por cima dela.
@@ -1114,6 +1148,7 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0, !!b.centro); y -= 2; return; }
     if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }
     if (b.tipo === 'linha') { escreveLinha(b.esq, b.dir, b.tam || 11, !!b.negrito); return; }
+    if (b.tipo === 'tabela') { escreveTabela(b); return; }
     // Descrição do item: respiro embaixo, senão ela encosta no nome do item
     // seguinte e o cardápio vira um bloco só (visto na primeira prova impressa).
     if (b.tipo === 'nota') { escreve(b.texto, 9, false, b.recuo || 0); y -= 5; return; }
@@ -3095,7 +3130,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '8a6a0d997b17';
+  var BUILD = '64213e625751';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),

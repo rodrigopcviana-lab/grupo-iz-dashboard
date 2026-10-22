@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=8a6a0d997b17">
+<link rel="stylesheet" href="portal.css?v=64213e625751">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1321,6 +1321,8 @@ window.msgAcessoNegado = function (nomePagina) {
         <input type="search" id="cd-ca-busca" class="cd-busca" placeholder="Buscar item…"
                autocomplete="off" aria-label="Buscar item na carta">
         <button type="button" class="cd-ca-tog on" id="cd-ca-custo" aria-pressed="true">CMV</button>
+        <button type="button" class="cd-ca-tog" id="cd-ca-pdf" title="Exportar a prévia em PDF (com as sugestões)">PDF</button>
+        <button type="button" class="cd-ca-tog" id="cd-ca-xlsx" title="Exportar a prévia em Excel (com as sugestões)">Excel</button>
       </div>
       <div id="cd-ca-lista"></div>
       <div id="cd-ca-barra" class="cd-ca-barra" style="display:none"></div>
@@ -2966,6 +2968,40 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     y -= tam * 1.42;
   }
 
+  // Tabela de colunas fixas (2026-10-22, prévia de preços do Cardápio):
+  // b.colunas [{t, larg, dir}] em pontos, b.linhas [[...]] (texto já
+  // formatado; linha {secao: 'X'} vira faixa de categoria). O cabeçalho se
+  // repete em cada página nova; texto que não cabe na coluna é cortado.
+  function escreveTabela(b) {
+    var tam = b.tam || 7.5, alt = tam * 1.55;
+    function corta(t, w) {
+      t = String(t == null ? '' : t);
+      while (t.length > 1 && pdfLarguraAprox(t, tam) > w - 3) t = t.slice(0, -2) + '…';
+      return t;
+    }
+    function linha(cels, negrito) {
+      if (y < PDF_MARGEM + 28) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
+      var x = PDF_MARGEM;
+      b.colunas.forEach(function (c, i) {
+        var t = corta(cels[i], c.larg);
+        if (t) atual.push({ x: c.dir ? x + c.larg - pdfLarguraAprox(t, tam) - 2 : x, y: y, tam: tam, negrito: negrito, txt: t });
+        x += c.larg;
+      });
+      y -= alt;
+    }
+    linha(b.colunas.map(function (c) { return c.t; }), true);
+    b.linhas.forEach(function (l) {
+      if (l && l.secao !== undefined) {
+        if (y < PDF_MARGEM + 40) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
+        y -= 3;
+        atual.push({ x: PDF_MARGEM, y: y, tam: tam + 1, negrito: true, txt: String(l.secao).toUpperCase() });
+        y -= alt + 1;
+        return;
+      }
+      linha(l, false);
+    });
+  }
+
   // Espaço reservado pro logo ANTES de qualquer texto (só na página 1). A
   // imagem em si é desenhada na emissão do fluxo, mas o espaço tem que sair
   // daqui, senão o título nasceria por cima dela.
@@ -2986,6 +3022,7 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0, !!b.centro); y -= 2; return; }
     if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }
     if (b.tipo === 'linha') { escreveLinha(b.esq, b.dir, b.tam || 11, !!b.negrito); return; }
+    if (b.tipo === 'tabela') { escreveTabela(b); return; }
     // Descrição do item: respiro embaixo, senão ela encosta no nome do item
     // seguinte e o cardápio vira um bloco só (visto na primeira prova impressa).
     if (b.tipo === 'nota') { escreve(b.texto, 9, false, b.recuo || 0); y -= 5; return; }
@@ -4345,6 +4382,104 @@ function nomeArquivoSeguro(base) {
     }).then(volta);
   }
 
+  // ---- exportar a PRÉVIA (2026-10-22, pedido do Rodrigo) ----
+  // A tabela como está na tela: custo, os três preços nas versões escolhidas,
+  // cada um com o CMV, e o sugerido digitado (salvo ou não) com o CMV novo.
+  // Uso interno: tem custo. Não confirma nada nem cria versão.
+  function linhasPrevia() {
+    var pode = !!(CV && CV.pode_confirmar), out = [];
+    gruposDaCarta().forEach(function (g) {
+      g.itens.forEach(function (it) {
+        var custo = custoDoItem(it, CV_CASA), n = pode ? novoValido(it) : { estado: 'vazio' };
+        var r = { secao: g.nome, nome: it.nome, custo: custo, est: estadoCusto(it, CV_CASA).rot };
+        ['impresso', 'vendas', 'digital'].forEach(function (f) {
+          var pr = precoDaFonte(it, f); r[f] = pr; r['cmv_' + f] = cmvDe(custo, pr);
+        });
+        r.sug = n.estado === 'ok' && mudou(it, n) ? n.valor : null;
+        r.cmv_sug = r.sug === null ? null : cmvDe(custo, r.sug);
+        r.ref = refPreco(it);
+        out.push(r);
+      });
+    });
+    return out;
+  }
+  function rotVersoes() {
+    var c = conciliacaoDa(CV_CASA);
+    var vt = VER_SEL.digital === 'carta' ? 'carta confirmada' : (VER_SEL.digital ? dataCurta(VER_SEL.digital) : '—');
+    return 'impresso ' + (VER_SEL.impresso ? mesRot(VER_SEL.impresso) : '—') + ' · praticado ' + (VER_SEL.vendas || '—') + ' · Tagme ' + vt;
+  }
+  function exportaPrevia(formato, botao) {
+    if (!CV || !CV.vigente) return;
+    var rot = botao.textContent;
+    botao.disabled = true; botao.textContent = 'Gerando…';
+    try {
+      var L = linhasPrevia(), pode = !!CV.pode_confirmar;
+      var nSug = L.filter(function (r) { return r.sug !== null; }).length;
+      var hoje = new Date(), dia = hoje.toISOString().slice(0, 10);
+      var base = nomeArquivoSeguro(CV_CASA + ' previa precos ' + dia);
+      var num = function (v) { return v === null || v === undefined ? '—' : soNumero(v); };
+      var pct = function (v) { return v === null ? '—' : Math.round(v) + '%'; };
+      if (formato === 'pdf') {
+        var cols = [{ t: 'Item', larg: 132 }, { t: 'Custo', larg: 38, dir: true },
+          { t: 'Impresso', larg: 40, dir: true }, { t: 'CMV', larg: 28, dir: true },
+          { t: 'Praticado', larg: 42, dir: true }, { t: 'CMV', larg: 28, dir: true },
+          { t: 'Tagme', larg: 40, dir: true }, { t: 'CMV', larg: 28, dir: true }];
+        if (pode) cols.push({ t: 'Sugerido', larg: 42, dir: true }, { t: 'CMV novo', larg: 44, dir: true });
+        var linhas = [], atual = null;
+        L.forEach(function (r) {
+          if (r.secao !== atual) { linhas.push({ secao: r.secao }); atual = r.secao; }
+          var l = [r.nome, num(r.custo), num(r.impresso), pct(r.cmv_impresso), num(r.vendas), pct(r.cmv_vendas),
+                   num(r.digital), pct(r.cmv_digital)];
+          if (pode) l.push(num(r.sug), pct(r.cmv_sug));
+          linhas.push(l);
+        });
+        var blocos = [
+          { tipo: 'nota', texto: 'PRÉVIA, uso interno: tem custo e CMV. Nada aqui foi confirmado.' },
+          { tipo: 'nota', texto: 'Versões: ' + rotVersoes() + '. Custo de hoje (ficha técnica e B.D.1).' },
+          { tipo: 'tabela', colunas: cols, linhas: linhas, tam: 7.5 },
+          { tipo: 'sep' },
+          { tipo: 'nota', texto: (pode ? nSug + (nSug === 1 ? ' preço sugerido' : ' preços sugeridos') + ' (ainda não confirmados). ' : '')
+            + textoSugestao() + (textoSugestao() ? '. ' : '') + 'Gerado em ' + diaHoraBr(hoje.toISOString()) + '.' },
+        ];
+        pdfBaixa(base + '.pdf', casaNome(CV_CASA), 'PRÉVIA DE PREÇOS · ' + dia.split('-').reverse().join('/'), blocos,
+          { logo: LOGOS[CV_CASA] || null, tituloCentro: true });
+      } else {
+        var colsX = [
+          { titulo: 'Categoria', tipo: 'texto', largura: 22 }, { titulo: 'Item', tipo: 'texto', largura: 34 },
+          { titulo: 'Custo', tipo: 'moeda', largura: 11 }, { titulo: 'Situação do custo', tipo: 'texto', largura: 24 },
+          { titulo: 'Impresso', tipo: 'moeda', largura: 11 }, { titulo: 'CMV impresso %', tipo: 'numero', largura: 10 },
+          { titulo: 'Praticado', tipo: 'moeda', largura: 11 }, { titulo: 'CMV praticado %', tipo: 'numero', largura: 10 },
+          { titulo: 'Tagme', tipo: 'moeda', largura: 11 }, { titulo: 'CMV Tagme %', tipo: 'numero', largura: 10 }];
+        if (pode) colsX.push({ titulo: 'Sugerido', tipo: 'moeda', largura: 11 }, { titulo: 'CMV novo %', tipo: 'numero', largura: 10 });
+        var r1 = function (v) { return v === null ? null : Math.round(v * 10) / 10; };
+        var abas = [{ nome: 'Prévia', colunas: colsX, linhas: L.map(function (r) {
+          var l = [r.secao, r.nome, r.custo, r.est, r.impresso, r1(r.cmv_impresso), r.vendas, r1(r.cmv_vendas),
+                   r.digital, r1(r.cmv_digital)];
+          if (pode) l.push(r.sug, r1(r.cmv_sug));
+          return l;
+        }) }];
+        if (pode && nSug) {
+          abas.push({ nome: 'Sugestões', colunas: [
+            { titulo: 'Item', tipo: 'texto', largura: 34 }, { titulo: 'Atual', tipo: 'moeda', largura: 11 },
+            { titulo: 'Sugerido', tipo: 'moeda', largura: 11 }, { titulo: 'Variação %', tipo: 'numero', largura: 11 },
+            { titulo: 'CMV atual %', tipo: 'numero', largura: 11 }, { titulo: 'CMV novo %', tipo: 'numero', largura: 11 }],
+            linhas: L.filter(function (r) { return r.sug !== null; }).map(function (r) {
+              var pv = pctVar(r.ref, r.sug);
+              return [r.nome, r.ref, r.sug, pv === null ? null : Math.round(pv * 10) / 10,
+                      r1(cmvDe(r.custo, r.ref)), r1(r.cmv_sug)];
+            }) });
+        }
+        abas.push({ nome: 'Sobre', colunas: [{ titulo: 'Campo', tipo: 'texto', largura: 22 }, { titulo: 'Valor', tipo: 'texto', largura: 80 }],
+          linhas: [['Casa', casaNome(CV_CASA)], ['Versões', rotVersoes()], ['Custo', 'de hoje (ficha técnica e B.D.1)'],
+                   ['Situação', 'PRÉVIA: nada confirmado'], ['Gerado em', diaHoraBr(hoje.toISOString())]] });
+        xlsxBaixa(abas, base + '.xlsx');
+      }
+    } catch (e) {
+      avisoErro('Não consegui exportar a prévia: ' + e.message);
+    }
+    botao.disabled = false; botao.textContent = rot;
+  }
+
   // ---- detalhe do item (E9): painel ao lado no tablet deitado, embaixo da
   // linha no celular ----
   var ITEM_SEL = null, VER_FULL = {};
@@ -4675,6 +4810,8 @@ function nomeArquivoSeguro(base) {
     document.getElementById('cd-ca-custo').onclick = function () {
       VER_CUSTO = !VER_CUSTO; lsGrava(LS_CUSTO, VER_CUSTO ? '1' : '0'); desenhaCarta();
     };
+    document.getElementById('cd-ca-pdf').onclick = function () { exportaPrevia('pdf', this); };
+    document.getElementById('cd-ca-xlsx').onclick = function () { exportaPrevia('xlsx', this); };
     var t = null;
     document.getElementById('cd-ca-busca').oninput = function (e) {
       var v = normChave(e.target.value);
@@ -7890,7 +8027,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '8a6a0d997b17';
+  var BUILD = '64213e625751';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
