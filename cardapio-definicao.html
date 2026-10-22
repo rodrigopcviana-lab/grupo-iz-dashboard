@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=1c41b9c2f26d">
+<link rel="stylesheet" href="portal.css?v=5a54526423ff">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1167,7 +1167,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .cd-ca-ver span { color:var(--text-3); font-size:10.5px; }
   .cd-ca-ver select { width:100%; max-width:none; min-width:0; padding:4px 6px; font-size:12px; }
   @media (min-width:700px) { .cd-ca-fonte { grid-template-columns:repeat(3, 180px); } }
-  .cd-cl-rola { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px; min-width:0; }
+  .cd-cl-rola { -webkit-overflow-scrolling:touch; border-radius:10px; min-width:0; }
   .cd-cl-linha.cab .fonte { color:var(--acc); font-weight:500; }
   .cd-ca-ferr { display:flex; align-items:center; gap:8px; margin:0 0 8px; font-size:12px; }
   .cd-ca-ferr .cd-busca { max-width:none; }
@@ -1198,7 +1198,15 @@ window.msgAcessoNegado = function (nomePagina) {
       align-self:stretch; display:flex; flex-direction:column; justify-content:center; }
   .cd-cl-linha.mudou > .cd-cl-nome, .cd-cl-linha.sel > .cd-cl-nome { background:#2a2418; }
   .cd-cl-cat { position:sticky; left:0; z-index:2; width:min(100%, calc(100vw - 34px)); box-sizing:border-box; }
-  div.cd-cl.desc.desc.desc .cd-cl-linha { grid-template-columns:var(--cols); }
+  div.cd-cl.cd-cl.cd-cl.cd-cl .cd-cl-linha { grid-template-columns:var(--cols); }
+  .cd-cl-rola { overflow:auto; max-height:calc(100vh - 150px); overscroll-behavior:contain; }
+  .cd-cl-linha.cab { position:sticky; top:0; z-index:4; background:var(--card); box-shadow:0 1px 0 var(--border); }
+  .cd-cl-linha.cab > .cd-cl-nome { z-index:5; }
+  .cd-cl-tit { font:inherit; font-size:inherit; background:none; border:none; padding:2px 0; color:var(--text-3); cursor:pointer;
+      text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cd-cl-tit:hover { color:var(--acc); }
+  .cd-cl-tit.off { text-align:center; color:var(--acc); font-size:14px; line-height:1; border:1px dashed var(--border); border-radius:4px; }
+  .cd-cl-off { align-self:stretch; border-left:1px dashed var(--border); opacity:.6; }
   .cd-cl-desc { font-size:11.5px; line-height:1.35; color:var(--text-2); white-space:normal; overflow-wrap:anywhere; padding-right:6px; }
   .cd-cl-desc.mut { color:var(--text-3); }
   .cd-cl-desc-in { width:100%; min-width:0; box-sizing:border-box; resize:vertical; font:inherit; font-size:11.5px; line-height:1.35;
@@ -3647,6 +3655,7 @@ function nomeArquivoSeguro(base) {
   // e servidor), nunca para a versão da carta. VER_DESC: colunas de descrição,
   // SEMPRE começam recolhidas (não guarda a escolha).
   var DESC_NOVOS = {}, VER_DESC = false;
+  var COL_OFF = {};   // colunas recolhidas: impresso, vendas, digital, cmv_<fonte>, cmv_novo
   function nDescNovas() {
     var n = 0;
     Object.keys(DESC_NOVOS).forEach(function (k) { if (String(DESC_NOVOS[k] || '').trim()) n++; });
@@ -3970,25 +3979,37 @@ function nomeArquivoSeguro(base) {
     var td = document.getElementById('cd-ca-desc');
     td.classList.toggle('on', VER_DESC);
     td.setAttribute('aria-pressed', VER_DESC ? 'true' : 'false');
-    if (VER_DESC) {
-      // As duas colunas de texto entram no fim da grade (o resto não muda).
-      var largo = window.matchMedia && window.matchMedia('(min-width:700px)').matches;
-      var base = largo ? ['200px', '58px'] : ['132px', '44px'], pr = largo ? '62px' : '46px', cm = largo ? '48px' : '38px';
-      var cols = base.slice();
-      for (var q = 0; q < 3; q++) { cols.push(pr); if (verCusto) cols.push(cm); }
-      if (pode) { cols.push(largo ? '80px' : '58px'); if (verCusto) cols.push(largo ? '56px' : '40px'); }
-      cols.push(largo ? '240px' : '200px');
-      if (pode) cols.push(largo ? '260px' : '220px');
-      box.style.setProperty('--cols', cols.join(' '));
-    }
+    // Larguras calculadas aqui (2026-10-22): cada coluna de preço e de CMV
+    // pode ser recolhida tocando no título (COL_OFF, só nesta visita); a
+    // recolhida vira uma faixa estreita com "+" para reabrir.
+    var largo = window.matchMedia && window.matchMedia('(min-width:700px)').matches;
+    var W = largo ? { nome: '200px', custo: '58px', pr: '62px', cm: '48px', sug: '80px', cmn: '56px', d1: '240px', d2: '260px' }
+                  : { nome: '132px', custo: '44px', pr: '46px', cm: '38px', sug: '58px', cmn: '40px', d1: '200px', d2: '220px' };
+    var cols = [W.nome, W.custo];
+    ['impresso', 'vendas', 'digital'].forEach(function (f) {
+      cols.push(COL_OFF[f] ? '20px' : W.pr);
+      if (verCusto) cols.push(COL_OFF['cmv_' + f] ? '20px' : W.cm);
+    });
+    if (pode) { cols.push(W.sug); if (verCusto) cols.push(COL_OFF.cmv_novo ? '20px' : W.cmn); }
+    if (VER_DESC) { cols.push(W.d1); if (pode) cols.push(W.d2); }
+    box.style.setProperty('--cols', cols.join(' '));
     var cab = cel('div', 'cd-cl-linha cab');
     cab.appendChild(cel('div', 'cd-cl-nome', 'item'));
     cab.appendChild(cel('div', 'n', 'custo'));
+    function celCab(k, rot) {
+      var off = !!COL_OFF[k];
+      var b = cel('button', 'n cd-cl-tit' + (off ? ' off' : ''), off ? '+' : (/^CMV /.test(rot) && rot !== 'CMV novo' ? 'CMV' : rot));
+      b.type = 'button';
+      b.title = off ? 'Mostrar ' + rot : 'Recolher ' + rot;
+      b.setAttribute('aria-label', b.title);
+      b.onclick = function () { COL_OFF[k] = !COL_OFF[k]; desenhaCarta(); };
+      return b;
+    }
     [['impresso', 'impresso'], ['vendas', 'praticado'], ['digital', 'Tagme']].forEach(function (f) {
-      cab.appendChild(cel('div', 'n fonte', f[1]));
-      if (verCusto) cab.appendChild(cel('div', 'n', 'CMV'));
+      cab.appendChild(celCab(f[0], f[1]));
+      if (verCusto) cab.appendChild(celCab('cmv_' + f[0], 'CMV ' + f[1]));
     });
-    if (pode) { cab.appendChild(cel('div', 'n fonte', 'sugerido')); if (verCusto) cab.appendChild(cel('div', 'n', 'CMV novo')); }
+    if (pode) { cab.appendChild(cel('div', 'n fonte', 'sugerido')); if (verCusto) cab.appendChild(celCab('cmv_novo', 'CMV novo')); }
     if (VER_DESC) {
       cab.appendChild(cel('div', 'fonte', 'descrição (ficha)'));
       if (pode) cab.appendChild(cel('div', 'fonte', 'descrição nova'));
@@ -4090,8 +4111,8 @@ function nomeArquivoSeguro(base) {
     }
     ['impresso', 'vendas', 'digital'].forEach(function (f) {
       var pr = precoDaFonte(it, f);
-      row.appendChild(cel('div', 'n', pr === null ? '—' : soNumero(pr)));
-      if (verCusto) row.appendChild(celCmv(pr));
+      row.appendChild(COL_OFF[f] ? cel('div', 'cd-cl-off') : cel('div', 'n', pr === null ? '—' : soNumero(pr)));
+      if (verCusto) row.appendChild(COL_OFF['cmv_' + f] ? cel('div', 'cd-cl-off') : celCmv(pr));
     });
     var inp = null, cCmvNovo = null;
     if (pode) {
@@ -4101,7 +4122,10 @@ function nomeArquivoSeguro(base) {
       inp.value = NOVOS[it.slug] || '';
       inp.setAttribute('aria-label', 'Preço novo de ' + it.nome);
       row.appendChild(inp);
-      if (verCusto) { cCmvNovo = cel('div', 'cd-cl-cmv'); row.appendChild(cCmvNovo); }
+      if (verCusto) {
+        if (COL_OFF.cmv_novo) row.appendChild(cel('div', 'cd-cl-off'));
+        else { cCmvNovo = cel('div', 'cd-cl-cmv'); row.appendChild(cCmvNovo); }
+      }
     }
     if (VER_DESC) {
       var dAt = descFicha(it);
@@ -8153,7 +8177,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '1c41b9c2f26d';
+  var BUILD = '5a54526423ff';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
