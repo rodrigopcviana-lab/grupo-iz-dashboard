@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=993d20c47288">
+<link rel="stylesheet" href="portal.css?v=5dfff0d8257e">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1198,6 +1198,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .cd-cl-in:focus { outline:none; border-color:var(--acc); border-style:solid; }
   .cd-cl-in.mudou { border:1px solid var(--acc); color:var(--acc); }
   .cd-cl-in.err { border:1px solid #e08585; color:#e08585; }
+  .cd-tag-cu { margin-left:4px; font-size:9.5px; padding:0 4px; border-radius:4px; border:1px dashed var(--amarelo); color:var(--amarelo); }
+  .cd-tag-cu.susp { border-style:solid; }
   .cd-cl-cmv { font-size:11px; text-align:center; border-radius:999px; padding:1px 4px; white-space:nowrap; }
   .cd-cl-cmv.g { background:#1f3a2f; color:#9fe1cb; }
   .cd-cl-cmv.a { background:#4a3a14; color:#fac775; }
@@ -3646,7 +3648,7 @@ function nomeArquivoSeguro(base) {
     CV.vigente.itens.forEach(function (it) {
       var preco = it.preco;
       if (comNovos) { var nv = novoValido(it); if (mudou(it, nv)) preco = nv.valor; }
-      var v = cmvDe(custoDoItem(it, CV_CASA), preco);
+      var v = cmvDe(custoReal(it, CV_CASA), preco);
       if (v !== null) { soma += v; n++; }
     });
     return n ? soma / n : null;
@@ -3749,6 +3751,12 @@ function nomeArquivoSeguro(base) {
       partes.push(CV.vigente.n_itens + ' itens');
       var cm = cmvMedio(false);
       if (cm !== null) partes.push('CMV médio ' + Math.round(cm) + '%');
+      if (CUSTOS) {
+        var ct = { real: 0, est: 0, susp: 0, sem: 0 };
+        CV.vigente.itens.forEach(function (x) { ct[estadoCusto(x, CV_CASA).k]++; });
+        partes.push('custo: ' + ct.real + ' real' + (ct.est ? ' · ' + ct.est + ' estimado' : '')
+          + (ct.susp ? ' · ' + ct.susp + ' com suspeita' : '') + ' · ' + ct.sem + ' sem');
+      }
     }
     if (c && c.mes) partes.push('vendas ' + c.mes);
     if (d.foto_cardapio) partes.push('digital ' + dataCurta(d.foto_cardapio));
@@ -3863,7 +3871,7 @@ function nomeArquivoSeguro(base) {
       bt2.appendChild(cel('span', 'nome', g.nome));
       var cmvs = [];
       g.itens.forEach(function (it) {
-        var x = cmvDe(custoDoItem(it, CV_CASA), refPreco(it));
+        var x = cmvDe(custoReal(it, CV_CASA), refPreco(it));
         if (x !== null) cmvs.push(x);
       });
       var soma = 0; cmvs.forEach(function (x) { soma += x; });
@@ -3940,8 +3948,13 @@ function nomeArquivoSeguro(base) {
       }
       row.classList.toggle('mudou', mud);
       if (!verCusto) return;
-      var custo = custoDoItem(it, CV_CASA);
+      var custo = custoDoItem(it, CV_CASA), est = estadoCusto(it, CV_CASA);
       txt(cCusto, custo === null ? '—' : soNumero(custo));
+      if (est.k === 'est' || est.k === 'susp') {
+        var tg = cel('span', 'cd-tag-cu ' + est.k, est.k === 'est' ? 'est.' : '!');
+        tg.title = est.rot + (est.data ? ' · ' + dataCurta(est.data) : '');
+        cCusto.appendChild(tg);
+      }
       var a = cmvDe(custo, refp), b = mud ? cmvDe(custo, n.valor) : null;
       var t = (mud && b !== null) ? (a !== null ? Math.round(a) + '→' : '') + Math.round(b) + '%' : cmvTxt(a);
       txt(cCmv, t);
@@ -4376,6 +4389,8 @@ function nomeArquivoSeguro(base) {
     });
     var f = fichaDoItem(it, CV_CASA);
     par('Custo da ficha', textoFicha(it, CV_CASA).t);
+    var ec = estadoCusto(it, CV_CASA);
+    par('Situação do custo', ec.rot + (ec.data ? ' · ' + dataCurta(ec.data) : ''));
     if (conc) {
       par('Vendidos no mês', conc.qtde + ' un.');
     }
@@ -5364,6 +5379,27 @@ function nomeArquivoSeguro(base) {
     if (!f || !f.e) return null;
     return custoDaEntrada(f.e, f.modo === 'vinculo' ? vinculoDe(it).dose_ml : null);
   }
+  // Situação da precificação do item, com a data quando existe (2026-10-21):
+  // real (calculado, digitado, B.D.1), estimado (ficha genérica, marcada),
+  // com suspeita, ou sem custo. `k` serve de classe e de contagem.
+  function estadoCusto(it, casaSlug) {
+    var f = fichaDoItem(it, casaSlug);
+    if (!f) return { k: 'sem', rot: 'Sem custo', data: null };
+    if (f.modo === 'sumiu') return { k: 'sem', rot: 'Ficha ligada não existe mais', data: null };
+    if (f.modo === 'homonimo') return { k: 'sem', rot: 'Ficha duplicada: ligue a certa', data: null };
+    var e = f.e;
+    if (custoDoItem(it, casaSlug) === null) return { k: 'sem', rot: 'Ficha sem custo', data: null };
+    if (e.t === 'insumo') return { k: 'real', rot: 'Real · B.D.1', data: CUSTOS && CUSTOS.gerado_em ? String(CUSTOS.gerado_em).slice(0, 10) : null };
+    if (e.f === 'estimado') return { k: 'est', rot: 'Estimado (ficha genérica)', data: e.em || null };
+    if (e.f === 'suspeito') return { k: 'susp', rot: 'Com suspeita', data: null };
+    if (e.f === 'calculado') return { k: 'real', rot: 'Real · calculado', data: e.em || null };
+    return { k: 'real', rot: 'Real · digitado à mão', data: null };
+  }
+  // Médias de CMV só com custo real: a estimativa genérica aparece na linha,
+  // marcada, mas nunca entra na média da categoria nem da carta.
+  function custoReal(it, casaSlug) {
+    return estadoCusto(it, casaSlug).k === 'est' ? null : custoDoItem(it, casaSlug);
+  }
   function fmtMl(n) { return String(Math.round(Number(n) * 10) / 10).replace('.', ','); }
   // Dose sugerida ao ligar um insumo (a coordenação confirma ou troca):
   // ml escrito no nome do item ganha; a garrafa/lata inteira vira unidade;
@@ -5400,6 +5436,7 @@ function nomeArquivoSeguro(base) {
       return { t: quem + pelo + ' · custo calculado' + (e.em ? ' em ' + dataCurta(e.em) : ''), c: '' };
     }
     if (e.f === 'digitado') return { t: quem + pelo + ' · custo digitado à mão', c: '' };
+    if (e.f === 'estimado') return { t: quem + pelo + ' · ESTIMADO (ficha genérica' + (e.em ? ', ' + dataCurta(e.em) : '') + '), não é custo real', c: 'aten' };
     if (e.f === 'suspeito') return { t: quem + pelo + ' · custo com suspeita: ' + (e.a || 'confira a ficha'), c: 'aten' };
     return { t: quem + pelo + ' · custo do B.D.1', c: '' };
   }
@@ -6263,7 +6300,7 @@ function nomeArquivoSeguro(base) {
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 21/10/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 22/10/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -7723,7 +7760,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '993d20c47288';
+  var BUILD = '5dfff0d8257e';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
