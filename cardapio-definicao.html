@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=b2f6c1b0fbad">
+<link rel="stylesheet" href="portal.css?v=993d20c47288">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1047,7 +1047,16 @@ window.msgAcessoNegado = function (nomePagina) {
   .cd-picker-op b { color:var(--text); font-weight:500; }
   .cd-picker-op:hover, .cd-picker-op.on { border-color:var(--acc); }
   .cd-picker-vazio { font-size:12px; color:var(--text-3); padding:4px 8px; }
-  .cd-picker-acoes { display:flex; gap:8px; }
+  .cd-picker-acoes { display:flex; gap:8px; flex-wrap:wrap; }
+  .cd-picker-sub { font-size:11px; color:var(--text-3); padding:2px 8px 0; }
+  .cd-picker-dose { display:flex; flex-direction:column; gap:6px; margin:8px 0; max-width:620px; }
+  .cd-picker-dose .op { display:flex; align-items:center; gap:8px; flex-wrap:wrap; text-align:left;
+      background:none; border:1px solid var(--border); border-radius:8px; padding:8px 10px;
+      color:var(--text-2); font:inherit; font-size:12.5px; cursor:pointer; }
+  .cd-picker-dose .op.on { border-color:var(--acc); }
+  .cd-picker-dose .op b { color:var(--text); font-weight:500; }
+  .cd-picker-dose input { width:64px; padding:4px 6px; border-radius:6px; border:1px solid var(--border);
+      background:var(--bg); color:var(--text); font:inherit; font-size:13px; text-align:right; }
   table.cd-tabela.cd-precos .cd-pnovo { width:88px; max-width:100%; padding:5px 7px; border-radius:6px;
       border:1px solid var(--border); background:var(--card); color:var(--text); font-family:inherit;
       font-size:inherit; text-align:right; }
@@ -3672,6 +3681,7 @@ function nomeArquivoSeguro(base) {
   function carregaCarta(casa) {
     CV_CASA = casa; CV = null; CV_ESTADO = 'carregando'; CV_ERRO = '';
     NOVOS = {}; BUSCA_CARTA = ''; VER_DET = {}; VER_ITENS = {}; ITEM_SEL = null; VER_FULL = {};
+    PICKER_CARTA = null; LIGOU_MSG = null;
     var b = document.getElementById('cd-ca-busca'); if (b) b.value = '';
     desenhaTudo();
     if (!CASAS[casa]) {
@@ -3892,6 +3902,7 @@ function nomeArquivoSeguro(base) {
     nome.style.cursor = 'pointer';
     nome.onclick = function () {
       ITEM_SEL = ITEM_SEL === it.slug ? null : it.slug;
+      PICKER_CARTA = null; LIGOU_MSG = null;
       if (ITEM_SEL) carregaVersoesCompletas();
       desenhaCarta();
     };
@@ -4252,6 +4263,7 @@ function nomeArquivoSeguro(base) {
   // ---- detalhe do item (E9): painel ao lado no tablet deitado, embaixo da
   // linha no celular ----
   var ITEM_SEL = null, VER_FULL = {};
+  var PICKER_CARTA = null, LIGOU_MSG = null;   // "ligar a ficha ou insumo" aberto no painel do item
   // ---- fonte do preço de referência (a coluna "atual") ----
   // O preço de referência é o do cardápio IMPRESSO quando a casa enviou um
   // (é o que o cliente lê na mesa e o que decide a mudança de preço); sem ele,
@@ -4386,9 +4398,74 @@ function nomeArquivoSeguro(base) {
     });
     if (hist.length > 1) par('Nas versões', hist.join(' · '));
     raiz.appendChild(g);
-    var ok = f && f.id;
-    if (!ok) raiz.appendChild(cel('p', 'cd-ver-sub', 'Sem ficha ligada: o custo vem só quando há ficha de nome igual.'));
+    var ok = f && f.id, podeLigar = !!(CV && CV.pode_confirmar && CUSTOS);
+    if (!ok) raiz.appendChild(cel('p', 'cd-ver-sub', podeLigar
+      ? 'Sem ficha ligada. Ligue a uma ficha técnica ou, para dose, cerveja e água, a um insumo do B.D.1: o custo passa a vir de lá todo dia.'
+      : 'Sem ficha ligada: o custo vem quando há ficha de nome igual ou quando a coordenação liga o item a uma ficha ou insumo.'));
+    if (LIGOU_MSG && LIGOU_MSG.slug === it.slug) raiz.appendChild(cel('p', LIGOU_MSG.erro ? 'cd-ca-erro' : 'cd-ca-ok', LIGOU_MSG.t));
+    if (podeLigar) {
+      if (PICKER_CARTA === it.slug) {
+        raiz.appendChild(caixaPicker(it, CV_CASA, function (fid, dml) { salvaVinculo(it, fid, dml); },
+          function () { PICKER_CARTA = null; desenhaCarta(); }));
+      } else {
+        var ac = cel('div', 'cd-picker-acoes'); ac.style.marginTop = '8px';
+        var bl = cel('button', 'cd-btn sec', ok ? 'Trocar ficha ou insumo' : 'Ligar a ficha ou insumo');
+        bl.type = 'button';
+        bl.onclick = function () { PICKER_CARTA = it.slug; LIGOU_MSG = null; desenhaCarta(); };
+        var bp = cel('button', 'cd-btn sec', 'Próximo sem custo');
+        bp.type = 'button';
+        bp.onclick = proximoSemCusto;
+        ac.appendChild(bl); ac.appendChild(bp);
+        raiz.appendChild(ac);
+      }
+    }
     return raiz;
+  }
+  // Grava o vínculo do item da carta (todas as versões da casa). O custo não
+  // vai junto: sai do índice do dia, então muda sozinho com o B.D.1.
+  function salvaVinculo(it, fid, dml) {
+    var casa = CV_CASA;
+    api('/api/cardapio-versoes/vinculo', {
+      method: 'POST',
+      body: JSON.stringify({ casa: casa, slug: it.slug, ficha_id: fid, dose_ml: dml }),
+    }).then(function (d) {
+      if (CV_CASA !== casa || !CV) return;
+      CV.vinculos = d.vinculos || {};
+      PICKER_CARTA = null;
+      var c = custoDoItem(it, casa);
+      LIGOU_MSG = { slug: it.slug, t: !fid ? 'Vínculo desfeito.'
+        : c === null ? 'Ligado, mas ainda sem custo no B.D.1.' : 'Ligado: custo ' + soNumero(c) + ', atualizado todo dia.' };
+      desenhaCarta();
+    }).catch(function (e) {
+      LIGOU_MSG = { slug: it.slug, t: e.message, erro: true };
+      desenhaCarta();
+    });
+  }
+  // Pula para o próximo item da carta (na ordem da tela) ainda sem custo e já
+  // abre a busca: ligar a carta inteira sem caçar item por item.
+  function proximoSemCusto() {
+    if (!CV || !CV.vigente) return;
+    var lista = [];
+    gruposDaCarta().forEach(function (g) { lista = lista.concat(g.itens); });
+    var i0 = -1;
+    lista.forEach(function (x, i) { if (x.slug === ITEM_SEL) i0 = i; });
+    var prox = null;
+    for (var k = 1; k < lista.length && !prox; k++) {
+      var x = lista[(i0 + k) % lista.length];
+      if (custoDoItem(x, CV_CASA) === null) prox = x;
+    }
+    if (!prox) {
+      LIGOU_MSG = { slug: ITEM_SEL, t: 'Todos os itens da carta já têm custo.' };
+      desenhaCarta();
+      return;
+    }
+    ITEM_SEL = prox.slug; PICKER_CARTA = prox.slug; LIGOU_MSG = null;
+    BUSCA_CARTA = '';
+    var b = document.getElementById('cd-ca-busca'); if (b) b.value = '';
+    CATS_EST[CV_CASA + '|' + prox.secao] = true; salvaCats();
+    desenhaCarta();
+    var sel = document.querySelector('#cd-ca-lista .cd-cl-linha.sel');
+    if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'center' });
   }
 
   // ---- abrir e fechar a casa ----
@@ -5248,12 +5325,19 @@ function nomeArquivoSeguro(base) {
     var c = casaSlug || (PROJ ? PROJ.casa : '');
     return c === 'gra-bistro' ? 'gra' : c;
   }
+  // De onde vem o custo do item: { ficha_id, dose_ml }. Item da carta da
+  // casa (tem slug, não tem id) guarda o vínculo em cardapio_vinculos, por
+  // casa, valendo para todas as versões; item de projeto, na própria linha.
+  function vinculoDe(it) {
+    if (it.slug && it.id === undefined && CV && CV.vinculos && CV.vinculos[it.slug]) return CV.vinculos[it.slug];
+    return { ficha_id: it.ficha_id || null, dose_ml: it.dose_ml == null ? null : Number(it.dose_ml) };
+  }
   function fichaDoItem(it, casaSlug) {
     if (!CUSTOS) return null;
-    var F = CUSTOS.fichas || {};
-    if (it.ficha_id) {
-      return F[it.ficha_id] ? { id: it.ficha_id, e: F[it.ficha_id], modo: 'vinculo' }
-                            : { id: it.ficha_id, e: null, modo: 'sumiu' };
+    var F = CUSTOS.fichas || {}, fid = vinculoDe(it).ficha_id;
+    if (fid) {
+      return F[fid] ? { id: fid, e: F[fid], modo: 'vinculo' }
+                    : { id: fid, e: null, modo: 'sumiu' };
     }
     var ids = (CUSTOS.nomes || {})[normChave(it.nome)] || [];
     if (ids.length > 1) {
@@ -5267,9 +5351,34 @@ function nomeArquivoSeguro(base) {
     if (ids.length > 1) return { id: null, e: null, modo: 'homonimo', n: ids.length };
     return null;
   }
+  // Custo de uma entrada do índice. Insumo do B.D.1 vendido em dose:
+  // $/ML x ml (o `custo` dele é a unidade inteira, a GARRAFA de um
+  // destilado). Sem $/ML no B.D.1 a dose fica sem custo, nunca a garrafa.
+  function custoDaEntrada(e, doseMl) {
+    if (!e || e.custo === null || e.custo === undefined) return null;
+    if (e.t !== 'insumo' || !doseMl) return Number(e.custo);
+    return e.ml ? Math.round(e.ml * doseMl * 100) / 100 : null;
+  }
   function custoDoItem(it, casaSlug) {
     var f = fichaDoItem(it, casaSlug);
-    return (f && f.e && f.e.custo !== null && f.e.custo !== undefined) ? Number(f.e.custo) : null;
+    if (!f || !f.e) return null;
+    return custoDaEntrada(f.e, f.modo === 'vinculo' ? vinculoDe(it).dose_ml : null);
+  }
+  function fmtMl(n) { return String(Math.round(Number(n) * 10) / 10).replace('.', ','); }
+  // Dose sugerida ao ligar um insumo (a coordenação confirma ou troca):
+  // ml escrito no nome do item ganha; a garrafa/lata inteira vira unidade;
+  // seção de doses e destilados é dose de 50 ml (dose padrão MEDIDA, regra
+  // custo.md); cerveja, água, refrigerante, suco e café são unidade.
+  var SECAO_DOSE = /DOSE|WHISK|BOURBON|LICOR|DESTILAD|\bGIN\b|VODKA|\bRUM\b|CACHA|TEQUILA|MEZCAL|PISCO|COGNAC|CONHAQUE|VERMUT|FORTIFIC|APERITIVO|DIGESTIVO/;
+  var SECAO_UNIDADE = /CERVEJ|CHOP|AGUA|REFRI|SODA|SUCO|CAFE|CHA\b|CHAS\b|ENERG/;
+  function doseSugerida(it, e) {
+    var m = /(\d{2,4})\s*ml\b/i.exec(it.nome || ''), ml = m ? Number(m[1]) : null;
+    if (ml && e.v && ml >= e.v * 0.9) return null;
+    if (ml) return ml;
+    var sec = normChave(it.secao || '');
+    if (SECAO_UNIDADE.test(sec)) return null;
+    if (SECAO_DOSE.test(sec)) return 50;
+    return (e.v && e.v >= 500) ? 50 : null;
   }
   function textoFicha(it, casaSlug) {
     if (CUSTOS_ESTADO === 'carregando' || CUSTOS_ESTADO === 'vazio') return { t: 'buscando o custo…', c: '' };
@@ -5278,8 +5387,14 @@ function nomeArquivoSeguro(base) {
     if (!f) return { t: 'sem ficha vinculada', c: '' };
     if (f.modo === 'sumiu') return { t: 'a ficha vinculada não existe mais no Notion', c: 'aten' };
     if (f.modo === 'homonimo') return { t: f.n + ' fichas com este nome: vincule a certa', c: 'aten' };
-    var e = f.e, quem = (e.t === 'insumo' ? 'dose B.D.1: ' : 'ficha: ') + e.n;
+    var e = f.e, quem = 'ficha: ' + e.n;
     var pelo = f.modo === 'nome' ? ' (pelo nome)' : '';
+    if (e.t === 'insumo') {
+      var dm = vinculoDe(it).dose_ml;
+      var como = dm ? ' · dose de ' + fmtMl(dm) + ' ml' : ' · unidade inteira' + (e.v ? ' (' + fmtMl(e.v) + ' ml)' : '');
+      var sem = custoDoItem(it, casaSlug) === null ? ' · sem custo por ml no B.D.1' : '';
+      return { t: 'B.D.1: ' + e.n + como + sem, c: sem ? 'aten' : '' };
+    }
     if (e.custo === null || e.custo === undefined) return { t: quem + pelo + ' · sem custo na ficha', c: '' };
     if (e.f === 'calculado') {
       return { t: quem + pelo + ' · custo calculado' + (e.em ? ' em ' + dataCurta(e.em) : ''), c: '' };
@@ -5398,59 +5513,158 @@ function nomeArquivoSeguro(base) {
     return inp;
   }
 
-  // "Vincular ficha": linha aberta logo abaixo do item, com busca em todas as
-  // fichas e doses do índice. Gravar é o PATCH de sempre, com ficha_id.
-  function linhaPicker(it) {
-    var tr = document.createElement('tr');
-    tr.className = 'cd-picker-tr';
-    var td = document.createElement('td');
-    td.colSpan = 6;
+  // "Vincular": caixa com busca em todas as fichas e insumos do B.D.1 do
+  // índice. Usada pela visão Preços (linha embaixo do item, grava no PATCH do
+  // item) e pela carta da casa (painel do item, grava em
+  // /api/cardapio-versoes/vinculo). `salvar(ficha_id, dose_ml)` grava;
+  // `fechar()` some com a caixa.
+  // Insumo escolhido abre um segundo passo: dose (com o ml, 50 sugerido) ou a
+  // unidade inteira (lata, long neck, garrafa). O `Custo 1x1` do B.D.1 é a
+  // unidade inteira, então ligar uma dose sem esse passo mostrava o preço da
+  // garrafa como custo da dose.
+  var PICKER_PARADA = { DOSE: 1, DE: 1, DA: 1, DO: 1, DOS: 1, DAS: 1, COM: 1, SEM: 1, ML: 1, LT: 1,
+    ANOS: 1, YEARS: 1, THE: 1, LATA: 1, GARRAFA: 1, LONG: 1, NECK: 1, OLD: 1, NO: 1, 'N°': 1 };
+  function palavrasDe(k) {
+    return k.split(/[^A-Z0-9]+/).filter(function (s) { return s.length > 2 && !PICKER_PARADA[s]; });
+  }
+  function caixaPicker(it, casaSlug, salvar, fechar) {
     var cx = document.createElement('div');
     cx.className = 'cd-picker';
     var tit = document.createElement('div');
     tit.className = 'cd-picker-tit';
-    tit.textContent = 'Vincular "' + it.nome + '" a uma ficha técnica ou dose do B.D.1';
+    tit.textContent = 'Ligar "' + it.nome + '" a uma ficha técnica ou a um insumo do B.D.1';
     var busca = document.createElement('input');
     busca.type = 'search';
-    busca.placeholder = 'Buscar pelo nome da ficha';
-    busca.setAttribute('aria-label', 'Buscar ficha');
+    busca.placeholder = 'Buscar ficha ou insumo pelo nome';
+    busca.setAttribute('aria-label', 'Buscar ficha ou insumo');
     busca.value = it.nome;
     var lista = document.createElement('div');
     lista.className = 'cd-picker-lista';
     var acoes = document.createElement('div');
     acoes.className = 'cd-picker-acoes';
-    if (it.ficha_id) {
+    var atual = vinculoDe(it);
+    if (atual.ficha_id) {
       var desv = document.createElement('button');
       desv.type = 'button';
       desv.className = 'cd-btn sec';
       desv.textContent = 'Desvincular';
-      desv.onclick = function () {
-        salvaItem(it, { ficha_id: null }, function () { PICKER_ID = null; desenhaItens(); });
-      };
+      desv.onclick = function () { salvar(null, null); };
       acoes.appendChild(desv);
     }
-    var fechar = document.createElement('button');
-    fechar.type = 'button';
-    fechar.className = 'cd-btn sec';
-    fechar.textContent = 'Fechar';
-    fechar.onclick = function () { PICKER_ID = null; desenhaItens(); };
-    acoes.appendChild(fechar);
+    var bFechar = document.createElement('button');
+    bFechar.type = 'button';
+    bFechar.className = 'cd-btn sec';
+    bFechar.textContent = 'Fechar';
+    bFechar.onclick = fechar;
+    acoes.appendChild(bFechar);
+
+    function descricao(e) {
+      if (e.t === 'insumo') {
+        return ' · B.D.1' + (e.v ? ' · unidade de ' + fmtMl(e.v) + ' ml' : '')
+          + ' · ' + (e.custo === null || e.custo === undefined ? 'sem custo' : 'unidade ' + soNumero(e.custo));
+      }
+      return ' · ' + ((e.c || []).join(', ') || 'sem casa')
+        + ' · ' + (e.custo === null || e.custo === undefined ? 'sem custo' : 'custo ' + soNumero(e.custo))
+        + (e.f === 'suspeito' ? ' (com suspeita)' : '');
+    }
+    // Segundo passo do insumo: dose ou unidade inteira, com o custo de cada
+    // jeito na tela antes de gravar.
+    function passoDose(x) {
+      var e = x.e, sug = doseSugerida(it, e);
+      var jaEra = atual.ficha_id === x.id ? atual.dose_ml : undefined;
+      var ml = jaEra !== undefined ? jaEra : sug;
+      lista.innerHTML = '';
+      busca.style.display = 'none';
+      tit.textContent = 'Como "' + it.nome + '" sai de ' + e.n + '?';
+      var box = document.createElement('div');
+      box.className = 'cd-picker-dose';
+      var opD = document.createElement('div');
+      opD.className = 'op' + (ml ? ' on' : '');
+      opD.setAttribute('role', 'button');
+      opD.tabIndex = 0;
+      var bD = document.createElement('b'); bD.textContent = 'Dose de';
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.inputMode = 'decimal'; inp.autocomplete = 'off';
+      inp.value = fmtMl(ml || 50);
+      inp.setAttribute('aria-label', 'ml da dose');
+      var tD = document.createElement('span');
+      var opU = document.createElement('button');
+      opU.type = 'button';
+      opU.className = 'op' + (ml ? '' : ' on');
+      var bU = document.createElement('b');
+      bU.textContent = 'Unidade inteira' + (e.v ? ' (' + fmtMl(e.v) + ' ml)' : '');
+      var tU = document.createElement('span');
+      tU.textContent = e.custo === null || e.custo === undefined ? '· sem custo' : '· custo ' + soNumero(e.custo);
+      opU.appendChild(bU); opU.appendChild(tU);
+      function mlLido() {
+        var v = Number(String(inp.value).replace(',', '.'));
+        return (v >= 5 && v <= 1000) ? Math.round(v * 10) / 10 : null;
+      }
+      function pintaD() {
+        var v = mlLido(), c = v ? custoDaEntrada(e, v) : null;
+        tD.textContent = !v ? '· ml de 5 a 1000' : c === null ? '· sem custo por ml no B.D.1' : '· custo ' + soNumero(c);
+      }
+      inp.oninput = pintaD;
+      inp.onclick = function (ev) { ev.stopPropagation(); };
+      inp.onkeydown = function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); opD.onclick(); } };
+      var mlTxt = document.createElement('span'); mlTxt.textContent = 'ml';
+      opD.appendChild(bD); opD.appendChild(inp); opD.appendChild(mlTxt); opD.appendChild(tD);
+      opD.onclick = function () {
+        var v = mlLido();
+        if (!v) { inp.focus(); return; }
+        salvar(x.id, v);
+      };
+      opD.onkeydown = function (ev) { if (ev.key === 'Enter' && ev.target === opD) opD.onclick(); };
+      opU.onclick = function () { salvar(x.id, null); };
+      pintaD();
+      box.appendChild(opD); box.appendChild(opU);
+      var nota = document.createElement('div');
+      nota.className = 'cd-picker-sub';
+      nota.textContent = 'Toque no jeito certo para salvar. Dose usa o custo por ml do B.D.1; o custo acompanha o B.D.1 todo dia.';
+      box.appendChild(nota);
+      lista.appendChild(box);
+      var volta = document.createElement('button');
+      volta.type = 'button';
+      volta.className = 'cd-btn sec';
+      volta.textContent = 'Voltar à busca';
+      volta.onclick = function () {
+        busca.style.display = ''; tit.textContent = 'Ligar "' + it.nome + '" a uma ficha técnica ou a um insumo do B.D.1';
+        acoes.removeChild(volta); procura();
+      };
+      acoes.insertBefore(volta, acoes.firstChild);
+      setTimeout(function () { (ml ? inp : opU).focus(); }, 0);
+    }
 
     function procura() {
       var q = normChave(busca.value);
-      var casa = casaIndice();
-      var achados = (CUSTOS ? CUSTOS._lista : []).filter(function (x) {
-        return q && x.k.indexOf(q) >= 0;
-      });
+      var casa = casaIndice(casaSlug);
+      var todos = CUSTOS ? CUSTOS._lista : [];
+      var parecidos = false;
+      var achados = todos.filter(function (x) { return q && x.k.indexOf(q) >= 0; });
       // A palavra inteira digitada pode não existir; cai pra busca por cada
       // palavra (todas precisam aparecer), que é como se procura "gin tonica".
       if (!achados.length && q) {
         var partes = q.split(' ').filter(function (s) { return s.length > 1; });
-        achados = (CUSTOS ? CUSTOS._lista : []).filter(function (x) {
+        achados = todos.filter(function (x) {
           return partes.length && partes.every(function (s) { return x.k.indexOf(s) >= 0; });
         });
       }
+      // Ainda nada: parecidos, pelas palavras em comum ("Johnny Walker Double
+      // Black" acha "Whisky Johnnie Walker Double Black 1lt"). Só sugestão:
+      // quem liga é a pessoa, nunca a página (regra custo.md: PDV x B.D.1 por
+      // evidência, não por semelhança de texto).
+      var pontos = {};
+      if (!achados.length && q) {
+        var pal = palavrasDe(q);
+        todos.forEach(function (x) {
+          var n = 0;
+          pal.forEach(function (w) { if (x.k.indexOf(w) >= 0) n++; });
+          if (n) { pontos[x.id] = n; achados.push(x); }
+        });
+        parecidos = achados.length > 0;
+      }
       achados.sort(function (a, b) {
+        if (parecidos && pontos[a.id] !== pontos[b.id]) return pontos[b.id] - pontos[a.id];
         var ca = (a.e.c || []).indexOf(casa) >= 0 ? 0 : 1, cb = (b.e.c || []).indexOf(casa) >= 0 ? 0 : 1;
         if (ca !== cb) return ca - cb;
         var ta = a.e.t === 'ficha' ? 0 : 1, tb = b.e.t === 'ficha' ? 0 : 1;
@@ -5460,41 +5674,57 @@ function nomeArquivoSeguro(base) {
         return a.e.n.length - b.e.n.length;
       });
       lista.innerHTML = '';
-      achados.slice(0, 12).forEach(function (x) {
+      if (parecidos) {
+        var cab = document.createElement('div');
+        cab.className = 'cd-picker-vazio';
+        cab.textContent = 'Nenhum nome igual. Parecidos (confira antes de ligar):';
+        lista.appendChild(cab);
+      }
+      var teto = parecidos ? 8 : 12;
+      achados.slice(0, teto).forEach(function (x) {
         var b = document.createElement('button');
         b.type = 'button';
-        b.className = 'cd-picker-op' + (x.id === it.ficha_id ? ' on' : '');
+        b.className = 'cd-picker-op' + (x.id === atual.ficha_id ? ' on' : '');
         var n = document.createElement('b');
         n.textContent = x.e.n;
         var d = document.createElement('span');
-        d.textContent = ' · ' + (x.e.t === 'insumo' ? 'dose B.D.1' : ((x.e.c || []).join(', ') || 'sem casa'))
-          + ' · ' + (x.e.custo === null || x.e.custo === undefined ? 'sem custo' : 'custo ' + soNumero(x.e.custo))
-          + (x.e.f === 'suspeito' ? ' (com suspeita)' : '');
+        d.textContent = descricao(x.e);
         b.appendChild(n); b.appendChild(d);
         b.onclick = function () {
-          salvaItem(it, { ficha_id: x.id }, function () { PICKER_ID = null; desenhaItens(); });
+          if (x.e.t === 'insumo') passoDose(x); else salvar(x.id, null);
         };
         lista.appendChild(b);
       });
       if (!achados.length) {
         var v = document.createElement('div');
         v.className = 'cd-picker-vazio';
-        v.textContent = q ? 'Nenhuma ficha com esse nome.' : 'Digite parte do nome da ficha.';
+        v.textContent = q ? 'Nenhuma ficha nem insumo com esse nome.' : 'Digite parte do nome.';
         lista.appendChild(v);
-      } else if (achados.length > 12) {
+      } else if (achados.length > teto) {
         var m = document.createElement('div');
         m.className = 'cd-picker-vazio';
-        m.textContent = (achados.length - 12) + ' outras: refine a busca.';
+        m.textContent = (achados.length - teto) + ' outros: refine a busca.';
         lista.appendChild(m);
       }
     }
     var tBusca = null;
     busca.oninput = function () { clearTimeout(tBusca); tBusca = setTimeout(procura, 120); };
-    busca.onkeydown = function (e) { if (e.key === 'Escape') fechar.onclick(); };
+    busca.onkeydown = function (e) { if (e.key === 'Escape') fechar(); };
     cx.appendChild(tit); cx.appendChild(busca); cx.appendChild(lista); cx.appendChild(acoes);
-    td.appendChild(cx); tr.appendChild(td);
     procura();
     setTimeout(function () { busca.focus(); busca.select(); }, 0);
+    return cx;
+  }
+  function linhaPicker(it) {
+    var tr = document.createElement('tr');
+    tr.className = 'cd-picker-tr';
+    var td = document.createElement('td');
+    td.colSpan = 6;
+    function fechar() { PICKER_ID = null; desenhaItens(); }
+    td.appendChild(caixaPicker(it, undefined, function (fid, dml) {
+      salvaItem(it, { ficha_id: fid, dose_ml: dml }, fechar);
+    }, fechar));
+    tr.appendChild(td);
     return tr;
   }
 
@@ -6031,6 +6261,8 @@ function nomeArquivoSeguro(base) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
+<button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
+<aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
 <p class="nota">Bar.IZ · Grupo IZ · atualizado em 21/10/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
@@ -6709,6 +6941,210 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
 })();
 
 </script>
+<script>
+(function () {
+  var URL_IA = "https://contagem-bares.rodrigopcviana.workers.dev" + '/api/ia';
+  var NIVEIS = ['equipe', 'bartender', 'chefe', 'coord'];
+  var aba = document.getElementById('ia-aba');
+  var painel = document.getElementById('ia-painel');
+  if (!aba || !painel) return;
+  var s = (window.sessaoLer && window.sessaoLer()) || null;
+  // sem sessão, nível de fora da lista ou prévia da coordenação: o botão nem nasce
+  if (!s || s.previa || NIVEIS.indexOf(s.nivel) < 0 || URL_IA.indexOf('http') !== 0) return;
+  aba.hidden = false;
+
+  var msgs = document.getElementById('ia-msgs');
+  var form = document.getElementById('ia-form');
+  var campo = document.getElementById('ia-texto');
+  var envia = document.getElementById('ia-envia');
+  var rodape = document.getElementById('ia-rodape');
+  var LS = 'ia_conversa_' + (s.pessoa || s.nivel || 'x');
+  var conv = [];
+  var ocupado = false;
+
+  function guarda() { try { sessionStorage.setItem(LS, JSON.stringify(conv.slice(-30))); } catch (e) {} }
+  function le() { try { return JSON.parse(sessionStorage.getItem(LS) || '[]') || []; } catch (e) { return []; } }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+  function rola() { msgs.scrollTop = msgs.scrollHeight; }
+
+  var SUG = {
+    bartender: ['O que tem de evento nos próximos dias?', 'Quanto tem de Heineken?', 'Qual a regra de atraso?'],
+    equipe: ['O que tem de evento nos próximos dias?', 'Quanto tem de Heineken?', 'Qual a regra de atraso?'],
+    chefe: ['Quais alertas de operação a minha casa tem?', 'O que tem de evento nos próximos dias?', 'Como está a nota do bar no Nutricook?'],
+    coord: ['Quais alertas de operação o grupo tem?', 'O que tem de evento nos próximos dias?', 'Como está a nota do bar no Nutricook do Grá?']
+  };
+
+  function boasVindas() {
+    msgs.appendChild(el('div', 'ia-m ia', 'Oi! Eu respondo com o que o portal já mostra para o seu acesso: eventos, estoque da última contagem, transferências entre casas, preparos, Nutricook e regimento. Não envio nem salvo nada: só sugiro, e você autoriza.'));
+    var box = el('div', 'ia-sug');
+    (SUG[s.nivel] || SUG.equipe).forEach(function (t) {
+      var b = el('button', null, t);
+      b.type = 'button';
+      b.addEventListener('click', function () { pergunta(t); });
+      box.appendChild(b);
+    });
+    msgs.appendChild(box);
+  }
+
+  // ---- cartões de ação: a IA propõe, a pessoa autoriza ----
+  function enc(t) { return encodeURIComponent(t); }
+  function cartao(a, i, m) {
+    var c = el('div', 'ia-card');
+    var estado = (m.estados && m.estados[i]) || '';
+    var botoes = el('div', 'ia-card-bt');
+    function marca(novo) {
+      m.estados = m.estados || {};
+      m.estados[i] = novo;
+      guarda();
+      botoes.remove();
+      c.appendChild(el('div', 'ia-card-estado', novo === 'recusada' ? 'Recusada.' : 'Autorizada.'));
+    }
+    function bt(rot, ok, fn) {
+      var b = el('button', ok ? 'ok' : '', rot);
+      b.type = 'button';
+      b.addEventListener('click', fn);
+      botoes.appendChild(b);
+    }
+    if (a.tipo === 'mensagem') {
+      c.appendChild(el('div', 'ia-card-t', 'Mensagem pronta' + (a.para ? ' para ' + a.para : '')));
+      c.appendChild(el('div', 'ia-card-c', a.texto));
+      bt('Abrir no WhatsApp', true, function () { window.open('https://wa.me/?text=' + enc(a.texto), '_blank', 'noopener'); marca('autorizada'); });
+      bt('Copiar', false, function () {
+        try { navigator.clipboard.writeText(a.texto); this.textContent = 'Copiado'; } catch (e) { this.textContent = 'Não deu para copiar'; }
+      });
+    } else if (a.tipo === 'registro') {
+      c.appendChild(el('div', 'ia-card-t', (a.natureza === 'solicitacao' ? 'Solicitação' : 'Ocorrência') + ' para registrar'));
+      c.appendChild(el('div', 'ia-card-c', (a.titulo ? a.titulo + '\n' : '') + a.descricao));
+      bt('Abrir o Registro preenchido', true, function () {
+        var nota = (a.titulo ? a.titulo + '. ' : '') + a.descricao;
+        marca('autorizada');
+        location.href = 'registro.html?tipo=' + (a.natureza === 'solicitacao' ? 'solicitacao' : 'ocorrencia') + '&nota=' + enc(nota);
+      });
+    } else if (a.tipo === 'abrir') {
+      c.appendChild(el('div', 'ia-card-t', 'Abrir página'));
+      c.appendChild(el('div', 'ia-card-c', a.rotulo || a.pagina));
+      bt('Abrir', true, function () { marca('autorizada'); location.href = a.pagina; });
+    } else {
+      return null;
+    }
+    if (estado) {
+      c.appendChild(el('div', 'ia-card-estado', estado === 'recusada' ? 'Recusada.' : 'Autorizada.'));
+    } else {
+      bt('Recusar', false, function () { marca('recusada'); });
+      c.appendChild(botoes);
+    }
+    return c;
+  }
+
+  function desenha(m) {
+    if (m.role === 'user') { msgs.appendChild(el('div', 'ia-m eu', m.content)); return; }
+    if (m.erro) { msgs.appendChild(el('div', 'ia-m aviso', m.content)); return; }
+    msgs.appendChild(el('div', 'ia-m ia', m.content));
+    (m.acoes || []).forEach(function (a, i) {
+      var c = cartao(a, i, m);
+      if (c) msgs.appendChild(c);
+    });
+  }
+
+  function redesenha() {
+    msgs.textContent = '';
+    if (!conv.length) { boasVindas(); return; }
+    conv.forEach(desenha);
+    rola();
+  }
+
+  function pergunta(texto) {
+    texto = String(texto || '').trim();
+    if (!texto || ocupado) return;
+    ocupado = true;
+    envia.disabled = true;
+    var fr = msgs.querySelector('.ia-sug'); if (fr) fr.remove();
+    var u = { role: 'user', content: texto };
+    conv.push(u);
+    desenha(u);
+    var pensa = el('div', 'ia-m ia pensa', 'Pensando…');
+    msgs.appendChild(pensa);
+    rola();
+    var hist = conv.slice(0, -1).filter(function (m) { return !m.erro; }).slice(-6)
+      .map(function (m) { return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content }; });
+    var fim = function (m) {
+      pensa.remove();
+      conv.push(m);
+      desenha(m);
+      guarda();
+      rola();
+      ocupado = false;
+      envia.disabled = false;
+      campo.focus();
+    };
+    fetch(URL_IA, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      body: JSON.stringify({ pergunta: texto, historico: hist, extra: { tela: location.pathname.split('/').pop() } })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; });
+    }).then(function (x) {
+      if (x.status === 200 && x.d && x.d.texto) {
+        if (typeof x.d.restantes === 'number') rodape.textContent = 'Você ainda pode fazer ' + x.d.restantes + ' pergunta(s) hoje. A IA só sugere: nada é enviado nem salvo sem o seu toque em Autorizar.';
+        fim({ role: 'assistant', content: x.d.texto, acoes: x.d.acoes || [] });
+        return;
+      }
+      // 401 aqui NÃO desloga: só avisa (sessaoLimpar() por causa da IA viraria loop de logout)
+      var msg = x.status === 401 ? 'Seu acesso não vale para o assistente, ou a sessão expirou. Entre de novo pelo menu, se precisar.'
+        : (x.status === 429 || x.status === 400) && x.d && x.d.erro ? x.d.erro
+        : x.status === 503 ? 'O assistente ainda não está ligado neste ambiente.'
+        : 'A IA não respondeu agora. Tente de novo em instantes.';
+      fim({ role: 'assistant', content: msg, erro: true });
+    }).catch(function () {
+      fim({ role: 'assistant', content: 'Sem conexão com o servidor agora. Tente de novo.', erro: true });
+    });
+  }
+
+  function abre() {
+    painel.hidden = false;
+    aba.hidden = true;
+    aba.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('ia-aberto');
+    rola();
+    campo.focus();
+  }
+  function fecha() {
+    painel.hidden = true;
+    aba.hidden = false;
+    aba.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('ia-aberto');
+    aba.focus();
+  }
+  aba.addEventListener('click', abre);
+  document.getElementById('ia-fecha').addEventListener('click', fecha);
+  document.getElementById('ia-nova').addEventListener('click', function () {
+    conv = []; guarda(); redesenha();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !painel.hidden) fecha(); });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var t = campo.value;
+    campo.value = '';
+    campo.style.height = '';
+    pergunta(t);
+  });
+  campo.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+  campo.addEventListener('input', function () {
+    campo.style.height = 'auto';
+    campo.style.height = Math.min(120, campo.scrollHeight) + 'px';
+  });
+
+  conv = le();
+  redesenha();
+})();
+</script>
 
 <script>
 (function () {
@@ -7287,7 +7723,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'b2f6c1b0fbad';
+  var BUILD = '993d20c47288';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),

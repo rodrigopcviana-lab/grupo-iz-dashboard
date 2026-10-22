@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=b2f6c1b0fbad">
+<link rel="stylesheet" href="portal.css?v=993d20c47288">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1029,6 +1029,8 @@ window.msgAcessoNegado = function (nomePagina) {
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
+<button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
+<aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
 <p class="nota">Bar.IZ · Grupo IZ · atualizado em 21/10/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
@@ -1707,6 +1709,210 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
 })();
 
 </script>
+<script>
+(function () {
+  var URL_IA = "https://contagem-bares.rodrigopcviana.workers.dev" + '/api/ia';
+  var NIVEIS = ['equipe', 'bartender', 'chefe', 'coord'];
+  var aba = document.getElementById('ia-aba');
+  var painel = document.getElementById('ia-painel');
+  if (!aba || !painel) return;
+  var s = (window.sessaoLer && window.sessaoLer()) || null;
+  // sem sessão, nível de fora da lista ou prévia da coordenação: o botão nem nasce
+  if (!s || s.previa || NIVEIS.indexOf(s.nivel) < 0 || URL_IA.indexOf('http') !== 0) return;
+  aba.hidden = false;
+
+  var msgs = document.getElementById('ia-msgs');
+  var form = document.getElementById('ia-form');
+  var campo = document.getElementById('ia-texto');
+  var envia = document.getElementById('ia-envia');
+  var rodape = document.getElementById('ia-rodape');
+  var LS = 'ia_conversa_' + (s.pessoa || s.nivel || 'x');
+  var conv = [];
+  var ocupado = false;
+
+  function guarda() { try { sessionStorage.setItem(LS, JSON.stringify(conv.slice(-30))); } catch (e) {} }
+  function le() { try { return JSON.parse(sessionStorage.getItem(LS) || '[]') || []; } catch (e) { return []; } }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+  function rola() { msgs.scrollTop = msgs.scrollHeight; }
+
+  var SUG = {
+    bartender: ['O que tem de evento nos próximos dias?', 'Quanto tem de Heineken?', 'Qual a regra de atraso?'],
+    equipe: ['O que tem de evento nos próximos dias?', 'Quanto tem de Heineken?', 'Qual a regra de atraso?'],
+    chefe: ['Quais alertas de operação a minha casa tem?', 'O que tem de evento nos próximos dias?', 'Como está a nota do bar no Nutricook?'],
+    coord: ['Quais alertas de operação o grupo tem?', 'O que tem de evento nos próximos dias?', 'Como está a nota do bar no Nutricook do Grá?']
+  };
+
+  function boasVindas() {
+    msgs.appendChild(el('div', 'ia-m ia', 'Oi! Eu respondo com o que o portal já mostra para o seu acesso: eventos, estoque da última contagem, transferências entre casas, preparos, Nutricook e regimento. Não envio nem salvo nada: só sugiro, e você autoriza.'));
+    var box = el('div', 'ia-sug');
+    (SUG[s.nivel] || SUG.equipe).forEach(function (t) {
+      var b = el('button', null, t);
+      b.type = 'button';
+      b.addEventListener('click', function () { pergunta(t); });
+      box.appendChild(b);
+    });
+    msgs.appendChild(box);
+  }
+
+  // ---- cartões de ação: a IA propõe, a pessoa autoriza ----
+  function enc(t) { return encodeURIComponent(t); }
+  function cartao(a, i, m) {
+    var c = el('div', 'ia-card');
+    var estado = (m.estados && m.estados[i]) || '';
+    var botoes = el('div', 'ia-card-bt');
+    function marca(novo) {
+      m.estados = m.estados || {};
+      m.estados[i] = novo;
+      guarda();
+      botoes.remove();
+      c.appendChild(el('div', 'ia-card-estado', novo === 'recusada' ? 'Recusada.' : 'Autorizada.'));
+    }
+    function bt(rot, ok, fn) {
+      var b = el('button', ok ? 'ok' : '', rot);
+      b.type = 'button';
+      b.addEventListener('click', fn);
+      botoes.appendChild(b);
+    }
+    if (a.tipo === 'mensagem') {
+      c.appendChild(el('div', 'ia-card-t', 'Mensagem pronta' + (a.para ? ' para ' + a.para : '')));
+      c.appendChild(el('div', 'ia-card-c', a.texto));
+      bt('Abrir no WhatsApp', true, function () { window.open('https://wa.me/?text=' + enc(a.texto), '_blank', 'noopener'); marca('autorizada'); });
+      bt('Copiar', false, function () {
+        try { navigator.clipboard.writeText(a.texto); this.textContent = 'Copiado'; } catch (e) { this.textContent = 'Não deu para copiar'; }
+      });
+    } else if (a.tipo === 'registro') {
+      c.appendChild(el('div', 'ia-card-t', (a.natureza === 'solicitacao' ? 'Solicitação' : 'Ocorrência') + ' para registrar'));
+      c.appendChild(el('div', 'ia-card-c', (a.titulo ? a.titulo + '\n' : '') + a.descricao));
+      bt('Abrir o Registro preenchido', true, function () {
+        var nota = (a.titulo ? a.titulo + '. ' : '') + a.descricao;
+        marca('autorizada');
+        location.href = 'registro.html?tipo=' + (a.natureza === 'solicitacao' ? 'solicitacao' : 'ocorrencia') + '&nota=' + enc(nota);
+      });
+    } else if (a.tipo === 'abrir') {
+      c.appendChild(el('div', 'ia-card-t', 'Abrir página'));
+      c.appendChild(el('div', 'ia-card-c', a.rotulo || a.pagina));
+      bt('Abrir', true, function () { marca('autorizada'); location.href = a.pagina; });
+    } else {
+      return null;
+    }
+    if (estado) {
+      c.appendChild(el('div', 'ia-card-estado', estado === 'recusada' ? 'Recusada.' : 'Autorizada.'));
+    } else {
+      bt('Recusar', false, function () { marca('recusada'); });
+      c.appendChild(botoes);
+    }
+    return c;
+  }
+
+  function desenha(m) {
+    if (m.role === 'user') { msgs.appendChild(el('div', 'ia-m eu', m.content)); return; }
+    if (m.erro) { msgs.appendChild(el('div', 'ia-m aviso', m.content)); return; }
+    msgs.appendChild(el('div', 'ia-m ia', m.content));
+    (m.acoes || []).forEach(function (a, i) {
+      var c = cartao(a, i, m);
+      if (c) msgs.appendChild(c);
+    });
+  }
+
+  function redesenha() {
+    msgs.textContent = '';
+    if (!conv.length) { boasVindas(); return; }
+    conv.forEach(desenha);
+    rola();
+  }
+
+  function pergunta(texto) {
+    texto = String(texto || '').trim();
+    if (!texto || ocupado) return;
+    ocupado = true;
+    envia.disabled = true;
+    var fr = msgs.querySelector('.ia-sug'); if (fr) fr.remove();
+    var u = { role: 'user', content: texto };
+    conv.push(u);
+    desenha(u);
+    var pensa = el('div', 'ia-m ia pensa', 'Pensando…');
+    msgs.appendChild(pensa);
+    rola();
+    var hist = conv.slice(0, -1).filter(function (m) { return !m.erro; }).slice(-6)
+      .map(function (m) { return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content }; });
+    var fim = function (m) {
+      pensa.remove();
+      conv.push(m);
+      desenha(m);
+      guarda();
+      rola();
+      ocupado = false;
+      envia.disabled = false;
+      campo.focus();
+    };
+    fetch(URL_IA, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      body: JSON.stringify({ pergunta: texto, historico: hist, extra: { tela: location.pathname.split('/').pop() } })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; });
+    }).then(function (x) {
+      if (x.status === 200 && x.d && x.d.texto) {
+        if (typeof x.d.restantes === 'number') rodape.textContent = 'Você ainda pode fazer ' + x.d.restantes + ' pergunta(s) hoje. A IA só sugere: nada é enviado nem salvo sem o seu toque em Autorizar.';
+        fim({ role: 'assistant', content: x.d.texto, acoes: x.d.acoes || [] });
+        return;
+      }
+      // 401 aqui NÃO desloga: só avisa (sessaoLimpar() por causa da IA viraria loop de logout)
+      var msg = x.status === 401 ? 'Seu acesso não vale para o assistente, ou a sessão expirou. Entre de novo pelo menu, se precisar.'
+        : (x.status === 429 || x.status === 400) && x.d && x.d.erro ? x.d.erro
+        : x.status === 503 ? 'O assistente ainda não está ligado neste ambiente.'
+        : 'A IA não respondeu agora. Tente de novo em instantes.';
+      fim({ role: 'assistant', content: msg, erro: true });
+    }).catch(function () {
+      fim({ role: 'assistant', content: 'Sem conexão com o servidor agora. Tente de novo.', erro: true });
+    });
+  }
+
+  function abre() {
+    painel.hidden = false;
+    aba.hidden = true;
+    aba.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('ia-aberto');
+    rola();
+    campo.focus();
+  }
+  function fecha() {
+    painel.hidden = true;
+    aba.hidden = false;
+    aba.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('ia-aberto');
+    aba.focus();
+  }
+  aba.addEventListener('click', abre);
+  document.getElementById('ia-fecha').addEventListener('click', fecha);
+  document.getElementById('ia-nova').addEventListener('click', function () {
+    conv = []; guarda(); redesenha();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !painel.hidden) fecha(); });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var t = campo.value;
+    campo.value = '';
+    campo.style.height = '';
+    pergunta(t);
+  });
+  campo.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+  campo.addEventListener('input', function () {
+    campo.style.height = 'auto';
+    campo.style.height = Math.min(120, campo.scrollHeight) + 'px';
+  });
+
+  conv = le();
+  redesenha();
+})();
+</script>
 
 <script>
 (function () {
@@ -2285,7 +2491,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'b2f6c1b0fbad';
+  var BUILD = '993d20c47288';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
