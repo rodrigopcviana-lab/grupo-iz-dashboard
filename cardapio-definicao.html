@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=5a54526423ff">
+<link rel="stylesheet" href="portal.css?v=90a54d86f665">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1214,6 +1214,10 @@ window.msgAcessoNegado = function (nomePagina) {
   .cd-cl-desc-in:focus { outline:none; border-color:var(--acc); border-style:solid; }
   .cd-cl-desc-in.mudou { border:1px solid var(--acc); }
   .cd-ca-ferr { flex-wrap:wrap; }
+  .cd-ca-cols { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin:0 0 8px; font-size:11.5px; }
+  .cd-ca-cols .rot { color:var(--text-3); margin-right:2px; }
+  .cd-ca-tog.mini { padding:3px 8px; font-size:11px; }
+  .cd-ca-tog.mini:not(.on) { color:var(--text-3); text-decoration:line-through; }
   .cd-ca-exp { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 8px; font-size:12px; color:var(--text-2); }
   .cd-cl .cd-ca-det.inline { position:sticky; left:0; width:calc(100vw - 34px); max-width:640px; box-sizing:border-box; }
   .cd-cl-linha.cab { font-size:10.5px; color:var(--text-3); padding-top:4px; padding-bottom:2px; border-top:none; }
@@ -1342,6 +1346,7 @@ window.msgAcessoNegado = function (nomePagina) {
         <button type="button" class="cd-ca-tog" id="cd-ca-pdf" title="Exportar a prévia em PDF (com as sugestões)">PDF</button>
         <button type="button" class="cd-ca-tog" id="cd-ca-xlsx" title="Exportar a prévia em Excel (com as sugestões)">Excel</button>
       </div>
+      <div class="cd-ca-cols" id="cd-ca-cols"></div>
       <div class="cd-ca-exp" id="cd-ca-exp" style="display:none"></div>
       <div id="cd-ca-lista"></div>
       <div id="cd-ca-barra" class="cd-ca-barra" style="display:none"></div>
@@ -3656,6 +3661,25 @@ function nomeArquivoSeguro(base) {
   // SEMPRE começam recolhidas (não guarda a escolha).
   var DESC_NOVOS = {}, VER_DESC = false;
   var COL_OFF = {};   // colunas recolhidas: impresso, vendas, digital, cmv_<fonte>, cmv_novo
+  function desenhaChipsColunas(pode, verCusto) {
+    var raiz = document.getElementById('cd-ca-cols');
+    if (!raiz) return;
+    raiz.textContent = '';
+    raiz.appendChild(cel('span', 'rot', 'Colunas'));
+    var defs = [['impresso', 'Impresso'], ['cmv_impresso', 'CMV impresso', true], ['vendas', 'Praticado'], ['cmv_vendas', 'CMV praticado', true],
+                ['digital', 'Tagme'], ['cmv_digital', 'CMV Tagme', true]];
+    if (pode) defs.push(['cmv_novo', 'CMV novo', true]);
+    defs.forEach(function (d) {
+      if (d[2] && !verCusto) return;
+      var on = !COL_OFF[d[0]];
+      var b = cel('button', 'cd-ca-tog mini' + (on ? ' on' : ''), d[1]);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.title = (on ? 'Ocultar ' : 'Mostrar ') + d[1];
+      b.onclick = function () { COL_OFF[d[0]] = !COL_OFF[d[0]]; desenhaCarta(); };
+      raiz.appendChild(b);
+    });
+  }
   function nDescNovas() {
     var n = 0;
     Object.keys(DESC_NOVOS).forEach(function (k) { if (String(DESC_NOVOS[k] || '').trim()) n++; });
@@ -3946,14 +3970,14 @@ function nomeArquivoSeguro(base) {
     var ferr = document.querySelector('#cd-ca-carta .cd-ca-ferr');
     raiz.textContent = '';
     if (CV_ESTADO !== 'ok') {
-      ferr.style.display = 'none';
+      ferr.style.display = 'none'; document.getElementById('cd-ca-cols').textContent = '';
       raiz.appendChild(cel('p', 'cd-vazio', CV_ESTADO === 'falhou'
         ? 'Não consegui carregar a carta: ' + CV_ERRO : 'Carregando a carta…'));
       atualizaBarra();
       return;
     }
     if (!CV.vigente) {
-      ferr.style.display = 'none';
+      ferr.style.display = 'none'; document.getElementById('cd-ca-cols').textContent = '';
       var v = cel('div', 'cd-vazio');
       v.appendChild(cel('p', null, casaNome(CV_CASA) + ' sem carta para mostrar: '
         + (CV.sem_carta || 'carta digital não publicada') + '.'));
@@ -3980,36 +4004,29 @@ function nomeArquivoSeguro(base) {
     td.classList.toggle('on', VER_DESC);
     td.setAttribute('aria-pressed', VER_DESC ? 'true' : 'false');
     // Larguras calculadas aqui (2026-10-22): cada coluna de preço e de CMV
-    // pode ser recolhida tocando no título (COL_OFF, só nesta visita); a
-    // recolhida vira uma faixa estreita com "+" para reabrir.
+    // liga e desliga num botão da linha "Colunas" acima da tabela (COL_OFF,
+    // só nesta visita). Coluna desligada SAI da grade: não deixa faixa (a
+    // faixa com "+" parecia coluna nova no celular).
+    desenhaChipsColunas(pode, verCusto);
     var largo = window.matchMedia && window.matchMedia('(min-width:700px)').matches;
     var W = largo ? { nome: '200px', custo: '58px', pr: '62px', cm: '48px', sug: '80px', cmn: '56px', d1: '240px', d2: '260px' }
                   : { nome: '132px', custo: '44px', pr: '46px', cm: '38px', sug: '58px', cmn: '40px', d1: '200px', d2: '220px' };
     var cols = [W.nome, W.custo];
     ['impresso', 'vendas', 'digital'].forEach(function (f) {
-      cols.push(COL_OFF[f] ? '20px' : W.pr);
-      if (verCusto) cols.push(COL_OFF['cmv_' + f] ? '20px' : W.cm);
+      if (!COL_OFF[f]) cols.push(W.pr);
+      if (verCusto && !COL_OFF['cmv_' + f]) cols.push(W.cm);
     });
-    if (pode) { cols.push(W.sug); if (verCusto) cols.push(COL_OFF.cmv_novo ? '20px' : W.cmn); }
+    if (pode) { cols.push(W.sug); if (verCusto && !COL_OFF.cmv_novo) cols.push(W.cmn); }
     if (VER_DESC) { cols.push(W.d1); if (pode) cols.push(W.d2); }
     box.style.setProperty('--cols', cols.join(' '));
     var cab = cel('div', 'cd-cl-linha cab');
     cab.appendChild(cel('div', 'cd-cl-nome', 'item'));
     cab.appendChild(cel('div', 'n', 'custo'));
-    function celCab(k, rot) {
-      var off = !!COL_OFF[k];
-      var b = cel('button', 'n cd-cl-tit' + (off ? ' off' : ''), off ? '+' : (/^CMV /.test(rot) && rot !== 'CMV novo' ? 'CMV' : rot));
-      b.type = 'button';
-      b.title = off ? 'Mostrar ' + rot : 'Recolher ' + rot;
-      b.setAttribute('aria-label', b.title);
-      b.onclick = function () { COL_OFF[k] = !COL_OFF[k]; desenhaCarta(); };
-      return b;
-    }
     [['impresso', 'impresso'], ['vendas', 'praticado'], ['digital', 'Tagme']].forEach(function (f) {
-      cab.appendChild(celCab(f[0], f[1]));
-      if (verCusto) cab.appendChild(celCab('cmv_' + f[0], 'CMV ' + f[1]));
+      if (!COL_OFF[f[0]]) cab.appendChild(cel('div', 'n fonte', f[1]));
+      if (verCusto && !COL_OFF['cmv_' + f[0]]) cab.appendChild(cel('div', 'n', 'CMV'));
     });
-    if (pode) { cab.appendChild(cel('div', 'n fonte', 'sugerido')); if (verCusto) cab.appendChild(celCab('cmv_novo', 'CMV novo')); }
+    if (pode) { cab.appendChild(cel('div', 'n fonte', 'sugerido')); if (verCusto && !COL_OFF.cmv_novo) cab.appendChild(cel('div', 'n', 'CMV novo')); }
     if (VER_DESC) {
       cab.appendChild(cel('div', 'fonte', 'descrição (ficha)'));
       if (pode) cab.appendChild(cel('div', 'fonte', 'descrição nova'));
@@ -4111,8 +4128,8 @@ function nomeArquivoSeguro(base) {
     }
     ['impresso', 'vendas', 'digital'].forEach(function (f) {
       var pr = precoDaFonte(it, f);
-      row.appendChild(COL_OFF[f] ? cel('div', 'cd-cl-off') : cel('div', 'n', pr === null ? '—' : soNumero(pr)));
-      if (verCusto) row.appendChild(COL_OFF['cmv_' + f] ? cel('div', 'cd-cl-off') : celCmv(pr));
+      if (!COL_OFF[f]) row.appendChild(cel('div', 'n', pr === null ? '—' : soNumero(pr)));
+      if (verCusto && !COL_OFF['cmv_' + f]) row.appendChild(celCmv(pr));
     });
     var inp = null, cCmvNovo = null;
     if (pode) {
@@ -4122,10 +4139,7 @@ function nomeArquivoSeguro(base) {
       inp.value = NOVOS[it.slug] || '';
       inp.setAttribute('aria-label', 'Preço novo de ' + it.nome);
       row.appendChild(inp);
-      if (verCusto) {
-        if (COL_OFF.cmv_novo) row.appendChild(cel('div', 'cd-cl-off'));
-        else { cCmvNovo = cel('div', 'cd-cl-cmv'); row.appendChild(cCmvNovo); }
-      }
+      if (verCusto && !COL_OFF.cmv_novo) { cCmvNovo = cel('div', 'cd-cl-cmv'); row.appendChild(cCmvNovo); }
     }
     if (VER_DESC) {
       var dAt = descFicha(it);
@@ -8177,7 +8191,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '5a54526423ff';
+  var BUILD = '90a54d86f665';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
