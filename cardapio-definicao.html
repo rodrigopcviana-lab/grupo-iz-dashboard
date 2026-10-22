@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=5dfff0d8257e">
+<link rel="stylesheet" href="portal.css?v=0d5dd4c19120">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -1198,6 +1198,10 @@ window.msgAcessoNegado = function (nomePagina) {
   .cd-cl-in:focus { outline:none; border-color:var(--acc); border-style:solid; }
   .cd-cl-in.mudou { border:1px solid var(--acc); color:var(--acc); }
   .cd-cl-in.err { border:1px solid #e08585; color:#e08585; }
+  .cd-cl-sit { display:block; font-size:10.5px; line-height:1.3; margin-top:1px; color:var(--text-3); }
+  .cd-cl-sit.real { color:#5dcaa5; }
+  .cd-cl-sit.est, .cd-cl-sit.susp { color:var(--amarelo); }
+  .cd-cl-sit.sem { color:var(--text-3); font-style:italic; }
   .cd-tag-cu { margin-left:4px; font-size:9.5px; padding:0 4px; border-radius:4px; border:1px dashed var(--amarelo); color:var(--amarelo); }
   .cd-tag-cu.susp { border-style:solid; }
   .cd-cl-cmv { font-size:11px; text-align:center; border-radius:999px; padding:1px 4px; white-space:nowrap; }
@@ -3660,17 +3664,42 @@ function nomeArquivoSeguro(base) {
   }
 
   // ---- rascunho: o que foi digitado e ainda não confirmado, por casa ----
+  // Rascunho: o que foi digitado fica no aparelho (a cada tecla) e, ao
+  // "Salvar sugestão", no servidor (2026-10-22: o celular e o PC viam
+  // rascunhos diferentes). Ao abrir, vale o mais recente dos dois para a
+  // mesma versão base.
   function rascunhoLe(casa, d) {
+    var local = null, srv = d && d.sugestao;
     try {
       var r = JSON.parse(lsLe(LS_RASC + casa) || 'null');
-      if (r && d && d.vigente && r.base === d.vigente.id && r.novos && typeof r.novos === 'object') return r.novos;
+      if (r && d && d.vigente && r.base === d.vigente.id && r.novos && typeof r.novos === 'object') local = r;
     } catch (e) {}
-    return {};
+    if (srv && (!d.vigente || srv.versao_base !== d.vigente.id)) srv = null;
+    if (srv && (!local || !local.em || srv.em >= local.em)) return copia(srv.novos || {});
+    return local ? local.novos : {};
+  }
+  function copia(o) { var r = {}; Object.keys(o || {}).forEach(function (k) { r[k] = o[k]; }); return r; }
+  function textoSugestao() {
+    var sg = CV && CV.sugestao;
+    if (!sg || !CV.vigente || sg.versao_base !== CV.vigente.id) return '';
+    return 'sugestão salva por ' + (sg.autor || 'coordenação') + ' em ' + diaHoraBr(sg.em);
+  }
+  // Grava a sugestão no servidor. `depois(ok, msg)`.
+  function salvaSugestaoServidor(novos, depois) {
+    if (!CV || !CV.vigente || !CV.pode_confirmar) { if (depois) depois(false, ''); return; }
+    var casa = CV_CASA;
+    api('/api/cardapio-versoes/sugestao', {
+      method: 'POST',
+      body: JSON.stringify({ casa: casa, versao_base: CV.vigente.id, novos: novos }),
+    }).then(function (d) {
+      if (CV_CASA === casa && CV) CV.sugestao = d.sugestao || null;
+      if (depois) depois(true, '');
+    }).catch(function (e) { if (depois) depois(false, e.message); });
   }
   function salvaRascunho() {
     if (!CV || !CV.vigente) return;
     if (!Object.keys(NOVOS).length) { lsApaga(LS_RASC + CV_CASA); return; }
-    lsGrava(LS_RASC + CV_CASA, JSON.stringify({ base: CV.vigente.id, novos: NOVOS }));
+    lsGrava(LS_RASC + CV_CASA, JSON.stringify({ base: CV.vigente.id, novos: NOVOS, em: new Date().toISOString() }));
   }
 
   // ---- carregar ----
@@ -3760,6 +3789,7 @@ function nomeArquivoSeguro(base) {
     }
     if (c && c.mes) partes.push('vendas ' + c.mes);
     if (d.foto_cardapio) partes.push('digital ' + dataCurta(d.foto_cardapio));
+    var ts = textoSugestao(); if (ts) partes.push(ts);
     txt(document.getElementById('cd-ca-meta'), partes.join(' · '));
   }
   function abasDefs() {
@@ -3915,6 +3945,14 @@ function nomeArquivoSeguro(base) {
       desenhaCarta();
     };
     if (ITEM_SEL === it.slug) row.classList.add('sel');
+    // Situação da precificação e data, em cada item (pedido do Rodrigo,
+    // 2026-10-22). Só com o custo à mostra (o mesmo interruptor).
+    if (verCusto && CUSTOS) {
+      var es = estadoCusto(it, CV_CASA);
+      var rotCurto = es.k === 'real' ? es.rot.replace('Real · ', 'custo real · ') : es.rot.toLowerCase();
+      var sit = cel('span', 'cd-cl-sit ' + es.k, rotCurto + (es.data ? ' · ' + dataCurta(es.data) : ''));
+      nome.appendChild(sit);
+    }
     if (div[it.slug]) {
       var dot = cel('button', 'cd-cl-dot');
       dot.type = 'button';
@@ -3983,6 +4021,7 @@ function nomeArquivoSeguro(base) {
 
   function limpaNovos() {
     NOVOS = {}; salvaRascunho(); desenhaTudo();
+    if (CV && CV.sugestao) salvaSugestaoServidor({}, function () { desenhaMeta(); });
   }
   function atualizaBarra() {
     var b = document.getElementById('cd-ca-barra');
@@ -4002,9 +4041,15 @@ function nomeArquivoSeguro(base) {
     sug.onclick = function () {
       if (inv) { avisoErro('Corrija os valores marcados em vermelho antes de salvar.'); return; }
       salvaRascunho();
-      avisoOk(m.length + (m.length === 1 ? ' preço sugerido salvo' : ' preços sugeridos salvos')
-        + ' neste aparelho. Os preços atuais não mudaram: continue quando quiser.');
-      window.scrollTo(0, 0);
+      sug.disabled = true;
+      salvaSugestaoServidor(copia(NOVOS), function (ok, msg) {
+        sug.disabled = false;
+        var n = m.length + (m.length === 1 ? ' preço sugerido salvo' : ' preços sugeridos salvos');
+        if (ok) avisoOk(n + ' para todos os aparelhos. Os preços atuais não mudaram: continue no celular ou no computador.');
+        else avisoErro(n + ' só neste aparelho: o servidor não respondeu (' + (msg || 'sem conexão') + '). Tente de novo para levar ao computador.');
+        desenhaMeta();
+        window.scrollTo(0, 0);
+      });
     };
     var bt = cel('button', 'cd-btn', 'Revisar e confirmar');
     bt.type = 'button';
@@ -4088,6 +4133,7 @@ function nomeArquivoSeguro(base) {
           precos: m.map(function (x) { return { slug: x.it.slug, novo: x.novo }; }) }),
       }).then(function (d) {
         CV = d; NOVOS = {}; lsApaga(LS_RASC + casa); REVISANDO = false; VER_DET = {}; VER_ITENS = {}; VER_FULL = {};
+        if (d.sugestao) salvaSugestaoServidor({}, null);
         desenhaTudo();
         avisoOk('Nova versão de ' + diaBr(d.vigente.criada_em) + ' salva: ' + d.vigente.n_mudados
           + (d.vigente.n_mudados === 1 ? ' preço mudou.' : ' preços mudaram.') + ' A anterior ficou guardada em Versões.');
@@ -7760,7 +7806,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '5dfff0d8257e';
+  var BUILD = '0d5dd4c19120';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
