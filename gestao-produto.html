@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=8457a928acf2">
+<link rel="stylesheet" href="portal.css?v=367c4ff071cc">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -2081,6 +2081,7 @@ a contagem daquela semana.</p>
   .cp-match-tag { display:inline-block; flex:none; margin-left:6px; padding:1px 6px; border-radius:99px;
     font-size:9.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap;
     text-decoration:none; background:color-mix(in srgb, var(--urg-urgente) 14%, transparent); color:var(--urg-urgente); }
+  .cp-match-tag.conferir { background:color-mix(in srgb, var(--amarelo) 18%, transparent); color:var(--amarelo); }
   .cp-match-aviso { margin:0 0 12px; padding:10px 12px; border-radius:9px; font-size:12.5px;
     border:1px solid color-mix(in srgb, var(--urg-urgente) 40%, var(--border));
     background:color-mix(in srgb, var(--urg-urgente) 7%, var(--card)); }
@@ -3105,18 +3106,27 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
   // Tag "Match não conforme": o Worker devolve match null quando não há a
   // chave everloja:match no KV, e aí nada é marcado (sem dado, sem acusação).
   function matchTag(p) {
-    return p.match === 'nao_conforme'
-      ? ' <span class="cp-match-tag" title="' + esc(p.match_motivo || '') + '">Match não conforme</span>' : '';
+    if (p.match === 'nao_conforme')
+      return ' <span class="cp-match-tag" title="' + esc(p.match_motivo || '') + '">Match não conforme</span>';
+    // "conferir" (auditoria semanal do mapa): tem match, mas sairia errado
+    // (granel sem fator, código de venda). O robô recusa; o aviso vem antes.
+    if (p.match === 'conferir')
+      return ' <span class="cp-match-tag conferir" title="' + esc(p.match_motivo || '') + '">Match a conferir</span>';
+    return '';
   }
   function avisoMatch() {
     var el = document.getElementById('cp-match-aviso');
     if (!el) return;
     var n = PRODUTOS.filter(function (p) { return p.match === 'nao_conforme' && qEff(p) > 0; }).length;
-    el.hidden = !n;
-    el.textContent = n
+    var c = PRODUTOS.filter(function (p) { return p.match === 'conferir' && qEff(p) > 0; }).length;
+    el.hidden = !(n || c);
+    el.textContent = (n
       ? n + (n === 1 ? ' item com match não conforme está' : ' itens com match não conforme estão') +
-        ' no pedido. O robô do everloja não monta esses itens: zere na aprovação e compre por fora.'
-      : '';
+        ' no pedido. O robô do everloja não monta esses itens: zere na aprovação e compre por fora. '
+      : '') + (c
+      ? c + (c === 1 ? ' item está' : ' itens estão') +
+        ' com o match a conferir (o mapa do everloja sairia com a unidade ou o código errado): corrija o mapa ou zere.'
+      : '');
   }
 
   // --- Sugestões pelas vendas (2026-10-19) ----------------------------------
@@ -5885,7 +5895,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Bar.IZ · Grupo IZ · atualizado em 23/10/2026.
+<p class="nota">Bar.IZ · Grupo IZ · atualizado em 24/10/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -7345,7 +7355,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '8457a928acf2';
+  var BUILD = '367c4ff071cc';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
