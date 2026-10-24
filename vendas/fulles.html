@@ -196,6 +196,7 @@
   <button onclick="aba('p-concl', this)">Conclusões</button>
   <button onclick="aba('p-proj', this)">Projeção</button>
   <button onclick="aba('p-base', this)">Base de compra</button>
+  <button onclick="aba('p-consumo', this)">Consumo do mês</button>
   <button onclick="aba('p-selo', this)">Conferência</button>
 </div>
 
@@ -395,6 +396,150 @@
 </div>
 
 <script>
+// Conta da Base de compra: período, média por semana, maior/menor semana,
+// margem e mínimo sugerido. FONTE ÚNICA (PLANO_SIMULADOR_COMPRAS.md, etapa 2).
+//
+// Sem DOM, sem localStorage, sem fetch: só números entram e só números saem.
+// É injetado, igual, em três lugares:
+//   - Vendas, aba "Base de compra" (dashboards/_vista_base_compra.html),
+//   - Pedido de Compras, "Sugestões pelas vendas" (portal_gen.py),
+//   - Simulador de Compras.
+// Mudar a regra aqui muda as três telas juntas. Não copiar esta conta.
+// Teste: scripts/testa_base_compra_calc.mjs (compara com a versão congelada
+// de 2026-10-20 e com a regra do Pedido, sobre o dado real de cada casa).
+// "Semana" = mês ÷ B.semanas_por_mes (4,345), inclusive a maior e a menor.
+var BaseCompraCalc = (function () {
+  var MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+  function ano(m) { return 2000 + parseInt(m.split('/')[1], 10); }
+  function tri(m) { return Math.floor(MESES.indexOf(m.split('/')[0]) / 3) + 1; }
+  function mesesDe(B) { return B.meses_com_dado || B.meses || []; }
+
+  // Períodos que a tela oferece para o tipo escolhido (tudo, ano, tri, mes).
+  function opcoes(B, tipo) {
+    var m = mesesDe(B);
+    if (tipo === 'tudo') return [];
+    if (tipo === 'ano') {
+      var anos = [];
+      m.map(ano).forEach(function (a) { if (anos.indexOf(a) < 0) anos.push(a); });
+      return anos.sort(function (a, b) { return b - a; }).map(function (a) { return { v: String(a), t: String(a) }; });
+    }
+    if (tipo === 'tri') {
+      var vis = [];
+      m.forEach(function (x) { var k = ano(x) + '-T' + tri(x); if (vis.indexOf(k) < 0) vis.push(k); });
+      return vis.sort().reverse().map(function (k) {
+        var p = k.split('-T'), a = p[0], t = p[1];
+        var nomes = MESES.slice((t - 1) * 3, t * 3).join(', ');
+        return { v: k, t: t + 'º trimestre de ' + a + ' (' + nomes + ')' };
+      });
+    }
+    return m.slice().reverse().map(function (x) { return { v: x, t: x }; });
+  }
+
+  // Meses do período escolhido que têm dado.
+  function mesesPeriodo(B, tipo, qual) {
+    var m = mesesDe(B);
+    if (tipo === 'tudo') return m.slice();
+    if (tipo === 'ano') return m.filter(function (x) { return String(ano(x)) === qual; });
+    if (tipo === 'tri') return m.filter(function (x) { return (ano(x) + '-T' + tri(x)) === qual; });
+    return m.filter(function (x) { return x === qual; });
+  }
+
+  // Meses do período que deveriam existir e não têm dado (ficam fora da conta).
+  function faltantes(B, tipo, qual) {
+    var tem = {};
+    mesesDe(B).forEach(function (x) { tem[x] = true; });
+    var alvo = [];
+    if (tipo === 'ano') alvo = MESES.map(function (n) { return n + '/' + qual.slice(2); });
+    else if (tipo === 'tri') {
+      var p = qual.split('-T'), a = p[0], t = p[1];
+      alvo = MESES.slice((t - 1) * 3, t * 3).map(function (n) { return n + '/' + a.slice(2); });
+    }
+    var ultimo = mesesDe(B).slice(-1)[0];
+    var lin = function (m) { var q = m.split('/'); return parseInt(q[1], 10) * 12 + MESES.indexOf(q[0]); };
+    return alvo.filter(function (m) { return !tem[m] && (!ultimo || lin(m) <= lin(ultimo)); });
+  }
+
+  // Últimos n meses COM dado (a coluna "últimos 3 meses").
+  function ultimosMeses(B, n) { return mesesDe(B).slice(-(n || 3)); }
+
+  // Média semanal do período e maior/menor semana do histórico de UM item.
+  // `serie` = {mês: quantidade}; `sem` = semanas por mês; `x` e `B` só para o
+  // grupo (soma das médias de cada casa, cada uma sobre os meses que ela tem).
+  function linha(serie, mesesPer, mesesHist, sem, x, B) {
+    var soma = 0, media = null;
+    if (B && B.grupo && x && x.pc) {
+      Object.keys(x.pc).forEach(function (slug) {
+        var s = x.pc[slug];
+        var ms = mesesPer.filter(function (m) { return (B.meses_casa[slug] || []).indexOf(m) >= 0; });
+        var sc = 0; ms.forEach(function (m) { sc += s[m] || 0; });
+        soma += sc;
+        if (ms.length) media = (media || 0) + sc / (ms.length * sem);
+      });
+    } else {
+      mesesPer.forEach(function (m) { soma += serie[m] || 0; });
+      media = mesesPer.length ? soma / (mesesPer.length * sem) : null;
+    }
+    var pico = null, vale = null, zeros = 0, zerosPer = 0;
+    mesesPer.forEach(function (m) { if (!((serie[m] || 0) > 0)) zerosPer++; });
+    mesesHist.forEach(function (m) {
+      var v = serie[m] || 0;
+      if (v <= 0) { zeros++; return; }
+      if (!pico || v > pico.v) pico = { v: v, m: m };
+      if (!vale || v < vale.v) vale = { v: v, m: m };
+    });
+    return {
+      soma: soma, media: media, zeros: zeros, zerosPer: zerosPer, nPer: mesesPer.length, nHist: mesesHist.length,
+      pico: pico ? { v: pico.v / sem, m: pico.m } : null,
+      vale: vale ? { v: vale.v / sem, m: vale.m } : null
+    };
+  }
+
+  // Quanto a maior semana fica acima da média, em %.
+  function folga(c) { return c.media && c.pico ? (c.pico.v / c.media - 1) * 100 : null; }
+
+  // Margem em %: 'pico' cobre a própria maior semana; 'fixa' usa o % escolhido.
+  function margemPct(modo, pct, c) {
+    return modo === 'pico' ? Math.max(0, folga(c) || 0) : (pct || 0);
+  }
+
+  // Mínimo sugerido: arredonda para cima; sem dado (null), nada.
+  // `zeroVazio`: venda zero também vira nada. O Pedido de Compras usa assim
+  // (sugestão zero não tem o que comparar com o contado); a Base de compra
+  // mostra o 0. Diferença que já existia antes da fonte única, mantida de
+  // propósito até o Rodrigo decidir (PLANO_SIMULADOR_COMPRAS.md, etapa 2).
+  function sugere(v, margem, zeroVazio) {
+    if (v === null || v === undefined || (zeroVazio && !v)) return null;
+    return Math.ceil(v * (1 + margem / 100) - 1e-9);
+  }
+
+  // As três sugestões de UM item: média do período, últimos 3 meses e a venda
+  // real da semana passada (vSemana, em unidades da semana; null se não há).
+  // A margem vem da média do período, igual nas três (como na Base de compra).
+  function sugestoes(B, x, opt, vSemana) {
+    var sem = B.semanas_por_mes || 4.345;
+    var hist = B.grupo ? (B.meses_completos || []) : mesesDe(B);
+    var per = mesesPeriodo(B, opt.tipo || 'tudo', opt.qual || null);
+    var serie = x.mes || {};
+    var c = linha(serie, per, hist, sem, x, B);
+    var c3 = linha(serie, ultimosMeses(B, 3), hist, sem, x, B);
+    var m = margemPct(opt.modo, opt.pct, c);
+    return {
+      margem: m, media: c.media, media3: c3.media, pico: c.pico, vale: c.vale,
+      porMedia: sugere(c.media, m, opt.zeroVazio), porTres: sugere(c3.media, m, opt.zeroVazio),
+      porSemana: sugere(vSemana === undefined ? null : vSemana, m, opt.zeroVazio)
+    };
+  }
+
+  return {
+    MESES: MESES, ano: ano, tri: tri, opcoes: opcoes, mesesPeriodo: mesesPeriodo, faltantes: faltantes,
+    ultimosMeses: ultimosMeses, linha: linha, folga: folga, margemPct: margemPct, sugere: sugere, sugestoes: sugestoes
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompraCalc;
+
+</script>
+<script>
 // ── BASE DE COMPRA ──
 const BC = { tipo:'tudo', qual:null, marg:'fixa', pct:20, visao:'itens', busca:'', hist:false, fAbc:'', fCat:'', fForn:'' };
 // filtros por curva ABC, categoria e fornecedor (2026-10-19). Curva do item
@@ -440,65 +585,20 @@ function bcEstimadaTxt(w){
 }
 function bcDiaMes(iso){ const [a,m,d] = iso.split('-'); return d + '/' + m; }
 const BC_CASAS = { iz:'IZ', '1929':'1929', 'gra-bistro':'Grá', famu:'FAMU', fulles:'Fulles', nip:'NIP' };
-const BC_MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 function bcDados(){ return window.BASE_DADOS || (typeof D !== 'undefined' && D && D.BASE_COMPRA) || null; }
-function bcAno(m){ return 2000 + parseInt(m.split('/')[1],10); }
-function bcTri(m){ return Math.floor(BC_MESES.indexOf(m.split('/')[0]) / 3) + 1; }
 function bcNum(v, dec){ if (v === null || v === undefined || isNaN(v)) return '—';
   return v.toLocaleString('pt-BR', {minimumFractionDigits:dec===undefined?1:dec, maximumFractionDigits:dec===undefined?1:dec}); }
 function bcEsc(s){ return String(s===null||s===undefined?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-function bcOpcoes(B){
-  const m = B.meses_com_dado || B.meses || [];
-  if (BC.tipo === 'tudo') return [];
-  if (BC.tipo === 'ano') return [...new Set(m.map(bcAno))].sort((a,b)=>b-a).map(a=>({v:String(a), t:String(a)}));
-  if (BC.tipo === 'tri') {
-    const vis = []; m.forEach(x => { const k = bcAno(x)+'-T'+bcTri(x); if (!vis.includes(k)) vis.push(k); });
-    return vis.sort().reverse().map(k => { const [a,t]=k.split('-T');
-      const nomes = BC_MESES.slice((t-1)*3, t*3).join(', ');
-      return {v:k, t:`${t}º trimestre de ${a} (${nomes})`}; });
-  }
-  return m.slice().reverse().map(x=>({v:x, t:x}));
-}
-function bcMesesPeriodo(B){
-  const m = B.meses_com_dado || B.meses || [];
-  if (BC.tipo === 'tudo') return m.slice();
-  if (BC.tipo === 'ano') return m.filter(x => String(bcAno(x)) === BC.qual);
-  if (BC.tipo === 'tri') return m.filter(x => (bcAno(x)+'-T'+bcTri(x)) === BC.qual);
-  return m.filter(x => x === BC.qual);
-}
+// A conta (período, média, maior/menor semana, margem, mínimo) mora em
+// dashboards/_base_compra_calc.js e é a MESMA do Pedido de Compras e do
+// Simulador de Compras. Aqui só liga o estado da tela (BC) a ela.
+function bcOpcoes(B){ return BaseCompraCalc.opcoes(B, BC.tipo); }
+function bcMesesPeriodo(B){ return BaseCompraCalc.mesesPeriodo(B, BC.tipo, BC.qual); }
 // calendário do período escolhido: meses que deveriam existir e não têm dado
-function bcFaltantes(B){
-  const tem = new Set(B.meses_com_dado || B.meses || []);
-  let alvo = [];
-  if (BC.tipo === 'ano') alvo = BC_MESES.map(n => n + '/' + BC.qual.slice(2));
-  else if (BC.tipo === 'tri') { const [a,t] = BC.qual.split('-T'); alvo = BC_MESES.slice((t-1)*3, t*3).map(n => n + '/' + a.slice(2)); }
-  const ultimo = (B.meses_com_dado || B.meses || []).slice(-1)[0];
-  const lin = m => { const [n,a]=m.split('/'); return parseInt(a,10)*12 + BC_MESES.indexOf(n); };
-  return alvo.filter(m => !tem.has(m) && (!ultimo || lin(m) <= lin(ultimo)));
-}
+function bcFaltantes(B){ return BaseCompraCalc.faltantes(B, BC.tipo, BC.qual); }
 
-function bcLinha(serie, mesesPer, mesesHist, sem, x, B){
-  let soma = 0, media = null;
-  if (B && B.grupo && x && x.pc) {
-    // grupo: soma das médias de cada casa, cada uma sobre os meses que ela tem
-    Object.entries(x.pc).forEach(([slug, s]) => {
-      const ms = mesesPer.filter(m => (B.meses_casa[slug] || []).includes(m));
-      let sc = 0; ms.forEach(m => sc += s[m] || 0);
-      soma += sc;
-      if (ms.length) media = (media || 0) + sc / (ms.length * sem);
-    });
-  } else {
-    mesesPer.forEach(m => soma += serie[m] || 0);
-    media = mesesPer.length ? soma / (mesesPer.length * sem) : null;
-  }
-  let pico = null, vale = null, zeros = 0, zerosPer = 0;
-  mesesPer.forEach(m => { if (!((serie[m] || 0) > 0)) zerosPer++; });
-  mesesHist.forEach(m => { const v = serie[m] || 0; if (v <= 0) { zeros++; return; }
-    if (!pico || v > pico.v) pico = {v, m}; if (!vale || v < vale.v) vale = {v, m}; });
-  return { soma, media, zeros, zerosPer, nPer: mesesPer.length, nHist: mesesHist.length,
-    pico: pico ? {v: pico.v/sem, m: pico.m} : null, vale: vale ? {v: vale.v/sem, m: vale.m} : null };
-}
+function bcLinha(serie, mesesPer, mesesHist, sem, x, B){ return BaseCompraCalc.linha(serie, mesesPer, mesesHist, sem, x, B); }
 
 function bcRender(){
   const B = bcDados();
@@ -557,7 +657,7 @@ function bcRender(){
   const semCols = SF && SF.semanas ? SF.semanas.slice(0, BC.hist ? 8 : 1) : [];
   const ultSem = semCols[0] || null;
   // últimos 3 meses com relatório (no grupo, os 3 últimos em que alguma casa tem relatório)
-  const tres = (B.meses_com_dado || B.meses || []).slice(-3);
+  const tres = BaseCompraCalc.ultimosMeses(B, 3);
   const nota = document.getElementById('bcSemNota');
   if (BC_SEM_ERRO) nota.innerHTML = 'Semana passada: ' + bcEsc(BC_SEM_ERRO) + '.';
   else if (!BC_SEM) nota.innerHTML = 'Carregando a venda real da semana passada…';
@@ -588,9 +688,9 @@ function bcRender(){
     '</tr></thead>';
   const body = linhas.map(({x, c}) => {
     const c3 = bcLinha(x.mes || {}, tres, hist, sem, x, B);
-    const gap = c.media && c.pico ? (c.pico.v / c.media - 1) * 100 : null;
-    const m = BC.marg === 'pico' ? Math.max(0, gap || 0) : (BC.pct || 0);
-    const sug = v => (v === null || v === undefined) ? null : Math.ceil(v * (1 + m/100) - 1e-9);
+    const gap = BaseCompraCalc.folga(c);
+    const m = BaseCompraCalc.margemPct(BC.marg, BC.pct, c);
+    const sug = v => BaseCompraCalc.sugere(v, m);
     const vSem = semVal(x, ultSem);
     const atual = comMin ? x.min_atual : null;
     const celSug = v => {
@@ -632,17 +732,25 @@ function bcPendencias(){
   const cob = B.cobertura || {};
   let html = '';
   if (B.grupo) {
-    html += `<div class="card"><h4>Cobertura por casa</h4><table class="limpa"><tr><th>Casa</th><th class="num">Vendas convertidas</th><th class="num">Mínimo atual de</th></tr>` +
-      Object.entries(B.por_casa || {}).map(([s, c]) => `<tr><td>${bcEsc(BC_CASAS[s] || s)}</td><td class="num">${c.cobertura.pct_convertido===null?'—':bcNum(c.cobertura.pct_convertido)+'%'}</td>` +
+    html += `<div class="card"><h4>Cobertura por casa</h4><table class="limpa"><tr><th>Casa</th><th class="num">Convertidas por inteiro</th><th class="num">Em parte</th><th class="num">Mínimo atual de</th></tr>` +
+      Object.entries(B.por_casa || {}).map(([s, c]) => `<tr><td>${bcEsc(BC_CASAS[s] || s)}</td>` +
+        `<td class="num">${c.cobertura.pct_completo===undefined||c.cobertura.pct_completo===null?(c.cobertura.pct_convertido===null?'—':bcNum(c.cobertura.pct_convertido)+'%'):bcNum(c.cobertura.pct_completo)+'%'}</td>` +
+        `<td class="num">${c.cobertura.pct_completo===undefined||c.cobertura.pct_completo===null?'—':bcNum(c.cobertura.pct_convertido - c.cobertura.pct_completo)+'%'}</td>` +
         `<td class="num">${c.minimo_em ? c.minimo_em.split('-').reverse().join('/') : '—'}</td></tr>`).join('') + '</table>' +
       `<p class="nota" style="margin:8px 0 0">O que não converteu em cada casa está na aba Base de compra da própria casa.</p></div>`;
     el.innerHTML = html; return;
   }
   const pend = (B.sem_conversao || []).filter(s => s.tipo !== 'fora');
   const fora = (B.sem_conversao || []).filter(s => s.tipo === 'fora');
+  // coquetel com ingrediente sem item na contagem conta no pct_convertido,
+  // mas compra incompleta: os dois números lado a lado (2026-10-24)
+  const temCompleto = cob.pct_completo !== undefined && cob.pct_completo !== null;
+  const pctBanner = temCompleto ? cob.pct_completo : cob.pct_convertido;
+  const emParte = temCompleto ? cob.pct_convertido - cob.pct_completo : 0;
   html += `<h3>Vendas que ainda não viram item de estoque</h3>
-    <div class="banner-cob${cob.pct_convertido >= 80 ? ' ok' : ''}"><b>${cob.pct_convertido===null?'—':bcNum(cob.pct_convertido)+'%'}</b> das vendas
-    (fora serviço e voucher) já viram item de estoque. O resto está abaixo, do maior volume para o menor: cada linha fica de fora da conta até ganhar
+    <div class="banner-cob${pctBanner >= 80 ? ' ok' : ''}"><b>${pctBanner===null||pctBanner===undefined?'—':bcNum(pctBanner)+'%'}</b> das vendas
+    (fora serviço e voucher) já viram item de estoque por inteiro${emParte > 0.05 ? `; mais <b>${bcNum(emParte)}%</b> viram só em parte (coquetel com
+    um ingrediente sem item na contagem, que fica fora da compra)` : ''}. O resto está abaixo, do maior volume para o menor: cada linha fica de fora da conta até ganhar
     um casamento em <code>config/base_compra.json</code> (produto do PDV para item da contagem) ou uma ficha técnica com o mesmo nome.</div>
     <div class="card"><div class="scroll-x"><table class="limpa"><tr><th>Produto</th><th class="num">Vendido</th><th>Por quê</th><th>Possíveis itens</th></tr>` +
     pend.map(s => `<tr><td>${bcEsc(s.produto)}<span class="bc-mes">${bcEsc(s.cat)}</span></td><td class="num">${bcNum(s.vendas,0)}</td>` +
@@ -708,6 +816,236 @@ function bcCarregaSemanal(){
     .then(r => r.status === 404 ? Promise.reject('ainda não publicada') : r.ok ? r.json() : Promise.reject('erro ' + r.status))
     .then(d => { BC_SEM = d; bcRender(); })
     .catch(e => { BC_SEM_ERRO = typeof e === 'string' ? e : 'sem conexão'; bcRender(); });
+}
+</script>
+
+
+<!-- ═══ CONSUMO DO MÊS (vendas_consumo.py) ═══
+     Trecho compartilhado: entra no _template_vendas.html (casa) e no
+     _template_grupo.html (todas as casas) pelo marcador {{VISTA_CONSUMO}}.
+     O dado NÃO vem no JSON da página: é a chave vendas:consumo_<casa>, pedida
+     à mesma /api/vendas (mesmas duas travas) só quando a aba abre, para não
+     pesar a leitura de vendas:<casa> no Simulador e no Pedido de Compras.
+     Aqui nada se calcula além de somar e dividir o que já veio pronto. -->
+<style>
+  .cm-ctrl { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:6px 0 4px; }
+  .cm-ctrl select, .cm-ctrl input[type=text] { background:var(--card2); border:1px solid var(--border); border-radius:9px;
+    padding:8px 10px; color:var(--text); font-size:13px; }
+  .cm-ctrl input[type=text] { flex:1; min-width:180px; }
+  .cm-ctrl label { font-size:12.5px; color:var(--text-2); display:flex; gap:6px; align-items:center; }
+  .cm-barra { display:flex; height:14px; border-radius:999px; overflow:hidden; border:1px solid var(--border); margin:10px 0 8px; }
+  .cm-barra span { display:block; height:100%; }
+  .cm-leg { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--text-2); }
+  .cm-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+  .cm-c-completo { background:var(--verde); }
+  .cm-c-suspeita { background:var(--amarelo); }
+  .cm-c-sem { background:var(--verm); }
+  .cm-c-fora { background:var(--text-3); }
+  table.cm-tab td { white-space:nowrap; font-variant-numeric:tabular-nums; }
+  table.cm-tab td.cm-nome { white-space:normal; min-width:160px; max-width:280px; }
+  table.cm-tab td.cm-mot { white-space:normal; min-width:180px; max-width:340px; color:var(--text-2); font-size:12px; }
+  table.cm-tab th.num, table.cm-tab td.num { text-align:right; }
+  .cm-tag { display:inline-block; font-size:10.5px; letter-spacing:.04em; padding:1px 7px; border-radius:999px;
+    border:1px solid var(--border); color:var(--text-2); margin-left:6px; vertical-align:1px; white-space:nowrap; }
+  .cm-tag.prep { border-color:color-mix(in srgb, var(--acc) 50%, transparent); color:var(--acc); }
+  .cm-tag.semp { border-color:color-mix(in srgb, var(--verm) 45%, transparent); color:var(--verm); }
+  .cm-tag.susp { border-color:color-mix(in srgb, var(--amarelo) 45%, transparent); color:var(--amarelo); }
+  .cm-prods { font-size:11.5px; color:var(--text-3); margin-top:2px; }
+  .cm-sobe { color:var(--amarelo); }
+  .cm-desce { color:var(--verde); }
+  .cm-vazio { font-size:12.5px; color:var(--text-3); padding:8px 0; }
+  .cm-mais { background:none; border:1px solid var(--border); color:var(--acc); border-radius:999px; padding:6px 14px;
+    font-size:12.5px; cursor:pointer; margin-top:10px; }
+</style>
+
+<div class="painel" id="p-consumo">
+  <p class="nota">Quanto de cada produto foi <b>usado para faturar o mês</b>: venda do PDV vezes a ficha técnica (ml de cada
+  ingrediente), a dose ou a unidade. O custo é o ml vezes o <b>$/ML da B.D.1</b>, o mesmo das fichas (custo do everloja nunca
+  entra). Produto sem ficha, sem regra ou sem preço não entra na conta: aparece no fim, com o motivo.</p>
+  <div id="cmCorpo"><p class="cm-vazio">Carregando…</p></div>
+</div>
+
+<script>
+// ── CONSUMO DO MÊS ──
+const CM = { d:null, mes:null, busca:'', soPrep:false, ordem:'custo', nIns:40, nPend:25 };
+const CM_SELO = { completo:'Ficha inteira', suspeita:'Ficha suspeita', sem:'Não converte', fora:'Fora do estoque' };
+const CM_CASAS = { iz:'IZ', '1929':'1929', 'gra-bistro':'Grá', famu:'FAMU', fulles:'Fulles', nip:'NIP' };
+function cmEsc(s){ return String(s===null||s===undefined?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function cmR(v){ return (v===null||v===undefined||isNaN(v)) ? '—' : 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+function cmPct(v, dec){ return (v===null||v===undefined||!isFinite(v)) ? '—' : v.toLocaleString('pt-BR',{minimumFractionDigits:dec===undefined?1:dec, maximumFractionDigits:dec===undefined?1:dec}) + '%'; }
+function cmNum(v, dec){ return (v===null||v===undefined||isNaN(v)) ? '—' : v.toLocaleString('pt-BR',{minimumFractionDigits:dec||0, maximumFractionDigits:dec||0}); }
+function cmVol(ml){ if (!ml) return '—'; return ml >= 1000 ? cmNum(ml/1000, ml >= 100000 ? 0 : 1) + ' L' : cmNum(ml) + ' ml'; }
+
+// resumo do mês: na casa vem pronto; no grupo, soma das casas que têm o mês
+function cmResumo(m){
+  const d = CM.d;
+  if (!d.grupo) return Object.assign({ casas:null }, d.resumo[m] || {});
+  const R = { fat:0, fat_completo:0, fat_suspeita:0, fat_sem:0, fat_fora:0, fat_cmv:0, custo_cmv:0, custo_suspeita:0, casas:[] };
+  Object.entries(d.resumo_casa).forEach(([s, rc]) => {
+    const r = rc[m]; if (!r) return;
+    Object.keys(R).forEach(k => { if (k !== 'casas') R[k] += r[k] || 0; });
+    R.casas.push(s);
+  });
+  return R;
+}
+function cmQtd(ins, m){ return (ins.ml && ins.ml[m]) || 0; }
+function cmMedia3(ins, m){
+  const i = CM.d.meses.indexOf(m), ant = CM.d.meses.slice(Math.max(0, i-3), i);
+  if (!ant.length) return null;
+  return ant.reduce((a, x) => a + cmQtd(ins, x), 0) / ant.length;
+}
+function cmOnde(p){
+  const mo = p.motivo || '';
+  if (p.selo === 'suspeita') return 'Conferir a ficha técnica (o motor de custo acha que falta ingrediente)';
+  if (p.selo === 'completo') return 'Preço do insumo na B.D.1';
+  if (/sem ficha/.test(mo)) return 'Criar ou ligar a ficha da casa no Banco de Cocktails (campo Bar)';
+  if (/categoria sem regra/.test(mo)) return 'Regra da categoria em config/base_compra.json';
+  if (/granel|item|candidat|confirmar/.test(mo)) return 'Casamento em config/base_compra.json';
+  return 'Base de compra, lista "o que não entra"';
+}
+
+function initConsumo(){
+  const corpo = document.getElementById('cmCorpo');
+  const s = (typeof sessaoLer === 'function') ? sessaoLer() : null;
+  if (!s) { corpo.innerHTML = '<p class="cm-vazio">Sessão expirada. Recarregue a página.</p>'; return; }
+  fetch(`${WORKER_URL}/api/vendas?casa=${encodeURIComponent('consumo_' + CASA_SLUG)}`, {
+    headers: { 'X-Token': s.token, 'X-Senha-Vendas': senhaVendasLer() }
+  }).then(async r => {
+    if (r.status === 404) { corpo.innerHTML = '<p class="cm-vazio">O consumo do mês ainda não foi publicado para esta página. Ele sobe junto com a publicação de Vendas.</p>'; return; }
+    if (!r.ok) { corpo.innerHTML = `<p class="cm-vazio">Erro ao carregar (${r.status}). Tente de novo.</p>`; return; }
+    CM.d = await r.json();
+    CM.mes = CM.d.meses[CM.d.meses.length - 1] || null;
+    cmRender();
+  }).catch(() => { corpo.innerHTML = '<p class="cm-vazio">Sem conexão. Tente de novo.</p>'; });
+}
+
+function cmRender(){
+  const d = CM.d, m = CM.mes, corpo = document.getElementById('cmCorpo');
+  if (!d || !d.disponivel || !m) { corpo.innerHTML = '<p class="cm-vazio">Sem meses com venda para mostrar.</p>'; return; }
+  const R = cmResumo(m), fat = R.fat || 0;
+  const pc = k => fat ? (R[k] / fat * 100) : null;
+  const cmv = R.fat_cmv ? R.custo_cmv / R.fat_cmv * 100 : null;
+  const opMes = d.meses.slice().reverse().map(x => `<option${x===m?' selected':''}>${x}</option>`).join('');
+  const casasTxt = d.grupo ? ` Casas neste mês: ${R.casas.map(c => CM_CASAS[c] || c).join(', ')}.` : '';
+
+  let h = `<div class="cm-ctrl"><label>Mês <select id="cmMes">${opMes}</select></label></div>
+  <div class="kpis">
+    <div class="kpi destaque"><div class="k-lab">Faturamento do mês</div><div class="k-val">${cmR(fat)}</div><div class="k-sub">todos os produtos do relatório</div></div>
+    <div class="kpi"><div class="k-lab">Explicado pelas fichas</div><div class="k-val">${cmPct(pc('fat_completo'))}</div><div class="k-sub">+ ${cmPct(pc('fat_suspeita'))} com ficha suspeita</div></div>
+    <div class="kpi"><div class="k-lab">Custo teórico</div><div class="k-val">${cmR(R.custo_cmv)}</div><div class="k-sub">sobre ${cmPct(fat ? R.fat_cmv/fat*100 : null)} do faturamento</div></div>
+    <div class="kpi"><div class="k-lab">CMV teórico</div><div class="k-val">${cmPct(cmv)}</div><div class="k-sub">custo ÷ faturamento dos mesmos produtos</div></div>
+  </div>
+  <div class="card"><h4>De onde vem o faturamento do mês</h4>
+    <div class="cm-barra">${['completo','suspeita','sem','fora'].map(k => `<span class="cm-c-${k}" style="width:${Math.max(0, pc('fat_'+k)||0)}%"></span>`).join('')}</div>
+    <div class="cm-leg">${['completo','suspeita','sem','fora'].map(k => `<span><i class="cm-c-${k}"></i>${CM_SELO[k]} ${cmPct(pc('fat_'+k))} · ${cmR(R['fat_'+k])}</span>`).join('')}</div>
+    <p class="nota" style="margin:10px 0 0">O CMV teórico só usa produtos com ficha inteira e preço em todos os ingredientes: custo e faturamento
+    saem dos <b>mesmos</b> produtos. Ficha suspeita pode estar sem um ingrediente, então o volume dela fica de fora do CMV.${casasTxt}</p>
+  </div>`;
+
+  if (d.grupo) h += cmTabelaCasas(m);
+  h += cmTabelaInsumos(m) + cmTabelaPendencias(m) + cmTabelaHistorico();
+  corpo.innerHTML = h;
+  document.getElementById('cmMes').onchange = e => { CM.mes = e.target.value; CM.nIns = 40; CM.nPend = 25; cmRender(); };
+  const busca = document.getElementById('cmBusca');
+  busca.value = CM.busca;
+  busca.oninput = e => { CM.busca = e.target.value; cmAtualizaInsumos(); };
+  document.getElementById('cmSoPrep').onchange = e => { CM.soPrep = e.target.checked; cmAtualizaInsumos(); };
+  document.getElementById('cmOrdem').onchange = e => { CM.ordem = e.target.value; cmAtualizaInsumos(); };
+}
+
+function cmTabelaCasas(m){
+  const linhas = Object.entries(CM.d.resumo_casa).filter(([s, rc]) => rc[m]).map(([s, rc]) => {
+    const r = rc[m];
+    return `<tr><td>${cmEsc(CM_CASAS[s] || s)}</td><td class="num">${cmR(r.fat)}</td><td class="num">${cmPct(r.fat ? r.fat_completo/r.fat*100 : null)}</td>
+      <td class="num">${cmR(r.custo_cmv)}</td><td class="num">${cmPct(r.fat_cmv ? r.custo_cmv/r.fat_cmv*100 : null)}</td></tr>`;
+  }).join('');
+  return `<div class="card"><h4>Por casa em ${cmEsc(m)}</h4><div class="scroll-x"><table class="limpa cm-tab" id="cmCasas">
+    <thead><tr><th>Casa</th><th class="num">Faturamento</th><th class="num">Explicado</th><th class="num">Custo teórico</th><th class="num">CMV teórico</th></tr></thead>
+    <tbody>${linhas}</tbody></table></div></div>`;
+}
+
+function cmInsumosFiltrados(m){
+  const b = CM.busca.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+  let lista = CM.d.insumos.filter(i => cmQtd(i, m) > 0 || (i.un && i.un[m]));
+  if (CM.soPrep) lista = lista.filter(i => i.preparo);
+  if (b) lista = lista.filter(i => (i.nome + ' ' + (i.prods||[]).join(' ')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().includes(b));
+  const custo = i => i.preco_ml ? cmQtd(i, m) * i.preco_ml : -1;
+  lista.sort((a, z) => CM.ordem === 'volume' ? cmQtd(z, m) - cmQtd(a, m) : custo(z) - custo(a));
+  return lista;
+}
+function cmLinhasInsumos(m){
+  const lista = cmInsumosFiltrados(m);
+  if (!lista.length) return { html:'<tr><td colspan="6" class="cm-vazio">Nenhum insumo com esse filtro.</td></tr>', total:0, mostrados:0 };
+  const html = lista.slice(0, CM.nIns).map(i => {
+    const q = cmQtd(i, m), med = cmMedia3(i, m);
+    const varp = (med && q) ? (q - med) / med * 100 : null;
+    const varTxt = varp === null ? '—' : `<span class="${varp > 15 ? 'cm-sobe' : varp < -15 ? 'cm-desce' : ''}">${varp > 0 ? '+' : ''}${cmPct(varp, 0)}</span>`;
+    const un = i.un && i.un[m] ? ` + ${cmNum(i.un[m], 1)} un` : '';
+    const tags = (i.preparo ? '<span class="cm-tag prep">preparo da casa</span>' : '') + (i.preco_ml ? '' : '<span class="cm-tag semp">sem preço</span>');
+    return `<tr><td class="cm-nome">${cmEsc(i.nome)}${tags}<div class="cm-prods">${cmEsc((i.prods||[]).slice(0,3).join(' · '))}</div></td>
+      <td class="num">${cmVol(q)}${un}</td><td class="num">${i.vol && q ? cmNum(q / i.vol, q / i.vol >= 100 ? 0 : 1) : '—'}</td>
+      <td class="num">${i.preco_ml ? cmR(q * i.preco_ml) : '—'}</td><td class="num">${varTxt}</td></tr>`;
+  }).join('');
+  return { html, total:lista.length, mostrados:Math.min(lista.length, CM.nIns) };
+}
+function cmTabelaInsumos(m){
+  const L = cmLinhasInsumos(m);
+  return `<div class="card"><h4>O que foi usado em ${cmEsc(m)}</h4>
+    <div class="cm-ctrl">
+      <input type="text" id="cmBusca" placeholder="Buscar insumo ou produto…">
+      <select id="cmOrdem"><option value="custo"${CM.ordem==='custo'?' selected':''}>Maior custo</option><option value="volume"${CM.ordem==='volume'?' selected':''}>Maior volume</option></select>
+      <label><input type="checkbox" id="cmSoPrep"${CM.soPrep?' checked':''}> Só preparos da casa</label>
+    </div>
+    <div class="scroll-x"><table class="limpa cm-tab">
+      <thead><tr><th>Insumo</th><th class="num">Volume no mês</th><th class="num">Garrafas</th><th class="num">Custo</th><th class="num">vs 3 meses</th></tr></thead>
+      <tbody id="cmInsBody">${L.html}</tbody></table></div>
+    <p class="nota" id="cmInsRodape" style="margin:8px 0 0">${cmRodapeIns(L)}</p>
+    <div id="cmInsMais">${L.total > L.mostrados ? '<button class="cm-mais" onclick="CM.nIns += 60; cmAtualizaInsumos()">Mostrar mais</button>' : ''}</div>
+  </div>`;
+}
+function cmRodapeIns(L){
+  return `${L.mostrados} de ${L.total} insumos. Garrafas = volume ÷ volume da embalagem cadastrada na B.D.1. "vs 3 meses" compara com a
+    média dos 3 meses anteriores com relatório. Inclui o volume das fichas suspeitas (pode faltar ingrediente nelas).`;
+}
+function cmAtualizaInsumos(){
+  const L = cmLinhasInsumos(CM.mes);
+  document.getElementById('cmInsBody').innerHTML = L.html;
+  document.getElementById('cmInsRodape').innerHTML = cmRodapeIns(L);
+  document.getElementById('cmInsMais').innerHTML = L.total > L.mostrados ? '<button class="cm-mais" onclick="CM.nIns += 60; cmAtualizaInsumos()">Mostrar mais</button>' : '';
+}
+
+function cmTabelaPendencias(m){
+  const i = CM.d.meses.indexOf(m);
+  const lista = CM.d.pendencias.map(p => ({ ...p, v: p.fat[i] || 0 })).filter(p => p.v > 0).sort((a, z) => z.v - a.v);
+  if (!lista.length) return '';
+  const total = lista.reduce((a, p) => a + p.v, 0);
+  const linhas = lista.slice(0, CM.nPend).map(p => {
+    const tag = p.selo === 'suspeita' ? '<span class="cm-tag susp">ficha suspeita</span>'
+      : p.selo === 'completo' ? '<span class="cm-tag semp">sem preço</span>' : '<span class="cm-tag semp">não converte</span>';
+    return `<tr><td class="cm-nome">${cmEsc(p.produto)}${tag}<div class="cm-prods">${cmEsc(p.cat || '')}${p.casa ? ' · ' + cmEsc(CM_CASAS[p.casa] || p.casa) : ''}</div></td>
+      <td class="num">${cmR(p.v)}</td><td class="cm-mot">${cmEsc(p.motivo || '')}</td><td class="cm-mot">${cmEsc(cmOnde(p))}</td></tr>`;
+  }).join('');
+  return `<div class="card"><h4>O que ainda não entra no CMV de ${cmEsc(m)}</h4>
+    <p class="nota" style="margin:0 0 10px">${lista.length} produtos, ${cmR(total)} de faturamento. Resolver de cima para baixo dá o maior ganho de cobertura.</p>
+    <div class="scroll-x"><table class="limpa cm-tab">
+      <thead><tr><th>Produto</th><th class="num">Faturamento no mês</th><th>Motivo</th><th>Onde resolver</th></tr></thead>
+      <tbody>${linhas}</tbody></table></div>
+    ${lista.length > CM.nPend ? '<button class="cm-mais" onclick="CM.nPend += 50; cmRender()">Mostrar mais</button>' : ''}
+  </div>`;
+}
+
+function cmTabelaHistorico(){
+  const linhas = CM.d.meses.slice().reverse().map(m => {
+    const R = cmResumo(m);
+    return `<tr><td>${cmEsc(m)}${CM.d.grupo ? `<div class="cm-prods">${R.casas.length} casas</div>` : ''}</td><td class="num">${cmR(R.fat)}</td>
+      <td class="num">${cmPct(R.fat ? R.fat_completo/R.fat*100 : null)}</td><td class="num">${cmR(R.custo_cmv)}</td>
+      <td class="num">${cmPct(R.fat_cmv ? R.custo_cmv/R.fat_cmv*100 : null)}</td></tr>`;
+  }).join('');
+  return `<div class="card"><h4>Mês a mês</h4><div class="scroll-x"><table class="limpa cm-tab">
+    <thead><tr><th>Mês</th><th class="num">Faturamento</th><th class="num">Explicado</th><th class="num">Custo teórico</th><th class="num">CMV teórico</th></tr></thead>
+    <tbody>${linhas}</tbody></table></div>
+    <p class="nota" style="margin:8px 0 0">O preço é o de hoje da B.D.1 em todos os meses: a diferença entre meses é de volume e de mix,
+    não de inflação do insumo. O CMV pelas compras reais fica na aba CMV Mensal de Performance.</p></div>`;
 }
 </script>
 
@@ -1133,7 +1471,7 @@ function drawBarChart(id, labels, data, colorFn, opts={}, _tentativa) {
 }
 
 // ── carregamento lazy por aba ──
-const initFns = { 'p-resumo':initResumo, 'p-comp':initCompleto, 'p-concl':initConclusoes, 'p-proj':initProjecao, 'p-base':initBaseCompra, 'p-selo':initConferencia };
+const initFns = { 'p-resumo':initResumo, 'p-comp':initCompleto, 'p-concl':initConclusoes, 'p-proj':initProjecao, 'p-base':initBaseCompra, 'p-consumo':initConsumo, 'p-selo':initConferencia };
 const initialized = {};
 const _abaOrig = aba;
 aba = function(id, btn) {
