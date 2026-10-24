@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=367c4ff071cc">
+<link rel="stylesheet" href="portal.css?v=d0eab803ac60">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bar.IZ">
 </head>
 <body>
@@ -4222,9 +4222,27 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     }
 
     var carrinhoPorProduto = {};
+    var intrusas = [];
     (pedido.carrinho_everloja || []).forEach(function (c) {
       if (c && c.produto) carrinhoPorProduto[c.produto] = c;
+      else if (c && c.fora_do_pedido) intrusas.push(c);
     });
+
+    // Conferência linha a linha (24/10/2026): o robô lê a grade do everloja
+    // por código logo antes de gerar a Solicitação, e o carrinho guarda o que
+    // a tela mostrou. Pedido antigo (ou sem a releitura) traz só o eco do que
+    // foi enviado: a tela diz qual dos dois está vendo.
+    var carr = pedido.carrinho_everloja || [];
+    if (carr.length) {
+      var conferido = carr.every(function (c) { return c && c.confirmado_pelo_everloja; });
+      var nota = document.createElement('div');
+      nota.className = 'evc-lancado-obs';
+      nota.style.margin = '0 0 10px';
+      nota.textContent = conferido
+        ? 'Conferido na tela do everloja, item a item pelo código e pela quantidade, antes de gerar a Solicitação.'
+        : 'A coluna "No everloja" é o que o robô enviou; a releitura da tela não foi guardada neste pedido.';
+      view.appendChild(nota);
+    }
 
     var itens = pedido.itens_aprovados || [];
     if (!itens.length) {
@@ -4238,7 +4256,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
       var temCarrinho = pedido.carrinho_everloja != null;
       var table = document.createElement('table'); table.className = 'evc';
       table.innerHTML = temCarrinho
-        ? '<thead><tr><th>Produto</th><th class="n">Aprovado</th><th class="n">No carrinho</th><th class="n">Preço</th></tr></thead>'
+        ? '<thead><tr><th>Produto</th><th class="n">Aprovado</th><th class="n">No everloja</th><th class="n">Preço</th></tr></thead>'
         : '<thead><tr><th>Produto</th><th class="n">Aprovado</th></tr></thead>';
       var tbody = document.createElement('tbody');
       itens.forEach(function (it) {
@@ -4255,10 +4273,26 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
         if (temCarrinho) {
           var noCarrinho = carrinhoPorProduto[it.produto];
           var qtdeCarrinho = noCarrinho ? noCarrinho.qtde : null;
-          var divergeQtde = qtdeCarrinho != null && qtdeCarrinho !== it.qtde;
-          tr.appendChild(td(qtdeCarrinho != null ? qtdeCarrinho : 'não encontrado', 'n' + (divergeQtde || qtdeCarrinho == null ? ' divergente' : '')));
+          // Compara com o que o robô mandou (já convertido pelo fator do mapa:
+          // 200 g viram 0,2 kg), não com o aprovado cru. Sem `qtde_esperada`
+          // (pedido antigo), cai no aprovado, como era.
+          var esperado = noCarrinho && noCarrinho.qtde_esperada != null ? noCarrinho.qtde_esperada : it.qtde;
+          var divergeQtde = qtdeCarrinho != null && Math.abs(qtdeCarrinho - esperado) > 1e-6;
+          var texto = qtdeCarrinho != null ? String(qtdeCarrinho).replace('.', ',')
+            : (noCarrinho && noCarrinho.faltou_na_grade ? 'faltou na tela' : 'não foi');
+          var cel = td(texto, 'n' + (divergeQtde || qtdeCarrinho == null ? ' divergente' : ''));
+          if (noCarrinho && noCarrinho.nome_everloja) cel.title = noCarrinho.nome_everloja;
+          tr.appendChild(cel);
           tr.appendChild(td(noCarrinho && noCarrinho.preco != null ? fmtBRL(noCarrinho.preco) : '—', 'n'));
         }
+        tbody.appendChild(tr);
+      });
+      intrusas.forEach(function (c) {
+        var tr = document.createElement('tr');
+        tr.appendChild(td('Linha a mais no everloja (código ' + (c.cd_item || '?') + ')'));
+        tr.appendChild(td('—', 'n'));
+        tr.appendChild(td(c.qtde != null ? String(c.qtde).replace('.', ',') : '—', 'n divergente'));
+        tr.appendChild(td('—', 'n'));
         tbody.appendChild(tr);
       });
       table.appendChild(tbody);
@@ -7355,7 +7389,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '367c4ff071cc';
+  var BUILD = 'd0eab803ac60';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
