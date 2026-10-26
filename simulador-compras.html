@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=cb8809631065">
+<link rel="stylesheet" href="portal.css?v=4aaa25945fc0">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -877,6 +877,16 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-vazio { font-size:13px; color:var(--text-3); margin:12px 2px; }
   .sc-foot { font-size:11.5px; color:var(--text-3); margin-top:20px; line-height:1.65; }
   .sc-foot b { color:var(--text-2); }
+  .sc-abas { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 14px; }
+  .sc-abas button { font:inherit; font-size:13px; padding:7px 14px; border-radius:9px; border:1px solid var(--border);
+    background:var(--card); color:var(--text-2); cursor:pointer; }
+  .sc-abas button.on { border-color:var(--acc); color:var(--acc); }
+  table.cm-ponte td { padding:6px 8px; vertical-align:top; }
+  table.cm-ponte td.n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  table.cm-ponte tr.tot td { border-top:1px solid var(--border); font-weight:700; }
+  .cm-proj { color:var(--text-2); font-style:italic; }
+  .cm-ruim { color:#ff9aa8; }
+  .cm-det summary { cursor:pointer; color:var(--acc); font-size:12.5px; margin-top:8px; }
   @media (max-width:700px) {
     table.sc.sc-cards > thead { display:none; }
     table.sc.sc-cards, table.sc.sc-cards > tbody, table.sc.sc-cards > tbody > tr, table.sc.sc-cards > tbody > tr > td { display:block; width:100%; }
@@ -893,6 +903,13 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <div id="sc-wrap" style="display:none">
   <div class="sc-chips" id="sc-casas"></div>
+  <div class="sc-abas" id="sc-abas"><button type="button" data-a="compra" class="on">Compras pelas vendas</button><button type="button" data-a="cmv">Análise do CMV</button></div>
+  <div id="sc-aba-cmv" style="display:none">
+    <p class="sub" style="margin:0 0 12px">Quatro leituras lado a lado: o CMV da <b>planilha da Maristela</b> (compras ÷ vendas), o mesmo <b>ajustado pelo estoque contado</b> (o que foi comprado e ficou parado sai; o que saiu do estoque entra), a <b>compra simulada</b> por este simulador (venda → item → código → preço pago, a mesma cesta das compras) e o <b>teórico das fichas</b>.</p>
+    <div class="sc-ctrl cm-ctrl-mes"><div><label for="cm-mes">Mês</label><select id="cm-mes"></select></div></div>
+    <div id="cm-corpo"><p class="sc-vazio">Carregando…</p></div>
+  </div>
+  <div id="sc-aba-compra">
   <div class="sc-ctrl">
     <div><label for="sc-tipo">Período da média</label>
       <select id="sc-tipo"><option value="tudo">Todo o histórico</option><option value="ano">Um ano</option><option value="tri">Um trimestre</option><option value="mes">Um mês</option></select></div>
@@ -909,7 +926,10 @@ window.msgAcessoNegado = function (nomePagina) {
     <div><label for="sc-cat">Categoria</label><select id="sc-cat"></select></div>
     <div><label for="sc-ordem">Ordenar por</label>
       <select id="sc-ordem"><option value="custo">Maior custo</option><option value="nome">Ordem alfabética</option><option value="qtd">Maior volume</option></select></div>
+    <div><label for="sc-corr">Correção pelo consumo real</label>
+      <select id="sc-corr"><option value="sim">Corrigir</option><option value="nao">Sem correção</option></select></div>
   </div>
+  <p class="sc-meta" id="sc-corr-dica" style="margin:-4px 0 12px"></p>
   <div class="sc-fontes" id="sc-fontes"></div>
   <div class="sc-kpis" id="sc-kpis"></div>
   <div class="sc-tab-wrap">
@@ -922,6 +942,7 @@ window.msgAcessoNegado = function (nomePagina) {
   <div class="sc-box" id="sc-pend"></div>
   <div class="sc-box" id="sc-conv"></div>
   <div class="sc-foot" id="sc-foot"></div>
+  </div>
 </div>
 
 <script>
@@ -1077,7 +1098,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
   var CASAS = [['gra-bistro', 'Grá'], ['iz', 'IZ'], ['1929', '1929'], ['famu', 'FAMU'], ['fulles', 'Fulles'], ['nip', 'NIP'], ['todas', 'Todas']];
   var NOME_CASA = {}; CASAS.forEach(function (c) { NOME_CASA[c[0]] = c[1]; });
   var TOKEN = '', CASA = 'gra-bistro', CACHE = {}, D = null;
-  var E = { tipo: 'tudo', qual: null, modo: 'fixa', pct: 20, preco: 'media30', cp: 0, cv: 0, busca: '', abc: '', cat: '', ordem: 'custo' };
+  var E = { tipo: 'tudo', qual: null, modo: 'fixa', pct: 20, preco: 'media30', cp: 0, cv: 0, busca: '', abc: '', cat: '', ordem: 'custo', corr: 'sim' };
+  var ABA = 'compra', CMV = {}, CMV_MES = null;
+  try { var c0 = localStorage.getItem('bc_corr'); if (c0 === 'sim' || c0 === 'nao') E.corr = c0; } catch (e) {}
   var $ = function (id) { return document.getElementById(id); };
 
   if (!WORKER) {
@@ -1135,17 +1158,18 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
       var vs = semInfo ? ((semItens[norm(it.nome)] || {})[semInfo.ini] || null) : null;
       var r = BaseCompraCalc.sugestoes(B, it, { tipo: E.tipo, qual: E.qual, modo: E.modo, pct: E.pct }, vs);
       if (!(r.media > 0)) return;
-      var media = r.media * g;
+      var F = fatorReal(slug, it.nome);
+      var media = r.media * g * F.f;
       var L = it.liga || {}, ok = L.status === 'ok' && L.fator > 0;
       var pr = ok && L.cd_item ? precoDe(L.cd_item, slug) : null;
       var qtdCompra = ok ? media / L.fator : null;
       out.push({
         casa: slug, nome: it.nome, cat: it.cat, abc: it.abc, cod: L.cd_item || null, nomeCompra: L.nome_compra || null,
         status: ok && !pr ? 'sem_preco' : (L.status || 'sem_codigo'), motivo: ok && !pr ? 'o código não tem preço no Preço de custo' : (L.motivo || null),
-        fator: ok ? L.fator : null, unid: L.unidade_compra || null,
+        fatorEmb: ok ? L.fator : null, unid: L.unidade_compra || null,
         media: media, vs: vs, minSug: BaseCompraCalc.sugere(media, r.margem), minAtual: it.min_atual, minFonte: it.min_fonte,
         margem: r.margem, qtdCompra: qtdCompra, vsCompra: ok && vs != null ? vs / L.fator : null,
-        preco: pr ? pr.v : null, precoFonte: pr ? pr.fonte : null, incerto: pr ? pr.incerto : false,
+        fator: F, preco: pr ? pr.v : null, precoFonte: pr ? pr.fonte : null, incerto: pr ? pr.incerto : false,
         custo: pr && qtdCompra != null ? qtdCompra * pr.v : null
       });
     });
@@ -1163,8 +1187,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
       a.casas.push(l.casa);
       a.qtdCompra += l.qtdCompra;
       if (l.vsCompra != null) a.vsCompra = (a.vsCompra || 0) + l.vsCompra;
-      if (l.minSug != null) a.minSugCompra += l.minSug / l.fator;
-      if (l.minAtual != null) a.minAtualCompra = (a.minAtualCompra || 0) + l.minAtual / l.fator;
+      if (l.minSug != null) a.minSugCompra += l.minSug / l.fatorEmb;
+      if (l.minAtual != null) a.minAtualCompra = (a.minAtualCompra || 0) + l.minAtual / l.fatorEmb;
       if (l.custo == null) a.temCusto = false; else a.custo += l.custo;
       if (l.incerto) a.incerto = true;
       if (!a.abc || (l.abc && l.abc < a.abc)) a.abc = l.abc;
@@ -1176,6 +1200,124 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
       return a;
     });
     return { linhas: ag, resto: resto };
+  }
+
+  // ---------- correção pelo consumo real (cmv_analise.py) ----------
+  // Por item: compra detalhada do mês + estoque contado, contra a venda
+  // convertida no mesmo mês. Sem medição, o fator da casa se passar de 1.
+  // SÓ SOBE: medida abaixo do teórico aparece, mas não corta o mínimo.
+  function fatorReal(slug, nome) {
+    var c = CMV[slug];
+    if (!c || !c.disponivel) return { f: 1, src: null, med: null };
+    if (!c._fi) { c._fi = {}; Object.keys(c.fator_itens || {}).forEach(function (k) { c._fi[norm(k)] = c.fator_itens[k]; }); }
+    var fi = c._fi[norm(nome)], fc = c.fator && c.fator.valor, r;
+    if (fi && fi.f > 0) r = { f: Math.max(1, fi.f), src: 'item', med: fi.f };
+    else if (fc && fc > 1) r = { f: fc, src: 'casa', med: fc };
+    else r = { f: 1, src: null, med: fi ? fi.f : null };
+    if (E.corr !== 'sim') r.f = 1;
+    return r;
+  }
+  function dicaCorr() {
+    var D2 = $('sc-corr-dica');
+    var casas = CASA === 'todas' ? CASAS_REAIS : [CASA];
+    var c = casas.map(function (s) { return CMV[s]; }).filter(function (x) { return x && x.disponivel; });
+    if (!c.length) { D2.textContent = 'Carregando a medição do consumo real…'; return; }
+    var n = 0, meses = [];
+    c.forEach(function (x) { n += Object.keys(x.fator_itens || {}).length; (x.meses_item || []).forEach(function (m) { if (meses.indexOf(m) < 0) meses.push(m); }); });
+    D2.textContent = 'Correção ' + (E.corr === 'sim' ? 'ligada' : 'desligada') + ': ' + n + ' itens medidos em ' + (meses.join(', ') || '—') +
+      ' (compra detalhada + estoque contado). Só sobe o mínimo; vale nesta tela, o Pedido de Compras segue sem correção.';
+  }
+
+  // ---------- aba Análise do CMV ----------
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function pc(v) { return v == null || !isFinite(v) ? '—' : nu(v, 1) + '%'; }
+  function pp(v) { return v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : '') + nu(v, 1) + ' p.p.'; }
+  function dif(L) { return L && L.cmv_ajustado != null && L.cmv_teorico != null ? L.cmv_ajustado - L.cmv_teorico : null; }
+  function ordemMes(m) { return parseInt(m.slice(4), 10) * 12 + ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].indexOf(m.slice(0, 3)); }
+  function dataRel(iso, dias) {
+    var p = String(iso).split('-');
+    return p[2] + '/' + p[1] + ' (' + (dias === 0 ? 'último dia do mês' : dias > 0 ? dias + ' dia' + (dias > 1 ? 's' : '') + ' depois do fim' : (-dias) + ' dia' + (dias < -1 ? 's' : '') + ' antes do fim') + ')';
+  }
+  function kpi(v, l, sub) { return '<div class="sc-kpi"><div class="v">' + v + '</div><div class="l">' + esc(l) + '</div>' + (sub ? '<div class="sc-meta">' + sub + '</div>' : '') + '</div>'; }
+  function mesesCmv(c) {
+    if (!c.grupo) return (c.ordem || []).slice();
+    var u = []; Object.keys(c.por_casa || {}).forEach(function (s) { (c.por_casa[s].ordem || []).forEach(function (m) { if (u.indexOf(m) < 0) u.push(m); }); });
+    return u.sort(function (a, b) { return ordemMes(a) - ordemMes(b); });
+  }
+  function desenhaCmv() {
+    var c = CMV[CASA === 'todas' ? 'grupo' : CASA], C = $('cm-corpo');
+    if (!c) { C.innerHTML = '<p class="sc-vazio">Carregando…</p>'; return; }
+    if (!c.disponivel) { C.innerHTML = '<p class="sc-vazio">' + esc(c.erro || 'Análise do CMV ainda não publicada.') + '</p>'; return; }
+    var ms = mesesCmv(c), sel = $('cm-mes');
+    if (ms.indexOf(CMV_MES) < 0) CMV_MES = ms[ms.length - 1] || null;
+    sel.innerHTML = ms.slice().reverse().map(function (m) { return '<option' + (m === CMV_MES ? ' selected' : '') + '>' + m + '</option>'; }).join('');
+    if (!CMV_MES) { C.innerHTML = '<p class="sc-vazio">Nenhuma planilha da Maristela para esta casa.</p>'; return; }
+    C.innerHTML = c.grupo ? cmvGrupo(c, CMV_MES) : cmvCasa(c, CMV_MES);
+  }
+  function cmvCasa(c, m) {
+    var L = c.meses[m], e = L.estoque, d = dif(L), h = '', sim = L.simulada;
+    h += '<div class="sc-kpis">' +
+      kpi(pc(L.cmv_maristela), 'CMV da Maristela', 'compras ÷ vendas, como na planilha') +
+      kpi(e ? pc(L.cmv_ajustado) : '—', 'CMV ajustado pelo estoque', e ? 'estoque ' + (e.variacao >= 0 ? 'subiu ' : 'desceu ') + rs0(Math.abs(e.variacao)) : esc(L.sem_estoque || 'sem contagem')) +
+      kpi(sim ? pc(L.cmv_simulado) : '—', 'Compra simulada', sim ? sim.itens_com_preco + ' de ' + sim.itens + ' itens com preço' : 'sem venda convertida neste mês') +
+      kpi(pc(L.cmv_teorico), 'Teórico das fichas', 'sobre ' + pc(L.cobertura_teorico) + ' do faturamento') + '</div>';
+    var transf = L.transf == null ? '<span class="cm-proj">não vem na planilha deste mês</span>' : rs0(L.transf);
+    var t = '<tr><td>Compras de bebidas (planilha ' + esc(L.arquivo) + ')</td><td class="n">' + rs0(L.compras) + '</td></tr>' +
+      '<tr><td>+ Transferências líquidas entre casas</td><td class="n">' + transf + '</td></tr>';
+    if (e) {
+      t += '<tr><td>− Variação do estoque (fim − início; positivo = ficou parado)<div class="sc-meta">contagem de ' + dataRel(e.ini, e.ini_dias) + ' e de ' + dataRel(e.fim, e.fim_dias) + '; ' + e.itens_com_preco + ' de ' + e.itens + ' itens com preço</div></td><td class="n">' + rs0(e.variacao) + '</td></tr>' +
+        '<tr class="tot"><td>= Consumo real estimado</td><td class="n">' + rs0(L.consumo_real) + '</td></tr>';
+    } else t += '<tr><td colspan="2" class="cm-proj">Sem o ajuste do estoque: ' + esc(L.sem_estoque || 'sem contagem') + '.</td></tr>';
+    t += '<tr><td>Vendas totais de bebidas (com eventos)</td><td class="n">' + rs0(L.vendas) + '</td></tr>';
+    if (sim) t += '<tr><td>Compra simulada pelas vendas (este simulador, preço pago)<div class="sc-meta">' + sim.itens_com_preco + ' de ' + sim.itens + ' itens com código, fator e preço; ' + (c.cobertura_venda == null ? '' : nu(c.cobertura_venda, 0) + '% da venda vira item da contagem') + '</div></td><td class="n">' + rs0(sim.valor) + '</td></tr>';
+    if (L.real_sobre_simulada != null) t += '<tr><td>Consumo real ÷ compra simulada</td><td class="n">' + nu(L.real_sobre_simulada, 2) + '</td></tr>';
+    h += '<div class="sc-box"><h2>Das compras ao consumo real em ' + esc(m) + '</h2><div class="sc-tab-wrap"><table class="cm-ponte">' + t + '</table></div>' +
+      '<p class="sc-meta">A conta: consumo real = compras + transferências − (estoque no fim − estoque no início). A compra simulada só conta o que tem código, fator e preço e a venda que virou item: é um piso. Ajustado − teórico das fichas: <b class="' + (d != null && d > 2 ? 'cm-ruim' : '') + '">' + pp(d) + '</b> (as fichas contam hortifruti e secos, que as compras de bebidas não trazem).</p></div>';
+    var mov = (c.movimentos || {})[m] || [];
+    if (mov.length) h += '<div class="sc-box"><h2>O que mais mudou no estoque em ' + esc(m) + '</h2><div class="sc-tab-wrap"><table class="sc"><thead><tr><th>Item da contagem</th><th class="n">No início</th><th class="n">No fim</th><th class="n">Preço un.</th><th class="n">Variação</th></tr></thead><tbody>' +
+      mov.slice(0, 12).map(function (x) { var v = (x.qf - x.qi) * x.preco; return '<tr><td>' + esc(x.nome) + '<div class="sc-meta">preço: ' + (x.fonte === 'compra' ? 'pago (código de compra)' : esc(x.fonte)) + '</div></td><td class="n">' + nu(x.qi, x.qi % 1 ? 1 : 0) + '</td><td class="n">' + nu(x.qf, x.qf % 1 ? 1 : 0) + '</td><td class="n">' + rs(x.preco) + '</td><td class="n"><span class="' + (v > 0 ? 'sc-sobe' : 'sc-desce') + '">' + (v > 0 ? '+' : '−') + rs0(Math.abs(v)) + '</span></td></tr>'; }).join('') +
+      '</tbody></table></div><p class="sc-meta">Subiu = comprado e parado (sai do consumo); desceu = usado do estoque de antes (entra no consumo).</p></div>';
+    h += '<div class="sc-box"><h2>CMV mês a mês</h2><div class="sc-tab-wrap"><table class="sc"><thead><tr><th>Mês</th><th class="n">Vendas</th><th class="n">Compras + transf.</th><th class="n">Maristela</th><th class="n">Estoque parado</th><th class="n">Ajustado</th><th class="n">Simulada</th><th class="n">Fichas</th></tr></thead><tbody>' +
+      (c.ordem || []).slice().reverse().map(function (x) { var l = c.meses[x], ee = l.estoque; return '<tr><td>' + x + '</td><td class="n">' + rs0(l.vendas) + '</td><td class="n">' + rs0((l.compras || 0) + (l.transf || 0)) + '</td><td class="n">' + pc(l.cmv_maristela) + '</td><td class="n">' + (ee ? rs0(ee.variacao) : '—') + '</td><td class="n"><b>' + (ee ? pc(l.cmv_ajustado) : '—') + '</b></td><td class="n">' + pc(l.cmv_simulado) + '</td><td class="n">' + pc(l.cmv_teorico) + '</td></tr>'; }).join('') +
+      '</tbody></table></div><p class="sc-meta">Mês sem contagem a até 7 dias do fim (do próprio mês e do anterior) fica sem ajuste. Planilhas lidas: ' + esc((c.arquivos || []).join(', ')) + '.</p></div>';
+    var conf = c.conferir || [], sem = c.sem_preco || [];
+    if (conf.length || sem.length) {
+      h += '<div class="sc-box"><h2>Fora da conta do estoque</h2>';
+      if (conf.length) h += '<p class="sc-meta"><b>Unidade a conferir (' + conf.length + '):</b> 20 ou mais unidades contadas de um produto caro, quase sempre grama contra preço do pacote. Fica fora das duas pontas até a decisão entrar em config/cmv_estoque.json.</p><div class="sc-tab-wrap"><table class="sc"><thead><tr><th>Item</th><th class="n">Maior contagem</th><th class="n">Preço achado</th><th>Fonte</th></tr></thead><tbody>' +
+        conf.map(function (x) { return '<tr><td>' + esc(x.nome) + '</td><td class="n">' + nu(x.qtd, x.qtd % 1 ? 1 : 0) + '</td><td class="n">' + rs(x.preco) + '</td><td>' + esc(x.fonte) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      if (sem.length) h += '<details class="cm-det"><summary>Sem preço (' + sem.length + ' itens): sem código de compra no mapa do everloja e sem Custo 1x1 na B.D.1</summary><p class="sc-meta">' + sem.map(function (x) { return esc(x.nome) + ' (' + nu(x.qtd, x.qtd % 1 ? 1 : 0) + ')'; }).join(' · ') + '</p></details>';
+      h += '</div>';
+    }
+    return h;
+  }
+  function cmvGrupo(c, m) {
+    var vend = 0, gasto = 0, vAj = 0, rAj = 0, n = 0, nAj = 0, linhas = '';
+    Object.keys(c.por_casa || {}).forEach(function (s) {
+      var L = (c.por_casa[s].meses || {})[m]; if (!L) return;
+      var e = L.estoque; n++; vend += L.vendas || 0; gasto += (L.compras || 0) + (L.transf || 0);
+      if (e) { nAj++; vAj += L.vendas || 0; rAj += L.consumo_real || 0; }
+      linhas += '<tr><td>' + esc(NOME_CASA[s] || s) + '</td><td class="n">' + rs0(L.vendas) + '</td><td class="n">' + pc(L.cmv_maristela) + '</td><td class="n">' + (e ? rs0(e.variacao) : '—') + '</td><td class="n"><b>' + (e ? pc(L.cmv_ajustado) : '—') + '</b></td><td class="n">' + pc(L.cmv_simulado) + '</td><td class="n">' + pc(L.cmv_teorico) + '</td></tr>';
+    });
+    if (!n) return '<p class="sc-vazio">Sem planilha da Maristela para ' + esc(m) + '.</p>';
+    return '<div class="sc-kpis">' + kpi(pc(vend ? gasto / vend * 100 : null), 'CMV da Maristela', n + ' casas com planilha') +
+      kpi(pc(vAj ? rAj / vAj * 100 : null), 'CMV ajustado pelo estoque', nAj + ' casas com contagem nas duas pontas') + '</div>' +
+      '<div class="sc-box"><h2>Por casa em ' + esc(m) + '</h2><div class="sc-tab-wrap"><table class="sc"><thead><tr><th>Casa</th><th class="n">Vendas</th><th class="n">Maristela</th><th class="n">Estoque parado</th><th class="n">Ajustado</th><th class="n">Simulada</th><th class="n">Fichas</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+      '<p class="sc-meta">O detalhe de cada casa (ponte, itens que mais mudaram, o que ficou fora) está na própria casa. Planilhas lidas: ' + esc((c.arquivos || []).join(', ')) + '.</p></div>';
+  }
+  function buscaCmv(chave) {
+    if (CMV[chave]) return Promise.resolve(CMV[chave]);
+    return fetch(WORKER + '/api/compras/cmv?casa=' + encodeURIComponent(chave === 'grupo' ? 'todas' : chave), { headers: { 'X-Token': TOKEN } })
+      .then(function (r) {
+        if (r.status === 401) { window.sessaoLimpar(); window.irParaLogin(SLUG); throw new Error('sessao'); }
+        if (r.status === 404) return { disponivel: false, erro: 'A análise do CMV ainda não foi publicada.' };
+        if (!r.ok) throw new Error('http ' + r.status);
+        return r.json();
+      }).then(function (d) { CMV[chave] = d; return d; });
+  }
+  function carregaCmv() {
+    var lista = CASA === 'todas' ? CASAS_REAIS.concat(['grupo']) : [CASA];
+    Promise.all(lista.map(function (k) { return buscaCmv(k).catch(function (e) { if (e && e.message === 'sessao') throw e; CMV[k] = { disponivel: false, erro: 'Erro ao carregar a análise do CMV.' }; }); }))
+      .then(function () { dicaCorr(); if (D) desenha(); if (ABA === 'cmv') desenhaCmv(); }).catch(function () {});
   }
 
   // ---------- desenho ----------
@@ -1301,6 +1443,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     var cls = ms != null && ma != null ? (ms > ma ? 'sc-sobe' : ms < ma ? 'sc-desce' : '') : '';
     tm.appendChild(el('b', cls, ms == null ? '—' : nu(ms, agregado && ms < 10 ? 1 : 0)));
     if (ma != null) tm.appendChild(el('div', 'sc-meta', 'hoje ' + nu(ma, agregado && ma < 10 ? 1 : 0) + (!agregado && l.minFonte === 'base_de_compra' ? ' (da Base de compra)' : '')));
+    // real ÷ teórico do item (Análise do CMV): por que o mínimo subiu, ou não
+    var Fx = l.fator || {};
+    if (!agregado && Fx.med != null) tm.appendChild(el('div', 'sc-meta' + (Fx.med > 1.05 && E.corr === 'sim' ? ' sc-sobe' : ''),
+      'real ÷ teórico ' + nu(Fx.med, 2) + (Fx.med < 1 ? ' (não corta)' : Fx.src === 'casa' ? ' (da casa)' : Fx.med > 2 ? ' (conferir)' : '')));
     tr.appendChild(tm);
     var tp = td(null, 'n'); tp.setAttribute('data-label', 'Preço un.');
     if (l.preco != null) {
@@ -1343,7 +1489,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     disp.forEach(function (s) { (D.casas[s].sem_conversao || []).forEach(function (x) { l.push({ casa: s, p: x }); }); });
     l.sort(function (a, b) { return (b.p.vendas || 0) - (a.p.vendas || 0); });
     B.appendChild(el('h2', null, 'Venda que não virou item da contagem · ' + l.length + ' produtos'));
-    B.appendChild(el('p', 'sc-meta', 'Não entra no volume acima: o volume real é maior do que o mostrado. Resolver em Vendas, aba Análise do CMV, Estoque mínimo (casamentos).'));
+    B.appendChild(el('p', 'sc-meta', 'Não entra no volume acima: o volume real é maior do que o mostrado. Resolver na aba Base de compra, em Vendas (casamentos).'));
     if (!l.length) return;
     B.appendChild(tabelaSimples([['Produto', ''], ['Casa', ''], ['Vendas', 'n'], ['Motivo', '']], l.slice(0, 8).map(function (x) {
       return [x.p.produto, NOME_CASA[x.casa] || x.casa, nu(x.p.vendas, 0), String(x.p.motivo || '').slice(0, 140)];
@@ -1355,7 +1501,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     var F = $('sc-foot'); F.innerHTML = '';
     var p = function (b, t) { var d = el('div'); d.style.marginTop = '4px'; d.appendChild(el('b', null, b)); d.appendChild(document.createTextNode(t)); F.appendChild(d); };
     p('Como ler: ', '"Por semana" é a média de venda do período convertida em itens da contagem (mês dividido por 4,345 semanas), com o cenário de venda aplicado. "Mínimo sugerido" soma a margem escolhida. O custo é o volume da semana, em unidades de compra, vezes o preço escolhido, com o cenário de preço aplicado.');
-    p('Fontes: ', 'a conta de período, margem e mínimo é a mesma do Estoque mínimo (Análise do CMV, em Vendas) e do Pedido de Compras. O preço vem do Preço de custo (Gestão de Produto) e a ligação item, código e embalagem vem do mapa do everloja. Mudou uma fonte, o simulador muda junto.');
+    p('Fontes: ', 'a conta de período, margem e mínimo é a mesma da aba Base de compra de Vendas e do Pedido de Compras. A correção pelo consumo real e a Análise do CMV moram nesta página (cmv_analise.py). O preço vem do Preço de custo (Gestão de Produto) e a ligação item, código e embalagem vem do mapa do everloja. Mudou uma fonte, o simulador muda junto.');
     p('Limite: ', 'só existe venda mensal; a semana é o mês dividido por 4,345. Item sem preço, sem fator de embalagem ou sem código fica fora do custo e aparece em "O que ainda não entra na conta".');
   }
 
@@ -1407,7 +1553,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     var C = $('sc-casas'); C.innerHTML = '';
     CASAS.forEach(function (c) {
       var b = el('button', 'sc-chip' + (c[0] === CASA ? ' on' : ''), c[1]); b.type = 'button';
-      b.onclick = function () { CASA = c[0]; chips(); carrega(); };
+      b.onclick = function () { CASA = c[0]; chips(); carrega(); carregaCmv(); if (ABA === 'cmv') desenhaCmv(); };
       C.appendChild(b);
     });
   }
@@ -1426,10 +1572,22 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     $('sc-abc').onchange = function () { E.abc = this.value; desenha(); };
     $('sc-cat').onchange = function () { E.cat = this.value; desenha(); };
     $('sc-ordem').onchange = function () { E.ordem = this.value; desenha(); };
+    $('sc-corr').value = E.corr;
+    $('sc-corr').onchange = function () { E.corr = this.value; try { localStorage.setItem('bc_corr', E.corr); } catch (e) {} dicaCorr(); desenha(); };
+    $('cm-mes').onchange = function () { CMV_MES = this.value; desenhaCmv(); };
+    Array.prototype.forEach.call(document.querySelectorAll('#sc-abas button'), function (b) {
+      b.onclick = function () {
+        ABA = b.getAttribute('data-a');
+        Array.prototype.forEach.call(document.querySelectorAll('#sc-abas button'), function (x) { x.className = x === b ? 'on' : ''; });
+        $('sc-aba-compra').style.display = ABA === 'compra' ? '' : 'none';
+        $('sc-aba-cmv').style.display = ABA === 'cmv' ? '' : 'none';
+        if (ABA === 'cmv') desenhaCmv();
+      };
+    });
   }
 
   var r = window.exigirNivel(NIVEIS_OK, SLUG);
-  if (r.ok) { TOKEN = r.sessao.token; liga(); chips(); carrega(); }
+  if (r.ok) { TOKEN = r.sessao.token; liga(); chips(); carrega(); carregaCmv(); }
   else if (!r.redirecionou) msg.innerHTML = window.msgAcessoNegado('o simulador de compras');
 })();
 </script>
@@ -1526,7 +1684,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 25/10/2026.
+<p class="nota">Painel do bar · atualizado em 26/10/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -2986,7 +3144,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'cb8809631065';
+  var BUILD = '4aaa25945fc0';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
