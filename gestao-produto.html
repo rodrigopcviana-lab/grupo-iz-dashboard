@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=b118f2e05641">
+<link rel="stylesheet" href="portal.css?v=a44a1ef0914a">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -3577,6 +3577,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
             return;
           }
         }
+        incluirEverloja();
+      };
+      // O Worker só leva o que foi aprovado PELO SITE nesta contagem, com o
+      // número do site (2026-10-26). `fora` = número que está só no Notion
+      // (veio da cópia da semana ou foi digitado lá): não entra, e a tela diz.
+      function incluirEverloja() {
         everlojaBtn.disabled = true;
         everlojaStatus.className = 'cp-status pend';
         everlojaStatus.textContent = 'Enviando pra fila…';
@@ -3602,6 +3608,14 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
               a.href = 'everloja-conferencia.html?casa=' + portalSlug(casaSel);
               a.textContent = 'Conferência everloja';
               everlojaStatus.appendChild(a);
+              var fora = (res.corpo && res.corpo.fora) || [];
+              if (fora.length) {
+                var av = document.createElement('div');
+                av.textContent = 'Ficaram FORA ' + fora.length + ' item(ns) com número só no Notion, sem aprovação pelo site nesta semana: ' +
+                  fora.map(function (h) { return h.produto + ' (' + h.qtde_notion + ')'; }).join(', ') +
+                  '. Se algum deve ir, aprove aqui e envie de novo.';
+                everlojaStatus.appendChild(av);
+              }
             } else {
               everlojaStatus.className = 'cp-status erro';
               everlojaStatus.textContent = (res.corpo && res.corpo.erro) ? res.corpo.erro : ('Erro ao incluir (' + res.status + ')');
@@ -7389,7 +7403,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'b118f2e05641';
+  var BUILD = 'a44a1ef0914a';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
