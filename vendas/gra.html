@@ -774,6 +774,33 @@ function bcPendencias(){
       <div class="scroll-x"><table class="limpa"><tr><th>Linha da contagem</th><th>Está ligada ao insumo</th><th>Por quê</th></tr>` +
       susp.map(x => `<tr><td>${bcEsc(x.linha)}</td><td style="white-space:normal">${bcEsc(x.insumo)}</td><td style="white-space:normal">${bcEsc(x.motivo)}</td></tr>`).join('') +
       `</table></div></div>`;
+  // Venda convertida x consumo que a contagem mede (etapa 3, 2026-10-27)
+  const cf = B.conferencia;
+  if (cf && cf.disponivel && (cf.acusados || []).length) {
+    const ROT = {
+      venda_sem_consumo: 'Venda maior que o consumo contado',
+      consumo_sem_venda: 'Consumo contado maior que a venda',
+      contagem_nao_mede: 'Contagem não mediu (consumo zero ou negativo)',
+      sem_venda_ligada: 'Item contado sem nenhuma venda ligada'
+    };
+    const DICA = {
+      venda_sem_consumo: 'a venda de outro produto pode estar chegando neste item, ou o item não é contado direito',
+      consumo_sem_venda: 'falta ficha ou ligação para a venda chegar aqui, ou há outro canal, perda ou consumo da equipe',
+      contagem_nao_mede: 'a entrada do item não está no pedido da contagem (o estoque sobe em vez de cair)',
+      sem_venda_ligada: 'a linha existe na contagem e nenhuma venda chega nela; confira ficha e relação'
+    };
+    const jan = (cf.janela || []).join(', ');
+    html += `<h3>Venda convertida x consumo contado</h3>
+      <div class="card"><p class="nota" style="margin:0 0 8px">Conferência independente: o que a venda diz que saiu do estoque
+      contra o que a contagem mediu (estoque anterior + pedido - estoque atual), nos mesmos dias de ${cf.semanas} semanas de ${bcEsc(jan)}.
+      ${cf.pct_na_faixa != null ? `<b>${bcNum(cf.pct_na_faixa,0)}%</b> dos itens de volume estão dentro da faixa. ` : ''}${cf.aviso_casa ? bcEsc(cf.aviso_casa) + ' ' : ''}
+      Cada linha abaixo é uma pista, não uma prova: a contagem também mede perda, evento e consumo da equipe.</p>
+      <div class="scroll-x"><table class="limpa"><tr><th>Item</th><th>O que aparece</th><th class="num">Venda</th><th class="num">Contado</th><th>Vendas que chegam nele</th></tr>` +
+      cf.acusados.map(a => `<tr><td>${bcEsc(a.item)}</td><td style="white-space:normal">${bcEsc(ROT[a.classe] || a.classe)}
+        <span class="bc-mes">${bcEsc(DICA[a.classe] || '')}</span></td><td class="num">${bcNum(a.venda,0)}</td><td class="num">${bcNum(a.contado,0)}</td>
+        <td style="white-space:normal">${(a.fontes || []).map(f => bcEsc(f.produto)).join(' · ') || '—'}</td></tr>`).join('') +
+      `</table></div></div>`;
+  }
   if ((B.preparos || []).length)
     html += `<p class="nota">Preparo da casa (não é compra, entra na Produção interna): ${B.preparos.map(bcEsc).join(', ')}.</p>`;
   if (fora.length)
