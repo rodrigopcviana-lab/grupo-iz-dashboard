@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=c17badf9eca7">
+<link rel="stylesheet" href="portal.css?v=cb693bc8126e">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -877,6 +877,30 @@ window.msgAcessoNegado = function (nomePagina) {
   .ac-ctrl select { font:inherit; font-size:14px; padding:8px 11px; border-radius:9px; border:1px solid var(--border); background:var(--card); color:var(--text); }
   .ac-foot { font-size:11.5px; color:var(--text-3); margin-top:16px; line-height:1.65; }
   .ac-det summary { cursor:pointer; color:var(--acc); font-size:12.5px; margin-top:8px; }
+  .ac-ctrl select { height:40px; box-sizing:border-box; }
+  .ac-vis { display:inline-flex; height:40px; box-sizing:border-box; border:1px solid var(--border); border-radius:9px; overflow:hidden; }
+  .ac-vis button { font:inherit; font-size:14px; padding:0 14px; border:0; background:var(--card); color:var(--text-2); cursor:pointer; }
+  .ac-vis button + button { border-left:1px solid var(--border); }
+  .ac-vis button.on { color:var(--acc); font-weight:600; }
+  .ac-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:10px; }
+  .ac-card { border:1px solid var(--border); border-radius:11px; padding:10px 12px; min-width:0; }
+  .ac-card.tot { border-color:var(--acc); }
+  .ac-card .t { display:flex; justify-content:space-between; gap:6px; font-size:12.5px; color:var(--text-2); font-weight:600; }
+  .ac-card .v { font-size:21px; font-weight:700; font-variant-numeric:tabular-nums; margin:2px 0 6px; }
+  .ac-card .d { font-size:11.5px; font-weight:600; white-space:nowrap; }
+  .ac-card dl { display:grid; grid-template-columns:auto 1fr; gap:2px 8px; margin:0; font-size:12px; }
+  .ac-card dt { color:var(--text-3); }
+  .ac-card dd { margin:0; text-align:right; font-variant-numeric:tabular-nums; }
+  .ac-graf { border:1px solid var(--border); border-radius:12px; margin:14px 0 0; background:var(--card); }
+  .ac-graf summary { cursor:pointer; list-style:none; padding:9px 14px; font-size:12.5px; color:var(--text-3);
+    display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 12px; }
+  .ac-graf summary::-webkit-details-marker { display:none; }
+  .ac-graf summary b { color:var(--text-2); font-weight:600; }
+  .ac-graf summary b::before { content:'▸ '; color:var(--text-3); }
+  .ac-graf[open] summary b::before { content:'▾ '; }
+  .ac-graf svg { display:block; width:100%; height:auto; padding:0 8px; box-sizing:border-box; }
+  .ac-leg { font-size:11px; color:var(--text-3); padding:0 14px 9px; }
+  .ac-leg span { margin-right:12px; }
 </style>
 
 <div class="panel" id="ac-gate">
@@ -887,7 +911,11 @@ window.msgAcessoNegado = function (nomePagina) {
 <div id="ac-wrap" style="display:none">
   <div class="ac-chips" id="ac-casas"></div>
   <div class="ac-abas" id="ac-abas"><button type="button" data-a="sim" class="on">Simulação</button><button type="button" data-a="real">Real (Maristela)</button></div>
-  <div class="ac-ctrl" id="ac-ctrl-mes" style="display:none"><div><label for="ac-mes">Mês</label><select id="ac-mes"></select></div></div>
+  <div class="ac-ctrl">
+    <div><label for="ac-per">Período</label><select id="ac-per"><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">12 meses</option><option value="tudo">Tudo</option></select></div>
+    <div id="ac-ctrl-mes" style="display:none"><label for="ac-mes">Mês</label><select id="ac-mes"></select></div>
+    <div><label>Ver os meses em</label><div class="ac-vis" id="ac-vis"><button type="button" data-v="cards">Cards</button><button type="button" data-v="tabela">Tabela</button></div></div>
+  </div>
   <div id="ac-corpo"></div>
 </div>
 
@@ -900,6 +928,10 @@ window.msgAcessoNegado = function (nomePagina) {
   var NOME = {}; CASAS.forEach(function (c) { NOME[c[0]] = c[1]; });
   var TOKEN = '', CASA = 'gra-bistro', ABA = 'sim', MES = null, CACHE = {};
   var $ = function (id) { return document.getElementById(id); };
+  // preferência de quem vê (período, cards ou tabela, gráfico aberto): só conforto, a página funciona sem
+  function lsLe(k, d) { try { var v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } }
+  function lsGrava(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  var VIS = lsLe('ac_vis', window.innerWidth < 640 ? 'cards' : 'tabela'), PER = lsLe('ac_per', '12'), GRAF = lsLe('ac_graf', '1') === '1';
   if (!WORKER) { gate.innerHTML = '<h2>Em configuração</h2>'; return; }
 
   function rs0(v) { return v == null ? '—' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
@@ -916,16 +948,96 @@ window.msgAcessoNegado = function (nomePagina) {
     return '<div class="ac-wrap"><table class="ac"><thead><tr>' + cab.map(function (h) { return '<th class="' + (h[1] || '') + '">' + h[0] + '</th>'; }).join('') + '</tr></thead><tbody>' +
       linhas.join('') + (tot || '') + '</tbody></table></div>';
   }
-  // meses de custo parado: estoque ÷ custo de um mês de venda (CMV simulado × faturamento, projeção)
-  function mesesParado(L) { return L.estoque && L.cmv && L.fat ? L.estoque.valor / (L.cmv / 100 * L.fat) : null; }
+  // meses de custo parado: estoque ÷ custo de um mês de venda (CMV simulado × faturamento, projeção).
+  // No grupo, fat_est é o faturamento só das casas com contagem (o estoque soma só essas).
+  function fatEst(L) { return L.fat_est != null ? L.fat_est : L.fat; }
+  function mesesParado(L) { return L.estoque && L.cmv && fatEst(L) ? L.estoque.valor / (L.cmv / 100 * fatEst(L)) : null; }
+  function noPeriodo(ms) {
+    if (PER === 'tudo' || !ms.length) return ms.slice();
+    var fim = ordem(ms[ms.length - 1]), n = parseInt(PER, 10);
+    return ms.filter(function (m) { return ordem(m) > fim - n; });
+  }
+  function anterior(ms, m) { var i = ms.indexOf(m); return i > 0 ? ms[i - 1] : null; }
+  // variação do CMV contra o mês anterior, em pontos percentuais (CMV subir é ruim)
+  function delta(v, a, mesAnt) {
+    if (v == null || a == null || !isFinite(v) || !isFinite(a)) return '';
+    var d = v - a, t = ' title="contra ' + esc(mesAnt || 'o mês anterior') + '"';
+    if (Math.abs(d) < 0.05) return '<span class="d"' + t + '>= ' + esc(mesAnt || '') + '</span>';
+    return '<span class="d ' + (d > 0 ? 'ac-sobe' : 'ac-desce') + '"' + t + '>' + (d > 0 ? '▲ ' : '▼ ') + nu(Math.abs(d), 1) + ' p.p.</span>';
+  }
+  // meses do período, do mais recente para o mais antigo, em cards ou tabela
+  function lista(per, todos, get, linha, card, cab) {
+    var rev = per.slice().reverse();
+    if (VIS === 'cards') return '<div class="ac-cards">' + rev.map(function (m) { var a = anterior(todos, m); return card(m, get(m), a ? get(a) : null, '', a); }).join('') + '</div>';
+    return tabela(cab, rev.map(function (m) { return linha(m, get(m)); }));
+  }
+
+  // Gráfico da oscilação no período: discreto (linha fina, sem eixo cheio) e recolhível; o estado fica no navegador.
+  function grafico(ms, series, titulo) {
+    var ok = function (v) { return v != null && isFinite(v); };
+    var base = series[0].vals.filter(ok), n = ms.length;
+    if (n < 2 || base.length < 2) return '';
+    var todos = []; series.forEach(function (s) { s.vals.forEach(function (v) { if (ok(v)) todos.push(v); }); });
+    var dmin = Math.min.apply(null, todos), dmax = Math.max.apply(null, todos), lo = dmin, hi = dmax;
+    if (hi - lo < 2) { var meio = (hi + lo) / 2; lo = meio - 1; hi = meio + 1; }
+    var folga = (hi - lo) * 0.14; lo -= folga; hi += folga;
+    var W = Math.max(280, Math.round(($('ac-corpo').clientWidth || 600) - 18)), H = 118, E = 38, D = 14, T = 12, B = 20;
+    // posição pelo calendário: mês sem dado (planilha que não veio) deixa o buraco no lugar dele
+    var o0 = ordem(ms[0]), vao = Math.max(1, ordem(ms[n - 1]) - o0);
+    var x = function (i) { return E + (ordem(ms[i]) - o0) * (W - E - D) / vao; };
+    var y = function (v) { return T + (hi - v) / (hi - lo) * (H - T - B); };
+    var f = function (v) { return v.toFixed(1); };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(titulo) + '" style="font-size:10px">';
+    [dmax, dmin].forEach(function (v) {
+      svg += '<line x1="' + E + '" x2="' + (W - D) + '" y1="' + f(y(v)) + '" y2="' + f(y(v)) + '" style="stroke:var(--border)" stroke-width="1"/>' +
+        '<text x="' + (E - 5) + '" y="' + f(y(v) + 3) + '" text-anchor="end" style="fill:var(--text-3)">' + nu(v, 1) + '%</text>';
+    });
+    var media = base.reduce(function (s, v) { return s + v; }, 0) / base.length;
+    svg += '<line x1="' + E + '" x2="' + (W - D) + '" y1="' + f(y(media)) + '" y2="' + f(y(media)) + '" style="stroke:var(--text-3)" stroke-width="1" stroke-dasharray="2 4" opacity=".6"><title>média ' + pc(media) + '</title></line>';
+    // rótulos do mês do fim para o começo, pulando o que encostaria no anterior
+    var ultimoX = Infinity;
+    for (var i = n - 1; i >= 0; i--) {
+      if (ultimoX - x(i) < 46) continue;
+      ultimoX = x(i);
+      svg += '<text x="' + f(x(i)) + '" y="' + (H - 5) + '" text-anchor="' + (i === n - 1 ? 'end' : i === 0 ? 'start' : 'middle') + '" style="fill:var(--text-3)">' + esc(ms[i]) + '</text>';
+    }
+    series.forEach(function (s, k) {
+      var cor = k ? 'var(--text-3)' : 'var(--acc)', d = '', caneta = false;
+      s.vals.forEach(function (v, i) {
+        if (!ok(v)) { caneta = false; return; }
+        d += (caneta ? 'L' : 'M') + f(x(i)) + ' ' + f(y(v)); caneta = true;
+      });
+      svg += '<path d="' + d + '" fill="none" style="stroke:' + cor + '" stroke-width="' + (k ? 1.3 : 1.8) + '"' + (k ? ' stroke-dasharray="4 3"' : '') + ' stroke-linejoin="round" stroke-linecap="round"/>';
+      s.vals.forEach(function (v, i) {
+        if (!ok(v)) return;
+        svg += '<circle cx="' + f(x(i)) + '" cy="' + f(y(v)) + '" r="' + (k ? 2 : 2.6) + '" style="fill:' + cor + '"><title>' + esc(ms[i] + ' · ' + s.nome + ': ' + pc(v)) + '</title></circle>';
+      });
+    });
+    var iu = -1; series[0].vals.forEach(function (v, i) { if (ok(v)) iu = i; });
+    if (iu >= 0) svg += '<text x="' + f(x(iu)) + '" y="' + f(y(series[0].vals[iu]) - 6) + '" text-anchor="end" style="fill:var(--text-2);font-weight:600">' + pc(series[0].vals[iu]) + '</text>';
+    svg += '</svg>';
+    var iMin = series[0].vals.indexOf(Math.min.apply(null, base)), iMax = series[0].vals.indexOf(Math.max.apply(null, base));
+    var per = PER === 'tudo' ? 'todo o período' : 'últimos ' + PER + ' meses';
+    return '<details class="ac-graf"' + (GRAF ? ' open' : '') + '><summary><b>Oscilação do ' + esc(titulo) + ', ' + per + '</b><span>média ' + pc(media) +
+      ' · de ' + pc(series[0].vals[iMin]) + ' (' + esc(ms[iMin]) + ') a ' + pc(series[0].vals[iMax]) + ' (' + esc(ms[iMax]) + ')</span></summary>' + svg +
+      (series.length > 1 ? '<div class="ac-leg">' + series.map(function (s, k) { return '<span>' + (k ? '- - ' : '— ') + esc(s.nome) + '</span>'; }).join('') + '<span>··· média</span></div>' : '<div class="ac-leg"><span>··· média do período</span></div>') +
+      '</details>';
+  }
 
   // ---------- Simulação ----------
-  function linhaSim(m, L, rot) {
-    var e = L.estoque, mp = mesesParado(L);
-    return '<tr><td>' + esc(rot || m) + (e ? '<div class="ac-meta">contagem ' + dm(e.data) + '</div>' : '') + '</td><td class="n">' + rs0(L.fat) + '</td><td class="n">' + rs0(L.custo) +
+  function linhaSim(m, L, rot, cls) {
+    var e = L.estoque, mp = mesesParado(L), sub = e && e.data ? 'contagem ' + dm(e.data) : L.casas ? L.casas + ' casa' + (L.casas > 1 ? 's' : '') : '';
+    return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + esc(rot || m) + (sub ? '<div class="ac-meta">' + sub + '</div>' : '') + '</td><td class="n">' + rs0(L.fat) + '</td><td class="n">' + rs0(L.custo) +
       '<div class="ac-meta">sobre ' + pc(L.cobertura) + ' do faturamento</div></td><td class="n"><b>' + pc(L.cmv) + '</b></td><td class="n">' + (e ? rs0(e.valor) : '—') +
-      (e ? '<div class="ac-meta">' + e.itens_com_preco + ' de ' + e.itens + ' itens com preço</div>' : '') + '</td><td class="n">' + (e && L.fat ? pc(e.valor / L.fat * 100) : '—') +
+      (e ? '<div class="ac-meta">' + e.itens_com_preco + ' de ' + e.itens + ' itens com preço</div>' : '') + '</td><td class="n">' + (e && fatEst(L) ? pc(e.valor / fatEst(L) * 100) : '—') +
       '</td><td class="n">' + (mp == null ? '—' : nu(mp, 1)) + '</td></tr>';
+  }
+  function cardSim(rot, L, ant, cls, mesAnt) {
+    var e = L.estoque, mp = mesesParado(L);
+    return '<div class="ac-card' + (cls ? ' ' + cls : '') + '"><div class="t"><span>' + esc(rot) + '</span>' + (ant ? delta(L.cmv, ant.cmv, mesAnt) : '') + '</div>' +
+      '<div class="v">' + pc(L.cmv) + '</div><dl><dt>Faturamento</dt><dd>' + rs0(L.fat) + '</dd><dt>Custo</dt><dd>' + rs0(L.custo) + '</dd>' +
+      '<dt>Estoque no fim</dt><dd>' + (e ? rs0(e.valor) : '—') + '</dd><dt>Meses parado</dt><dd>' + (mp == null ? '—' : nu(mp, 1)) + '</dd></dl>' +
+      '<div class="ac-meta">custo sobre ' + pc(L.cobertura) + ' do faturamento' + (e && e.data ? ' · contagem ' + dm(e.data) : '') + '</div></div>';
   }
   var CAB_SIM = [['Mês', ''], ['Faturamento', 'n'], ['Custo simulado', 'n'], ['CMV simulado', 'n'], ['Estoque no fim', 'n'], ['Estoque ÷ faturamento', 'n'], ['Meses de custo parado', 'n']];
   function simCasa(c) {
@@ -938,38 +1050,63 @@ window.msgAcessoNegado = function (nomePagina) {
       kpi(e ? rs0(e.valor) : '—', 'Estoque no fim de ' + ult, e ? 'contagem de ' + dm(e.data) + ' (' + rel(e.dias) + ')' : 'sem contagem perto do fim do mês') +
       kpi(e && L.fat ? pc(e.valor / L.fat * 100) : '—', 'Estoque ÷ faturamento', 'dinheiro parado em relação ao que a casa vende no mês') +
       kpi(mp == null ? '—' : nu(mp, 1), 'Meses de custo parado', 'quantos meses de consumo o estoque cobre') + '</div>';
-    h += '<div class="ac-box"><h2>Mês a mês</h2>' + tabela(CAB_SIM, ms.slice().reverse().map(function (m) { return linhaSim(m, S[m]); })) + '</div>';
+    var per = noPeriodo(ms), get = function (m) { return S[m]; };
+    h += grafico(per, [{ nome: 'CMV simulado', vals: per.map(function (m) { return S[m].cmv; }) }], 'CMV simulado');
+    h += '<div class="ac-box"><h2>Mês a mês</h2>' + lista(per, ms, get, linhaSim, cardSim, CAB_SIM) + '</div>';
     return h;
   }
-  function simGrupo(c, m) {
-    var tf = 0, tfc = 0, tc = 0, te = 0, tfe = 0, linhas = [];
+  // soma das casas num mês, no mesmo formato da linha de uma casa
+  function simAgg(c, m) {
+    var a = { fat: 0, fat_cmv: 0, custo: 0, fat_est: 0, casas: 0 }, e = null;
     Object.keys(c.por_casa || {}).forEach(function (s) {
       var L = ((c.por_casa[s].simulacao) || {})[m]; if (!L) return;
-      linhas.push(linhaSim(m, L, NOME[s] || s));
-      tf += L.fat || 0; tfc += L.fat_cmv || 0; tc += L.custo || 0;
-      if (L.estoque) { te += L.estoque.valor; tfe += L.fat || 0; }
+      a.casas++; a.fat += L.fat || 0; a.fat_cmv += L.fat_cmv || 0; a.custo += L.custo || 0;
+      if (L.estoque) {
+        e = e || { valor: 0, itens: 0, itens_com_preco: 0 };
+        e.valor += L.estoque.valor; e.itens += L.estoque.itens || 0; e.itens_com_preco += L.estoque.itens_com_preco || 0; a.fat_est += L.fat || 0;
+      }
     });
-    if (!linhas.length) return '<p class="ac-vazio">Nenhuma casa com venda em ' + esc(m) + '.</p>';
-    var cmv = tfc ? tc / tfc * 100 : null;
-    var tot = '<tr class="tot"><td>Todas</td><td class="n">' + rs0(tf) + '</td><td class="n">' + rs0(tc) + '</td><td class="n">' + pc(cmv) + '</td><td class="n">' + rs0(te) +
-      '</td><td class="n">' + (tfe ? pc(te / tfe * 100) : '—') + '</td><td class="n">' + (cmv && tfe ? nu(te / (cmv / 100 * tfe), 1) : '—') + '</td></tr>';
+    if (!a.casas) return null;
+    a.cmv = a.fat_cmv ? a.custo / a.fat_cmv * 100 : null; a.cobertura = a.fat ? a.fat_cmv / a.fat * 100 : null; a.estoque = e;
+    return a;
+  }
+  function simGrupo(c, m, A, ms) {
+    var linhas = [], cards = [], ant = anterior(ms, m);
+    Object.keys(c.por_casa || {}).forEach(function (s) {
+      var S = c.por_casa[s].simulacao || {}, L = S[m]; if (!L) return;
+      linhas.push(linhaSim(m, L, NOME[s] || s));
+      cards.push(cardSim(NOME[s] || s, L, ant ? S[ant] : null, '', ant));
+    });
+    var T = A[m];
+    if (!T) return ['', '<p class="ac-vazio">Nenhuma casa com venda em ' + esc(m) + '.</p>'];
     var cab = CAB_SIM.slice(); cab[0] = ['Casa', ''];
-    return '<div class="ac-kpis">' + kpi(pc(cmv), 'CMV simulado do grupo em ' + m, 'soma das casas, mesmos produtos') + kpi(rs0(te), 'Estoque no fim de ' + m, 'soma das casas com contagem') + '</div>' +
-      '<div class="ac-box"><h2>Por casa em ' + esc(m) + '</h2>' + tabela(cab, linhas, tot) + '</div>';
+    var corpo = VIS === 'cards' ? '<div class="ac-cards">' + cardSim('Todas', T, ant ? A[ant] : null, 'tot', ant) + cards.join('') + '</div>' : tabela(cab, linhas, linhaSim(m, T, 'Todas', 'tot'));
+    return ['<div class="ac-kpis">' + kpi(pc(T.cmv), 'CMV simulado do grupo em ' + m, 'soma das casas, mesmos produtos') + kpi(rs0(T.estoque ? T.estoque.valor : 0), 'Estoque no fim de ' + m, 'soma das casas com contagem') + '</div>',
+      '<div class="ac-box" id="ac-porcasa"><h2>Por casa em ' + esc(m) + '</h2>' + corpo + '</div>'];
   }
 
   // ---------- Real (Maristela) ----------
   var CAB_REAL = [['Mês', ''], ['Vendas totais', 'n'], ['Compras', 'n'], ['Transferências', 'n'], ['CMV real (Maristela)', 'n'], ['Variação do estoque', 'n'], ['CMV ajustado pelo estoque', 'n']];
-  function linhaReal(m, L, rot) {
+  function linhaReal(m, L, rot, cls) {
     var e = L.estoque;
-    return '<tr><td>' + esc(rot || m) + '</td><td class="n">' + rs0(L.vendas) + '<div class="ac-meta">' + (L.eventos ? 'com ' + rs0(L.eventos) + ' de eventos' : '') + '</div></td><td class="n">' + rs0(L.compras) +
+    return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + esc(rot || m) + '</td><td class="n">' + rs0(L.vendas) + '<div class="ac-meta">' + (L.eventos ? 'com ' + rs0(L.eventos) + ' de eventos' : '') + '</div></td><td class="n">' + rs0(L.compras) +
       '</td><td class="n">' + (L.transf == null ? '—' : rs0(L.transf)) + '</td><td class="n"><b>' + pc(L.cmv_maristela) + '</b></td><td class="n">' + (e ? '<span class="' + (e.variacao > 0 ? 'ac-sobe' : 'ac-desce') + '">' + rs0(e.variacao) + '</span>' : '—') +
       '</td><td class="n">' + (e ? pc(L.cmv_ajustado) : '<span class="ac-meta">' + esc(L.sem_estoque || 'sem contagem') + '</span>') + '</td></tr>';
   }
+  function cardReal(rot, L, ant, cls, mesAnt) {
+    var e = L.estoque;
+    return '<div class="ac-card' + (cls ? ' ' + cls : '') + '"><div class="t"><span>' + esc(rot) + '</span>' + (ant ? delta(L.cmv_maristela, ant.cmv_maristela, mesAnt) : '') + '</div>' +
+      '<div class="v">' + pc(L.cmv_maristela) + '</div><dl><dt>Ajustado</dt><dd>' + (e ? pc(L.cmv_ajustado) : '—') + '</dd><dt>Vendas</dt><dd>' + rs0(L.vendas) + '</dd>' +
+      '<dt>Compras</dt><dd>' + rs0(L.compras) + '</dd><dt>Estoque</dt><dd>' + (e ? '<span class="' + (e.variacao > 0 ? 'ac-sobe' : 'ac-desce') + '">' + rs0(e.variacao) + '</span>' : '—') + '</dd></dl>' +
+      (e ? '' : '<div class="ac-meta">' + esc(L.sem_estoque || 'sem contagem') + '</div>') + '</div>';
+  }
   function realCasa(c) {
-    var ms = (c.ordem || []).slice();
+    var ms = (c.ordem || []).slice().sort(function (a, b) { return ordem(a) - ordem(b); });
     if (!ms.length) return '<p class="ac-vazio">Nenhuma planilha da Maristela para esta casa.</p>';
-    var h = '<div class="ac-box"><h2>CMV real, mês a mês</h2>' + tabela(CAB_REAL, ms.slice().reverse().map(function (m) { return linhaReal(m, c.meses[m]); })) +
+    var per = noPeriodo(ms), get = function (m) { return c.meses[m]; };
+    var h = grafico(per, [{ nome: 'CMV real', vals: per.map(function (m) { return c.meses[m].cmv_maristela; }) },
+      { nome: 'Ajustado pelo estoque', vals: per.map(function (m) { return c.meses[m].estoque ? c.meses[m].cmv_ajustado : null; }) }], 'CMV real');
+    h += '<div class="ac-box"><h2>CMV real, mês a mês</h2>' + lista(per, ms, get, linhaReal, cardReal, CAB_REAL) +
       '<p class="ac-meta">Real = compras do mês (+ transferências entre casas, quando a planilha traz) ÷ vendas totais de bebidas com eventos, como a Maristela apresenta. ' +
       'Variação do estoque = contagem do fim do mês menos a do fim do mês anterior: positiva é compra que ficou parada; o CMV ajustado tira isso e mostra o que foi consumido.</p></div>';
     var m = MES && c.meses[MES] ? MES : ms[ms.length - 1], mov = (c.movimentos || {})[m] || [];
@@ -981,19 +1118,34 @@ window.msgAcessoNegado = function (nomePagina) {
       })) + '</div>';
     return h;
   }
-  function realGrupo(c, m) {
-    var tv = 0, tg = 0, tva = 0, tra = 0, linhas = [];
+  // soma das casas num mês: CMV real = compras ÷ vendas; ajustado só com as casas que têm contagem nas duas pontas
+  function realAgg(c, m) {
+    var a = { vendas: 0, eventos: 0, compras: 0, transf: null, casas: 0 }, tva = 0, tra = 0, vari = null;
     Object.keys(c.por_casa || {}).forEach(function (s) {
       var L = (c.por_casa[s].meses || {})[m]; if (!L) return;
-      linhas.push(linhaReal(m, L, NOME[s] || s));
-      tv += L.vendas || 0; tg += (L.compras || 0) + (L.transf || 0);
-      if (L.estoque) { tva += L.vendas || 0; tra += L.consumo_real || 0; }
+      a.casas++; a.vendas += L.vendas || 0; a.eventos += L.eventos || 0; a.compras += L.compras || 0;
+      if (L.transf != null) a.transf = (a.transf || 0) + L.transf;
+      if (L.estoque) { tva += L.vendas || 0; tra += L.consumo_real || 0; vari = (vari || 0) + (L.estoque.variacao || 0); }
     });
-    if (!linhas.length) return '<p class="ac-vazio">Sem planilha da Maristela para ' + esc(m) + '.</p>';
+    if (!a.casas) return null;
+    a.cmv_maristela = a.vendas ? (a.compras + (a.transf || 0)) / a.vendas * 100 : null;
+    a.estoque = vari == null ? null : { variacao: vari }; a.cmv_ajustado = tva ? tra / tva * 100 : null;
+    return a;
+  }
+  function realGrupo(c, m, A, ms) {
+    var linhas = [], cards = [], ant = anterior(ms, m);
+    Object.keys(c.por_casa || {}).forEach(function (s) {
+      var M = c.por_casa[s].meses || {}, L = M[m]; if (!L) return;
+      linhas.push(linhaReal(m, L, NOME[s] || s));
+      cards.push(cardReal(NOME[s] || s, L, ant ? M[ant] : null, '', ant));
+    });
+    var T = A[m];
+    if (!T) return ['', '<p class="ac-vazio">Sem planilha da Maristela para ' + esc(m) + '.</p>'];
     var cab = CAB_REAL.slice(); cab[0] = ['Casa', ''];
-    return '<div class="ac-kpis">' + kpi(pc(tv ? tg / tv * 100 : null), 'CMV real do grupo em ' + m, linhas.length + ' casas na planilha') +
-      kpi(pc(tva ? tra / tva * 100 : null), 'Ajustado pelo estoque', 'casas com contagem nas duas pontas') + '</div>' +
-      '<div class="ac-box"><h2>Por casa em ' + esc(m) + '</h2>' + tabela(cab, linhas) + '</div>';
+    var corpo = VIS === 'cards' ? '<div class="ac-cards">' + cardReal('Todas', T, ant ? A[ant] : null, 'tot', ant) + cards.join('') + '</div>' : tabela(cab, linhas, linhaReal(m, T, 'Todas', 'tot'));
+    return ['<div class="ac-kpis">' + kpi(pc(T.cmv_maristela), 'CMV real do grupo em ' + m, T.casas + ' casas na planilha') +
+      kpi(pc(T.cmv_ajustado), 'Ajustado pelo estoque', 'casas com contagem nas duas pontas') + '</div>',
+      '<div class="ac-box" id="ac-porcasa"><h2>Por casa em ' + esc(m) + '</h2>' + corpo + '</div>'];
   }
 
   // ---------- desenho ----------
@@ -1005,8 +1157,21 @@ window.msgAcessoNegado = function (nomePagina) {
     });
     return u.sort(function (a, b) { return ordem(a) - ordem(b); });
   }
+  function grupoHtml(c, ms) {
+    var sim = ABA === 'sim', A = {};
+    ms.forEach(function (m) { A[m] = sim ? simAgg(c, m) : realAgg(c, m); });
+    var partes = sim ? simGrupo(c, MES, A, ms) : realGrupo(c, MES, A, ms);
+    var per = noPeriodo(ms).filter(function (m) { return A[m]; }), com = ms.filter(function (m) { return A[m]; });
+    var graf = sim ? grafico(per, [{ nome: 'CMV simulado do grupo', vals: per.map(function (m) { return A[m].cmv; }) }], 'CMV simulado do grupo')
+      : grafico(per, [{ nome: 'CMV real do grupo', vals: per.map(function (m) { return A[m].cmv_maristela; }) },
+        { nome: 'Ajustado pelo estoque', vals: per.map(function (m) { return A[m].estoque ? A[m].cmv_ajustado : null; }) }], 'CMV real do grupo');
+    var mm = '<div class="ac-box"><h2>O grupo mês a mês</h2>' + lista(per, com, function (m) { return A[m]; }, sim ? linhaSim : linhaReal, sim ? cardSim : cardReal, sim ? CAB_SIM : CAB_REAL) + '</div>';
+    return partes[0] + graf + partes[1] + mm;
+  }
   function desenha() {
     var c = CACHE[CASA], C = $('ac-corpo');
+    Array.prototype.forEach.call(document.querySelectorAll('#ac-vis button'), function (x) { x.className = x.getAttribute('data-v') === VIS ? 'on' : ''; });
+    $('ac-per').value = PER;
     if (!c) { C.innerHTML = '<p class="ac-vazio">Carregando…</p>'; return; }
     if (!c.disponivel) { C.innerHTML = '<p class="ac-vazio">' + esc(c.erro || 'Análise de CMV ainda não publicada.') + '</p>'; return; }
     var grupo = !!c.grupo;
@@ -1015,11 +1180,12 @@ window.msgAcessoNegado = function (nomePagina) {
       var ms = mesesDe(c);
       if (ms.indexOf(MES) < 0) MES = ms[ms.length - 1] || null;
       $('ac-mes').innerHTML = ms.slice().reverse().map(function (m) { return '<option' + (m === MES ? ' selected' : '') + '>' + m + '</option>'; }).join('');
-      C.innerHTML = !MES ? '<p class="ac-vazio">Sem meses.</p>' : (ABA === 'sim' ? simGrupo(c, MES) : realGrupo(c, MES));
+      C.innerHTML = !MES ? '<p class="ac-vazio">Sem meses.</p>' : grupoHtml(c, ms);
     } else C.innerHTML = ABA === 'sim' ? simCasa(c) : realCasa(c);
     C.innerHTML += '<div class="ac-foot">' + (ABA === 'sim'
       ? '<b>Simulação: </b>custo simulado = venda registrada no mês × custo de cada produto (fichas técnicas, custo por ml da B.D.1), só nos produtos com ficha inteira e preço (a cobertura aparece em cada linha). Estoque no fim = contagem semanal mais perto do último dia do mês, com o preço pago pelo código de compra (sem ele, o Custo 1x1 da B.D.1). Meses de custo parado é projeção: estoque ÷ (CMV simulado × faturamento).'
-      : '<b>Real: </b>planilhas da Maristela (' + esc((c.arquivos || []).join(', ')) + '). Mês sem planilha não aparece.') + '</div>';
+      : '<b>Real: </b>planilhas da Maristela (' + esc((c.arquivos || []).join(', ')) + '). Mês sem planilha não aparece.') +
+      ' O gráfico e a lista seguem o período escolhido; ▲ e ▼ nos cards comparam o CMV com o mês anterior, em pontos percentuais.</div>';
   }
   function carrega() {
     var k = CASA === 'todas' ? 'grupo' : CASA;
@@ -1050,6 +1216,19 @@ window.msgAcessoNegado = function (nomePagina) {
     };
   });
   $('ac-mes').onchange = function () { MES = this.value; desenha(); };
+  $('ac-per').onchange = function () { PER = this.value; lsGrava('ac_per', PER); desenha(); };
+  Array.prototype.forEach.call(document.querySelectorAll('#ac-vis button'), function (b) {
+    b.onclick = function () { VIS = b.getAttribute('data-v'); lsGrava('ac_vis', VIS); desenha(); };
+  });
+  // "toggle" não sobe pelo DOM: escuta na captura para lembrar se o gráfico ficou aberto
+  $('ac-corpo').addEventListener('toggle', function (ev) {
+    if (ev.target.classList && ev.target.classList.contains('ac-graf')) { GRAF = ev.target.open; lsGrava('ac_graf', GRAF ? '1' : '0'); }
+  }, true);
+  var largura = 0, tempo = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(tempo);
+    tempo = setTimeout(function () { var w = $('ac-corpo').clientWidth; if (Math.abs(w - largura) > 40) { largura = w; desenha(); } }, 200);
+  });
 
   var r = window.exigirNivel(['coord', 'controladoria'], SLUG);
   if (r.ok) { TOKEN = r.sessao.token; gate.style.display = 'none'; wrap.style.display = ''; chips(); carrega(); }
@@ -2609,7 +2788,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c17badf9eca7';
+  var BUILD = 'cb693bc8126e';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
