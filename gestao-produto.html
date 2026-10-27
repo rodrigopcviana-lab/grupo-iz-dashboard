@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=a44a1ef0914a">
+<link rel="stylesheet" href="portal.css?v=c17badf9eca7">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -3152,6 +3152,14 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     // A conta é a da Base de compra e do Simulador (dashboards/_base_compra_calc.js,
     // injetada acima): período "tudo", mesma margem, mesmo arredondamento.
     var marg = sugvMargem(), tres = BaseCompraCalc.ultimosMeses(B, 3);
+    // Mês anterior (pedido do Rodrigo, 2026-10-26): a venda TOTAL do item no
+    // último mês com dado até o mês passado, sem margem e sem descontar o
+    // contado. Se o relatório do mês passado ainda não entrou, vale o último
+    // que entrou, e o cabeçalho diz qual é.
+    var hoje = new Date(), limite = (hoje.getFullYear() - 2000) * 12 + hoje.getMonth() - 1;
+    var linMes = function (m) { var q = m.split('/'); return parseInt(q[1], 10) * 12 + BaseCompraCalc.MESES.indexOf(q[0]); };
+    var antes = (B.meses_com_dado || B.meses || []).filter(function (m) { return linMes(m) <= limite; });
+    var mesAnt = antes.length ? antes[antes.length - 1] : null;
     var semInfo = null, semItens = {};
     var sc = S && S.casas ? S.casas[casaSel] : null;
     if (sc) {
@@ -3163,9 +3171,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     (B.itens || []).forEach(function (it) {
       var vs = semInfo ? ((semItens[sugvNorm(it.nome)] || {})[semInfo.ini] || null) : null;
       var r = BaseCompraCalc.sugestoes(B, it, { tipo: 'tudo', modo: marg.modo, pct: marg.pct, zeroVazio: true }, vs);
-      porNome[sugvNorm(it.nome)] = { h: r.porMedia, t: r.porTres, s: r.porSemana };
+      var vm = mesAnt ? ((it.mes || {})[mesAnt] || 0) : null;  // mês sem venda é 0, não "—"
+      porNome[sugvNorm(it.nome)] = { h: r.porMedia, t: r.porTres, s: r.porSemana,
+        m: vm == null ? null : Math.max(0, Math.ceil(vm - 1e-9)) };
     });
-    return { porNome: porNome, semInfo: semInfo, tres: tres, marg: marg };
+    return { porNome: porNome, semInfo: semInfo, tres: tres, marg: marg, mesAnt: mesAnt };
   }
   function carregaSugVendas() {
     if (!PODE_APROVAR || !casaSel) return;
@@ -3205,6 +3215,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     var w = SUGV.semInfo;
     el.innerHTML = '<div class="cp-sugv-box"><b>Hist. · 3 meses · Sem. passada</b> = quanto comprar pelas três sugestões da ' +
       '<a href="vendas/' + portalSlug(casaSel) + '.html" target="_top">Base de compra</a>: mínimo sugerido (' + mg + ') menos o contado. ' +
+      '<b>Mês ant.</b> = venda total do item ' + (SUGV.mesAnt ? 'em ' + esc(SUGV.mesAnt) : 'no mês anterior (sem relatório ainda)') +
+      ', sem margem e sem descontar o contado. ' +
       'Últimos 3 meses: ' + esc(SUGV.tres.join(', ')) + '. ' +
       (w ? 'Semana passada: ' + w.ini.split('-').reverse().slice(0, 2).join('/') + ' a ' + w.fim.split('-').reverse().slice(0, 2).join('/') +
         (w.estimada ? ' (estimada)' : w.parcial ? ' (parcial)' : '') + '. ' : 'Sem semana passada desta casa. ') +
@@ -3215,10 +3227,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
     var s = SUGV.porNome[sugvNorm(p.nome)];
     var minimo = s ? s[chave] : null;
     if (minimo == null) return '<td class="n vs"><span class="ctx">—</span></td>';
-    var q = Math.max(0, Math.ceil(minimo - (p.contado || 0) - 1e-9));
+    // 'm' (mês anterior) já é a quantidade: venda total, sem descontar o contado.
+    var q = chave === 'm' ? minimo : Math.max(0, Math.ceil(minimo - (p.contado || 0) - 1e-9));
     return '<td class="n vs"><button type="button" class="cp-sugv-q" data-i="' + idx + '" data-q="' + q + '"' +
       (PODE_APROVAR && DADOS.campo_pd_aprovado ? '' : ' disabled') +
-      ' title="Mínimo sugerido ' + minimo + ' menos o contado">' + fmt(q) + '</button></td>';
+      ' title="' + (chave === 'm' ? 'Venda total em ' + esc(SUGV.mesAnt || '') : 'Mínimo sugerido ' + minimo + ' menos o contado') +
+      '">' + fmt(q) + '</button></td>';
   }
   function revisao() {
     if (!DADOS) return;
@@ -3284,7 +3298,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
         '<th>Produto</th><th class="n">Cont.</th><th class="n op">Mín</th>' +
         '<th class="n op">Venda ~</th><th class="n">Sug.</th>' +
         (SUGV ? '<th class="n vs" title="Pela média histórica de vendas">Hist.</th><th class="n vs" title="Pelos últimos 3 meses de vendas">3 meses</th>' +
-          '<th class="n vs" title="Pela venda da semana passada">Sem. pass.</th>' : '') +
+          '<th class="n vs" title="Pela venda da semana passada">Sem. pass.</th>' +
+          '<th class="n vs" title="Venda total do mês anterior' + (SUGV.mesAnt ? ' (' + esc(SUGV.mesAnt) + ')' : '') + '">Mês ant.</th>' : '') +
         '<th class="n">Pd 1</th>' +
         '<th class="n ap">Pd ajustado</th><th class="n op">R$</th></tr></thead><tbody>';
       porForn[f].forEach(function (p) {
@@ -3308,7 +3323,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
           '<td class="n op">' + (p.min != null ? fmt(p.min) : '—') + '</td>' +
           '<td class="n op venda">' + (p.venda != null ? fmt(p.venda) : '—') + '</td>' +
           '<td class="n sug">' + (p.sug != null ? fmt(p.sug) : '—') + '</td>' +
-          sugvCel(p, idx, 'h') + sugvCel(p, idx, 't') + sugvCel(p, idx, 's') +
+          sugvCel(p, idx, 'h') + sugvCel(p, idx, 't') + sugvCel(p, idx, 's') + sugvCel(p, idx, 'm') +
           '<td class="n pd1">' + fmt(p.pedido) + '</td>' +
           '<td class="n ap">' + aprCel + '</td>' +
           '<td class="n op rs" id="cp-rs-' + idx + '">' +
@@ -4208,6 +4223,21 @@ if (typeof module !== 'undefined' && module.exports) module.exports = BaseCompra
       t3.textContent = 'Você não precisa abrir o everloja pra conferir — '
         + 'este número é o mesmo do histórico de Solicitações de lá.';
       aviso.appendChild(t1); aviso.appendChild(t2); aviso.appendChild(t3);
+      // PDF da Solicitação, baixado pelo robô logo depois de montar
+      // (2026-10-26). Sem PDF, a linha diz que falta, para ninguém procurar.
+      var t4 = document.createElement('div');
+      t4.className = 'evc-lancado-obs';
+      if (pedido.pdf && pedido.pdf.url) {
+        var aPdf = document.createElement('a');
+        aPdf.href = pedido.pdf.url;
+        aPdf.target = '_blank';
+        aPdf.rel = 'noopener';
+        aPdf.textContent = 'Abrir o PDF da Solicitação ' + pedido.solicitacao;
+        t4.appendChild(aPdf);
+      } else {
+        t4.textContent = 'PDF da Solicitação ainda não chegou do robô.';
+      }
+      aviso.appendChild(t4);
     } else {
       // Sem número não se afirma que está lá. Erro/Cancelado ganham texto
       // próprio: dizer "aguardando o robô" num pedido que FALHOU manda a
@@ -7403,7 +7433,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a44a1ef0914a';
+  var BUILD = 'c17badf9eca7';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
