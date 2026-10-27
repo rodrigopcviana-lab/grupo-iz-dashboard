@@ -660,6 +660,23 @@ function bcPendencias(){
       `<td style="white-space:normal">${bcEsc(s.motivo)}${s.tipo==='parcial'?' <span class="bc-mes">o resto da ficha já entrou</span>':''}</td>` +
       `<td style="white-space:normal">${(s.candidatos||[]).map(bcEsc).join(' · ') || '—'}</td></tr>`).join('') +
     `</table></div></div>`;
+  // Fila de ligação (2026-10-27): a venda chega ao item pela coluna de relação
+  // da contagem com o B.D.1. Quem corrige é a casa, na própria linha do Notion.
+  const aLigar = B.a_ligar || [], susp = B.ligacoes_suspeitas || [];
+  if (aLigar.length)
+    html += `<h3>Linhas da contagem sem relação com o B.D.1</h3>
+      <div class="card"><p class="nota" style="margin:0 0 8px">Estas linhas ainda não apontam para o insumo na coluna <b>Banco de dados</b>
+      da contagem. A venda delas chega pelo nome, que erra; ligar na contagem resolve de vez e vale para as semanas seguintes.</p>
+      <div class="scroll-x"><table class="limpa"><tr><th>Linha da contagem</th><th>Ingrediente da ficha que chega nela</th></tr>` +
+      aLigar.map(x => `<tr><td>${bcEsc(x.item)}</td><td style="white-space:normal">${(x.insumos||[]).map(bcEsc).join(' · ')}</td></tr>`).join('') +
+      `</table></div></div>`;
+  if (susp.length)
+    html += `<h3>Ligações da contagem a conferir</h3>
+      <div class="card"><p class="nota" style="margin:0 0 8px">Mais de uma linha aponta para o mesmo insumo, ou o nome da linha não bate com o do insumo.
+      A venda fica só com a linha de nome igual; as outras não recebem nada até a relação ser corrigida no Notion (a coluna <b>Banco de dados</b>).</p>
+      <div class="scroll-x"><table class="limpa"><tr><th>Linha da contagem</th><th>Está ligada ao insumo</th><th>Por quê</th></tr>` +
+      susp.map(x => `<tr><td>${bcEsc(x.linha)}</td><td style="white-space:normal">${bcEsc(x.insumo)}</td><td style="white-space:normal">${bcEsc(x.motivo)}</td></tr>`).join('') +
+      `</table></div></div>`;
   if ((B.preparos || []).length)
     html += `<p class="nota">Preparo da casa (não é compra, entra na Produção interna): ${B.preparos.map(bcEsc).join(', ')}.</p>`;
   if (fora.length)
