@@ -569,6 +569,8 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
   blocos.forEach(function (b) {
     if (!b) return;
     if (b.tipo === 'sep') { y -= 9; return; }
+    // Quebra de página explícita (2026-10-28, uma ficha técnica por página).
+    if (b.tipo === 'pagina') { novaPagina(); return; }
     if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0, !!b.centro); y -= 3; return; }
     if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0, !!b.centro); y -= 2; return; }
     if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }

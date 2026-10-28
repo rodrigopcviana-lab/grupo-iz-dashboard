@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=15821cd6fef1">
+<link rel="stylesheet" href="portal.css?v=32d6e736e82b">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -2906,6 +2906,8 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
   blocos.forEach(function (b) {
     if (!b) return;
     if (b.tipo === 'sep') { y -= 9; return; }
+    // Quebra de página explícita (2026-10-28, uma ficha técnica por página).
+    if (b.tipo === 'pagina') { novaPagina(); return; }
     if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0, !!b.centro); y -= 3; return; }
     if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0, !!b.centro); y -= 2; return; }
     if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }
@@ -8713,7 +8715,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '15821cd6fef1';
+  var BUILD = '32d6e736e82b';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
