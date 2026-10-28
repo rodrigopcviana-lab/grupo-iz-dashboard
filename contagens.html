@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=c5d3eb5fb369">
+<link rel="stylesheet" href="portal.css?v=15821cd6fef1">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -709,9 +709,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .cg-btn.forte { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
   .cg-btn.peq { font-size: 13px; padding: 8px 12px; }
   .cg-btn:disabled { opacity: .55; cursor: default; }
-  .cg-locais { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .cg-locais { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
   .cg-local { display: flex; justify-content: space-between; align-items: center; gap: 10px;
-              width: 100%; text-align: left; font: inherit; font-size: 16px; padding: 15px 14px;
+              width: 100%; text-align: left; font: inherit; font-size: 16px; padding: 12px 14px;
               border-radius: 10px; border: 1px solid var(--border); background: var(--bg);
               color: var(--text); cursor: pointer; }
   .cg-local .cg-n { font-size: 13px; color: var(--text-2); white-space: nowrap; }
@@ -722,35 +722,51 @@ window.msgAcessoNegado = function (nomePagina) {
   .cg-pill { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 999px; cursor: pointer;
              border: 1px solid var(--border); background: none; color: var(--text-2); }
   .cg-pill.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
-  .cg-topo { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 8px 0 10px;
-             border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+  /* Contagem compacta (2026-10-28): o celular é pequeno e a casa tem até
+     280 produtos. Linha de ~52px (antes ~88), topo de ~90px (antes 147):
+     cabem ~10 produtos por tela num aparelho de 360x740, contra 5. A fonte
+     do campo fica em 17px: abaixo de 16px o iPhone dá zoom ao tocar. */
+  .cg-topo { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 6px 0 8px;
+             border-bottom: 1px solid var(--border); margin-bottom: 2px; }
   .cg-topo .cg-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .cg-busca { width: 100%; margin-top: 8px; padding: 11px 12px; font-size: 16px; border-radius: 10px;
+  .cg-topo .cg-linha strong { font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cg-topo .cg-btn.peq { padding: 6px 10px; }
+  .cg-filtro { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+  .cg-filtro .cg-pill { flex: none; padding: 8px 10px; }
+  .cg-busca { flex: 1 1 auto; min-width: 0; width: 100%; padding: 7px 10px; font-size: 16px; border-radius: 10px;
               border: 1px solid var(--border); background: var(--card); color: var(--text); }
-  .cg-cat { font-family: var(--serif); color: var(--acc); font-size: 14px; margin: 16px 0 4px; }
-  .cg-prod { border-bottom: 1px solid var(--border); padding: 10px 0; }
-  .cg-prod-l { display: flex; align-items: center; gap: 8px; }
-  .cg-nome { flex: 1 1 auto; min-width: 0; }
-  .cg-nome b { display: block; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
-  .cg-nome small { font-size: 12px; color: var(--text-3); }
-  .cg-num { width: 76px; height: 46px; flex: none; font-size: 19px; text-align: center; border-radius: 10px;
+  .cg-cat { font-family: var(--serif); color: var(--acc); font-size: 13px; margin: 10px 0 0; }
+  .cg-prod { border-bottom: 1px solid var(--border); padding: 5px 0; }
+  .cg-prod-l { display: flex; align-items: center; gap: 6px; }
+  .cg-nome { flex: 1 1 auto; min-width: 0; line-height: 1.25; }
+  .cg-nome b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+               font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .cg-nome small { display: block; font-size: 11.5px; color: var(--text-3); white-space: nowrap;
+                   overflow: hidden; text-overflow: ellipsis; }
+  .cg-num { width: 64px; height: 42px; flex: none; font-size: 17px; text-align: center; border-radius: 9px;
             border: 1px solid var(--border); background: var(--bg); color: var(--text);
             font-variant-numeric: tabular-nums; }
   .cg-num:focus { border-color: var(--acc); outline: none; }
+  /* Enter pula para o próximo: o campo para fora do topo e do rodapé fixos. */
+  .cg-num { scroll-margin: 100px 0 110px; }
   .cg-num.salvo { border-color: var(--verde); }
   .cg-num.pendente { border-color: var(--amarelo); }
   .cg-num.falhou { border-color: #e08585; }
-  .cg-zero { flex: none; height: 46px; font: inherit; font-size: 12px; padding: 0 10px; border-radius: 10px;
+  .cg-zero { flex: none; width: 46px; height: 42px; font: inherit; font-size: 11px; line-height: 1.1; padding: 0 2px; border-radius: 9px;
              border: 1px solid var(--border); background: none; color: var(--text-2); cursor: pointer; }
-  .cg-msg { font-size: 13px; margin: 6px 0 0; }
+  .cg-msg { font-size: 13px; margin: 4px 0 2px; }
   .cg-msg.alerta { color: var(--amarelo); }
   .cg-msg.erro { color: #e08585; }
   .cg-msg-acoes { display: flex; gap: 8px; margin-top: 6px; }
   /* Acima da barra fixa de atalhos do celular (--barra-h), senão o "Sem
      conexão" e o "não salvos" ficam escondidos atrás dela. */
-  .cg-barra { position: sticky; bottom: var(--barra-h, 0px); z-index: 5; background: var(--bg); padding: 10px 0;
+  .cg-barra { position: sticky; bottom: var(--barra-h, 0px); z-index: 5; background: var(--bg); padding: 5px 0;
               border-top: 1px solid var(--border); display: flex; justify-content: space-between;
-              align-items: center; gap: 8px; margin-top: 10px; }
+              align-items: center; gap: 8px; margin-top: 10px; min-height: 36px;
+              box-shadow: 0 6px 0 var(--bg); }  /* tapa a fresta até a barra fixa */
+  .cg-barra .cg-btn.peq { padding: 5px 10px; }
+  /* Contando um local: a aba flutuante da IA (meio da tela, à direita) cobria o "Não tem". */
+  body.cg-contando .ia-aba { display: none; }
   .cg-estado { font-size: 13px; color: var(--verde); }
   .cg-estado.pend { color: var(--amarelo); }
   .cg-estado.erro { color: #e08585; }
@@ -820,6 +836,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
   function telaLogin(msg) {
     pausado = true;
+    document.body.classList.remove('cg-contando');
     el.innerHTML = '<div class="cg-card cg-login"><h2>Entre com a sua senha</h2>' +
       '<p class="cg-sub">Para contar, use a sua senha individual: o seu nome fica gravado na contagem. ' +
       'A senha da casa não serve aqui.</p>' +
@@ -935,6 +952,7 @@ window.msgAcessoNegado = function (nomePagina) {
   // --- tela 1: locais -------------------------------------------------------
   function telaInicio() {
     localSel = null;
+    document.body.classList.remove('cg-contando');
     var tot = dados.produtos.length;
     var html = cabecalho() + '<div class="cg-card"><h2>Onde você está contando?</h2>' +
       '<p class="cg-sub">Toque no local e conte só o que está nele.</p><div class="cg-locais">';
@@ -1009,6 +1027,7 @@ window.msgAcessoNegado = function (nomePagina) {
   // --- tela 2: um local -----------------------------------------------------
   function telaLocal(local, rolar) {
     localSel = local;
+    document.body.classList.add('cg-contando');
     var bloqueado = fechada();
     var lista = dados.produtos.filter(function (p) {
       if (termo && p.nome.toLowerCase().indexOf(termo) < 0) return false;
@@ -1019,8 +1038,8 @@ window.msgAcessoNegado = function (nomePagina) {
     var html = '<div class="cg-topo"><div class="cg-linha"><button class="cg-btn peq" type="button" id="cg-voltar">Locais</button>' +
       '<strong style="font-size:17px">' + esc(local.trim()) + '</strong>' +
       '<span class="cg-sub" id="cg-falta-n">' + (falta ? 'faltam ' + falta : 'completo') + '</span></div>' +
-      '<input class="cg-busca" id="cg-busca" placeholder="Buscar produto" value="' + esc(termo) + '">' +
-      '<div class="cg-casas"><button type="button" class="cg-pill' + (soFaltando ? ' on' : '') + '" id="cg-so">Só os que faltam</button></div></div>';
+      '<div class="cg-filtro"><input class="cg-busca" id="cg-busca" type="search" placeholder="Buscar produto" value="' + esc(termo) + '">' +
+      '<button type="button" class="cg-pill' + (soFaltando ? ' on' : '') + '" id="cg-so">Só os que faltam</button></div></div>';
     if (bloqueado) html += '<p class="cg-aviso">Contagem concluída: para mudar um número, volte e reabra.</p>';
     var cat = null;
     lista.forEach(function (p) {
@@ -1030,11 +1049,11 @@ window.msgAcessoNegado = function (nomePagina) {
       var mostrado = segurados[k] != null ? segurados[k] : v;
       var cls = falhas[k] ? ' falhou' : (fila.some(function (x) { return x.chave === k; }) ? ' pendente' : (v !== null ? ' salvo' : ''));
       html += '<div class="cg-prod" data-k="' + esc(k) + '"><div class="cg-prod-l"><div class="cg-nome"><b>' + esc(p.nome) + '</b>' +
-        '<small>total da semana passada: ' + fmt(p.ant_contado) + (p.min != null ? ' · mínimo ' + fmt(p.min) : '') + '</small></div>' +
+        '<small>semana passada ' + fmt(p.ant_contado) + (p.min != null ? ' · mínimo ' + fmt(p.min) : '') + '</small></div>' +
         '<input class="cg-num' + cls + '" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="next"' +
         ' data-p="' + p.page_id + '" value="' + (mostrado == null ? '' : String(mostrado).replace('.', ',')) + '"' +
         (bloqueado ? ' disabled' : '') + ' aria-label="' + esc(p.nome) + ' em ' + esc(local) + '">' +
-        '<button class="cg-zero" type="button" data-zero="' + p.page_id + '"' + (bloqueado ? ' disabled' : '') + '>Não tem</button></div>' +
+        '<button class="cg-zero" type="button" data-zero="' + p.page_id + '"' + (bloqueado ? ' disabled' : '') + '>Não<br>tem</button></div>' +
         '<div class="cg-msgw">' + (falhas[k] ? '<p class="cg-msg erro">' + esc(falhas[k]) + '</p>' : '') + '</div></div>';
     });
     if (!lista.length) html += '<p class="cg-sub" style="margin:14px 0">' + (soFaltando ? 'Nada faltando neste local.' : 'Nenhum produto com esse nome.') + '</p>';
@@ -3675,7 +3694,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'c5d3eb5fb369';
+  var BUILD = '15821cd6fef1';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
