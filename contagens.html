@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=1b759db14444">
+<link rel="stylesheet" href="portal.css?v=c5d3eb5fb369">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -746,7 +746,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .cg-msg.alerta { color: var(--amarelo); }
   .cg-msg.erro { color: #e08585; }
   .cg-msg-acoes { display: flex; gap: 8px; margin-top: 6px; }
-  .cg-barra { position: sticky; bottom: 0; z-index: 5; background: var(--bg); padding: 10px 0;
+  /* Acima da barra fixa de atalhos do celular (--barra-h), senão o "Sem
+     conexão" e o "não salvos" ficam escondidos atrás dela. */
+  .cg-barra { position: sticky; bottom: var(--barra-h, 0px); z-index: 5; background: var(--bg); padding: 10px 0;
               border-top: 1px solid var(--border); display: flex; justify-content: space-between;
               align-items: center; gap: 8px; margin-top: 10px; }
   .cg-estado { font-size: 13px; color: var(--verde); }
@@ -1037,9 +1039,9 @@ window.msgAcessoNegado = function (nomePagina) {
     });
     if (!lista.length) html += '<p class="cg-sub" style="margin:14px 0">' + (soFaltando ? 'Nada faltando neste local.' : 'Nenhum produto com esse nome.') + '</p>';
     if (!bloqueado && falta) {
-      html += '<div class="cg-card" style="margin-top:14px"><h2>Terminei este local</h2><p class="cg-sub">Os ' + falta +
-        ' produto(s) ainda sem número aqui ficam com zero (não tem neste local). Conte primeiro o que está no local.</p>' +
-        '<p style="margin:10px 0 0"><button class="cg-btn" type="button" id="cg-zera-resto">Zerar os ' + falta + ' sem número</button></p></div>';
+      html += '<div class="cg-card" id="cg-zera-card" style="margin-top:14px"><h2>Terminei este local</h2><p class="cg-sub">Os <span class="cg-zera-n">' + falta +
+        '</span> produto(s) ainda sem número aqui ficam com zero (não tem neste local). Conte primeiro o que está no local.</p>' +
+        '<p style="margin:10px 0 0"><button class="cg-btn" type="button" id="cg-zera-resto">Zerar os <span class="cg-zera-n">' + falta + '</span> sem número</button></p></div>';
     }
     html += blocoAdicionar() + barra();
     el.innerHTML = html;
@@ -1047,6 +1049,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var zr = document.getElementById('cg-zera-resto');
     if (zr) zr.onclick = function () {
       var resto = faltaNoLocal(local);
+      if (!resto.length) return;
       if (Object.keys(segurados).length || Object.keys(invalidos).length) { alert('Confirme ou corrija os números marcados antes.'); return; }
       if (!confirm('Marcar ' + resto.length + ' produto(s) como "não tem" em ' + local.trim() + '?')) return;
       // "Não tem" consciente, local por local: o vazio continua querendo dizer
@@ -1131,7 +1134,12 @@ window.msgAcessoNegado = function (nomePagina) {
 
   function atualizaContadores() {
     var n = document.getElementById('cg-falta-n');
-    if (n && localSel) { var f = faltaNoLocal(localSel).length; n.textContent = f ? 'faltam ' + f : 'completo'; }
+    if (n && localSel) {
+      var f = faltaNoLocal(localSel).length; n.textContent = f ? 'faltam ' + f : 'completo';
+      // O "Zerar os N" é desenhado ao abrir o local: acompanha o que foi digitado depois.
+      el.querySelectorAll('.cg-zera-n').forEach(function (s) { s.textContent = f; });
+      var zc = document.getElementById('cg-zera-card'); if (zc) zc.style.display = f ? '' : 'none';
+    }
     pintaEstado();
   }
 
@@ -3667,7 +3675,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '1b759db14444';
+  var BUILD = 'c5d3eb5fb369';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
