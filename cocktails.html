@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=32d6e736e82b">
+<link rel="stylesheet" href="portal.css?v=1d0fe06b9662">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -776,6 +776,7 @@ window.msgAcessoNegado = function (nomePagina) {
   #ficha-detalhe .precif-tab td:first-child { color: var(--text); padding-right: 8px; overflow-wrap: anywhere; }
   #ficha-detalhe .precif-tab td.sem { color: var(--text-3); }
   #ficha-detalhe .precif-tab .tipo { display: block; font-size: 10px; color: var(--text-3); }
+  #ficha-detalhe .precif-tab .tipo.web { color: var(--acc); }
   #ficha-detalhe .precif-tab tfoot td { border-bottom: none; border-top: 1px solid var(--acc); color: var(--text);
       font-weight: 600; }
   #ficha-detalhe .precif-tab tfoot td:last-child { color: var(--acc); }
@@ -1981,6 +1982,14 @@ function nomeArquivoSeguro(base) {
     } else if (e.cl === 'suspeito' && e.al) {
       notas.push('Total com alerta: ' + e.al + '.');
     }
+    // Origem "w" (6º campo da linha): o preço do insumo veio da web, não de
+    // compra paga. A linha leva a marca e a nota explica (pedido do Rodrigo,
+    // 2026-10-28: "marque essa fonte").
+    var nWeb = ln.filter(function (l) { return l[5] === 'w'; }).length;
+    if (nWeb) {
+      notas.push('Preço da web em ' + nWeb + (nWeb === 1 ? ' ingrediente' : ' ingredientes') +
+        ': mediana de lojas online, não preço de compra paga. Troque pela nota de compra quando houver.');
+    }
     if (e.tb != null && ln.length) {
       var somaCent = ln.reduce(function (a, l) { return a + Math.round(l[3] * 100); }, 0);
       if (somaCent !== Math.round(e.tb * 100)) {
@@ -2009,7 +2018,8 @@ function nomeArquivoSeguro(base) {
       tab = '<table class="precif-tab"><colgroup><col><col class="c-qtd"><col class="c-ml"><col class="c-custo"></colgroup>' +
         '<thead><tr><th>Ingrediente</th><th>Qtd (ml)</th><th>R$ / ml</th><th>Custo</th></tr></thead><tbody>' +
         m.ln.map(function (l) {
-          var tipo = PRECIF_TIPO[l[4]] ? '<span class="tipo">' + esc(PRECIF_TIPO[l[4]]) + '</span>' : '';
+          var tipo = (PRECIF_TIPO[l[4]] ? '<span class="tipo">' + esc(PRECIF_TIPO[l[4]]) + '</span>' : '') +
+            (l[5] === 'w' ? '<span class="tipo web">preço da web</span>' : '');
           return '<tr><td>' + esc(l[0]) + tipo + '</td><td>' + esc(qtdMl(l[1])) + '</td>' +
             (l[2] == null ? '<td class="sem">—</td>' : '<td>' + esc(rsMl(l[2])) + '</td>') +
             (l[3] == null ? '<td class="sem">—</td>' : '<td>' + esc(rs2(l[3])) + '</td>') + '</tr>';
@@ -2076,7 +2086,7 @@ function nomeArquivoSeguro(base) {
             colunas: [{ t: 'Ingrediente', larg: 251 }, { t: 'Qtd (ml)', larg: 70, dir: true },
                       { t: 'R$ / ml', larg: 80, dir: true }, { t: 'Custo', larg: 90, dir: true }],
             linhas: m.ln.map(function (l) {
-              return [l[0] + (PRECIF_TIPO[l[4]] ? ' (' + PRECIF_TIPO[l[4]] + ')' : ''), qtdMl(l[1]),
+              return [l[0] + (PRECIF_TIPO[l[4]] ? ' (' + PRECIF_TIPO[l[4]] + ')' : '') + (l[5] === 'w' ? ' (preço da web)' : ''), qtdMl(l[1]),
                       l[2] == null ? '—' : rsMl(l[2]), l[3] == null ? '—' : rs2(l[3])];
             }),
           });
@@ -4234,7 +4244,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '32d6e736e82b';
+  var BUILD = '1d0fe06b9662';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
