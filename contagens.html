@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=7b731b4d0369">
+<link rel="stylesheet" href="portal.css?v=1b759db14444">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -692,838 +692,532 @@ window.msgAcessoNegado = function (nomePagina) {
 </style>
 
 <div class="perf-tabs"><button class="perf-tab on" type="button" data-tab="insumos" data-niveis="equipe chefe coord">Insumos</button><button class="perf-tab" type="button" data-tab="copos" data-niveis="equipe chefe coord">Copos</button></div>
-<div id="perf-panel-insumos" class="perf-panel">
-<h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg> Contagem de insumos</h1>
-<p class="sub">Contagem de bebidas de geladeira, direto do celular. Escolha sua casa e preencha andando pelo estoque — cada número é salvo sozinho. Veja também a <a href="inventario.html?tab=copos">contagem de copos e taças</a>.</p>
-
+<div id="perf-panel-insumos" class="perf-panel"><h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg> Contagem de insumos</h1><p class="sub">Conte um local por vez, direto do celular. Cada número é salvo sozinho, mesmo sem internet. Veja também a <a href="inventario.html?tab=copos">contagem de copos e taças</a>.</p>
 <style>
-  .ct-pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-  .ct-pill { padding:9px 16px; border:1px solid var(--border); border-radius:999px;
-             background:none; color:var(--text-2); font-size:14px; cursor:pointer; }
-  .ct-pill.on { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); font-weight:600; }
-  .ct-topo { position:sticky; top:0; background:var(--bg); padding:10px 0; z-index:5;
-             border-bottom:1px solid var(--border); margin-bottom:10px; }
-  .ct-topo .linha { display:flex; justify-content:space-between; align-items:center; gap:8px; }
-  .ct-status { font-size:12px; color:var(--verde); }
-  .ct-status.pend { color: var(--amarelo); }
-  .ct-status.erro { color: #e08585; }
-  .ct-busca { width:100%; margin-top:8px; padding:10px 12px; font-size:16px; border-radius:10px;
-              border:1px solid var(--border); background:var(--card); color:var(--text); }
-  .ct-cat { font-family:var(--serif); color:var(--acc); font-size:14px; margin:14px 0 4px; }
-  /* Densidade máxima (2026-07-19, a pedido do Rodrigo): rótulo de coluna só
-     uma vez no cabeçalho (.ct-cab), cada produto vira uma única linha fina
-     (~30px) — ponto + nome + sem.passada + inputs + soma. Testado a 375px
-     no pior caso (6 colunas de local, IZ/Fulles) sem estourar. */
-  /* Cabeçalho de coluna FIXO (2026-08-01, pedido do Rodrigo): rolando a
-     lista, "Bar / Estoque / Pulmão" some e o bartender perde de vista a qual
-     lugar cada input pertence. Ele gruda logo ABAIXO do .ct-topo, cuja altura
-     varia (chips de casa, histórico aberto, valor do inventário) — por isso
-     o topo vem de --ct-cab-top, medido em JS (medeTopo) e não chutado no CSS.
-     z-index 4 fica abaixo do .ct-topo (5), senão o cabeçalho passaria por
-     cima da busca ao rolar. */
-  .ct-cab { display:flex; align-items:center; gap:4px; padding:4px 9px 3px;
-            position:sticky; top:var(--ct-cab-top, 0px); z-index:4;
-            background:var(--bg); border-bottom:1px solid var(--border); }
-  /* O rótulo QUEBRA em vez de ser cortado: numa coluna de 30px,
-     "Estoque"/"Rooftop"/"Pulmão" não cabem numa linha, e um rótulo cortado
-     ("Rooft…") anula o motivo de o cabeçalho ser fixo. Sem letter-spacing e
-     com line-height apertado cabem ~6 caracteres por linha. Medido a 375px
-     com os nomes REAIS de coluna das 6 casas (worker.js CASAS[].loc): as 23
-     colunas aparecem inteiras. Sem -webkit-line-clamp de propósito — naquele
-     contexto de formatação o overflow-wrap não é aplicado igual e "Sala
-     produções" (Fulles, o rótulo mais longo) voltava a ser cortado. A linha
-     fica alta como o maior rótulo, então só a casa que precisa paga. */
-  .ct-cab span { font-size:8.5px; letter-spacing:0; text-transform:uppercase; color:var(--text-3);
-                 text-align:center; flex:none; overflow:hidden; line-height:1.05;
-                 white-space:normal; overflow-wrap:break-word; hyphens:none; }
-  .ct-cab .cab-nome { flex:1 1 40px; min-width:40px; text-align:left; }
-  .ct-cab .cab-ant { width:26px; }
-  .ct-cab .cab-campo { width:30px; }
-  .ct-cab .cab-soma { width:30px; }
-  .ct-prod { background:var(--card); border:1px solid var(--border); border-radius:8px;
-             padding:4px 9px; margin-bottom:3px; }
-  .ct-l1 { display:flex; align-items:center; gap:4px; min-height:26px; }
-  .ct-dot { width:6px; height:6px; border-radius:50%; flex:none; background:var(--text-3); opacity:.5; }
-  .ct-dot.ok { background:var(--verde); opacity:1; }
-  .ct-dot.parcial { background:var(--amarelo); opacity:1; }
-  .ct-dot.zero { background:var(--urg-urgente); opacity:1; }
-  #ct-prog.completa { color:var(--verde); font-weight:600; }
-  .ct-nomewrap { display:flex; align-items:center; gap:5px; flex:1 1 40px; min-width:40px; }
-  .ct-nomewrap.clic { cursor:pointer; }
-  .ct-nomewrap .nome { font-size:12px; font-weight:600; overflow:hidden; text-overflow:ellipsis;
-                       white-space:nowrap; }
-  .ct-ant { font-size:9.5px; color:var(--text-3); flex:none; width:26px; text-align:center; white-space:nowrap; }
-  .ct-min-detalhe { font-size:11px; color:var(--text-3); margin-top:4px; padding-top:4px;
-                    border-top:1px dashed var(--border); }
-  .ct-min-detalhe[hidden] { display:none; }
-  .ct-campo { width:30px; flex:none; }
-  .ct-campo input { width:100%; padding:4px 1px; font-size:12px; text-align:center;
-                    border:1px solid var(--border); border-radius:6px;
-                    background:var(--bg); color:var(--text); font-variant-numeric:tabular-nums; }
-  .ct-campo input:focus { border-color:var(--acc); outline:none; }
-  .ct-campo input.salvo { border-color:var(--verde); }
-  .ct-campo input.pendente { border-color:var(--amarelo); }
-  .ct-campo input.falhou { border-color:#e08585; }
-  .ct-soma { flex:none; width:30px; text-align:center; font-family:var(--serif); font-size:13px;
-             color:var(--text); font-variant-numeric:tabular-nums; }
-  .ct-soma.vaz { color:var(--text-3); font-family:inherit; font-size:11px; }
-  /* Chips de casa no topo (2026-07-21, a pedido do Rodrigo): trocar de casa
-     era 2 toques (abrir "trocar de casa" -> escolher a casa); agora as
-     casas já ficam visíveis no topo, troca em 1 toque só. */
-  .ct-topo-casas { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
-  .ct-topo-casas .ct-pill { padding:5px 10px; font-size:11.5px; }
-  /* Histórico + abrir nova contagem (2026-07-21, PLANO_CONTAGEM_HISTORICO_DIA.md) */
-  /* Pílulas menores (mesma medida das casas do topo): com o botão de
-     confirmar são 3 numa linha, e no tamanho normal elas quebravam em duas —
-     o .ct-topo é sticky, então cada linha a mais é altura roubada da lista
-     no celular (medido: 290px de topo em 812 de tela). */
-  .ct-hist-linha { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
-  .ct-hist-linha .ct-pill { padding:5px 10px; font-size:11.5px; }
-  .ct-hist-painel { display:flex; flex-direction:column; gap:4px; margin-top:6px;
-                    max-height:180px; overflow-y:auto; padding:6px; border:1px solid var(--border);
-                    border-radius:8px; background:var(--card); }
-  .ct-hist-painel[hidden] { display:none; }
-  .ct-hist-item { text-align:left; padding:6px 9px; border:1px solid var(--border); border-radius:7px;
-                  background:none; color:var(--text-2); font-size:12px; cursor:pointer; font:inherit; }
-  .ct-hist-item.on { border-color:var(--acc); color:var(--acc); }
-  .ct-valor-inv { margin-top:6px; font-size:12px; color:var(--text-2); }
-  .ct-valor-inv strong { color:var(--acc); font-family:var(--serif); font-size:14px; }
-  /* Data da contagem nova + confirmação (2026-08-01, PLANO_CONTAGEM_HISTORICO_DIA.md) */
-  .ct-nova-painel { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:6px;
-                    padding:8px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
-  .ct-nova-painel[hidden] { display:none; }
-  .ct-nova-painel label { font-size:12px; color:var(--text-2); display:flex; align-items:center; gap:6px; }
-  .ct-nova-painel input { font:inherit; font-size:13px; padding:6px 8px; border-radius:7px;
-                          border:1px solid var(--border); background:var(--bg); color:var(--text); }
-  .ct-nova-painel .ct-pill.acao { border-color:var(--acc); color:var(--acc); }
-  .ct-pill.confirmar { border-color:var(--verde); color:var(--verde); }
-  .ct-selo { font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px;
-             background:color-mix(in srgb, var(--verde) 16%, transparent); color:var(--verde);
-             border:1px solid color-mix(in srgb, var(--verde) 40%, transparent); }
-  .ct-selo[hidden] { display:none; }
-  /* Adicionar produto (2026-08-10, pedido do Rodrigo). Fica FORA do .ct-topo
-     de propósito: o topo é sticky, e cada linha lá dentro é altura roubada da
-     lista o tempo todo (ver o comentário do .ct-topo-casas). Aqui é uma ação
-     eventual — vive logo acima do cabeçalho de coluna e rola junto com ele. */
-  .ct-add-linha { display:flex; justify-content:flex-end; margin:0 0 6px; }
-  .ct-add-painel { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; margin:0 0 8px;
-                   padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
-  .ct-add-painel[hidden] { display:none; }
-  .ct-add-campo { display:flex; flex-direction:column; gap:3px; }
-  .ct-add-campo label { font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:.04em; }
-  .ct-add-campo input, .ct-add-campo select { font:inherit; font-size:14px; padding:7px 8px; border-radius:7px;
-                                              border:1px solid var(--border); background:var(--bg); color:var(--text); }
-  /* O nome é o único obrigatório e ocupa a linha inteira no celular; os dois
-     opcionais dividem a linha seguinte. Sem o `flex:1 1 100%` o campo de nome
-     dividia espaço igual com a categoria e cabia ~12 caracteres em 375px. */
-  .ct-add-campo.nome { flex:1 1 100%; }
-  .ct-add-campo.nome input { width:100%; }
-  .ct-add-campo.opc { flex:1 1 120px; min-width:0; }
-  .ct-add-campo.opc input, .ct-add-campo.opc select { width:100%; }
-  .ct-add-painel .ct-add-acoes { display:flex; gap:8px; flex:1 1 100%; }
-  .ct-add-msg { flex:1 1 100%; font-size:12px; margin:0; }
-  .ct-add-msg.erro { color:#e08585; }
-  .ct-add-msg.ok { color:var(--verde); }
+  #cg-app { max-width: 640px; }
+  .cg-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+             padding: 14px; margin-bottom: 12px; }
+  .cg-card h2 { margin: 0 0 2px; font-size: 17px; }
+  .cg-sub { font-size: 13px; color: var(--text-2); margin: 0; }
+  .cg-aviso { font-size: 13px; padding: 10px 12px; border-radius: 10px; margin: 10px 0 0;
+              border: 1px solid color-mix(in srgb, var(--amarelo) 55%, transparent);
+              background: color-mix(in srgb, var(--amarelo) 14%, transparent); color: var(--text); }
+  .cg-erro { color: #e08585; font-size: 13px; margin: 6px 0 0; }
+  .cg-ok { color: var(--verde); font-size: 13px; margin: 6px 0 0; }
+  .cg-btn { font: inherit; font-size: 15px; padding: 11px 16px; border-radius: 10px; cursor: pointer;
+            border: 1px solid var(--border); background: none; color: var(--text); }
+  .cg-btn.forte { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  .cg-btn.peq { font-size: 13px; padding: 8px 12px; }
+  .cg-btn:disabled { opacity: .55; cursor: default; }
+  .cg-locais { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .cg-local { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+              width: 100%; text-align: left; font: inherit; font-size: 16px; padding: 15px 14px;
+              border-radius: 10px; border: 1px solid var(--border); background: var(--bg);
+              color: var(--text); cursor: pointer; }
+  .cg-local .cg-n { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+  .cg-local.parcial { border-color: color-mix(in srgb, var(--amarelo) 60%, transparent); }
+  .cg-local.feito { border-color: color-mix(in srgb, var(--verde) 60%, transparent); }
+  .cg-local.feito .cg-n { color: var(--verde); }
+  .cg-casas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .cg-pill { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 999px; cursor: pointer;
+             border: 1px solid var(--border); background: none; color: var(--text-2); }
+  .cg-pill.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); font-weight: 600; }
+  .cg-topo { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 8px 0 10px;
+             border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+  .cg-topo .cg-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .cg-busca { width: 100%; margin-top: 8px; padding: 11px 12px; font-size: 16px; border-radius: 10px;
+              border: 1px solid var(--border); background: var(--card); color: var(--text); }
+  .cg-cat { font-family: var(--serif); color: var(--acc); font-size: 14px; margin: 16px 0 4px; }
+  .cg-prod { border-bottom: 1px solid var(--border); padding: 10px 0; }
+  .cg-prod-l { display: flex; align-items: center; gap: 8px; }
+  .cg-nome { flex: 1 1 auto; min-width: 0; }
+  .cg-nome b { display: block; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+  .cg-nome small { font-size: 12px; color: var(--text-3); }
+  .cg-num { width: 76px; height: 46px; flex: none; font-size: 19px; text-align: center; border-radius: 10px;
+            border: 1px solid var(--border); background: var(--bg); color: var(--text);
+            font-variant-numeric: tabular-nums; }
+  .cg-num:focus { border-color: var(--acc); outline: none; }
+  .cg-num.salvo { border-color: var(--verde); }
+  .cg-num.pendente { border-color: var(--amarelo); }
+  .cg-num.falhou { border-color: #e08585; }
+  .cg-zero { flex: none; height: 46px; font: inherit; font-size: 12px; padding: 0 10px; border-radius: 10px;
+             border: 1px solid var(--border); background: none; color: var(--text-2); cursor: pointer; }
+  .cg-msg { font-size: 13px; margin: 6px 0 0; }
+  .cg-msg.alerta { color: var(--amarelo); }
+  .cg-msg.erro { color: #e08585; }
+  .cg-msg-acoes { display: flex; gap: 8px; margin-top: 6px; }
+  .cg-barra { position: sticky; bottom: 0; z-index: 5; background: var(--bg); padding: 10px 0;
+              border-top: 1px solid var(--border); display: flex; justify-content: space-between;
+              align-items: center; gap: 8px; margin-top: 10px; }
+  .cg-estado { font-size: 13px; color: var(--verde); }
+  .cg-estado.pend { color: var(--amarelo); }
+  .cg-estado.erro { color: #e08585; }
+  .cg-falta { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--text-2); }
+  .cg-selo { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+             color: var(--verde); border: 1px solid color-mix(in srgb, var(--verde) 45%, transparent); }
+  .cg-login input { width: 100%; margin: 10px 0; padding: 12px; font-size: 16px; border-radius: 10px;
+                    border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  .cg-add { margin-top: 14px; }
+  .cg-add input, .cg-add select { width: 100%; margin: 6px 0; padding: 10px; font-size: 15px;
+              border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 </style>
-
-<div id="ct-app">
-<div class="panel" id="ct-escolha"><h2>Escolha a casa</h2><div class="ct-pills" id="ct-casas"></div></div>
-<div id="ct-tela" style="display:none"></div>
-</div>
-
+<div id="cg-app"></div>
 <script type="text/plain" id="perf-src-insumos">
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
   var CASAS = [{"slug": "iz", "nome": "IZ"}, {"slug": "1929", "nome": "1929"}, {"slug": "gra-bistro", "nome": "Grá"}, {"slug": "famu", "nome": "FAMU"}, {"slug": "fulles", "nome": "Fulles"}, {"slug": "nip", "nome": "NIP"}];
-  var CASA_FIXA = null;
-  var ROTA_SEMANA = "/api/semana";
-  var ROTA_GRAVAR = "/api/gravar";
-  var ROTA_MARCAR = "/api/contagem/marcar";
-  var ROTA_CONTAGENS = "/api/contagens";
-  var ROTA_NOVA = "/api/contagem/nova";
-  var ROTA_STATUS = "/api/contagem/status";
-  var ROTA_PRODUTO = "/api/contagem/produto";
-  var STATUS_CONCLUIDO = 'Concluído';
-  var AGRUPA_CATEGORIA = true;
-  var UNIDADE = "produtos";
-  var LS_CASA = 'contagem_casa_contagem', LS_FILA = 'contagem_fila_contagem';
-  var casaSel = CASA_FIXA, dados = null, fila = [], enviando = false, timers = {};
-  var contagemSel = null;  // page_id específico do histórico; null = "a mais recente" (comportamento de sempre)
-  // falhas = itens que o servidor recusou de forma permanente (4xx): nunca
-  // somem calados, ficam visíveis. reintento = passo do backoff pra erros
-  // transitórios (rede/502) — zera a cada sucesso. timerEnvia impede empilhar
-  // timers de reenvio (interval + backoff + evento 'online' chamando envia).
-  // marcou = carimbo de data+responsável (handleContagemMarcar) já disparado
-  // nesta sessão de contagem — dispara 1x na primeira gravação bem-sucedida,
-  // não a cada campo (ver envia()).
-  var falhas = [], reintento = 0, timerEnvia = null, marcou = false;
-  // filtro "só faltando" (2026-07-19): completo = todos os locais deste
-  // produto preenchidos — diferente de "algum" (pelo menos 1), que já era
-  // usado só pro ponto de status.
-  var termoCt = '', soFaltando = false;
+  var R = { semana: '/api/semana', gravar: '/api/gravar', marcar: '/api/contagem/marcar',
+            status: '/api/contagem/status', produto: '/api/contagem/produto' };
+  var CONCLUIDO = 'Concluído';
+  var NIVEIS_CASA = ['bartender', 'chefe', 'equipe'];
+  var NIVEIS_GRUPO = ['coord', 'treinador'];
+  var LS_CASA = 'contagem2_casa', LS_FILA = 'contagem2_fila';
+  var el = document.getElementById('cg-app');
+  var casa = null, dados = null, localSel = null, soFaltando = false, termo = '';
+  var fila = [], enviando = false, falhas = {}, reintento = 0, timerEnvia = null, marcou = false;
+  var timers = {}, segurados = {};  // segurados: número fora do comum esperando "Está certo"
+  var invalidos = {};  // texto que não é número: nunca vai para a fila
+  var pausado = false;  // na tela de login: o envio espera, senão o 403 redesenharia a tela no meio da senha
+  try { fila = JSON.parse(localStorage.getItem(LS_FILA) || '[]') || []; } catch (e) { fila = []; }
 
-  try { fila = JSON.parse(localStorage.getItem(LS_FILA) || '[]'); } catch (e) { fila = []; }
+  if (!WORKER) { el.innerHTML = '<div class="cg-card"><p class="cg-sub">Contagem em configuração.</p></div>'; return; }
 
-  var elEscolha = document.getElementById('ct-escolha');
-  var elTela = document.getElementById('ct-tela');
-
-  if (!WORKER) {
-    (elEscolha || elTela).innerHTML = '<h2>Em configuração</h2><p class="sub" style="margin:0">' +
-      'A contagem pelo site ainda não foi ativada (falta publicar o Worker). ' +
-      'Por enquanto, siga contando pelo Notion.</p>';
-    return;
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fmt(v) { if (v == null || v === '') return '—';
+    return Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 2, useGrouping: false }); }
+  function sess() { return window.sessaoLer ? window.sessaoLer() : null; }
+  function nomeCasa(slug) { var c = CASAS.filter(function (x) { return x.slug === slug; })[0]; return c ? c.nome : slug; }
+  function podeContar(s, slug) {
+    if (!s) return false;
+    if (NIVEIS_GRUPO.indexOf(s.nivel) >= 0) return true;
+    return NIVEIS_CASA.indexOf(s.nivel) >= 0 && !!s.pessoa && s.casa === slug;
   }
-
-  function entra(slug) {
-    casaSel = slug;
-    contagemSel = null;  // trocar de casa sempre volta pra "a mais recente"
-    localStorage.setItem(LS_CASA, slug);
-    carrega();
-  }
-
-  // Histórico: abre uma contagem específica já criada (não a mais recente).
-  function abreContagem(pageId) {
-    contagemSel = pageId;
-    carrega();
-  }
-
-  if (elEscolha) {
-    var pills = document.getElementById('ct-casas');
-    CASAS.forEach(function (c) {
-      var b = document.createElement('button');
-      b.className = 'ct-pill'; b.type = 'button'; b.textContent = c.nome; b.dataset.slug = c.slug;
-      b.onclick = function () { entra(c.slug); };
-      pills.appendChild(b);
-    });
-    // casa lembrada — sem senha não tem sessão de verdade, é só conveniência
-    var lembrada = localStorage.getItem(LS_CASA);
-    if (lembrada && CASAS.some(function (c) { return c.slug === lembrada; })) entra(lembrada);
-  } else {
-    carrega();
-  }
+  function casaDaSessao(s) { return s && s.casa && s.casa !== '*' ? s.casa : null; }
+  function salvaFila() { try { localStorage.setItem(LS_FILA, JSON.stringify(fila)); } catch (e) {} }
 
   function api(metodo, rota, body) {
-    // X-Token: só se já existir sessão (mesma senha individual usada pra
-    // entrar no portal) — nunca pede login aqui. Sem sessão, o Worker trata
-    // como hoje (contagem continua aberta); com sessão, dá pro Worker saber
-    // quem contou (ver handleContagemMarcar) sem nenhum prompt novo.
-    var sess = window.sessaoLer && window.sessaoLer();
-    var headers = { 'Content-Type': 'application/json', 'X-Casa': casaSel };
-    if (sess && sess.token) headers['X-Token'] = sess.token;
-    return fetch(WORKER + rota, {
-      method: metodo,
-      headers: headers,
-      body: body ? JSON.stringify(body) : undefined
+    var s = sess();
+    var h = { 'Content-Type': 'application/json', 'X-Casa': casa };
+    if (s && s.token) h['X-Token'] = s.token;
+    return fetch(WORKER + rota, { method: metodo, headers: h, body: body ? JSON.stringify(body) : undefined });
+  }
+
+  // --- entrada: login individual e casa ------------------------------------
+  function inicio() {
+    pausado = false;
+    var s = sess();
+    if (!s || !(NIVEIS_GRUPO.indexOf(s.nivel) >= 0 || (s.pessoa && casaDaSessao(s)))) return telaLogin('');
+    var fixa = casaDaSessao(s);
+    if (fixa && NIVEIS_GRUPO.indexOf(s.nivel) < 0) { casa = fixa; return carrega(); }
+    var lembrada = null;
+    try { lembrada = localStorage.getItem(LS_CASA); } catch (e) {}
+    if (lembrada && CASAS.some(function (c) { return c.slug === lembrada; })) { casa = lembrada; return carrega(); }
+    telaCasas();
+  }
+
+  function telaLogin(msg) {
+    pausado = true;
+    el.innerHTML = '<div class="cg-card cg-login"><h2>Entre com a sua senha</h2>' +
+      '<p class="cg-sub">Para contar, use a sua senha individual: o seu nome fica gravado na contagem. ' +
+      'A senha da casa não serve aqui.</p>' +
+      '<input type="password" id="cg-senha" autocomplete="current-password" placeholder="Sua senha">' +
+      '<button class="cg-btn forte" id="cg-entrar" type="button">Entrar</button>' +
+      (msg ? '<p class="cg-erro">' + msg + '</p>' : '') +
+      '<p class="cg-sub" style="margin-top:12px">Não tem senha individual? <a href="acessos.html">Peça a sua</a> ' +
+      'ou peça ao chefe da casa para contar.</p></div>';
+    var inp = document.getElementById('cg-senha'), btn = document.getElementById('cg-entrar');
+    function vai() {
+      var senha = (inp.value || '').trim();
+      if (!senha) { telaLogin('Digite a sua senha.'); return; }
+      btn.disabled = true; btn.textContent = 'Entrando…';
+      window.loginSenha(WORKER, senha).then(function (r) {
+        if (!r || !r.ok || !r.token) { telaLogin(r && r.status === 401 ? 'Senha não reconhecida.' : 'Não deu para entrar agora. Tente de novo.'); return; }
+        var s = sess();
+        if (!s || !(NIVEIS_GRUPO.indexOf(s.nivel) >= 0 || (s.pessoa && casaDaSessao(s)))) {
+          telaLogin('Essa senha é compartilhada, não é a sua. Use a sua senha individual.'); return;
+        }
+        inicio();
+      });
+    }
+    btn.onclick = vai;
+    inp.onkeydown = function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); vai(); } };
+    inp.focus();
+  }
+
+  function telaCasas() {
+    var html = '<div class="cg-card"><h2>Qual casa?</h2><div class="cg-casas">';
+    CASAS.forEach(function (c) { html += '<button type="button" class="cg-pill" data-c="' + c.slug + '">' + esc(c.nome) + '</button>'; });
+    el.innerHTML = html + '</div></div>';
+    el.querySelectorAll('[data-c]').forEach(function (b) {
+      b.onclick = function () { casa = b.dataset.c; try { localStorage.setItem(LS_CASA, casa); } catch (e) {} carrega(); };
     });
   }
 
-  function carrega() {
-    if (elEscolha) elEscolha.style.display = 'none';
-    elTela.style.display = '';
-    elTela.innerHTML = '<p class="sub">Carregando…</p>';
-    falhas = []; reintento = 0; marcou = false;  // view nova: inputs vêm do servidor de novo
-    termoCt = ''; soFaltando = false;
-    var rota = ROTA_SEMANA + '?casa=' + casaSel + (contagemSel ? '&contagem=' + encodeURIComponent(contagemSel) : '');
-    api('GET', rota).then(function (r) {
-      if (!r.ok) { erroCarregar(r.status); return; }
-      r.json().then(function (d) { dados = d; desenha(); });
-    }).catch(function () { erroCarregar(null); });
+  function trocaPessoa() {
+    if (fila.length && !confirm('Ainda há ' + fila.length + ' número(s) salvando. Sair mesmo assim?')) return;
+    if (window.sessaoLimpar) window.sessaoLimpar();
+    dados = null; casa = null; telaLogin('');
   }
 
-  // --- histórico (listar contagens já criadas) + abrir contagem nova ------
-  function carregaHistorico(elLista) {
-    if (!ROTA_CONTAGENS) return;
-    elLista.innerHTML = '<p class="sub" style="margin:4px 0">Carregando…</p>';
-    api('GET', ROTA_CONTAGENS + '?casa=' + casaSel).then(function (r) {
-      return r.ok ? r.json() : Promise.reject(r.status);
+  // --- dados ----------------------------------------------------------------
+  function carrega(silencioso) {
+    if (!silencioso) el.innerHTML = '<div class="cg-card"><p class="cg-sub">Carregando a contagem…</p></div>';
+    return api('GET', R.semana + '?casa=' + encodeURIComponent(casa)).then(function (r) {
+      if (!r.ok) throw r.status;
+      return r.json();
     }).then(function (d) {
-      if (!d.contagens || !d.contagens.length) {
-        elLista.innerHTML = '<p class="sub" style="margin:4px 0">Nenhuma contagem encontrada.</p>';
+      dados = d; marcou = false;
+      // Fila de outra contagem (semana virou) não pode cair nesta.
+      fila = fila.filter(function (x) { return x.db_id === d.semana.db_id; }); salvaFila();
+      localSel ? telaLocal(localSel) : telaInicio();
+      envia();
+    }).catch(function (st) {
+      el.innerHTML = '<div class="cg-card"><p class="cg-erro">' +
+        (typeof st === 'number' ? 'Não deu para abrir a contagem (' + st + ').' : 'Sem internet.') +
+        '</p><button class="cg-btn" type="button" id="cg-de-novo">Tentar de novo</button></div>';
+      document.getElementById('cg-de-novo').onclick = function () { carrega(); };
+    });
+  }
+
+  function fechada() { return dados && dados.semana && dados.semana.status === CONCLUIDO; }
+
+  // Valor que vale agora: o digitado (na fila ou segurado) ganha do servidor.
+  function valor(p, local) {
+    var k = p.page_id + '|' + local;
+    var f = fila.filter(function (x) { return x.chave === k; })[0];
+    if (f) return f.valor;
+    if (segurados[k] != null) return null;
+    var v = p.valores ? p.valores[local] : null;
+    return v === undefined ? null : v;
+  }
+  function faltaNoLocal(local) {
+    return dados.produtos.filter(function (p) { return valor(p, local) === null; });
+  }
+  function resumoFaltas() {
+    var out = [];
+    dados.campos_loc.forEach(function (l) { var n = faltaNoLocal(l).length; if (n) out.push({ local: l, n: n }); });
+    return out;
+  }
+
+  function cabecalho() {
+    var s = sess(), grupo = s && NIVEIS_GRUPO.indexOf(s.nivel) >= 0;
+    var data = dados.semana.data ? String(dados.semana.data).slice(0, 10) : '';
+    var velha = false;
+    if (data) { var dias = (Date.now() - new Date(data + 'T12:00:00').getTime()) / 864e5; velha = dias > 6; }
+    var html = '<div class="cg-card"><div class="cg-topo-linha" style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">' +
+      '<div><h2>' + esc(dados.semana.titulo || 'Contagem') + '</h2>' +
+      '<p class="cg-sub">Contando: ' + esc((s && s.pessoa) || (s && s.nivel) || '') + ' · <a href="#" id="cg-troca">não sou eu</a></p></div>' +
+      (fechada() ? '<span class="cg-selo">Concluída</span>' : '') + '</div>';
+    if (grupo) {
+      html += '<div class="cg-casas">';
+      CASAS.forEach(function (c) { html += '<button type="button" class="cg-pill' + (c.slug === casa ? ' on' : '') + '" data-c="' + c.slug + '">' + esc(c.nome) + '</button>'; });
+      html += '</div>';
+    }
+    if (velha) html += '<p class="cg-aviso">Esta é a contagem de ' + data.split('-').reverse().join('/') +
+      '. A contagem desta semana ainda não foi criada: avise o Rodrigo antes de contar.</p>';
+    return html + '</div>';
+  }
+  function ligaCabecalho() {
+    var t = document.getElementById('cg-troca');
+    if (t) t.onclick = function (ev) { ev.preventDefault(); trocaPessoa(); };
+    el.querySelectorAll('.cg-casas [data-c]').forEach(function (b) {
+      b.onclick = function () {
+        if (b.dataset.c === casa) return;
+        if (fila.length) { alert('Espere salvar os números desta casa antes de trocar.'); return; }
+        casa = b.dataset.c; localSel = null; try { localStorage.setItem(LS_CASA, casa); } catch (e) {} carrega();
+      };
+    });
+  }
+
+  // --- tela 1: locais -------------------------------------------------------
+  function telaInicio() {
+    localSel = null;
+    var tot = dados.produtos.length;
+    var html = cabecalho() + '<div class="cg-card"><h2>Onde você está contando?</h2>' +
+      '<p class="cg-sub">Toque no local e conte só o que está nele.</p><div class="cg-locais">';
+    dados.campos_loc.forEach(function (l) {
+      var falta = faltaNoLocal(l).length, feito = tot - falta;
+      var cls = falta === 0 ? ' feito' : (feito > 0 ? ' parcial' : '');
+      html += '<button type="button" class="cg-local' + cls + '" data-l="' + esc(l) + '"><span>' + esc(l.trim()) + '</span>' +
+        '<span class="cg-n">' + (falta === 0 ? 'completo' : feito === 0 ? 'não começou' : feito + ' de ' + tot) + '</span></button>';
+    });
+    html += '</div></div>' + blocoConcluir() + barra();
+    el.innerHTML = html;
+    ligaCabecalho();
+    el.querySelectorAll('.cg-local').forEach(function (b) { b.onclick = function () { soFaltando = false; termo = ''; telaLocal(b.dataset.l, true); }; });
+    ligaConcluir(); pintaEstado();
+    window.scrollTo(0, 0);
+  }
+
+  function blocoConcluir() {
+    if (fechada()) {
+      return '<div class="cg-card"><h2>Contagem concluída</h2><p class="cg-sub">Para mudar algum número, reabra a contagem.</p>' +
+        '<p style="margin:10px 0 0"><button class="cg-btn" type="button" id="cg-reabrir">Reabrir contagem</button></p></div>';
+    }
+    var faltas = resumoFaltas(), total = faltas.reduce(function (s, f) { return s + f.n; }, 0);
+    if (!total) {
+      return '<div class="cg-card"><h2>Tudo contado</h2><p class="cg-sub">Confira e conclua. Depois de concluída, ' +
+        'a contagem vai para o Pedido de Compras.</p><p style="margin:10px 0 0">' +
+        '<button class="cg-btn forte" type="button" id="cg-concluir">Concluir contagem</button></p><div id="cg-concluir-msg"></div></div>';
+    }
+    return '<div class="cg-card"><h2>Ainda faltam ' + total + ' número(s)</h2>' +
+      '<p class="cg-aviso">' + faltas.map(function (f) { return esc(f.local.trim()) + ': ' + f.n; }).join(' · ') +
+      '. Produto sem número não conta como zero: se acabou, toque em "Não tem".</p>' +
+      '<p style="margin:10px 0 0"><button class="cg-btn" type="button" id="cg-ir-falta">Ir para os que faltam</button></p></div>';
+  }
+  function ligaConcluir() {
+    var b = document.getElementById('cg-concluir'), r = document.getElementById('cg-reabrir'), f = document.getElementById('cg-ir-falta');
+    if (f) f.onclick = function () { var fx = resumoFaltas(); if (fx.length) { soFaltando = true; termo = ''; telaLocal(fx[0].local, true); } };
+    if (r) r.onclick = function () { mudaStatus('Em andamento', r); };
+    if (b) b.onclick = function () {
+      if (fila.length || enviando) { mostraMsg('cg-concluir-msg', 'Espere salvar tudo antes de concluir.', 'erro'); return; }
+      if (Object.keys(falhas).length || Object.keys(invalidos).length || Object.keys(segurados).length) {
+        mostraMsg('cg-concluir-msg', 'Há números para corrigir ou confirmar antes de concluir.', 'erro'); return; }
+      if (!confirm('Concluir a contagem de ' + nomeCasa(casa) + '?')) return;
+      mudaStatus(CONCLUIDO, b);
+    };
+  }
+  function mostraMsg(id, texto, classe) {
+    var m = document.getElementById(id); if (m) m.innerHTML = '<p class="cg-' + (classe || 'ok') + '">' + esc(texto) + '</p>';
+  }
+  function mudaStatus(novo, btn) {
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    api('POST', R.status, { status: novo, page_id: dados.semana.page_id }).then(function (r) {
+      return r.json().then(function (d) { return { r: r, d: d }; });
+    }).then(function (x) {
+      if (x.r.ok) { dados.semana.status = x.d.status; telaInicio(); return; }
+      if (x.d && x.d.requer_login_individual) { telaLogin('Entre de novo com a sua senha individual.'); return; }
+      if (x.r.status === 409 && x.d.faltando) {
+        // O servidor viu local vazio que esta tela não via (outra pessoa
+        // apagou um número, ou a tela estava velha): recarrega e mostra.
+        carrega(true).then(function () {
+          mostraMsg('cg-concluir-msg', x.d.erro, 'erro');
+        });
         return;
       }
-      var html = '';
-      d.contagens.forEach(function (c) {
-        var ativa = contagemSel ? c.page_id === contagemSel : false;
-        html += '<button type="button" class="ct-hist-item' + (ativa ? ' on' : '') + '" data-page="' + c.page_id + '">' +
-          esc(c.titulo || 'Sem título') + (c.status ? ' · ' + esc(c.status) : '') + '</button>';
-      });
-      elLista.innerHTML = html;
-      elLista.querySelectorAll('.ct-hist-item').forEach(function (b) {
-        b.onclick = function () { abreContagem(b.dataset.page); fechaHistorico(); };
-      });
+      btn.disabled = false; btn.textContent = novo === CONCLUIDO ? 'Concluir contagem' : 'Reabrir contagem';
+      alert('Não deu para mudar a contagem: ' + ((x.d && x.d.erro) || x.r.status));
     }).catch(function () {
-      elLista.innerHTML = '<p class="sub" style="margin:4px 0">Erro ao carregar histórico.</p>';
+      btn.disabled = false; btn.textContent = novo === CONCLUIDO ? 'Concluir contagem' : 'Reabrir contagem';
+      alert('Sem internet. Tente de novo perto do wi-fi.');
     });
   }
 
-  function fechaHistorico() {
-    var el = document.getElementById('ct-hist-painel');
-    if (el) el.hidden = true;
-  }
-
-  // Data de hoje em AAAA-MM-DD no fuso local (nunca toISOString(), que é UTC
-  // e à noite devolve o dia seguinte — mesma armadilha já documentada no
-  // CLAUDE.md pra datas puras).
-  function hojeIso() {
-    var d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
-      '-' + String(d.getDate()).padStart(2, '0');
-  }
-
-  // Contagem nova com DATA escolhida (2026-08-01, pedido do Rodrigo): o
-  // bartender pode estar só transcrevendo uma folha preenchida dias antes,
-  // e a contagem tem que nascer com a data do papel. O painel abre já com
-  // hoje preenchido — quem só quer o comportamento de sempre é 2 toques.
-  function abreNova() {
-    if (!ROTA_NOVA) return;
-    var casaNome = (CASAS.find(function (c) { return c.slug === casaSel; }) || {}).nome || '';
-    var elData = document.getElementById('ct-nova-data');
-    var dataEsc = elData ? elData.value : '';
-    if (!dataEsc) { alert('Escolha a data da contagem.'); return; }
-    if (dataEsc > hojeIso()) { alert('A data da contagem não pode ser no futuro.'); return; }
-    var quando = dataEsc === hojeIso() ? 'de hoje' : 'com a data ' + diaMesAnoBr(dataEsc);
-    if (!confirm('Abrir uma contagem nova ' + quando + ' pra ' + casaNome +
-      '? Isso cria uma contagem vazia (produtos zerados) a partir do catálogo atual.')) return;
-    var btn = document.getElementById('ct-nova-criar');
-    if (btn) { btn.disabled = true; btn.textContent = 'Abrindo…'; }
-    api('POST', ROTA_NOVA, { data: dataEsc }).then(function (r) {
-      return r.ok ? r.json() : r.json().then(function (d) { return Promise.reject(d.erro || r.status); });
-    }).then(function (d) {
-      abreContagem(d.page_id);
-    }).catch(function (erro) {
-      alert('Não deu pra abrir a contagem nova: ' + erro);
-    }).finally(function () {
-      if (btn) { btn.disabled = false; btn.textContent = 'Criar contagem'; }
+  // --- tela 2: um local -----------------------------------------------------
+  function telaLocal(local, rolar) {
+    localSel = local;
+    var bloqueado = fechada();
+    var lista = dados.produtos.filter(function (p) {
+      if (termo && p.nome.toLowerCase().indexOf(termo) < 0) return false;
+      if (soFaltando && valor(p, local) !== null) return false;
+      return true;
     });
-  }
-
-  function diaMesAnoBr(iso) {
-    if (!iso) return '';
-    var p = String(iso).slice(0, 10).split('-');
-    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : iso;
-  }
-
-  // --- confirmar / reabrir a contagem (Status no Notion) -------------------
-  // Confirmar é o ato que fecha a contagem: no Notion o Status da página
-  // daquela contagem vira "Concluído". Reabrir volta pra "Em andamento" (não
-  // pra "Não iniciada" — ela já foi contada) e existe pra um toque errado
-  // não virar um beco sem saída.
-  function mudaStatus(novo) {
-    if (!ROTA_STATUS || !dados) return;
-    var btn = document.getElementById('ct-status-btn');
-    if (novo === STATUS_CONCLUIDO && fila.length &&
-        !confirm('Ainda há ' + fila.length + ' número(s) esperando salvar. Confirmar assim mesmo?')) return;
-    if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
-    var corpo = { status: novo };
-    if (dados.semana && dados.semana.page_id) corpo.page_id = dados.semana.page_id;
-    api('POST', ROTA_STATUS, corpo).then(function (r) {
-      return r.ok ? r.json() : r.json().then(function (d) { return Promise.reject(d.erro || r.status); });
-    }).then(function (d) {
-      dados.semana.status = d.status;
-      pintaStatus();
-    }).catch(function (erro) {
-      alert('Não deu pra mudar o status da contagem: ' + erro);
-      pintaStatus();
+    var falta = faltaNoLocal(local).length;
+    var html = '<div class="cg-topo"><div class="cg-linha"><button class="cg-btn peq" type="button" id="cg-voltar">Locais</button>' +
+      '<strong style="font-size:17px">' + esc(local.trim()) + '</strong>' +
+      '<span class="cg-sub" id="cg-falta-n">' + (falta ? 'faltam ' + falta : 'completo') + '</span></div>' +
+      '<input class="cg-busca" id="cg-busca" placeholder="Buscar produto" value="' + esc(termo) + '">' +
+      '<div class="cg-casas"><button type="button" class="cg-pill' + (soFaltando ? ' on' : '') + '" id="cg-so">Só os que faltam</button></div></div>';
+    if (bloqueado) html += '<p class="cg-aviso">Contagem concluída: para mudar um número, volte e reabra.</p>';
+    var cat = null;
+    lista.forEach(function (p) {
+      var c = p.categoria || 'Sem categoria';
+      if (c !== cat) { html += '<div class="cg-cat">' + esc(c) + '</div>'; cat = c; }
+      var k = p.page_id + '|' + local, v = valor(p, local);
+      var mostrado = segurados[k] != null ? segurados[k] : v;
+      var cls = falhas[k] ? ' falhou' : (fila.some(function (x) { return x.chave === k; }) ? ' pendente' : (v !== null ? ' salvo' : ''));
+      html += '<div class="cg-prod" data-k="' + esc(k) + '"><div class="cg-prod-l"><div class="cg-nome"><b>' + esc(p.nome) + '</b>' +
+        '<small>total da semana passada: ' + fmt(p.ant_contado) + (p.min != null ? ' · mínimo ' + fmt(p.min) : '') + '</small></div>' +
+        '<input class="cg-num' + cls + '" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="next"' +
+        ' data-p="' + p.page_id + '" value="' + (mostrado == null ? '' : String(mostrado).replace('.', ',')) + '"' +
+        (bloqueado ? ' disabled' : '') + ' aria-label="' + esc(p.nome) + ' em ' + esc(local) + '">' +
+        '<button class="cg-zero" type="button" data-zero="' + p.page_id + '"' + (bloqueado ? ' disabled' : '') + '>Não tem</button></div>' +
+        '<div class="cg-msgw">' + (falhas[k] ? '<p class="cg-msg erro">' + esc(falhas[k]) + '</p>' : '') + '</div></div>';
     });
-  }
-
-  function pintaStatus() {
-    var btn = document.getElementById('ct-status-btn');
-    var selo = document.getElementById('ct-selo');
-    if (!btn) return;
-    var st = (dados && dados.semana && dados.semana.status) || null;
-    var fechada = st === STATUS_CONCLUIDO;
-    btn.disabled = false;
-    btn.textContent = fechada ? 'Reabrir contagem' : 'Confirmar contagem';
-    btn.classList.toggle('confirmar', !fechada);
-    btn.onclick = function () { mudaStatus(fechada ? 'Em andamento' : STATUS_CONCLUIDO); };
-    if (selo) {
-      selo.hidden = !st;
-      selo.textContent = st || '';
+    if (!lista.length) html += '<p class="cg-sub" style="margin:14px 0">' + (soFaltando ? 'Nada faltando neste local.' : 'Nenhum produto com esse nome.') + '</p>';
+    if (!bloqueado && falta) {
+      html += '<div class="cg-card" style="margin-top:14px"><h2>Terminei este local</h2><p class="cg-sub">Os ' + falta +
+        ' produto(s) ainda sem número aqui ficam com zero (não tem neste local). Conte primeiro o que está no local.</p>' +
+        '<p style="margin:10px 0 0"><button class="cg-btn" type="button" id="cg-zera-resto">Zerar os ' + falta + ' sem número</button></p></div>';
     }
-  }
-
-  function erroCarregar(status) {
-    var msg = status ? 'Erro ao carregar (' + status + ').' : 'Sem conexão.';
-    elTela.innerHTML = '<p class="sub">' + msg + ' <a href="#" id="ct-retry">Tente de novo</a>' +
-      (status ? '' : ' perto do wi-fi') + '.</p>';
-    document.getElementById('ct-retry').onclick = function (ev) { ev.preventDefault(); carrega(); };
-  }
-
-  // --- tela da contagem ----------------------------------------------------
-  // Estado do produto pra decidir a bolinha de status: 'vazio' (nenhum local
-  // preenchido ainda), 'zero' (todos preenchidos, soma deu 0 — contagem real,
-  // não "esqueci") ou 'ok' (soma > 0). Mesma conta usada no render inicial
-  // (a partir de p.valores) e no recálculo ao vivo (a partir dos inputs).
-  function somaEAlgum(camposLoc, valoresPorCampo) {
-    var soma = 0, algum = false, preenchidos = 0;
-    camposLoc.forEach(function (c) {
-      var v = valoresPorCampo(c);
-      if (v !== null && v !== undefined && v !== '') { algum = true; soma += Number(v) || 0; preenchidos++; }
-    });
-    var completo = preenchidos === camposLoc.length;
-    // 'vazio' (nada) | 'parcial' (falta algum local) | 'zero' (completo, soma 0) | 'ok' (completo, soma > 0)
-    var estado = !algum ? 'vazio' : (!completo ? 'parcial' : (soma === 0 ? 'zero' : 'ok'));
-    return { soma: soma, algum: algum, completo: completo, estado: estado };
-  }
-
-  // Cabeçalho de coluna (2026-07-19): rótulo de cada local aparece 1x aqui,
-  // não repetido em cada produto — é isso que deixa o card de 1 linha só.
-  function cabecalhoCols(camposLoc) {
-    var temMin = !!dados.campo_min;
-    var html = '<div class="ct-cab"><span class="cab-nome"></span>' +
-      '<span class="cab-ant" title="Contagem da semana passada">ant.</span>';
-    camposLoc.forEach(function (campo) {
-      // Nome INTEIRO: agora que o cabeçalho é fixo, ele é a única coisa que
-      // diz a qual lugar o input pertence — cortar em 5 caracteres devolvia
-      // "Estoq"/"Rooft"/"Pulmã" e, pior, "Bar 1"/"Bar 2" viravam iguais em
-      // casa com nome longo. O CSS quebra em até 2 linhas em vez de cortar.
-      html += '<span class="cab-campo" title="' + esc(campo) + '">' + esc(campo) + '</span>';
-    });
-    if (camposLoc.length > 1) html += '<span class="cab-soma">Soma</span>';
-    return html + '</div>';
-  }
-
-  // --- adicionar produto à lista da contagem ------------------------------
-  // Pedido do Rodrigo (2026-08-10): apareceu no estoque uma garrafa que não
-  // está na folha e, até aqui, a única saída era abrir o Notion no meio do
-  // turno. Só o NOME é obrigatório.
-  //
-  // Os dois campos opcionais só aparecem quando existe onde gravá-los:
-  //  - categoria: só se a contagem tiver a coluna (o payload manda
-  //    `categorias`, as opções que o Worker aceita). É <select>, não texto
-  //    livre — o Notion cria opção de multi_select em silêncio, então digitar
-  //    "cervejas" ao lado de "Cervejas" partiria a categoria em duas na tela
-  //    do bar sem ninguém perceber.
-  //  - estoque mínimo: só se a contagem tiver a coluna E a sessão for
-  //    chefe/coord, a MESMA régua que o /api/gravar já aplica ao mínimo. Quem
-  //    não pode editar o mínimo de um produto existente também não o define
-  //    num produto novo. O Worker reconfere — isto aqui só evita oferecer um
-  //    campo que ele recusaria.
-  function podeMinimo() {
-    var s = window.sessaoLer && window.sessaoLer();
-    return !!(s && (s.nivel === 'chefe' || s.nivel === 'coord'));
-  }
-
-  function blocoAdicionar() {
-    if (!ROTA_PRODUTO) return '';
-    var cats = (dados.categorias || []);
-    var temMin = !!dados.campo_min && podeMinimo();
-    return '<div class="ct-add-linha">' +
-        '<button type="button" class="ct-pill" id="ct-add-btn">+ Adicionar produto</button>' +
-      '</div>' +
-      '<div class="ct-add-painel" id="ct-add-painel" hidden>' +
-        '<div class="ct-add-campo nome"><label for="ct-add-nome">Nome do produto</label>' +
-          '<input id="ct-add-nome" type="text" maxlength="200" autocomplete="off" ' +
-          'placeholder="Ex.: Aperol 750ml"></div>' +
-        (cats.length ? '<div class="ct-add-campo opc"><label for="ct-add-cat">Categoria (opcional)</label>' +
-          '<select id="ct-add-cat"><option value="">— sem categoria —</option>' +
-          cats.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
-          '</select></div>' : '') +
-        (temMin ? '<div class="ct-add-campo opc"><label for="ct-add-min">Estoque mínimo (opcional)</label>' +
-          '<input id="ct-add-min" type="number" min="0" step="any" inputmode="decimal"></div>' : '') +
-        '<p class="ct-add-msg sub" id="ct-add-msg" hidden></p>' +
-        '<div class="ct-add-acoes">' +
-          '<button type="button" class="ct-pill acao" id="ct-add-salvar">Adicionar</button>' +
-          '<button type="button" class="ct-pill" id="ct-add-cancelar">Cancelar</button>' +
-        '</div>' +
-      '</div>';
-  }
-
-  function addMsg(texto, classe) {
-    var el = document.getElementById('ct-add-msg');
-    if (!el) return;
-    el.textContent = texto || '';
-    el.className = 'ct-add-msg sub' + (classe ? ' ' + classe : '');
-    el.hidden = !texto;
-    medeTopo();
-  }
-
-  function adicionaProduto() {
-    if (!ROTA_PRODUTO || !dados) return;
-    var elNome = document.getElementById('ct-add-nome');
-    var elCat = document.getElementById('ct-add-cat');
-    var elMin = document.getElementById('ct-add-min');
-    var nome = (elNome.value || '').trim();
-    if (!nome) { addMsg('Escreva o nome do produto.', 'erro'); elNome.focus(); return; }
-
-    var corpo = { nome: nome };
-    if (elCat && elCat.value) corpo.categoria = elCat.value;
-    if (elMin && elMin.value !== '') corpo.minimo = Number(elMin.value);
-    // db_id da contagem ABERTA na tela, não "a mais recente": quem está com
-    // uma contagem do histórico aberta espera que o produto entre naquela.
-    if (dados.semana && dados.semana.db_id) corpo.db_id = dados.semana.db_id;
-
-    var btn = document.getElementById('ct-add-salvar');
-    if (btn) { btn.disabled = true; btn.textContent = 'Adicionando…'; }
-    addMsg('', '');
-    api('POST', ROTA_PRODUTO, corpo).then(function (r) {
-      return r.json().then(function (d) { return r.ok ? d : Promise.reject(d); });
-    }).then(function () {
-      // Recarrega do servidor em vez de inserir a linha na mão: a ordenação é
-      // por categoria+nome e vem pronta do Worker — montar a linha aqui
-      // duplicaria essa regra e poria o produto no lugar errado da lista.
-      carrega();
-    }).catch(function (d) {
-      var msg = (d && d.erro) || 'não deu pra adicionar agora';
-      if (d && d.existente) msg += ' (já está na lista como "' + d.existente + '")';
-      addMsg(msg, 'erro');
-    }).finally(function () {
-      if (btn) { btn.disabled = false; btn.textContent = 'Adicionar'; }
-    });
-  }
-
-  function linhaProduto(p, camposLoc) {
-    var temMin = !!dados.campo_min;
-    var mostraSoma = camposLoc.length > 1;
-    var r = somaEAlgum(camposLoc, function (c) { return p.valores[c]; });
-    var dotClasse = r.estado === 'vazio' ? '' : r.estado;
-
-    var html = '<div class="ct-prod" data-nome="' + esc(p.nome.toLowerCase()) +
-      '" data-page="' + p.page_id + '" data-completo="' + (r.completo ? '1' : '0') + '">';
-    html += '<div class="ct-l1">';
-
-    // nome+ponto: só quando existe mínimo cadastrado essa área vira tocável
-    // (abre/fecha o detalhe do mínimo) — em vez do antigo botão "Mín ▸" que
-    // não cabia mais numa linha com 6 colunas de input.
-    html += '<span class="ct-nomewrap' + (temMin ? ' clic' : '') + '">' +
-      '<span class="ct-dot ' + dotClasse + '"></span>' +
-      '<span class="nome">' + esc(p.nome) + '</span></span>';
-    html += '<span class="ct-ant">' + (p.ant_contado != null ? fmtNum(p.ant_contado) : '—') + '</span>';
-
-    camposLoc.forEach(function (campo) {
-      var v = p.valores[campo];
-      html += '<span class="ct-campo"><input type="number" inputmode="decimal" step="any" min="0" class="ct-loc"' +
-        ' data-page="' + p.page_id + '" data-campo="' + esc(campo) + '"' +
-        (v === null || v === undefined ? '' : ' value="' + num2(v) + '"') + '></span>';
-    });
-    if (mostraSoma) {
-      html += '<span class="ct-soma ct-soma-v' + (r.algum ? '' : ' vaz') + '">' + (r.algum ? fmtNum(r.soma) : '—') + '</span>';
-    }
-    html += '</div>';
-
-    if (temMin) {
-      html += '<div class="ct-min-detalhe" hidden>Estoque mínimo cadastrado: ' +
-        (p.min != null ? fmtNum(p.min) : 'não definido') + '</div>';
-    }
-
-    return html + '</div>';
-  }
-
-  function recalcCard(cardEl) {
-    if (!cardEl) return;
-    var camposLoc = Array.prototype.map.call(cardEl.querySelectorAll('.ct-loc'), function (i) { return i.dataset.campo; });
-    var r = somaEAlgum(camposLoc, function (campo) {
-      var inp = cardEl.querySelector('.ct-loc[data-campo="' + campo.replace(/"/g, '\\"') + '"]');
-      return inp ? inp.value : null;
-    });
-    var somaEl = cardEl.querySelector('.ct-soma-v');
-    if (somaEl) { somaEl.textContent = r.algum ? fmtNum(r.soma) : '—'; somaEl.classList.toggle('vaz', !r.algum); }
-    var dot = cardEl.querySelector('.ct-dot');
-    if (dot) dot.className = 'ct-dot' + (r.estado === 'vazio' ? '' : ' ' + r.estado);
-    cardEl.dataset.completo = r.completo ? '1' : '0';
-    progresso();
-    if (soFaltando) aplicaFiltrosCt();
-  }
-
-  function desenha() {
-    var campos = dados.campos_loc;
-    var html = '<div class="ct-topo">' +
-      '<div class="linha"><strong>' + esc(dados.semana.titulo || 'Semana atual') + '</strong>' +
-      (ROTA_STATUS ? '<span class="ct-selo" id="ct-selo" hidden></span>' : '') + '</div>' +
-      (elEscolha ? '<div class="ct-topo-casas" id="ct-topo-casas"></div>' : '') +
-      ((ROTA_CONTAGENS || ROTA_NOVA || ROTA_STATUS) ? (
-        '<div class="linha ct-hist-linha">' +
-        (ROTA_CONTAGENS ? '<button type="button" class="ct-pill" id="ct-hist-btn">Histórico</button>' : '') +
-        (ROTA_NOVA ? '<button type="button" class="ct-pill" id="ct-nova-btn">Abrir nova contagem</button>' : '') +
-        (ROTA_STATUS ? '<button type="button" class="ct-pill" id="ct-status-btn">Confirmar contagem</button>' : '') +
-        '</div>' +
-        (ROTA_CONTAGENS ? '<div id="ct-hist-painel" class="ct-hist-painel" hidden></div>' : '') +
-        (ROTA_NOVA ? '<div id="ct-nova-painel" class="ct-nova-painel" hidden>' +
-          '<label for="ct-nova-data">Data da contagem</label>' +
-          '<input type="date" id="ct-nova-data" max="' + hojeIso() + '" value="' + hojeIso() + '">' +
-          '<button type="button" class="ct-pill acao" id="ct-nova-criar">Criar contagem</button>' +
-          '</div>' : '')
-      ) : '') +
-      (dados.valor_inventario != null ? '<div class="linha ct-valor-inv">Valor do inventário: <strong>' +
-        fmtValorInv(dados.valor_inventario) + '</strong></div>' : '') +
-      '<div class="linha"><span class="sub" id="ct-prog" style="margin:0"></span>' +
-      '<span class="ct-status" id="ct-status"></span></div>' +
-      '<input class="ct-busca" id="ct-busca" placeholder="Buscar…">' +
-      '<div class="linha" style="margin-top:8px">' +
-      '<button type="button" class="ct-pill' + (soFaltando ? ' on' : '') + '" id="ct-so-faltando">Só faltando</button>' +
-      '</div></div>';
-
-    html += blocoAdicionar();
-    html += cabecalhoCols(campos);
-    if (AGRUPA_CATEGORIA) {
-      var porCat = {};
-      dados.produtos.forEach(function (p) {
-        var c = p.categoria || 'Sem categoria';
-        (porCat[c] = porCat[c] || []).push(p);
-      });
-      Object.keys(porCat).sort().forEach(function (cat) {
-        html += '<div class="ct-cat">' + esc(cat) + '</div>';
-        porCat[cat].forEach(function (p) { html += linhaProduto(p, campos); });
-      });
-    } else {
-      dados.produtos.forEach(function (p) { html += linhaProduto(p, campos); });
-    }
-    elTela.innerHTML = html;
-
-    if (elEscolha) {
-      var elTopoCasas = document.getElementById('ct-topo-casas');
-      CASAS.forEach(function (c) {
-        var b = document.createElement('button');
-        b.type = 'button'; b.className = 'ct-pill' + (c.slug === casaSel ? ' on' : '');
-        b.textContent = c.nome;
-        b.onclick = function () { if (c.slug !== casaSel) entra(c.slug); };
-        elTopoCasas.appendChild(b);
-      });
-    }
-    var elHistBtn = document.getElementById('ct-hist-btn');
-    if (elHistBtn) {
-      elHistBtn.onclick = function () {
-        var painel = document.getElementById('ct-hist-painel');
-        var abrindo = painel.hidden;
-        painel.hidden = !abrindo;
-        if (abrindo) carregaHistorico(painel);
-        medeTopo();  // o painel muda a altura do topo — o cabeçalho fixo tem que acompanhar
-      };
-    }
-    var elNovaBtn = document.getElementById('ct-nova-btn');
-    if (elNovaBtn) {
-      elNovaBtn.onclick = function () {
-        var painel = document.getElementById('ct-nova-painel');
-        painel.hidden = !painel.hidden;
-        medeTopo();
-      };
-    }
-    var elNovaCriar = document.getElementById('ct-nova-criar');
-    if (elNovaCriar) elNovaCriar.onclick = abreNova;
-    var elAddBtn = document.getElementById('ct-add-btn');
-    if (elAddBtn) {
-      elAddBtn.onclick = function () {
-        var painel = document.getElementById('ct-add-painel');
-        painel.hidden = !painel.hidden;
-        if (!painel.hidden) {
-          addMsg('', '');
-          document.getElementById('ct-add-nome').focus();
-        }
-      };
-      document.getElementById('ct-add-salvar').onclick = adicionaProduto;
-      document.getElementById('ct-add-cancelar').onclick = function () {
-        document.getElementById('ct-add-painel').hidden = true;
-        addMsg('', '');
-      };
-      // Enter no campo de nome adiciona — quem está com uma garrafa na mão
-      // não vai procurar o botão. Nos outros campos o Enter é neutro.
-      document.getElementById('ct-add-nome').onkeydown = function (ev) {
-        if (ev.key === 'Enter') { ev.preventDefault(); adicionaProduto(); }
-      };
-    }
-    pintaStatus();
-    document.getElementById('ct-busca').oninput = function () {
-      termoCt = this.value.trim().toLowerCase();
-      aplicaFiltrosCt();
+    html += blocoAdicionar() + barra();
+    el.innerHTML = html;
+    if (rolar) el.scrollIntoView();
+    var zr = document.getElementById('cg-zera-resto');
+    if (zr) zr.onclick = function () {
+      var resto = faltaNoLocal(local);
+      if (Object.keys(segurados).length || Object.keys(invalidos).length) { alert('Confirme ou corrija os números marcados antes.'); return; }
+      if (!confirm('Marcar ' + resto.length + ' produto(s) como "não tem" em ' + local.trim() + '?')) return;
+      // "Não tem" consciente, local por local: o vazio continua querendo dizer
+      // "não contado", e quem zera é quem acabou de contar o local.
+      resto.forEach(function (p) { enfileira(p.page_id + '|' + local, p.page_id, local, 0); });
+      soFaltando = false; telaLocal(local);
     };
-    document.getElementById('ct-so-faltando').onclick = function () {
-      soFaltando = !soFaltando;
-      this.classList.toggle('on', soFaltando);
-      aplicaFiltrosCt();
+    document.getElementById('cg-voltar').onclick = function () {
+      // Volta lendo de novo do servidor (outra pessoa pode ter contado outro
+      // local), mas só sem nada na fila: senão a tela perderia o digitado.
+      if (!fila.length && !Object.keys(segurados).length && !Object.keys(invalidos).length) { localSel = null; carrega(true); } else telaInicio();
     };
-    elTela.querySelectorAll('input[type=number]').forEach(function (inp) {
-      var ehLoc = inp.classList.contains('ct-loc');
-      inp.oninput = function () {
-        agenda(inp);
-        if (ehLoc) recalcCard(inp.closest('.ct-prod'));  // soma/sugestão/bolinha reagem na hora, sem esperar o debounce de salvar
+    var busca = document.getElementById('cg-busca');
+    busca.oninput = function () { termo = busca.value.trim().toLowerCase(); var pos = busca.selectionStart; telaLocal(local);
+      var b2 = document.getElementById('cg-busca'); b2.focus(); try { b2.setSelectionRange(pos, pos); } catch (e) {} };
+    document.getElementById('cg-so').onclick = function () { soFaltando = !soFaltando; telaLocal(local); };
+    var inputs = el.querySelectorAll('.cg-num');
+    inputs.forEach(function (inp, i) {
+      inp.oninput = function () { digitou(inp, local); };
+      inp.onkeydown = function (ev) {
+        if (ev.key === 'Enter') { ev.preventDefault(); var prox = inputs[i + 1]; if (prox) prox.focus(); else inp.blur(); }
       };
     });
-    elTela.querySelectorAll('.ct-nomewrap.clic').forEach(function (wrap) {
-      wrap.onclick = function () {
-        var detalhe = wrap.closest('.ct-prod').querySelector('.ct-min-detalhe');
-        if (detalhe) detalhe.hidden = !detalhe.hidden;
+    el.querySelectorAll('[data-zero]').forEach(function (b) {
+      b.onclick = function () {
+        var inp = el.querySelector('.cg-num[data-p="' + b.dataset.zero + '"]');
+        inp.value = '0'; digitou(inp, local, true);
       };
     });
-    // medeTopo DEPOIS de progresso()/status_(): as duas escrevem texto dentro
-    // do .ct-topo e podem mudar a altura dele — medir antes daria um valor
-    // velho por um quadro (o ResizeObserver corrige, mas só no quadro seguinte).
-    progresso(); status_(); medeTopo();
+    ligaAdicionar(); pintaEstado();
   }
 
-  // Altura real do .ct-topo -> --ct-cab-top, que é onde o cabeçalho de coluna
-  // gruda. O topo muda de altura sozinho (chips de casa em 1 ou 2 linhas,
-  // painel de histórico/data aberto, valor do inventário), então além das
-  // chamadas explícitas um ResizeObserver mantém a medida em dia.
-  var obsTopo = null;
-  function medeTopo() {
-    var topo = elTela.querySelector('.ct-topo');
-    if (!topo) return;
-    elTela.style.setProperty('--ct-cab-top', Math.round(topo.getBoundingClientRect().height) + 'px');
-    if (window.ResizeObserver && !obsTopo) {
-      obsTopo = new ResizeObserver(function () {
-        var t = elTela.querySelector('.ct-topo');
-        if (t) elTela.style.setProperty('--ct-cab-top', Math.round(t.getBoundingClientRect().height) + 'px');
-      });
-    }
-    if (obsTopo) { obsTopo.disconnect(); obsTopo.observe(topo); }
+  // Número aceito: inteiro ou com até 2 casas, vírgula ou ponto, de 0 a 9999.
+  function interpreta(txt) {
+    var t = String(txt || '').trim().replace(',', '.');
+    if (t === '') return { vazio: true };
+    if (!/^\d{1,4}(\.\d{1,2})?$/.test(t)) return { erro: /^\d{5,}/.test(t) ? 'Número alto demais. Confira.' : 'Use só número: 2, 0 ou 1,5.' };
+    return { v: Number(t) };
   }
-  window.addEventListener('resize', medeTopo);
-
-  // Todo número exibido nesta tela sai com no máximo 2 casas decimais
-  // (pedido do Rodrigo, 2026-08-01) — sem isso a soma em ponto flutuante
-  // aparecia com a cauda de zeros do binário (12,3 virando 12,3 seguido de
-  // uma dúzia de casas). Inteiro continua inteiro; sem
-  // separador de milhar, pelo mesmo motivo do fmt() do Pedido de Compras
-  // ("1.000" x "1,000" confunde em quantidade).
-  function fmtNum(v) {
-    if (v == null || v === '') return v;
-    var n = Number(v);
-    if (!isFinite(n)) return v;
-    return n.toLocaleString('pt-BR', { maximumFractionDigits: 2, useGrouping: false });
+  // Fora do comum: muito acima da semana passada e do mínimo. Fica segurado
+  // até a pessoa confirmar; é a trava contra o dedo que bateu um zero a mais.
+  function foraDoComum(v, p) {
+    var ref = Math.max(Number(p.ant_contado) || 0, Number(p.min) || 0);
+    return ref > 0 ? (v > ref * 3 && v - ref >= 6) : v >= 30;
   }
-  // Mesma régua pra dentro de <input type=number>, com PONTO decimal —
-  // fmtNum() devolve vírgula, que o input numérico recusa (nasceria vazio).
-  function num2(v) {
-    if (v == null || v === '') return '';
-    var n = Number(v);
-    return isFinite(n) ? String(Math.round(n * 100) / 100) : '';
-  }
-
-  function esc(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function fmtValorInv(v) {
-    return v == null ? '—' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
-
-  function passaCt(el) {
-    if (termoCt && el.dataset.nome.indexOf(termoCt) < 0) return false;
-    if (soFaltando && el.dataset.completo === '1') return false;
-    return true;
-  }
-
-  function aplicaFiltrosCt() {
-    if (AGRUPA_CATEGORIA) {
-      elTela.querySelectorAll('.ct-cat').forEach(function (cat) {
-        var vis = false, n = cat.nextElementSibling;
-        while (n && n.classList.contains('ct-prod')) {
-          var mostra = passaCt(n);
-          n.style.display = mostra ? '' : 'none';
-          if (mostra) vis = true;
-          n = n.nextElementSibling;
-        }
-        cat.style.display = vis ? '' : 'none';
-      });
-    } else {
-      elTela.querySelectorAll('.ct-prod').forEach(function (el) {
-        el.style.display = passaCt(el) ? '' : 'none';
-      });
-    }
-  }
-
-  function progresso() {
-    // Completo = TODOS os locais deste produto preenchidos (data-completo,
-    // mantido por linhaProduto/recalcCard). "Algum campo" já vira o ponto
-    // amarelo (parcial) — só completo conta pra saber se dá pra fechar a
-    // semana e passar pro Pedido de Compras.
-    var tot = dados.produtos.length, completos = 0;
-    elTela.querySelectorAll('.ct-prod[data-completo="1"]').forEach(function () { completos++; });
-    var el = document.getElementById('ct-prog');
-    if (!el) return;
-    var pronta = tot > 0 && completos === tot;
-    el.textContent = pronta ? 'Contagem completa — ' + tot + ' ' + UNIDADE
-      : completos + ' de ' + tot + ' ' + UNIDADE + ' completos';
-    el.classList.toggle('completa', pronta);
-  }
-
-  // --- salvamento incremental com fila offline -----------------------------
-  function agenda(inp) {
-    var chave = inp.dataset.page + '|' + inp.dataset.campo;
+  function msgDe(inp) { return inp.closest('.cg-prod').querySelector('.cg-msgw'); }
+  function digitou(inp, local, imediato) {
+    var pageId = inp.dataset.p, k = pageId + '|' + local;
+    var p = dados.produtos.filter(function (x) { return x.page_id === pageId; })[0];
+    var m = msgDe(inp), r = interpreta(inp.value);
+    delete falhas[k]; delete segurados[k]; delete invalidos[k];
+    clearTimeout(timers[k]);
     inp.classList.remove('salvo', 'falhou'); inp.classList.add('pendente');
-    falhas = falhas.filter(function (x) { return x.chave !== chave; });  // reeditou: tira da lista de falhas
-    clearTimeout(timers[chave]);
-    timers[chave] = setTimeout(function () {
-      var valor = inp.value === '' ? null : Number(inp.value);
-      fila = fila.filter(function (x) { return x.chave !== chave; });
-      fila.push({ chave: chave, db_id: dados.semana.db_id,
-                  page_id: inp.dataset.page, campo: inp.dataset.campo, valor: valor });
-      localStorage.setItem(LS_FILA, JSON.stringify(fila));
-      progresso(); envia();
-    }, 900);
+    m.innerHTML = '';
+    if (r.erro) { invalidos[k] = true; inp.classList.remove('pendente'); inp.classList.add('falhou');
+      m.innerHTML = '<p class="cg-msg erro">' + r.erro + '</p>'; pintaEstado(); return; }
+    if (r.vazio) {
+      // Apagar o número volta o produto para "não contado".
+      timers[k] = setTimeout(function () { enfileira(k, pageId, local, null); }, 700);
+      return;
+    }
+    if (foraDoComum(r.v, p)) {
+      segurados[k] = r.v;
+      var ref = Math.max(Number(p.ant_contado) || 0, Number(p.min) || 0);
+      m.innerHTML = '<p class="cg-msg alerta">' + fmt(r.v) + (ref > 0 ? ' é bem mais que a semana passada (' + fmt(p.ant_contado) +
+        ') e o mínimo (' + fmt(p.min) + ')' : ' é um número alto para este produto') + '. Confere?</p><div class="cg-msg-acoes"><button class="cg-btn peq" type="button" data-ok>Está certo</button>' +
+        '<button class="cg-btn peq" type="button" data-corrige>Corrigir</button></div>';
+      m.querySelector('[data-ok]').onclick = function () { delete segurados[k]; m.innerHTML = ''; enfileira(k, pageId, local, r.v); };
+      m.querySelector('[data-corrige]').onclick = function () { inp.focus(); inp.select(); };
+      pintaEstado();
+      return;
+    }
+    if (imediato) enfileira(k, pageId, local, r.v);
+    else timers[k] = setTimeout(function () { enfileira(k, pageId, local, r.v); }, 700);
   }
 
-  function marca(chave, classe) {
-    var par = chave.split('|');
-    var inp = elTela.querySelector('input[data-page="' + par[0] + '"][data-campo="' + par[1] + '"]');
+  function enfileira(k, pageId, local, v) {
+    fila = fila.filter(function (x) { return x.chave !== k; });
+    fila.push({ chave: k, db_id: dados.semana.db_id, page_id: pageId, campo: local, valor: v });
+    salvaFila(); atualizaContadores(); envia();
+  }
+
+  function atualizaContadores() {
+    var n = document.getElementById('cg-falta-n');
+    if (n && localSel) { var f = faltaNoLocal(localSel).length; n.textContent = f ? 'faltam ' + f : 'completo'; }
+    pintaEstado();
+  }
+
+  // --- envio com fila (sobrevive a sem-internet e a recarregar a página) ----
+  function agendaEnvia(ms) { clearTimeout(timerEnvia); timerEnvia = setTimeout(envia, ms); }
+  function marcaInput(k, classe) {
+    var par = k.split('|');
+    if (par[1] !== localSel) return;
+    var inp = el.querySelector('.cg-num[data-p="' + par[0] + '"]');
     if (inp) { inp.classList.remove('salvo', 'pendente', 'falhou'); if (classe) inp.classList.add(classe); }
   }
-
-  // Reenvio único-timer: evita empilhar (setInterval + backoff + 'online').
-  function agendaEnvia(ms) { clearTimeout(timerEnvia); timerEnvia = setTimeout(envia, ms); }
-  // Espera crescente do backoff pra erro transitório: 0.8s → ~25s (passo 1..6).
-  function esperaBackoff() { return 800 * Math.pow(2, Math.min(reintento, 6) - 1); }
-
   function envia() {
-    if (enviando || !fila.length || !casaSel) { status_(); return; }
-    enviando = true; status_();
+    if (pausado || enviando || !fila.length || !casa) { pintaEstado(); return; }
+    enviando = true; pintaEstado();
     var item = fila[0];
-    api('POST', ROTA_GRAVAR, { db_id: item.db_id, page_id: item.page_id, campo: item.campo, valor: item.valor }).then(function (r) {
+    api('POST', R.gravar, { db_id: item.db_id, page_id: item.page_id, campo: item.campo, valor: item.valor }).then(function (r) {
       if (r.ok) {
-        fila.shift(); localStorage.setItem(LS_FILA, JSON.stringify(fila));
-        marca(item.chave, 'salvo');
-        reintento = 0; enviando = false;
-        if (!marcou && ROTA_MARCAR) {
-          // Carimba data+responsável 1x por sessão de contagem, só depois de
-          // uma gravação real (sinal de que a pessoa contou de verdade, não
-          // só abriu a página). Fire-and-forget: nunca trava a contagem; sem
-          // sessão com pessoa (senha individual), o Worker faz no-op.
-          // ROTA_MARCAR só existe pra insumos — copos usa outro hub Notion.
-          // page_id explícito: carimba a contagem REALMENTE aberta (pode ser
-          // uma do histórico, não só "a mais recente").
-          marcou = true;
-          api('POST', ROTA_MARCAR, { page_id: dados.semana.page_id }).catch(function () { marcou = false; });
-        }
-        agendaEnvia(350);  // próximo item, respeitando o ritmo da API do Notion
-      } else if (r.status === 409) {
-        enviando = false; status_('A semana virou — recarregue a página.');
-      } else if (r.status >= 500) {
-        // Transitório: o worker devolve 502 quando o Notion falha ou limita.
-        // NUNCA descarta — mantém na fila e tenta de novo com espera crescente.
-        reintento += 1; enviando = false; status_();
-        agendaEnvia(esperaBackoff());
-      } else {
-        // 4xx (dado/permissão inválidos): retry não resolve. Sai da fila ativa,
-        // mas fica marcado como FALHA visível (campo em vermelho + rodapé) —
-        // nunca some calado, como acontecia antes.
-        fila.shift(); localStorage.setItem(LS_FILA, JSON.stringify(fila));
-        falhas.push(item); marca(item.chave, 'falhou');
-        reintento = 0; enviando = false; status_();
-        agendaEnvia(350);
+        fila.shift(); salvaFila(); enviando = false; reintento = 0;
+        var p = dados && dados.produtos.filter(function (x) { return x.page_id === item.page_id; })[0];
+        if (p) { p.valores = p.valores || {}; p.valores[item.campo] = item.valor; }
+        marcaInput(item.chave, item.valor === null ? '' : 'salvo');
+        if (!marcou) { marcou = true; api('POST', R.marcar, { page_id: dados.semana.page_id }).catch(function () { marcou = false; }); }
+        atualizaContadores(); agendaEnvia(300); return;
       }
-    }).catch(function () {
-      // offline / rede caiu: item continua na fila; tenta sozinho com backoff
-      reintento += 1; enviando = false; status_();
-      agendaEnvia(esperaBackoff());
-    });
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        enviando = false;
+        if (d && d.requer_login_individual) { pintaEstado(); telaLogin('Entre de novo com a sua senha individual. Os números digitados continuam guardados.'); return; }
+        if (r.status >= 500 || r.status === 429) { reintento++; pintaEstado(); agendaEnvia(800 * Math.pow(2, Math.min(reintento, 6) - 1)); return; }
+        fila.shift(); salvaFila();
+        falhas[item.chave] = 'Não salvou: ' + ((d && d.erro) || ('erro ' + r.status)) + '. Digite de novo.';
+        marcaInput(item.chave, 'falhou');
+        if (localSel) telaLocal(localSel);
+        agendaEnvia(300);
+      });
+    }).catch(function () { enviando = false; reintento++; pintaEstado(); agendaEnvia(800 * Math.pow(2, Math.min(reintento, 6) - 1)); });
   }
 
-  function status_(msgErro) {
-    var el = document.getElementById('ct-status');
-    if (!el) return;
-    el.className = 'ct-status';
-    if (msgErro) { el.classList.add('erro'); el.textContent = msgErro; return; }
-    if (falhas.length) { el.classList.add('erro'); el.textContent = falhas.length + ' não salvo(s) — revise os campos em vermelho'; return; }
-    if (enviando) { el.textContent = 'Salvando…'; return; }
-    if (fila.length) { el.classList.add('pend'); el.textContent = fila.length + ' na fila…'; return; }
-    el.textContent = 'Tudo salvo ✓';
+  function barra() {
+    return '<div class="cg-barra"><span class="cg-estado" id="cg-estado"></span>' +
+      (localSel ? '<button class="cg-btn peq" type="button" onclick="window.scrollTo(0,0)">Topo</button>' : '') + '</div>';
+  }
+  function pintaEstado() {
+    var e = document.getElementById('cg-estado'); if (!e) return;
+    var nf = Object.keys(falhas).length + Object.keys(invalidos).length, ns = Object.keys(segurados).length;
+    e.className = 'cg-estado';
+    if (nf) { e.classList.add('erro'); e.textContent = nf + ' número(s) não salvos: veja em vermelho'; return; }
+    if (ns) { e.classList.add('pend'); e.textContent = ns + ' número(s) esperando você confirmar'; return; }
+    if (fila.length) { e.classList.add('pend'); e.textContent = (reintento || navigator.onLine === false)
+      ? 'Sem conexão: ' + fila.length + ' guardado(s) no aparelho, tentando de novo' : 'Salvando ' + fila.length + '…'; return; }
+    e.textContent = 'Tudo salvo';
+  }
+
+  // --- produto que não está na lista (chefe e coordenação) -----------------
+  function podeAdicionar() { var s = sess(); return !!(s && (s.nivel === 'chefe' || s.nivel === 'coord')); }
+  function blocoAdicionar() {
+    if (!podeAdicionar() || fechada()) return '';
+    var cats = dados.categorias || [];
+    return '<details class="cg-add"><summary class="cg-sub">Produto que não está na lista</summary>' +
+      '<input id="cg-add-nome" maxlength="200" placeholder="Nome, ex.: Aperol 750 ml">' +
+      (cats.length ? '<select id="cg-add-cat"><option value="">Categoria</option>' + cats.map(function (c) {
+        return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') + '</select>' : '') +
+      '<button class="cg-btn peq" type="button" id="cg-add-ok">Adicionar</button><div id="cg-add-msg"></div></details>';
+  }
+  function ligaAdicionar() {
+    var b = document.getElementById('cg-add-ok'); if (!b) return;
+    b.onclick = function () {
+      var nome = (document.getElementById('cg-add-nome').value || '').trim();
+      var cat = document.getElementById('cg-add-cat');
+      if (!nome) { mostraMsg('cg-add-msg', 'Escreva o nome do produto.', 'erro'); return; }
+      b.disabled = true;
+      var corpo = { nome: nome, db_id: dados.semana.db_id };
+      if (cat && cat.value) corpo.categoria = cat.value;
+      api('POST', R.produto, corpo).then(function (r) { return r.json().then(function (d) { return r.ok ? d : Promise.reject(d); }); })
+        .then(function () { carrega(true); })
+        .catch(function (d) { b.disabled = false; mostraMsg('cg-add-msg', ((d && d.erro) || 'Não deu para adicionar agora') +
+          (d && d.existente ? ' (já está como "' + d.existente + '")' : ''), 'erro'); });
+    };
   }
 
   window.addEventListener('online', envia);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) envia(); });
+  window.addEventListener('beforeunload', function (ev) {
+    if (fila.length || Object.keys(segurados).length || Object.keys(invalidos).length) { ev.preventDefault(); ev.returnValue = ''; }
+  });
   setInterval(envia, 15000);
+  inicio();
 })();
 </script></div><div id="perf-panel-copos" class="perf-panel" hidden>
 <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12l-1.2 15.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.4 9h11.2"/></svg> Contagem de copos e taças</h1>
@@ -2513,7 +2207,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 27/10/2026.
+<p class="nota">Painel do bar · atualizado em 28/10/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -3973,7 +3667,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '7b731b4d0369';
+  var BUILD = '1b759db14444';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
