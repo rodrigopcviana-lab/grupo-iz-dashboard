@@ -379,6 +379,26 @@
   /* nivel-pill + lupa lado a lado (header.topo não é flex por padrão) */
   .topo-linha { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
   .topo-linha .nivel-pill { margin-top: 0; }
+  /* Celular estreito (2026-10-28): nome comprido empurrava sino, rádio e
+     pomodoro para fora da tela. Só o nome encolhe (com reticências). */
+  .topo-linha > * { flex-shrink: 0; }
+  .topo-linha > .nivel-pill { flex-shrink: 1; min-width: 0; }
+  .topo-linha > .nivel-pill > * { flex-shrink: 0; }
+  .topo-linha > .nivel-pill > b { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 400px) { .topo-linha > .nivel-pill .np-pre { display: none; } }
+  /* Painel guardado fora da tela (ficha fechada, com transform) abria rolagem
+     para o lado no celular. clip, e não hidden: não quebra o position:sticky. */
+  html { overflow-x: clip; }
+  /* Link longo escrito por extenso (as "Infos" das fichas) não quebrava a
+     linha: a página de Fichas ficava com 495 px numa tela de 360 e o celular
+     mostrava tudo reduzido. Vale para qualquer link escrito como endereço. */
+  a[href^="http"], .ficha li { overflow-wrap: anywhere; }
+  /* Campo com letra abaixo de 16px faz o iPhone dar zoom ao tocar, e a página
+     fica fora de enquadramento até a pessoa desfazer o zoom com os dedos. */
+  @media (pointer: coarse) {
+    input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), select, textarea {
+      font-size: max(16px, 1em) !important; }
+  }
   /* "Trocar acesso" (2026-07-18, pedido do Rodrigo) — botão próprio no topo,
      separado da pill "Perfil": os dois precisam existir lado a lado, sem um
      estar aninhado dentro do outro. Ícone só (mesmo padrão do pomo-btn —
@@ -785,6 +805,10 @@
     .atualiza-atalho { bottom: calc(var(--barra-h) + 12px) !important; }
     .pomo-mini, .radio-mini { bottom: calc(var(--barra-h) + 14px) !important; }
     .ia-aba { bottom: calc(var(--barra-h) + 32px) !important; }
+    /* Aba da IA só com o ícone no celular: com o rótulo ela cobria botão e
+       número na borda direita de toda página. */
+    .ia-aba { padding: 8px 6px; gap: 0; font-size: 0; letter-spacing: 0; opacity: .92; }
+    .ia-aba svg { width: 18px; height: 18px; }
     .ag-toast, .av-toast, .dm-toast, .es-toast, .fe-toast, .sc-toast, #idea-toast, #pt-toast {
       bottom: calc(var(--barra-h) + 18px) !important; }
     .au-placar, .cn-rec-bar, .cd-ca-barra, .cp-rodape, .sc-cad-pe { bottom: var(--barra-h) !important; }
