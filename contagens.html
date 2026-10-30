@@ -16,7 +16,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=00cca8059998">
+<link rel="stylesheet" href="portal.css?v=a35ddccddc3c">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -677,7 +677,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
 
 <h1>Contagens</h1>
-<p class="sub">As duas contagens do turno lado a lado. Cada número é salvo sozinho, como antes.</p>
+
 <style>
   .perf-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 18px; border-bottom:1px solid var(--border); padding-bottom:10px; }
   .perf-tab { font:inherit; font-size:14px; font-weight:600; padding:9px 16px; border:1.5px solid var(--border);
@@ -692,7 +692,7 @@ window.msgAcessoNegado = function (nomePagina) {
 </style>
 
 <div class="perf-tabs"><button class="perf-tab on" type="button" data-tab="insumos" data-niveis="equipe chefe coord">Insumos</button><button class="perf-tab" type="button" data-tab="copos" data-niveis="equipe chefe coord">Copos</button></div>
-<div id="perf-panel-insumos" class="perf-panel"><h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg> Contagem de insumos</h1><p class="sub">Conte um local por vez, direto do celular. Cada número é salvo sozinho, mesmo sem internet. Veja também a <a href="inventario.html?tab=copos">contagem de copos e taças</a>.</p>
+<div id="perf-panel-insumos" class="perf-panel"><h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg> Contagem de insumos</h1>
 <style>
   #cg-app { max-width: 640px; }
   .cg-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -710,10 +710,30 @@ window.msgAcessoNegado = function (nomePagina) {
   .cg-btn.peq { font-size: 13px; padding: 8px 12px; }
   .cg-btn:disabled { opacity: .55; cursor: default; }
   .cg-locais { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-  .cg-local { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  /* Faixa da contagem (2026-10-30): a data, o andamento e o que fazer agora
+     têm de aparecer antes de qualquer outra coisa. */
+  .cg-hero-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .cg-kicker { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--text-2); min-width: 0; }
+  .cg-data { font-family: var(--serif); font-size: 25px; line-height: 1.15; margin: 7px 0 3px; color: var(--text); }
+  .cg-prog { height: 10px; margin-top: 12px; border-radius: 999px; overflow: hidden;
+             background: color-mix(in srgb, var(--text) 13%, transparent); }
+  .cg-prog i { display: block; height: 100%; border-radius: inherit; background: var(--acc); transition: width .25s ease; }
+  .cg-prog.cheio i { background: var(--verde); }
+  .cg-prog.fino { height: 4px; margin-top: 6px; }
+  .cg-prog-t { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin-top: 5px; font-size: 13px; color: var(--text-2); }
+  .cg-prog-t b { font-size: 21px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .cg-cta { display: block; width: 100%; margin-top: 12px; text-align: center; }
+  .cg-nota { font-size: 12px; color: var(--text-2); margin: 8px 0 0; }
+  .cg-ajuda { margin: 0 0 12px; padding: 0 2px; }
+  .cg-ajuda summary { font-size: 13px; color: var(--acc); cursor: pointer; padding: 6px 0; }
+  .cg-ajuda ul { margin: 4px 0 0; padding-left: 18px; font-size: 13px; color: var(--text-2); }
+  .cg-ajuda li { margin-bottom: 5px; }
+  .cg-local { display: flex; justify-content: space-between; align-items: center; gap: 10px; position: relative; overflow: hidden;
               width: 100%; text-align: left; font: inherit; font-size: 16px; padding: 12px 14px;
               border-radius: 10px; border: 1px solid var(--border); background: var(--bg);
               color: var(--text); cursor: pointer; }
+  .cg-mini { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--acc); }
+  .cg-local.feito .cg-mini { background: var(--verde); }
   .cg-local .cg-n { font-size: 13px; color: var(--text-2); white-space: nowrap; }
   .cg-local.parcial { border-color: color-mix(in srgb, var(--amarelo) 60%, transparent); }
   .cg-local.feito { border-color: color-mix(in srgb, var(--verde) 60%, transparent); }
@@ -729,7 +749,10 @@ window.msgAcessoNegado = function (nomePagina) {
   .cg-topo { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 6px 0 8px;
              border-bottom: 1px solid var(--border); margin-bottom: 2px; }
   .cg-topo .cg-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .cg-topo .cg-linha strong { font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cg-tit { flex: 1 1 auto; min-width: 0; text-align: center; line-height: 1.15; }
+  .cg-tit strong { display: block; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cg-tit small { display: block; font-size: 11px; color: var(--text-2); white-space: nowrap; }
+  .cg-topo .cg-linha .cg-sub { flex: none; font-size: 12px; }
   .cg-topo .cg-btn.peq { padding: 6px 10px; }
   .cg-filtro { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
   .cg-filtro .cg-pill { flex: none; padding: 8px 10px; }
@@ -771,8 +794,11 @@ window.msgAcessoNegado = function (nomePagina) {
   .cg-estado.pend { color: var(--amarelo); }
   .cg-estado.erro { color: #e08585; }
   .cg-falta { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--text-2); }
-  .cg-selo { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  .cg-selo { flex: none; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
              color: var(--verde); border: 1px solid color-mix(in srgb, var(--verde) 45%, transparent); }
+  .cg-selo.andamento { color: var(--amarelo); border-color: color-mix(in srgb, var(--amarelo) 45%, transparent); }
+  .cg-selo.nao { color: var(--text-2); border-color: var(--border); }
+  .cg-estado { flex: 1 1 auto; min-width: 0; }
   .cg-login input { width: 100%; margin: 10px 0; padding: 12px; font-size: 16px; border-radius: 10px;
                     border: 1px solid var(--border); background: var(--bg); color: var(--text); }
   .cg-add { margin-top: 14px; }
@@ -789,10 +815,10 @@ window.msgAcessoNegado = function (nomePagina) {
   var CONCLUIDO = 'Concluído';
   var NIVEIS_CASA = ['bartender', 'chefe', 'equipe'];
   var NIVEIS_GRUPO = ['coord', 'treinador'];
-  var LS_CASA = 'contagem2_casa', LS_FILA = 'contagem2_fila';
+  var LS_CASA = 'contagem2_casa', LS_FILA = 'contagem2_fila', LS_ULTIMO = 'contagem2_ultimo';
   var el = document.getElementById('cg-app');
   var casa = null, dados = null, localSel = null, soFaltando = false, termo = '';
-  var fila = [], enviando = false, falhas = {}, reintento = 0, timerEnvia = null, marcou = false;
+  var fila = [], enviando = false, falhas = {}, reintento = 0, timerEnvia = null, marcou = false, dadosEm = 0;
   var timers = {}, segurados = {};  // segurados: número fora do comum esperando "Está certo"
   var invalidos = {};  // texto que não é número: nunca vai para a fila
   var pausado = false;  // na tela de login: o envio espera, senão o 403 redesenharia a tela no meio da senha
@@ -886,12 +912,18 @@ window.msgAcessoNegado = function (nomePagina) {
       if (!r.ok) throw r.status;
       return r.json();
     }).then(function (d) {
-      dados = d; marcou = false;
+      dados = d; marcou = false; dadosEm = Date.now();
       // Fila de outra contagem (semana virou) não pode cair nesta.
       fila = fila.filter(function (x) { return x.db_id === d.semana.db_id; }); salvaFila();
-      localSel ? telaLocal(localSel) : telaInicio();
+      // Leitura de fundo não redesenha debaixo de quem está digitando.
+      var ativo = document.activeElement;
+      if (!(silencioso && ativo && ativo.classList && ativo.classList.contains('cg-num'))) {
+        localSel ? telaLocal(localSel) : telaInicio();
+      }
       envia();
     }).catch(function (st) {
+      // Leitura de fundo sem internet: fica com o que já está na tela.
+      if (silencioso && dados) return;
       el.innerHTML = '<div class="cg-card"><p class="cg-erro">' +
         (typeof st === 'number' ? 'Não deu para abrir a contagem (' + st + ').' : 'Sem internet.') +
         '</p><button class="cg-btn" type="button" id="cg-de-novo">Tentar de novo</button></div>';
@@ -913,21 +945,80 @@ window.msgAcessoNegado = function (nomePagina) {
   function faltaNoLocal(local) {
     return dados.produtos.filter(function (p) { return valor(p, local) === null; });
   }
-  function resumoFaltas() {
-    var out = [];
-    dados.campos_loc.forEach(function (l) { var n = faltaNoLocal(l).length; if (n) out.push({ local: l, n: n }); });
-    return out;
+
+  // --- data e andamento: o que a pessoa precisa ver logo ao abrir ------------
+  function isoSemana() { return dados.semana.data ? String(dados.semana.data).slice(0, 10) : ''; }
+  function dataLonga(iso) {
+    var t = new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  function dataCurta(iso) {
+    return ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][new Date(iso + 'T12:00:00').getDay()] + ' ' + iso.slice(8, 10) + '/' + iso.slice(5, 7);
+  }
+  function num(n) { return Number(n).toLocaleString('pt-BR'); }
+  function andamento() {
+    var t = dados.produtos.length, feitos = 0, completos = 0;
+    dados.campos_loc.forEach(function (l) { var f = faltaNoLocal(l).length; feitos += t - f; if (t && !f) completos++; });
+    var total = t * dados.campos_loc.length;
+    // Para baixo: 100% só quando não falta nenhum número.
+    return { total: total, feitos: feitos, pct: total ? Math.floor(feitos * 100 / total) : 0, completos: completos };
+  }
+  function pctLocal(l) { var t = dados.produtos.length; return t ? Math.floor((t - faltaNoLocal(l).length) * 100 / t) : 0; }
+  function barraProg(pct, fino, id) {
+    return '<div class="cg-prog' + (fino ? ' fino' : '') + (pct >= 100 ? ' cheio' : '') + '"' + (id ? ' id="' + id + '"' : '') +
+      ' role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>';
+  }
+  function rotuloFalta(f, pct) { return f ? pct + '% · faltam ' + num(f) : 'completo'; }
+  function ultimoLocal() {
+    try { var u = JSON.parse(localStorage.getItem(LS_ULTIMO) || 'null'); return u && u.db === dados.semana.db_id ? u.local : null; }
+    catch (e) { return null; }
+  }
+  // Para onde o botão principal leva: o local em que este celular estava; senão
+  // um que ninguém começou, para a segunda pessoa não cair em cima da primeira.
+  function localSugerido() {
+    var t = dados.produtos.length;
+    var abertos = dados.campos_loc.filter(function (l) { return faltaNoLocal(l).length > 0; });
+    if (!abertos.length) return null;
+    var u = ultimoLocal();
+    if (u && abertos.indexOf(u) >= 0) return u;
+    return abertos.filter(function (l) { return faltaNoLocal(l).length === t; })[0] || abertos[0];
+  }
+  function proxLocal(atual) {
+    var ls = dados.campos_loc, i = ls.indexOf(atual);
+    for (var k = 1; k < ls.length; k++) { var l = ls[(i + k) % ls.length]; if (faltaNoLocal(l).length) return l; }
+    return null;
+  }
+  function semPendencia() { return !fila.length && !Object.keys(segurados).length && !Object.keys(invalidos).length; }
+  function abreLocal(local, soF) {
+    soFaltando = !!soF; termo = ''; localSel = local;
+    // Tela aberta há tempo: outra pessoa pode ter contado este local. Lê de novo
+    // antes de mostrar, senão os campos dela apareceriam vazios.
+    if (semPendencia() && Date.now() - dadosEm > 120000) {
+      el.innerHTML = '<div class="cg-card"><p class="cg-sub">Abrindo ' + esc(local.trim()) + '…</p></div>';
+      carrega(true).then(function () { if (localSel === local) telaLocal(local, true); });
+      return;
+    }
+    telaLocal(local, true);
+  }
+  function voltaInicio() {
+    telaInicio(); window.scrollTo(0, 0);
+    if (semPendencia()) carrega(true);
+  }
+  function vaiAdiante() {
+    var prox = proxLocal(localSel);
+    if (prox) abreLocal(prox, false); else voltaInicio();
   }
 
   function cabecalho() {
     var s = sess(), grupo = s && NIVEIS_GRUPO.indexOf(s.nivel) >= 0;
-    var data = dados.semana.data ? String(dados.semana.data).slice(0, 10) : '';
+    var data = isoSemana(), a = andamento();
     var velha = false;
     if (data) { var dias = (Date.now() - new Date(data + 'T12:00:00').getTime()) / 864e5; velha = dias > 6; }
-    var html = '<div class="cg-card"><div class="cg-topo-linha" style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">' +
-      '<div><h2>' + esc(dados.semana.titulo || 'Contagem') + '</h2>' +
-      '<p class="cg-sub">Contando: ' + esc((s && s.pessoa) || (s && s.nivel) || '') + ' · <a href="#" id="cg-troca">não sou eu</a></p></div>' +
-      (fechada() ? '<span class="cg-selo">Concluída</span>' : '') + '</div>';
+    var selo = fechada() ? ['', 'Concluída'] : a.feitos ? [' andamento', 'Em andamento'] : [' nao', 'Não iniciada'];
+    var html = '<div class="cg-card cg-hero"><div class="cg-hero-top"><span class="cg-kicker">Contagem da semana · ' + esc(nomeCasa(casa)) + '</span>' +
+      '<span class="cg-selo' + selo[0] + '">' + selo[1] + '</span></div>' +
+      '<div class="cg-data">' + esc(data ? dataLonga(data) : (dados.semana.titulo || 'Contagem')) + '</div>' +
+      '<p class="cg-sub">Contando: ' + esc((s && s.pessoa) || (s && s.nivel) || '') + ' · <a href="#" id="cg-troca">não sou eu</a></p>';
     if (grupo) {
       html += '<div class="cg-casas">';
       CASAS.forEach(function (c) { html += '<button type="button" class="cg-pill' + (c.slug === casa ? ' on' : '') + '" data-c="' + c.slug + '">' + esc(c.nome) + '</button>'; });
@@ -935,7 +1026,26 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     if (velha) html += '<p class="cg-aviso">Esta é a contagem de ' + data.split('-').reverse().join('/') +
       '. A contagem desta semana ainda não foi criada: avise o Rodrigo antes de contar.</p>';
-    return html + '</div>';
+    html += barraProg(a.pct) + '<div class="cg-prog-t"><b>' + a.pct + '%</b><span>' + num(a.feitos) + ' de ' + num(a.total) +
+      ' números · ' + a.completos + ' de ' + dados.campos_loc.length + ' locais completos</span></div>';
+    return html + acaoPrincipal(a) + '</div>';
+  }
+  // Uma ação só, a certa para o momento: começar, continuar, concluir ou reabrir.
+  function acaoPrincipal(a) {
+    if (!dados.produtos.length) return '<p class="cg-aviso">Esta contagem está sem produtos. Avise o Rodrigo antes de contar.</p>';
+    if (fechada()) {
+      return '<p class="cg-nota">Contagem concluída. Para mudar algum número, reabra.</p>' +
+        '<button class="cg-btn cg-cta" type="button" id="cg-reabrir">Reabrir contagem</button>';
+    }
+    if (a.feitos === a.total) {
+      return '<p class="cg-nota">Tudo contado. Confira e conclua: depois de concluída, a contagem vai para o Pedido de Compras.</p>' +
+        '<button class="cg-btn forte cg-cta" type="button" id="cg-concluir">Concluir contagem</button><div id="cg-concluir-msg"></div>';
+    }
+    var l = localSugerido(), falta = faltaNoLocal(l).length;
+    var rot = a.feitos === 0 ? 'Começar a contagem: ' : (ultimoLocal() === l ? 'Continuar: ' : 'Contar: ');
+    return '<button class="cg-btn forte cg-cta" type="button" id="cg-seguir" data-l="' + esc(l) + '">' + rot + esc(l.trim()) +
+      (falta < dados.produtos.length ? ' (faltam ' + num(falta) + ')' : '') + '</button>' +
+      (a.feitos ? '<p class="cg-nota">O botão de concluir aparece quando todos os locais estiverem completos.</p>' : '');
   }
   function ligaCabecalho() {
     var t = document.getElementById('cg-troca');
@@ -954,41 +1064,35 @@ window.msgAcessoNegado = function (nomePagina) {
     localSel = null;
     document.body.classList.remove('cg-contando');
     var tot = dados.produtos.length;
-    var html = cabecalho() + '<div class="cg-card"><h2>Onde você está contando?</h2>' +
-      '<p class="cg-sub">Toque no local e conte só o que está nele.</p><div class="cg-locais">';
+    var html = cabecalho() + '<div class="cg-card"><h2>Locais</h2>' +
+      '<p class="cg-sub">Conte só o que está no local que você escolher.</p><div class="cg-locais">';
     dados.campos_loc.forEach(function (l) {
       var falta = faltaNoLocal(l).length, feito = tot - falta;
       var cls = falta === 0 ? ' feito' : (feito > 0 ? ' parcial' : '');
       html += '<button type="button" class="cg-local' + cls + '" data-l="' + esc(l) + '"><span>' + esc(l.trim()) + '</span>' +
-        '<span class="cg-n">' + (falta === 0 ? 'completo' : feito === 0 ? 'não começou' : feito + ' de ' + tot) + '</span></button>';
+        '<span class="cg-n">' + (falta === 0 ? 'completo' : feito === 0 ? 'não começou' : num(feito) + ' de ' + num(tot)) + '</span>' +
+        (feito ? '<span class="cg-mini" style="width:' + pctLocal(l) + '%"></span>' : '') + '</button>';
     });
-    html += '</div></div>' + blocoConcluir() + barra();
+    html += '</div></div>' + ajuda() + barra();
     el.innerHTML = html;
     ligaCabecalho();
-    el.querySelectorAll('.cg-local').forEach(function (b) { b.onclick = function () { soFaltando = false; termo = ''; telaLocal(b.dataset.l, true); }; });
+    el.querySelectorAll('.cg-local').forEach(function (b) { b.onclick = function () { abreLocal(b.dataset.l, false); }; });
     ligaConcluir(); pintaEstado();
-    window.scrollTo(0, 0);
   }
 
-  function blocoConcluir() {
-    if (fechada()) {
-      return '<div class="cg-card"><h2>Contagem concluída</h2><p class="cg-sub">Para mudar algum número, reabra a contagem.</p>' +
-        '<p style="margin:10px 0 0"><button class="cg-btn" type="button" id="cg-reabrir">Reabrir contagem</button></p></div>';
-    }
-    var faltas = resumoFaltas(), total = faltas.reduce(function (s, f) { return s + f.n; }, 0);
-    if (!total) {
-      return '<div class="cg-card"><h2>Tudo contado</h2><p class="cg-sub">Confira e conclua. Depois de concluída, ' +
-        'a contagem vai para o Pedido de Compras.</p><p style="margin:10px 0 0">' +
-        '<button class="cg-btn forte" type="button" id="cg-concluir">Concluir contagem</button></p><div id="cg-concluir-msg"></div></div>';
-    }
-    return '<div class="cg-card"><h2>Ainda faltam ' + total + ' número(s)</h2>' +
-      '<p class="cg-aviso">' + faltas.map(function (f) { return esc(f.local.trim()) + ': ' + f.n; }).join(' · ') +
-      '. Produto sem número não conta como zero: se acabou, toque em "Não tem".</p>' +
-      '<p style="margin:10px 0 0"><button class="cg-btn" type="button" id="cg-ir-falta">Ir para os que faltam</button></p></div>';
+  function ajuda() {
+    return '<details class="cg-ajuda"><summary>Como funciona a contagem</summary><ul>' +
+      '<li>Cada número é salvo sozinho, mesmo sem internet. Verde: salvo. Amarelo: salvando ou esperando você confirmar. Vermelho: não salvou.</li>' +
+      '<li>Acabou o produto? Toque em "Não tem", que grava zero. Em branco quer dizer "não contei".</li>' +
+      '<li>Terminou de olhar o local? "Zerar os sem número" fecha o que não está nele.</li>' +
+      '<li>Número muito acima do normal pede confirmação antes de salvar.</li>' +
+      '<li>Com todos os locais completos, o chefe conclui e a contagem vai para o Pedido de Compras.</li>' +
+      '</ul></details>';
   }
   function ligaConcluir() {
-    var b = document.getElementById('cg-concluir'), r = document.getElementById('cg-reabrir'), f = document.getElementById('cg-ir-falta');
-    if (f) f.onclick = function () { var fx = resumoFaltas(); if (fx.length) { soFaltando = true; termo = ''; telaLocal(fx[0].local, true); } };
+    var b = document.getElementById('cg-concluir'), r = document.getElementById('cg-reabrir'), g = document.getElementById('cg-seguir');
+    // Local já começado abre só no que falta: quem volta não rola o que já contou.
+    if (g) g.onclick = function () { var l = g.dataset.l; abreLocal(l, faltaNoLocal(l).length < dados.produtos.length); };
     if (r) r.onclick = function () { mudaStatus('Em andamento', r); };
     if (b) b.onclick = function () {
       if (fila.length || enviando) { mostraMsg('cg-concluir-msg', 'Espere salvar tudo antes de concluir.', 'erro'); return; }
@@ -1028,16 +1132,17 @@ window.msgAcessoNegado = function (nomePagina) {
   function telaLocal(local, rolar) {
     localSel = local;
     document.body.classList.add('cg-contando');
+    try { localStorage.setItem(LS_ULTIMO, JSON.stringify({ db: dados.semana.db_id, local: local })); } catch (e) {}
     var bloqueado = fechada();
     var lista = dados.produtos.filter(function (p) {
       if (termo && p.nome.toLowerCase().indexOf(termo) < 0) return false;
       if (soFaltando && valor(p, local) !== null) return false;
       return true;
     });
-    var falta = faltaNoLocal(local).length;
-    var html = '<div class="cg-topo"><div class="cg-linha"><button class="cg-btn peq" type="button" id="cg-voltar">Locais</button>' +
-      '<strong style="font-size:17px">' + esc(local.trim()) + '</strong>' +
-      '<span class="cg-sub" id="cg-falta-n">' + (falta ? 'faltam ' + falta : 'completo') + '</span></div>' +
+    var falta = faltaNoLocal(local).length, pl = pctLocal(local), iso = isoSemana();
+    var html = '<div class="cg-topo"><div class="cg-linha"><button class="cg-btn peq" type="button" id="cg-voltar">‹ Locais</button>' +
+      '<div class="cg-tit"><strong>' + esc(local.trim()) + '</strong><small>' + esc(nomeCasa(casa)) + (iso ? ' · ' + dataCurta(iso) : '') + '</small></div>' +
+      '<span class="cg-sub" id="cg-falta-n">' + rotuloFalta(falta, pl) + '</span></div>' + barraProg(pl, true, 'cg-prog-local') +
       '<div class="cg-filtro"><input class="cg-busca" id="cg-busca" type="search" placeholder="Buscar produto" value="' + esc(termo) + '">' +
       '<button type="button" class="cg-pill' + (soFaltando ? ' on' : '') + '" id="cg-so">Só os que faltam</button></div></div>';
     if (bloqueado) html += '<p class="cg-aviso">Contagem concluída: para mudar um número, volte e reabra.</p>';
@@ -1057,14 +1162,21 @@ window.msgAcessoNegado = function (nomePagina) {
         '<div class="cg-msgw">' + (falhas[k] ? '<p class="cg-msg erro">' + esc(falhas[k]) + '</p>' : '') + '</div></div>';
     });
     if (!lista.length) html += '<p class="cg-sub" style="margin:14px 0">' + (soFaltando ? 'Nada faltando neste local.' : 'Nenhum produto com esse nome.') + '</p>';
-    if (!bloqueado && falta) {
-      html += '<div class="cg-card" id="cg-zera-card" style="margin-top:14px"><h2>Terminei este local</h2><p class="cg-sub">Os <span class="cg-zera-n">' + falta +
+    if (!bloqueado) {
+      html += '<div class="cg-card" id="cg-zera-card" style="margin-top:14px' + (falta ? '' : ';display:none') + '"><h2>Terminei este local</h2><p class="cg-sub">Os <span class="cg-zera-n">' + falta +
         '</span> produto(s) ainda sem número aqui ficam com zero (não tem neste local). Conte primeiro o que está no local.</p>' +
-        '<p style="margin:10px 0 0"><button class="cg-btn" type="button" id="cg-zera-resto">Zerar os <span class="cg-zera-n">' + falta + '</span> sem número</button></p></div>';
+        '<p style="margin:10px 0 0"><button class="cg-btn" type="button" id="cg-zera-resto">Zerar os <span class="cg-zera-n">' + falta + '</span> sem número</button></p></div>' +
+        '<div class="cg-card" id="cg-fim-card" style="margin-top:14px' + (falta ? ';display:none' : '') + '"><h2>Local completo</h2>' +
+        '<p class="cg-sub">Todos os produtos deste local têm número.</p>' +
+        '<p style="margin:10px 0 0"><button class="cg-btn forte" type="button" id="cg-fim-btn"></button></p></div>';
     }
     html += blocoAdicionar() + barra();
     el.innerHTML = html;
     if (rolar) el.scrollIntoView();
+    var px = document.getElementById('cg-prox'), fb = document.getElementById('cg-fim-btn');
+    if (px) px.onclick = vaiAdiante;
+    if (fb) fb.onclick = vaiAdiante;
+    pintaProx();
     var zr = document.getElementById('cg-zera-resto');
     if (zr) zr.onclick = function () {
       var resto = faltaNoLocal(local);
@@ -1076,11 +1188,8 @@ window.msgAcessoNegado = function (nomePagina) {
       resto.forEach(function (p) { enfileira(p.page_id + '|' + local, p.page_id, local, 0); });
       soFaltando = false; telaLocal(local);
     };
-    document.getElementById('cg-voltar').onclick = function () {
-      // Volta lendo de novo do servidor (outra pessoa pode ter contado outro
-      // local), mas só sem nada na fila: senão a tela perderia o digitado.
-      if (!fila.length && !Object.keys(segurados).length && !Object.keys(invalidos).length) { localSel = null; carrega(true); } else telaInicio();
-    };
+    // Volta na hora e lê de novo por trás (outra pessoa pode ter contado outro local).
+    document.getElementById('cg-voltar').onclick = voltaInicio;
     var busca = document.getElementById('cg-busca');
     busca.oninput = function () { termo = busca.value.trim().toLowerCase(); var pos = busca.selectionStart; telaLocal(local);
       var b2 = document.getElementById('cg-busca'); b2.focus(); try { b2.setSelectionRange(pos, pos); } catch (e) {} };
@@ -1154,12 +1263,25 @@ window.msgAcessoNegado = function (nomePagina) {
   function atualizaContadores() {
     var n = document.getElementById('cg-falta-n');
     if (n && localSel) {
-      var f = faltaNoLocal(localSel).length; n.textContent = f ? 'faltam ' + f : 'completo';
+      var f = faltaNoLocal(localSel).length, pl = pctLocal(localSel); n.textContent = rotuloFalta(f, pl);
+      var pb = document.getElementById('cg-prog-local');
+      if (pb) { pb.classList.toggle('cheio', pl >= 100); pb.setAttribute('aria-valuenow', pl); pb.firstChild.style.width = pl + '%'; }
       // O "Zerar os N" é desenhado ao abrir o local: acompanha o que foi digitado depois.
       el.querySelectorAll('.cg-zera-n').forEach(function (s) { s.textContent = f; });
       var zc = document.getElementById('cg-zera-card'); if (zc) zc.style.display = f ? '' : 'none';
+      var fc = document.getElementById('cg-fim-card'); if (fc) fc.style.display = f ? 'none' : '';
+      pintaProx();
     }
     pintaEstado();
+  }
+  // Local completo: o caminho para o próximo aparece sem precisar voltar à lista.
+  function pintaProx() {
+    if (!localSel) return;
+    var f = faltaNoLocal(localSel).length, prox = f ? null : proxLocal(localSel);
+    var rot = prox ? 'Próximo: ' + prox.trim() : 'Voltar e concluir';
+    var b = document.getElementById('cg-prox'), c = document.getElementById('cg-fim-btn');
+    if (b) { b.style.display = f || fechada() ? 'none' : ''; b.textContent = rot; }
+    if (c) c.textContent = rot;
   }
 
   // --- envio com fila (sobrevive a sem-internet e a recarregar a página) ----
@@ -1198,11 +1320,14 @@ window.msgAcessoNegado = function (nomePagina) {
 
   function barra() {
     return '<div class="cg-barra"><span class="cg-estado" id="cg-estado"></span>' +
-      (localSel ? '<button class="cg-btn peq" type="button" onclick="window.scrollTo(0,0)">Topo</button>' : '') + '</div>';
+      (localSel ? '<button class="cg-btn peq forte" type="button" id="cg-prox" style="display:none"></button>' +
+        '<button class="cg-btn peq" type="button" onclick="document.getElementById(\'cg-app\').scrollIntoView()">Topo</button>' : '') + '</div>';
   }
   function pintaEstado() {
     var e = document.getElementById('cg-estado'); if (!e) return;
     var nf = Object.keys(falhas).length + Object.keys(invalidos).length, ns = Object.keys(segurados).length;
+    // Na tela dos locais, "Tudo salvo" antes de contar qualquer coisa só atrapalha.
+    if (!localSel) e.parentNode.style.display = nf || ns || fila.length ? '' : 'none';
     e.className = 'cg-estado';
     if (nf) { e.classList.add('erro'); e.textContent = nf + ' número(s) não salvos: veja em vermelho'; return; }
     if (ns) { e.classList.add('pend'); e.textContent = ns + ' número(s) esperando você confirmar'; return; }
@@ -1239,7 +1364,12 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   window.addEventListener('online', envia);
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) envia(); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    envia();
+    // Voltou para o site na tela dos locais: o andamento pode ter mudado.
+    if (dados && !localSel && !pausado && semPendencia() && Date.now() - dadosEm > 120000) carrega(true);
+  });
   window.addEventListener('beforeunload', function (ev) {
     if (fila.length || Object.keys(segurados).length || Object.keys(invalidos).length) { ev.preventDefault(); ev.returnValue = ''; }
   });
@@ -3704,7 +3834,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '00cca8059998';
+  var BUILD = 'a35ddccddc3c';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
