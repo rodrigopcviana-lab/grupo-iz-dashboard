@@ -752,6 +752,19 @@ window.msgAcessoNegado = function (nomePagina) {
   .ac-graf svg { display:block; width:100%; height:auto; padding:0 8px; box-sizing:border-box; }
   .ac-leg { font-size:11px; color:var(--text-3); padding:0 14px 9px; }
   .ac-leg span { margin-right:12px; }
+  /* aba Volume: o portfólio do fornecedor em destaque, a troca combinada com tom mais leve */
+  table.ac tr.ac-cat td { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-3); font-weight:600; padding-top:14px; }
+  table.ac tr.ac-port td { background:color-mix(in srgb, var(--acc) 13%, transparent); }
+  table.ac tr.ac-port td:first-child { box-shadow:inset 3px 0 0 var(--acc); }
+  table.ac tr.ac-troca td { background:color-mix(in srgb, var(--acc) 6%, transparent); }
+  table.ac tr.ac-troca td:first-child { box-shadow:inset 3px 0 0 color-mix(in srgb, var(--acc) 55%, transparent); }
+  .ac-tag { display:inline-block; font-size:10.5px; font-weight:600; padding:1px 7px; margin-left:6px; border-radius:999px;
+    border:1px solid var(--acc); color:var(--acc); vertical-align:1px; white-space:nowrap; }
+  .ac-tag.troca { border-style:dashed; }
+  .ac-exp { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 4px; }
+  .ac-exp button { font:inherit; font-size:13px; font-weight:600; padding:8px 14px; border-radius:9px; border:1px solid var(--acc);
+    background:var(--card); color:var(--acc); cursor:pointer; }
+  .ac-exp button:disabled { opacity:.6; cursor:default; }
 </style>
 
 <div class="panel" id="ac-gate">
@@ -761,16 +774,663 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <div id="ac-wrap" style="display:none">
   <div class="ac-chips" id="ac-casas"></div>
-  <div class="ac-abas" id="ac-abas"><button type="button" data-a="sim" class="on">Simulação</button><button type="button" data-a="real">Real (Maristela)</button></div>
+  <div class="ac-abas" id="ac-abas"><button type="button" data-a="sim" class="on">Simulação</button><button type="button" data-a="real">Real (Maristela)</button><button type="button" data-a="vol">Volume de bebidas</button></div>
   <div class="ac-ctrl">
     <div><label for="ac-per">Período</label><select id="ac-per"><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">12 meses</option><option value="tudo">Tudo</option></select></div>
     <div id="ac-ctrl-mes" style="display:none"><label for="ac-mes">Mês</label><select id="ac-mes"></select></div>
-    <div><label>Ver os meses em</label><div class="ac-vis" id="ac-vis"><button type="button" data-v="cards">Cards</button><button type="button" data-v="tabela">Tabela</button></div></div>
+    <div id="ac-ctrl-vis"><label>Ver os meses em</label><div class="ac-vis" id="ac-vis"><button type="button" data-v="cards">Cards</button><button type="button" data-v="tabela">Tabela</button></div></div>
   </div>
   <div id="ac-corpo"></div>
 </div>
 
 <script type="text/plain" id="perf-src-analise">
+
+
+// bh_xlsx.py :: JS_XLSX — escritor de .xlsx sem biblioteca (Etapa E3,
+// PLANO_BH_V2.md). ZIP em método store (sem compressão) + OOXML mínimo.
+// Roda em navegador (window.*) e em Node para o harness de teste, que
+// injeta `global.window = global` antes de carregar este bloco.
+(function (window) {
+  'use strict';
+
+  // ---------- bytes / util ----------
+
+  function u16LE(n) { return new Uint8Array([n & 0xFF, (n >>> 8) & 0xFF]); }
+  function u32LE(n) {
+    return new Uint8Array([
+      n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF,
+    ]);
+  }
+  function utf8Bytes(str) { return new TextEncoder().encode(str); }
+
+  function concatBytes(arrays) {
+    var total = 0;
+    for (var i = 0; i < arrays.length; i++) total += arrays[i].length;
+    var out = new Uint8Array(total);
+    var offset = 0;
+    for (var j = 0; j < arrays.length; j++) {
+      out.set(arrays[j], offset);
+      offset += arrays[j].length;
+    }
+    return out;
+  }
+
+  function xmlEsc(s) {
+    return String(s).replace(/[&<>'"]/g, function (c) {
+      if (c === '&') return '&amp;';
+      if (c === '<') return '&lt;';
+      if (c === '>') return '&gt;';
+      if (c === "'") return '&apos;';
+      return '&quot;';
+    });
+  }
+
+  // Letra de coluna do Excel a partir do índice 1-based (1->A, 27->AA).
+  function colLetra(n) {
+    var s = '';
+    while (n > 0) {
+      var m = (n - 1) % 26;
+      s = String.fromCharCode(65 + m) + s;
+      n = Math.floor((n - 1) / 26);
+    }
+    return s;
+  }
+
+  // ---------- CRC-32 (necessário mesmo em store — vai no cabeçalho) ----------
+
+  var CRC32_TABELA = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(bytes) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) {
+      c = CRC32_TABELA[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  // ---------- ZIP (método store — 0, sem DEFLATE) ----------
+
+  function dosHora(d) {
+    return ((d.getHours() & 0x1F) << 11) | ((d.getMinutes() & 0x3F) << 5) | ((d.getSeconds() >> 1) & 0x1F);
+  }
+  function dosData(d) {
+    var ano = d.getFullYear() - 1980;
+    if (ano < 0) ano = 0;
+    return ((ano & 0x7F) << 9) | (((d.getMonth() + 1) & 0xF) << 5) | (d.getDate() & 0x1F);
+  }
+
+  // arquivos: [{ nome: 'xl/workbook.xml', dados: Uint8Array }, ...]
+  function empacotarZip(arquivos) {
+    var agora = new Date();
+    var dTime = dosHora(agora), dDate = dosData(agora);
+    var locais = [];
+    var centrais = [];
+    var offset = 0;
+
+    for (var i = 0; i < arquivos.length; i++) {
+      var nomeBytes = utf8Bytes(arquivos[i].nome);
+      var dados = arquivos[i].dados;
+      var crc = crc32(dados);
+
+      var lfh = concatBytes([
+        u32LE(0x04034b50),
+        u16LE(20),      // version needed to extract
+        u16LE(0),       // flags
+        u16LE(0),       // método: 0 = store (sem compressão)
+        u16LE(dTime),
+        u16LE(dDate),
+        u32LE(crc),
+        u32LE(dados.length), // compressed size == uncompressed em store
+        u32LE(dados.length),
+        u16LE(nomeBytes.length),
+        u16LE(0),       // extra field length
+        nomeBytes,
+      ]);
+      locais.push(lfh, dados);
+
+      var cdh = concatBytes([
+        u32LE(0x02014b50),
+        u16LE(20),      // version made by
+        u16LE(20),      // version needed to extract
+        u16LE(0),       // flags
+        u16LE(0),       // método: store
+        u16LE(dTime),
+        u16LE(dDate),
+        u32LE(crc),
+        u32LE(dados.length),
+        u32LE(dados.length),
+        u16LE(nomeBytes.length),
+        u16LE(0),       // extra field length
+        u16LE(0),       // comment length
+        u16LE(0),       // disk number start
+        u16LE(0),       // internal file attrs
+        u32LE(0),       // external file attrs
+        u32LE(offset),  // offset do local header
+        nomeBytes,
+      ]);
+      centrais.push(cdh);
+
+      offset += lfh.length + dados.length;
+    }
+
+    var centralDirOffset = offset;
+    var centralDirBytes = concatBytes(centrais);
+    var eocd = concatBytes([
+      u32LE(0x06054b50),
+      u16LE(0), u16LE(0),               // nº do disco / disco do central dir
+      u16LE(arquivos.length),           // entradas neste disco
+      u16LE(arquivos.length),           // entradas totais
+      u32LE(centralDirBytes.length),    // tamanho do central directory
+      u32LE(centralDirOffset),          // offset de início do central directory
+      u16LE(0),                         // comment length
+    ]);
+
+    return concatBytes(locais.concat([centralDirBytes, eocd]));
+  }
+
+  // ---------- OOXML: partes fixas ----------
+
+  var RELS_RAIZ =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" ' +
+    'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" ' +
+    'Target="xl/workbook.xml"/>' +
+    '</Relationships>';
+
+  // numFmtId: builtins usados sem declarar (49=Texto "@", 2="0.00", 1="0").
+  // 164/165 são customizados (moeda/data), únicos que precisam de <numFmt>.
+  var STYLES_XML =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="2">' +
+    '<numFmt numFmtId="164" formatCode="&quot;R$&quot;\ #,##0.00"/>' +
+    '<numFmt numFmtId="165" formatCode="dd/mm/yyyy"/>' +
+    '</numFmts>' +
+    '<fonts count="2">' +
+    '<font><sz val="11"/><name val="Calibri"/></font>' +
+    '<font><b/><sz val="11"/><name val="Calibri"/></font>' +
+    '</fonts>' +
+    '<fills count="3">' +
+    '<fill><patternFill patternType="none"/></fill>' +
+    '<fill><patternFill patternType="gray125"/></fill>' +
+    '<fill><patternFill patternType="solid">' +
+    '<fgColor rgb="FFE8E1D0"/><bgColor indexed="64"/></patternFill></fill>' +
+    '</fills>' +
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="7">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +                              // 0 padrão
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>' +  // 1 cabeçalho
+    '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +       // 2 texto
+    '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +        // 3 número (0.00)
+    '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +        // 4 inteiro
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +      // 5 moeda
+    '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +      // 6 data
+    '</cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+    '</styleSheet>';
+
+  var ESTILO_POR_TIPO = { texto: 2, numero: 3, inteiro: 4, moeda: 5, data: 6 };
+  var ESTILO_CABECALHO = 1;
+  var ESTILO_AUSENTE = 2; // "—" sempre em célula de texto, nunca 0 fabricado
+
+  function montaContentTypes(nAbas) {
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+      '<Default Extension="xml" ContentType="application/xml"/>',
+      '<Override PartName="/xl/workbook.xml" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
+      '<Override PartName="/xl/styles.xml" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>',
+    ];
+    for (var i = 1; i <= nAbas; i++) {
+      partes.push(
+        '<Override PartName="/xl/worksheets/sheet' + i + '.xml" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+      );
+    }
+    partes.push('</Types>');
+    return partes.join('');
+  }
+
+  function montaWorkbookXml(nomesAbas) {
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
+      '<sheets>',
+    ];
+    for (var i = 0; i < nomesAbas.length; i++) {
+      partes.push(
+        '<sheet name="' + xmlEsc(nomesAbas[i]) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'
+      );
+    }
+    partes.push('</sheets>', '</workbook>');
+    return partes.join('');
+  }
+
+  function montaWorkbookRels(nAbas) {
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
+    ];
+    for (var i = 1; i <= nAbas; i++) {
+      partes.push(
+        '<Relationship Id="rId' + i + '" ' +
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" ' +
+        'Target="worksheets/sheet' + i + '.xml"/>'
+      );
+    }
+    partes.push(
+      '<Relationship Id="rId' + (nAbas + 1) + '" ' +
+      'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" ' +
+      'Target="styles.xml"/>'
+    );
+    partes.push('</Relationships>');
+    return partes.join('');
+  }
+
+  // Nome de aba: até 31 chars, sem \ / ? * [ ] : , único dentro do arquivo.
+  function nomeAbaSeguro(nome, usados) {
+    var s = String(nome == null ? 'Aba' : nome).replace(/[\\/\?\*\[\]:]/g, ' ').trim();
+    if (!s) s = 'Aba';
+    if (s.length > 31) s = s.substring(0, 31);
+    var base = s, i = 2;
+    while (usados[s]) {
+      var suf = '_' + i;
+      s = base.substring(0, Math.max(1, 31 - suf.length)) + suf;
+      i++;
+    }
+    usados[s] = true;
+    return s;
+  }
+
+  // Serial de data do Excel: dias desde 1899-12-30 (epoch deslocado que já
+  // absorve o bug histórico do "29/02/1900" do Lotus 1-2-3).
+  function dataParaSerial(valor) {
+    var d;
+    if (valor instanceof Date) {
+      d = valor;
+    } else {
+      var partes = String(valor).split('-');
+      d = new Date(Date.UTC(+partes[0], +partes[1] - 1, +partes[2]));
+    }
+    var epoch = Date.UTC(1899, 11, 30);
+    var ms = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - epoch;
+    return Math.round(ms / 86400000);
+  }
+
+  function celulaAusenteXml(ref) {
+    // Nunca 0 fabricado (regra do Controle de Doses): ausência vira "—",
+    // sempre em célula de TEXTO — não pode ser somada como se fosse zero.
+    return '<c r="' + ref + '" t="inlineStr" s="' + ESTILO_AUSENTE + '"><is><t>&#8212;</t></is></c>';
+  }
+
+  function celulaXml(ref, tipo, valor) {
+    var ausente = valor === null || valor === undefined || valor === '';
+    var s = ESTILO_POR_TIPO[tipo] != null ? ESTILO_POR_TIPO[tipo] : 0;
+
+    if (tipo === 'texto') {
+      var texto = ausente ? '' : String(valor);
+      return '<c r="' + ref + '" t="inlineStr" s="' + s + '">' +
+        '<is><t xml:space="preserve">' + xmlEsc(texto) + '</t></is></c>';
+    }
+
+    if (ausente) return celulaAusenteXml(ref);
+
+    if (tipo === 'data') {
+      return '<c r="' + ref + '" s="' + s + '"><v>' + dataParaSerial(valor) + '</v></c>';
+    }
+
+    var num = Number(valor);
+    if (!isFinite(num)) return celulaAusenteXml(ref);
+    return '<c r="' + ref + '" s="' + s + '"><v>' + num + '</v></c>';
+  }
+
+  function montaSheetXml(aba) {
+    var colunas = aba.colunas || [];
+    var linhas = aba.linhas || [];
+    var partes = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    ];
+
+    if (colunas.length) {
+      partes.push('<cols>');
+      for (var c = 0; c < colunas.length; c++) {
+        var largura = colunas[c].largura || Math.max(10, String(colunas[c].titulo || '').length + 4);
+        partes.push('<col min="' + (c + 1) + '" max="' + (c + 1) + '" width="' + largura + '" customWidth="1"/>');
+      }
+      partes.push('</cols>');
+    }
+
+    partes.push('<sheetData>');
+
+    partes.push('<row r="1">');
+    for (var ci = 0; ci < colunas.length; ci++) {
+      var refc = colLetra(ci + 1) + '1';
+      partes.push(
+        '<c r="' + refc + '" t="inlineStr" s="' + ESTILO_CABECALHO + '">' +
+        '<is><t xml:space="preserve">' + xmlEsc(colunas[ci].titulo || '') + '</t></is></c>'
+      );
+    }
+    partes.push('</row>');
+
+    for (var r = 0; r < linhas.length; r++) {
+      var linha = linhas[r] || [];
+      var rn = r + 2;
+      partes.push('<row r="' + rn + '">');
+      for (var cj = 0; cj < colunas.length; cj++) {
+        var ref = colLetra(cj + 1) + rn;
+        partes.push(celulaXml(ref, colunas[cj].tipo, linha[cj]));
+      }
+      partes.push('</row>');
+    }
+
+    partes.push('</sheetData>', '</worksheet>');
+    return partes.join('');
+  }
+
+  // ---------- API pública ----------
+
+  // abas: [{ nome, colunas: [{titulo, tipo, largura?}], linhas: [[...]] }]
+  function xlsxGerar(abas) {
+    if (!abas || !abas.length) throw new Error('xlsxGerar: nenhuma aba informada');
+
+    var usados = {};
+    var nomesSeguros = [];
+    var sheetsXml = [];
+    for (var i = 0; i < abas.length; i++) {
+      nomesSeguros.push(nomeAbaSeguro(abas[i].nome, usados));
+      sheetsXml.push(montaSheetXml(abas[i]));
+    }
+
+    var arquivos = [];
+    arquivos.push({ nome: '[Content_Types].xml', dados: utf8Bytes(montaContentTypes(abas.length)) });
+    arquivos.push({ nome: '_rels/.rels', dados: utf8Bytes(RELS_RAIZ) });
+    arquivos.push({ nome: 'xl/workbook.xml', dados: utf8Bytes(montaWorkbookXml(nomesSeguros)) });
+    arquivos.push({ nome: 'xl/_rels/workbook.xml.rels', dados: utf8Bytes(montaWorkbookRels(abas.length)) });
+    arquivos.push({ nome: 'xl/styles.xml', dados: utf8Bytes(STYLES_XML) });
+    for (var j = 0; j < sheetsXml.length; j++) {
+      arquivos.push({ nome: 'xl/worksheets/sheet' + (j + 1) + '.xml', dados: utf8Bytes(sheetsXml[j]) });
+    }
+
+    return empacotarZip(arquivos);
+  }
+
+  function xlsxBaixa(abas, nomeArquivo) {
+    var bytes = xlsxGerar(abas);
+    var blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (nomeArquivo || 'banco-horas') + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  window.xlsxGerar = xlsxGerar;
+  window.xlsxBaixa = xlsxBaixa;
+})(window);
+
+
+
+// --- PDF mínimo (sem biblioteca) -------------------------------------------
+// Monta o arquivo como STRING de bytes (todo caractere já mapeado para <256
+// por winansi()), o que permite calcular os offsets do xref com .length antes
+// de converter para Uint8Array. Com string UTF-16 crua os offsets sairiam
+// errados e o PDF abriria corrompido.
+var PDF_L = 595.28, PDF_A = 841.89, PDF_MARGEM = 52;
+
+function winansi(s) {
+  // Latin-1 direto quando dá; o que não couber vira equivalente sem acento.
+  var mapa = {
+    '—': '-', '–': '-', '‘': "'", '’': "'",
+    '“': '"', '”': '"', '…': '...', ' ': ' ',
+    '•': '-', '·': '-', '−': '-', 'º': 'o', 'ª': 'a'
+  };
+  var out = '';
+  for (var i = 0; i < s.length; i++) {
+    var c = s[i];
+    if (mapa[c]) { out += mapa[c]; continue; }
+    var cod = s.charCodeAt(i);
+    if (cod < 256) { out += c; continue; }
+    // Último recurso: decompõe o acento e joga fora a marca.
+    var base = c.normalize ? c.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '?';
+    out += (base && base.charCodeAt(0) < 256) ? base : '?';
+  }
+  return out;
+}
+
+function pdfEsc(s) { return s.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'); }
+
+// Largura média da Helvetica ~0,5 em; 0,52 dá folga e evita estouro à direita.
+function pdfQuebra(texto, tam, largura) {
+  var max = Math.max(8, Math.floor(largura / (tam * 0.52)));
+  var linhas = [];
+  String(texto).split(/\n/).forEach(function (paragrafo) {
+    var palavras = paragrafo.split(/\s+/).filter(Boolean);
+    if (!palavras.length) { linhas.push(''); return; }
+    var atual = '';
+    palavras.forEach(function (p) {
+      if (!atual) { atual = p; return; }
+      if ((atual + ' ' + p).length <= max) atual += ' ' + p;
+      else { linhas.push(atual); atual = p; }
+    });
+    if (atual) linhas.push(atual);
+  });
+  return linhas;
+}
+
+// blocos: [{t:'h1'|'h2'|'p'|'li'|'sep', texto}] — a paginação é decidida aqui,
+// não pelo chamador.
+// Largura estimada com a mesma constante do quebrador (0,52 em). Serve pra
+// centralizar e pra alinhar preço à direita — não é métrica real da fonte, e
+// não precisa ser: erro de alguns pontos não se percebe num cardápio.
+function pdfLarguraAprox(txt, tam) { return String(txt).length * tam * 0.52; }
+
+// `opts` é opcional e TODO chamador antigo continua passando 3 argumentos —
+// sem ele o PDF sai exatamente como antes. Aceita:
+//   opts.logo = {b64, w, h, alt}  imagem JPEG (baseline, DCTDecode) no topo
+//   opts.tituloCentro = true      título/subtítulo centralizados
+function pdfMonta(titulo, subtitulo, blocos, opts) {
+  opts = opts || {};
+  var larg = PDF_L - PDF_MARGEM * 2;
+  var paginas = [], atual = [], y = PDF_A - PDF_MARGEM;
+  function novaPagina() { if (atual.length) paginas.push(atual); atual = []; y = PDF_A - PDF_MARGEM; }
+  function escreve(txt, tam, negrito, recuo, centro) {
+    var linhas = pdfQuebra(txt, tam, larg - (recuo || 0));
+    for (var i = 0; i < linhas.length; i++) {
+      if (y < PDF_MARGEM + 28) novaPagina();
+      var x = PDF_MARGEM + (recuo || 0);
+      if (centro) x = (PDF_L - pdfLarguraAprox(linhas[i], tam)) / 2;
+      atual.push({ x: x, y: y, tam: tam, negrito: negrito, txt: linhas[i] });
+      y -= tam * 1.42;
+    }
+  }
+  // Nome à esquerda e preço à direita na MESMA linha — é a forma de cardápio,
+  // e um `escreve` normal empilharia os dois.
+  function escreveLinha(esq, dir, tam, negrito) {
+    if (y < PDF_MARGEM + 28) novaPagina();
+    atual.push({ x: PDF_MARGEM, y: y, tam: tam, negrito: negrito, txt: String(esq) });
+    if (dir) {
+      var xd = PDF_L - PDF_MARGEM - pdfLarguraAprox(dir, tam);
+      atual.push({ x: xd, y: y, tam: tam, negrito: negrito, txt: String(dir) });
+    }
+    y -= tam * 1.42;
+  }
+
+  // Tabela de colunas fixas (2026-10-22, prévia de preços do Cardápio):
+  // b.colunas [{t, larg, dir}] em pontos, b.linhas [[...]] (texto já
+  // formatado; linha {secao: 'X'} vira faixa de categoria). O cabeçalho se
+  // repete em cada página nova; texto que não cabe na coluna é cortado.
+  function escreveTabela(b) {
+    var tam = b.tam || 7.5, alt = tam * 1.55;
+    function corta(t, w) {
+      t = String(t == null ? '' : t);
+      while (t.length > 1 && pdfLarguraAprox(t, tam) > w - 3) t = t.slice(0, -2) + '…';
+      return t;
+    }
+    function linha(cels, negrito) {
+      if (y < PDF_MARGEM + 28) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
+      var x = PDF_MARGEM;
+      b.colunas.forEach(function (c, i) {
+        var t = corta(cels[i], c.larg);
+        if (t) atual.push({ x: c.dir ? x + c.larg - pdfLarguraAprox(t, tam) - 2 : x, y: y, tam: tam, negrito: negrito, txt: t });
+        x += c.larg;
+      });
+      y -= alt;
+    }
+    linha(b.colunas.map(function (c) { return c.t; }), true);
+    b.linhas.forEach(function (l) {
+      if (l && l.nota !== undefined) {
+        var ls = pdfQuebra(String(l.nota), tam - 0.5, larg - 14);
+        ls.forEach(function (t) {
+          if (y < PDF_MARGEM + 28) novaPagina();
+          atual.push({ x: PDF_MARGEM + 10, y: y, tam: tam - 0.5, negrito: false, txt: t });
+          y -= (tam - 0.5) * 1.4;
+        });
+        y -= 1;
+        return;
+      }
+      if (l && l.secao !== undefined) {
+        if (y < PDF_MARGEM + 40) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
+        y -= 3;
+        atual.push({ x: PDF_MARGEM, y: y, tam: tam + 1, negrito: true, txt: String(l.secao).toUpperCase() });
+        y -= alt + 1;
+        return;
+      }
+      linha(l, false);
+    });
+  }
+
+  // Espaço reservado pro logo ANTES de qualquer texto (só na página 1). A
+  // imagem em si é desenhada na emissão do fluxo, mas o espaço tem que sair
+  // daqui, senão o título nasceria por cima dela.
+  var logo = opts.logo && opts.logo.b64 ? opts.logo : null;
+  var logoLado = 0;
+  if (logo) {
+    logoLado = 56;
+    y -= logoLado + 14;
+  }
+
+  escreve(titulo, 18, true, 0, !!opts.tituloCentro); y -= 4;
+  if (subtitulo) { escreve(subtitulo, 9.5, false, 0, !!opts.tituloCentro); }
+  y -= 10;
+  blocos.forEach(function (b) {
+    if (!b) return;
+    if (b.tipo === 'sep') { y -= 9; return; }
+    // Quebra de página explícita (2026-10-28, uma ficha técnica por página).
+    if (b.tipo === 'pagina') { novaPagina(); return; }
+    if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0, !!b.centro); y -= 3; return; }
+    if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0, !!b.centro); y -= 2; return; }
+    if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }
+    if (b.tipo === 'linha') { escreveLinha(b.esq, b.dir, b.tam || 11, !!b.negrito); return; }
+    if (b.tipo === 'tabela') { escreveTabela(b); return; }
+    // Descrição do item: respiro embaixo, senão ela encosta no nome do item
+    // seguinte e o cardápio vira um bloco só (visto na primeira prova impressa).
+    if (b.tipo === 'nota') { escreve(b.texto, 9, false, b.recuo || 0); y -= 5; return; }
+    escreve(b.texto, 10.5, false, 0, !!b.centro);
+    y -= 4;
+  });
+  if (atual.length) paginas.push(atual);
+  if (!paginas.length) paginas.push([]);
+
+  var objs = [], corpo = '%PDF-1.4\n';
+  function add(txt) { objs.push(corpo.length); corpo += txt; }
+  // 1 catálogo, 2 páginas, 3 e 4 fontes, 5 a imagem (só quando há logo),
+  // depois 2 objetos por página.
+  var nPag = paginas.length;
+  var nImg = logo ? 1 : 0;
+  var basePag = 5 + nImg;
+  var kids = [];
+  for (var i = 0; i < nPag; i++) kids.push((basePag + i * 2) + ' 0 R');
+  add('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
+  add('2 0 obj\n<</Type/Pages/Kids[' + kids.join(' ') + ']/Count ' + nPag + '>>\nendobj\n');
+  add('3 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>\nendobj\n');
+  add('4 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>\nendobj\n');
+  if (logo) {
+    // JPEG entra CRU no PDF (DCTDecode) — sem recodificar, sem canvas. Os
+    // logos são baseline 120x120 RGB (conferido em build); JPEG progressivo
+    // NÃO funciona aqui, e por isso as dimensões e o nº de componentes vêm
+    // medidos do Python, nunca adivinhados no cliente.
+    var img = atob(logo.b64);
+    add('5 0 obj\n<</Type/XObject/Subtype/Image/Width ' + logo.w + '/Height ' + logo.h +
+        '/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ' + img.length +
+        '>>\nstream\n' + img + '\nendstream\nendobj\n');
+  }
+  paginas.forEach(function (linhas, idx) {
+    var num = basePag + idx * 2;
+    var fluxo = '';
+    if (logo && idx === 0) {
+      var lx = ((PDF_L - logoLado) / 2).toFixed(2);
+      var ly = (PDF_A - PDF_MARGEM - logoLado).toFixed(2);
+      fluxo += 'q ' + logoLado + ' 0 0 ' + logoLado + ' ' + lx + ' ' + ly + ' cm /Im0 Do Q\n';
+    }
+    fluxo += 'BT\n';
+    var fonteAtual = null, tamAtual = null;
+    linhas.forEach(function (l) {
+      var f = l.negrito ? '/F2' : '/F1';
+      if (f !== fonteAtual || l.tam !== tamAtual) {
+        fluxo += f + ' ' + l.tam + ' Tf\n';
+        fonteAtual = f; tamAtual = l.tam;
+      }
+      fluxo += '1 0 0 1 ' + l.x.toFixed(2) + ' ' + l.y.toFixed(2) + ' Tm\n';
+      fluxo += '(' + pdfEsc(winansi(l.txt)) + ') Tj\n';
+    });
+    fluxo += 'ET';
+    var recursos = '<</Font<</F1 3 0 R/F2 4 0 R>>' +
+      (logo && idx === 0 ? '/XObject<</Im0 5 0 R>>' : '') + '>>';
+    add(num + ' 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 ' + PDF_L.toFixed(2) + ' ' + PDF_A.toFixed(2) +
+        ']/Resources' + recursos + '/Contents ' + (num + 1) + ' 0 R>>\nendobj\n');
+    add((num + 1) + ' 0 obj\n<</Length ' + fluxo.length + '>>\nstream\n' + fluxo + '\nendstream\nendobj\n');
+  });
+  // O padding do xref é montado em laço de propósito: um literal de 10 zeros
+  // aqui é lido como TELEFONE pelo _checa_publica e aborta a geração do portal
+  // inteiro (mesma armadilha que o build id já causou no Bento).
+  function pad10(n) { var s = String(n); while (s.length < 10) s = '0' + s; return s; }
+  var inicioXref = corpo.length;
+  var total = objs.length + 1;
+  var xref = 'xref\n0 ' + total + '\n' + pad10(0) + ' 65535 f \n';
+  objs.forEach(function (off) { xref += pad10(off) + ' 00000 n \n'; });
+  corpo += xref + 'trailer\n<</Size ' + total + '/Root 1 0 R>>\nstartxref\n' + inicioXref + '\n%%EOF';
+
+  var bytes = new Uint8Array(corpo.length);
+  for (var k = 0; k < corpo.length; k++) bytes[k] = corpo.charCodeAt(k) & 0xff;
+  return new Blob([bytes], { type: 'application/pdf' });
+}
+
+function pdfBaixa(nomeArquivo, titulo, subtitulo, blocos, opts) {
+  var blob = pdfMonta(titulo, subtitulo, blocos, opts);
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = nomeArquivo.replace(/[^\w.\- ]+/g, '').slice(0, 90) || 'treinamento.pdf';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+
+function nomeArquivoSeguro(base) {
+  var s = base.normalize ? base.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : base;
+  return s.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 70);
+}
+
 (function () {
   var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
   var SLUG = 'analise-cmv.html';
@@ -999,6 +1659,161 @@ window.msgAcessoNegado = function (nomePagina) {
       '<div class="ac-box" id="ac-porcasa"><h2>Por casa em ' + esc(m) + '</h2>' + corpo + '</div>'];
   }
 
+  // ---------- Volume de bebidas (volume_bebidas.py, 2026-10-30) ----------
+  // Quanto de cada bebida vai nos drinks e nas doses: ml do consumo das fichas ÷ garrafa da B.D.1.
+  // Média = soma dos meses do período ÷ meses com relatório (mês sem relatório não vira zero).
+  // No grupo, cada casa tira a média nos meses DELA e as médias se somam.
+  function r1(v) { return v == null ? null : Math.round(v * 10) / 10; }
+  function vForn(V) { return ((V.fornecedores || {})[V.destaque] || {}).nome || 'Portfólio'; }
+  function vCasas(c) { return CASAS.map(function (x) { return x[0]; }).filter(function (s) { return c.volume.casas && c.volume.casas[s]; }); }
+  function vMedia(ml, ms) { if (!ms.length) return null; var s = 0; ms.forEach(function (m) { s += ml[m] || 0; }); return s / ms.length; }
+  function vLinhas(c) {
+    var V = c.volume, D = V.destaque, cs = c.grupo ? vCasas(c) : null, out = [];
+    (V.itens || []).forEach(function (it) {
+      var L = { nome: it.nome, cat: it.cat, vol: it.vol || null, prods: it.prods || [], port: !!D && it.forn === D,
+                troca: it.troca && it.troca.forn === D ? it.troca.para : null, casas: {}, ml: 0 };
+      if (cs) cs.forEach(function (s) {
+        var x = it.ml[s]; if (!x) return;
+        var m = vMedia(x, noPeriodo(V.casas[s].meses)); if (m) { L.casas[s] = m; L.ml += m; }
+      });
+      else L.ml = vMedia(it.ml, noPeriodo(V.meses)) || 0;
+      if (L.ml > 0) out.push(L);
+    });
+    return out;
+  }
+  function vGf(ml, vol) { return vol ? ml / vol : null; }
+  // bebida de pouco uso não aparece como zero: "< 0,1"
+  function vNum(v, d) { return v != null && v > 0 && v < 0.5 * Math.pow(10, -d) ? '< ' + nu(Math.pow(10, -d), d) : nu(v, d); }
+  function vSoma(ls) {
+    var t = { ml: 0, gf: 0 };
+    ls.forEach(function (L) { t.ml += L.ml; if (L.vol) t.gf += L.ml / L.vol; });
+    return t;
+  }
+  function vCob(c) {
+    var V = c.volume, vals = [];
+    if (c.grupo) vCasas(c).forEach(function (s) { noPeriodo(V.casas[s].meses).forEach(function (m) { var x = V.casas[s].cobertura[m]; if (x != null) vals.push(x); }); });
+    else noPeriodo(V.meses).forEach(function (m) { var x = V.cobertura[m]; if (x != null) vals.push(x); });
+    return vals.length ? vals.reduce(function (a, b) { return a + b; }, 0) / vals.length : null;
+  }
+  function vPeriodoTxt(c) {
+    if (c.grupo) return 'média dos últimos ' + (PER === 'tudo' ? 'meses' : PER + ' meses') + ' de cada casa';
+    var p = noPeriodo(c.volume.meses);
+    return p.length ? 'média de ' + p[0] + ' a ' + p[p.length - 1] + ' (' + p.length + (p.length > 1 ? ' meses' : ' mês') + ' com relatório)' : 'sem meses';
+  }
+  function vTabela(c, ls, comCat, rotTotal) {
+    var grupo = !!c.grupo, cs = grupo ? vCasas(c) : [], FORN = vForn(c.volume);
+    // garrafas logo depois do nome: no celular é o que cabe sem rolar a tabela
+    var cab = [['Bebida', ''], ['Garrafas/mês', 'n'], ['Garrafas em 12 meses', 'n']]
+      .concat(grupo ? cs.map(function (s) { return [esc(NOME[s]), 'n']; }) : [['Garrafa', 'n']]).concat([['Litros/mês', 'n']]);
+    var linhas = [], cat = null;
+    ls.forEach(function (L) {
+      if (comCat && L.cat !== cat) { cat = L.cat; linhas.push('<tr class="ac-cat"><td colspan="' + cab.length + '">' + esc(cat) + '</td></tr>'); }
+      var g = vGf(L.ml, L.vol);
+      var tag = L.port ? '<span class="ac-tag">' + esc(FORN) + '</span>' : L.troca ? '<span class="ac-tag troca">troca: vira ' + esc(L.troca) + '</span>' : '';
+      linhas.push('<tr class="' + (L.port ? 'ac-port' : L.troca ? 'ac-troca' : '') + '"><td style="white-space:normal;min-width:180px">' + esc(L.nome) + tag +
+        (L.prods.length ? '<div class="ac-meta">em ' + esc(L.prods.slice(0, 3).join(', ').toLowerCase()) + '</div>' : '') + '</td>' +
+        '<td class="n"><b>' + vNum(g, 1) + '</b></td><td class="n">' + vNum(g == null ? null : g * 12, 0) + '</td>' +
+        (grupo ? cs.map(function (s) { var v = L.casas[s]; return '<td class="n">' + (v ? (L.vol ? vNum(v / L.vol, 1) : vNum(v / 1000, 2) + ' L') : '—') + '</td>'; }).join('')
+               : '<td class="n">' + (L.vol ? nu(L.vol, 0) + ' ml' : '—') + '</td>') +
+        '<td class="n">' + vNum(L.ml / 1000, 2) + '</td></tr>');
+    });
+    var t = vSoma(ls);
+    var tot = '<tr class="tot"><td>' + (rotTotal || 'Total') + '</td><td class="n">' + nu(t.gf, 1) + '</td><td class="n">' + nu(t.gf * 12, 0) + '</td>' +
+      (grupo ? cs.map(function () { return '<td></td>'; }).join('') : '<td></td>') + '<td class="n">' + nu(t.ml / 1000, 1) + '</td></tr>';
+    return tabela(cab, linhas, tot);
+  }
+  function volHtml(c) {
+    var V = c.volume;
+    if (!V || !(V.itens || []).length) return '<p class="ac-vazio">Volume de bebidas ainda não publicado para esta casa.</p>';
+    var ls = vLinhas(c), FORN = vForn(V);
+    var port = ls.filter(function (L) { return L.port; }), troca = ls.filter(function (L) { return L.troca; });
+    var T = vSoma(ls), P = vSoma(port), PT = vSoma(port.concat(troca)), cob = vCob(c);
+    var h = '<div class="ac-kpis">' +
+      kpi(nu(T.gf, 0), 'Garrafas por mês', nu(T.ml / 1000, 1) + ' litros de ' + ls.length + ' bebidas em drinks e doses') +
+      kpi(nu(P.gf, 1), 'Garrafas ' + FORN + ' por mês', nu(P.ml / 1000, 1) + ' litros, ' + pc(T.ml ? P.ml / T.ml * 100 : null) + ' do volume') +
+      (troca.length ? kpi(nu(PT.gf, 1), 'Com as trocas combinadas', troca.map(function (L) { return esc(L.troca); }).join(' e ') + ' no lugar de hoje') : '') +
+      kpi(pc(cob), 'Do faturamento com ficha', 'o que não tem ficha não entra: o volume é piso') + '</div>';
+    h += '<div class="ac-exp"><button type="button" id="ac-vol-xlsx">Baixar Excel</button><button type="button" id="ac-vol-pdf">Baixar PDF</button></div>' +
+      '<p class="ac-meta" style="margin:0 0 4px">' + esc(vPeriodoTxt(c)) + '. Garrafas em 12 meses = garrafas por mês × 12, sem sazonalidade.' +
+      (c.grupo ? ' Na coluna de cada casa, as garrafas por mês dela.' : '') + '</p>';
+    if (port.length || troca.length)
+      h += '<div class="ac-box"><h2>Portfólio ' + esc(FORN) + '</h2>' + vTabela(c, port.concat(troca), false, troca.length ? 'Total com as trocas' : 'Total') + '</div>';
+    h += '<div class="ac-box"><h2>Todas as bebidas de drink e dose</h2>' + vTabela(c, ls, true) + '</div>';
+    return h;
+  }
+  function vNotas(c) {
+    return [
+      'Volume = venda de cada mês × quantidade de cada bebida na ficha técnica do drink ou da dose (consumo da Análise de CMV). Garrafas = volume ÷ tamanho da garrafa na B.D.1.',
+      vPeriodoTxt(c).charAt(0).toUpperCase() + vPeriodoTxt(c).slice(1) + '. Mês sem relatório de vendas não conta como zero.',
+      'Do faturamento com ficha: ' + pc(vCob(c)) + '. Produto vendido sem ficha não entra; por isso o volume é piso.',
+      'Produção da casa (infusão, batch) fica fora: conta só a bebida que a ficha aponta direto.',
+      'Troca combinada: bebida de hoje que vai ser substituída por uma do portfólio ' + vForn(c.volume) + ' (o volume dela mostra o que a troca traz).'
+    ];
+  }
+  function vNomeArquivo(c) { return nomeArquivoSeguro('volume bebidas ' + (c.grupo ? 'Grupo IZ' : NOME[CASA] || CASA) + ' ' + new Date().toISOString().slice(0, 10)); }
+  // portfólio primeiro, trocas depois (mesma ordem da tela)
+  function vDestaque(ls) { return ls.filter(function (L) { return L.port; }).concat(ls.filter(function (L) { return L.troca; })); }
+  function vExcel(c) {
+    var ls = vLinhas(c), grupo = !!c.grupo, cs = grupo ? vCasas(c) : [], FORN = vForn(c.volume), V = c.volume;
+    var col = [{ titulo: 'Categoria', tipo: 'texto', largura: 24 }, { titulo: 'Bebida', tipo: 'texto', largura: 44 },
+               { titulo: FORN, tipo: 'texto', largura: 26 }, { titulo: 'Garrafa (ml)', tipo: 'inteiro', largura: 12 }];
+    cs.forEach(function (s) { col.push({ titulo: NOME[s] + ' (garrafas/mês)', tipo: 'numero', largura: 15 }); });
+    col.push({ titulo: 'Litros/mês', tipo: 'numero', largura: 12 }, { titulo: 'Garrafas/mês', tipo: 'numero', largura: 13 },
+             { titulo: 'Garrafas em 12 meses', tipo: 'numero', largura: 18 });
+    function lin(L) {
+      var g = vGf(L.ml, L.vol), r = [L.cat, L.nome, L.port ? 'sim' : L.troca ? 'troca: vira ' + L.troca : '', L.vol];
+      cs.forEach(function (s) { var v = L.casas[s]; r.push(v && L.vol ? r1(v / L.vol) : null); });
+      return r.concat([Math.round(L.ml / 10) / 100, r1(g), g == null ? null : Math.round(g * 12)]);
+    }
+    var abas = [];
+    var dest = vDestaque(ls);
+    if (dest.length) abas.push({ nome: 'Portfólio ' + FORN, colunas: col, linhas: dest.map(lin) });
+    abas.push({ nome: 'Todas as bebidas', colunas: col, linhas: ls.map(lin) });
+    // mês a mês em litros: na casa, os meses dela; no grupo, uma linha por casa e bebida
+    var meses = grupo ? [] : V.meses.slice();
+    if (grupo) cs.forEach(function (s) { V.casas[s].meses.forEach(function (m) { if (meses.indexOf(m) < 0) meses.push(m); }); });
+    meses.sort(function (a, b) { return ordem(a) - ordem(b); });
+    var colM = (grupo ? [{ titulo: 'Casa', tipo: 'texto', largura: 10 }] : []).concat([{ titulo: 'Bebida', tipo: 'texto', largura: 44 }, { titulo: FORN, tipo: 'texto', largura: 22 }])
+      .concat(meses.map(function (m) { return { titulo: m + ' (litros)', tipo: 'numero', largura: 12 }; }));
+    var linM = [];
+    (V.itens || []).forEach(function (it) {
+      var marca = it.forn === V.destaque ? 'sim' : it.troca && it.troca.forn === V.destaque ? 'troca: vira ' + it.troca.para : '';
+      var fontes = grupo ? cs.filter(function (s) { return it.ml[s]; }).map(function (s) { return [s, it.ml[s], V.casas[s].meses]; }) : [[null, it.ml, V.meses]];
+      fontes.forEach(function (f) {
+        linM.push((grupo ? [NOME[f[0]]] : []).concat([it.nome, marca]).concat(meses.map(function (m) {
+          return f[2].indexOf(m) < 0 ? null : Math.round((f[1][m] || 0) / 10) / 100;
+        })));
+      });
+    });
+    abas.push({ nome: 'Mês a mês', colunas: colM, linhas: linM });
+    abas.push({ nome: 'Como ler', colunas: [{ titulo: 'Nota', tipo: 'texto', largura: 140 }], linhas: vNotas(c).map(function (t) { return [t]; }) });
+    xlsxBaixa(abas, vNomeArquivo(c));  // a extensão quem põe é o xlsxBaixa
+  }
+  function vPdf(c) {
+    var ls = vLinhas(c), grupo = !!c.grupo, cs = grupo ? vCasas(c) : [], FORN = vForn(c.volume);
+    // largura útil do A4 retrato: 491 pontos
+    var cols = grupo
+      ? [{ t: 'Bebida', larg: 147 }].concat(cs.map(function (s) { return { t: NOME[s], larg: 37, dir: true }; })).concat([{ t: 'Gf/mês', larg: 42, dir: true }, { t: 'L/mês', larg: 38, dir: true }, { t: '12 meses', larg: 42, dir: true }])
+      : [{ t: 'Bebida', larg: 236 }, { t: 'Garrafa', larg: 50, dir: true }, { t: 'Litros/mês', larg: 62, dir: true }, { t: 'Garrafas/mês', larg: 70, dir: true }, { t: '12 meses', larg: 73, dir: true }];
+    // no bloco do portfólio a troca abre pelo nome novo: a coluna corta o fim do nome
+    function lin(L, noPort) {
+      var g = vGf(L.ml, L.vol);
+      var nome = L.troca ? '» ' + (noPort ? L.troca + ' (hoje ' + L.nome + ')' : L.nome + ' (vira ' + L.troca + ')') : (L.port ? '» ' : '') + L.nome;
+      var r = [nome];
+      if (grupo) cs.forEach(function (s) { var v = L.casas[s]; r.push(v && L.vol ? vNum(v / L.vol, 1) : '-'); });
+      else r.push(L.vol ? nu(L.vol, 0) + ' ml' : '-');
+      return r.concat(grupo ? [vNum(g, 1), vNum(L.ml / 1000, 1), vNum(g == null ? null : g * 12, 0)] : [vNum(L.ml / 1000, 2), vNum(g, 1), vNum(g == null ? null : g * 12, 0)]);
+    }
+    function comCat(lista) { var out = [], cat = null; lista.forEach(function (L) { if (L.cat !== cat) { cat = L.cat; out.push({ secao: cat }); } out.push(lin(L)); }); return out; }
+    var dest = vDestaque(ls), P = vSoma(ls.filter(function (L) { return L.port; })), T = vSoma(ls);
+    var blocos = [{ tipo: 'nota', texto: nu(T.gf, 0) + ' garrafas por mês em drinks e doses (' + nu(T.ml / 1000, 1) + ' litros); ' + FORN + ': ' + nu(P.gf, 1) + ' garrafas por mês. » = portfólio ' + FORN + ' ou troca combinada.' }];
+    if (dest.length) blocos.push({ tipo: 'h2', texto: 'Portfólio ' + FORN }, { tipo: 'tabela', colunas: cols, linhas: dest.map(function (L) { return lin(L, true); }) });
+    blocos.push({ tipo: 'h2', texto: 'Todas as bebidas de drink e dose' }, { tipo: 'tabela', colunas: cols, linhas: comCat(ls) }, { tipo: 'sep' });
+    vNotas(c).forEach(function (t) { blocos.push({ tipo: 'nota', texto: t }); });
+    pdfBaixa(vNomeArquivo(c) + '.pdf', 'Volume de bebidas · ' + (NOME[CASA] === 'Todas' ? 'Grupo IZ' : NOME[CASA]),
+      'Drinks e doses · ' + vPeriodoTxt(c) + ' · gerado em ' + new Date().toLocaleDateString('pt-BR'), blocos);
+  }
+
   // ---------- desenho ----------
   function mesesDe(c) {
     var u = [];
@@ -1026,7 +1841,12 @@ window.msgAcessoNegado = function (nomePagina) {
     if (!c) { C.innerHTML = '<p class="ac-vazio">Carregando…</p>'; return; }
     if (!c.disponivel) { C.innerHTML = '<p class="ac-vazio">' + esc(c.erro || 'Análise de CMV ainda não publicada.') + '</p>'; return; }
     var grupo = !!c.grupo;
-    $('ac-ctrl-mes').style.display = grupo ? '' : 'none';
+    $('ac-ctrl-mes').style.display = grupo && ABA !== 'vol' ? 'block' : 'none';
+    $('ac-ctrl-vis').style.display = ABA === 'vol' ? 'none' : 'block';
+    if (ABA === 'vol') {
+      C.innerHTML = volHtml(c) + '<div class="ac-foot"><b>Volume de bebidas: </b>' + vNotas(c).map(esc).join(' ') + ' O período escolhido decide a média.</div>';
+      return;
+    }
     if (grupo) {
       var ms = mesesDe(c);
       if (ms.indexOf(MES) < 0) MES = ms[ms.length - 1] || null;
@@ -1070,6 +1890,16 @@ window.msgAcessoNegado = function (nomePagina) {
   $('ac-per').onchange = function () { PER = this.value; lsGrava('ac_per', PER); desenha(); };
   Array.prototype.forEach.call(document.querySelectorAll('#ac-vis button'), function (b) {
     b.onclick = function () { VIS = b.getAttribute('data-v'); lsGrava('ac_vis', VIS); desenha(); };
+  });
+  // botões de exportar do Volume: nascem a cada desenho, então o clique é escutado no corpo
+  $('ac-corpo').addEventListener('click', function (ev) {
+    var id = ev.target && ev.target.id, c = CACHE[CASA];
+    if (!c || (id !== 'ac-vol-xlsx' && id !== 'ac-vol-pdf')) return;
+    var b = ev.target, rot = b.textContent;
+    b.disabled = true; b.textContent = 'Gerando…';
+    try { if (id === 'ac-vol-xlsx') vExcel(c); else vPdf(c); }
+    catch (e) { alert('Não consegui gerar o arquivo: ' + e.message); }
+    b.disabled = false; b.textContent = rot;
   });
   // "toggle" não sobe pelo DOM: escuta na captura para lembrar se o gráfico ficou aberto
   $('ac-corpo').addEventListener('toggle', function (ev) {
