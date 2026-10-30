@@ -713,7 +713,7 @@
 </button>
 <audio id="pomo-audio" loop playsinline preload="auto"></audio>
 
-<p class="nota" style="display:none">Painel do bar · atualizado em 28/10/2026.
+<p class="nota" style="display:none">Painel do bar · atualizado em 30/10/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -790,8 +790,18 @@ Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</
       if (g.open) grps.forEach(function (o) { if (o !== g) o.open = false; });
     });
   });
+  // Botão "Menu" do celular (_nav_toggle): abre e fecha as pílulas das seções.
+  var nav = document.getElementById('nav-principal');
+  var tog = nav && nav.querySelector('.nav-tog');
+  function navAberto(sim) {
+    if (!tog) return;
+    nav.classList.toggle('aberto', sim);
+    tog.setAttribute('aria-expanded', sim ? 'true' : 'false');
+    if (!sim) grps.forEach(function (g) { g.open = false; });
+  }
+  if (tog) tog.addEventListener('click', function () { navAberto(!nav.classList.contains('aberto')); });
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('#nav-principal')) grps.forEach(function (g) { g.open = false; });
+    if (!e.target.closest('#nav-principal')) { grps.forEach(function (g) { g.open = false; }); navAberto(false); }
   });
 })();
 </script>
@@ -1968,7 +1978,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '7b9409c41286';
+  var BUILD = '00cca8059998';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),

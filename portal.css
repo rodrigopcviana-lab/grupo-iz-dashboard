@@ -814,4 +814,22 @@
     .au-placar, .cn-rec-bar, .cd-ca-barra, .cp-rodape, .sc-cad-pe { bottom: var(--barra-h) !important; }
     .cp-tabs { bottom: calc(var(--barra-h) + 16px) !important; }
     .rt-casas { bottom: calc(var(--barra-h) + 8px) !important; }
+    /* Enquadramento (2026-10-30): o título da página caía a ~290 px do topo.
+       As seções do menu viram um botão de uma linha (_nav_toggle) que abre
+       as pílulas de sempre. A pílula "Mural" (vm-barra) some em toda largura:
+       repete o Mural da barra. */
+    nav.nav-sec .nav-tog { display: flex; }
+    .nav-sec:not(.aberto) > .grp { display: none !important; }
+    .nav-sec.aberto > .grp { flex: 1 1 46%; }
   }
+  .volta-mural.vm-barra { display: none; }
+  .nav-sec .nav-tog { display: none; flex: 1 1 100%; min-width: 0; align-items: center; gap: 8px;
+    padding: 11px 16px; border: 1px solid var(--border); border-radius: 999px; background: transparent;
+    color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
+  .nav-tog .ic { flex: none; color: var(--acc); }
+  .nav-tog .nt-rot { flex: none; font-weight: 600; color: var(--text); }
+  .nav-tog .nt-sec { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--acc); }
+  .nav-tog .nt-sec::before { content: "·"; margin-right: 8px; color: var(--text-3); }
+  .nav-tog .cv { margin-left: auto; font-size: 11px; color: var(--text-3); font-style: normal; transition: transform .18s; }
+  .nav-tog[aria-expanded="true"] { border-color: var(--acc); }
+  .nav-tog[aria-expanded="true"] .cv { transform: rotate(180deg); color: var(--acc); }
