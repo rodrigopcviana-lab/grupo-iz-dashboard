@@ -850,16 +850,26 @@
   h2 { font-weight: 600; letter-spacing: -.01em; }
   a.card, .panel, .hub-cartao, .ficha { box-shadow: var(--sombra-card); }
   a.card, .hub-cartao { border-radius: 16px; }
-  .marca-blk .topo-acoes { margin-left: auto; display: flex; gap: 6px; flex: none; }
-  .tema-btn, .prompt-bt { position: relative; flex: none; width: 34px; height: 34px; border-radius: 999px;
+  .marca-blk .topo-acoes { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
+  .prompt-bt { position: relative; flex: none; width: 34px; height: 34px; border-radius: 999px;
     border: 1px solid var(--border); background: var(--card); color: var(--text-2); padding: 0;
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
-  .tema-btn:hover, .tema-btn:focus-visible, .prompt-bt:hover, .prompt-bt:focus-visible {
-    border-color: var(--acc); color: var(--acc); }
-  .tema-btn .ic-sol { display: none; }
-  :root[data-tema="escuro"] .tema-btn .ic-sol { display: inline-flex; }
-  :root[data-tema="escuro"] .tema-btn .ic-lua { display: none; }
-  .tema-btn > span { display: inline-flex; }
+  .prompt-bt:hover, .prompt-bt:focus-visible { border-color: var(--acc); color: var(--acc); }
+  /* Chave do modo escuro (2026-11-03, pedido do Rodrigo: "de forma discreta"):
+     interruptor pequeno em tom apagado; a bolinha mostra o sol no claro e a
+     lua no escuro, e corre para a direita quando o escuro liga. */
+  .tema-btn { position: relative; flex: none; width: 34px; height: 20px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--card-2); padding: 0; cursor: pointer;
+    color: var(--text-4); opacity: .8; }
+  .tema-btn:hover, .tema-btn:focus-visible { opacity: 1; color: var(--text-2); }
+  .tema-btn .tc-bola { position: absolute; top: 1px; left: 1px; width: 16px; height: 16px;
+    border-radius: 999px; background: var(--card); box-shadow: var(--sombra-card);
+    display: flex; align-items: center; justify-content: center; transition: transform .18s; }
+  :root[data-tema="escuro"] .tema-btn .tc-bola { transform: translateX(14px); background: var(--border-2); }
+  .tema-btn svg { width: 10px; height: 10px; }
+  .tema-btn .ic-lua { display: none; }
+  :root[data-tema="escuro"] .tema-btn .ic-lua { display: flex; }
+  :root[data-tema="escuro"] .tema-btn .ic-sol { display: none; }
   .tema-aviso { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%); z-index: 9998; background: var(--acc); color: var(--acc-txt);
     font-size: 13px; font-weight: 600; padding: 10px 16px; border-radius: 999px;
