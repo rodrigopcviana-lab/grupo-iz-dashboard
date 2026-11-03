@@ -959,10 +959,30 @@
   a.card, .panel, .hub-cartao, .ficha { box-shadow: var(--sombra-card); }
   a.card, .hub-cartao { border-radius: 16px; }
   .marca-blk .topo-acoes { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
-  .prompt-bt { position: relative; flex: none; width: 34px; height: 34px; border-radius: 999px;
-    border: 1px solid var(--border); background: var(--card); color: var(--text-2); padding: 0;
-    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
-  .prompt-bt:hover, .prompt-bt:focus-visible { border-color: var(--acc); color: var(--acc); }
+  /* Caixa do prompt de construção (só Coordenação), no fim da página. */
+  .prompt-caixa { max-width: 980px; margin: 28px auto 8px; padding: 0 16px; box-sizing: border-box; }
+  .prompt-caixa > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--card);
+    color: var(--text-2); font-size: 14px; font-weight: 600; box-shadow: var(--sombra-card); }
+  .prompt-caixa > summary::-webkit-details-marker { display: none; }
+  .prompt-caixa > summary:hover, .prompt-caixa > summary:focus-visible { border-color: var(--acc); color: var(--text); }
+  .prompt-caixa .pc-ic, .prompt-caixa .pc-seta { display: inline-flex; color: var(--text-3); }
+  .prompt-caixa .pc-tam { margin-left: auto; font-weight: 500; font-size: 12px; color: var(--text-3); }
+  .prompt-caixa .pc-seta { transition: transform .18s; }
+  .prompt-caixa[open] .pc-seta { transform: rotate(180deg); }
+  .prompt-caixa[open] > summary { border-radius: 14px 14px 0 0; box-shadow: none; }
+  .prompt-caixa .pc-corpo { border: 1px solid var(--border); border-top: none; border-radius: 0 0 14px 14px;
+    background: var(--card); padding: 12px 14px 14px; }
+  .prompt-caixa .pc-txt { width: 100%; box-sizing: border-box; min-height: 340px; max-height: 70vh; resize: vertical;
+    font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--text);
+    background: var(--card-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .prompt-caixa .pc-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+  .prompt-caixa .pc-bt { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px;
+    border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text);
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .prompt-caixa .pc-bt.pc-pri { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); }
+  .prompt-caixa .pc-bt:hover, .prompt-caixa .pc-bt:focus-visible { border-color: var(--acc); }
+  .prompt-caixa .pc-nota { font-size: 12px; color: var(--text-3); margin-left: auto; }
   /* Chave do modo escuro (2026-11-03, pedido do Rodrigo: "de forma discreta"):
      interruptor pequeno em tom apagado; a bolinha mostra o sol no claro e a
      lua no escuro, e corre para a direita quando o escuro liga. */

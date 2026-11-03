@@ -35,11 +35,33 @@
     document.body.appendChild(d);
     setTimeout(function () { d.remove(); }, 2200);
   }
-  function copiaPrompt() {
+  function textoPrompt() {
     var el = document.getElementById('prompt-pagina');
-    if (!el) return;
-    var txt;
-    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    if (!el) return null;
+    try { return JSON.parse(el.textContent); } catch (e) { return null; }
+  }
+  // O textarea só recebe o texto quando a caixa abre.
+  function enchePrompt() {
+    var ta = document.getElementById('prompt-txt');
+    if (!ta || ta.value) return;
+    var txt = textoPrompt();
+    if (txt) ta.value = txt;
+  }
+  function baixaPrompt() {
+    var txt = textoPrompt();
+    if (!txt) return;
+    var cx = document.getElementById('prompt-caixa');
+    var nome = (cx && cx.getAttribute('data-arquivo')) || 'prompt-pagina.md';
+    var url = URL.createObjectURL(new Blob([txt], { type: 'text/markdown;charset=utf-8' }));
+    var a = document.createElement('a');
+    a.href = url; a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    aviso('Arquivo ' + nome + ' baixado');
+  }
+  function copiaPrompt() {
+    var txt = textoPrompt();
+    if (!txt) return;
     function reserva() {
       var t = document.createElement('textarea');
       t.value = txt; t.setAttribute('readonly', '');
@@ -57,8 +79,12 @@
   document.addEventListener('click', function (e) {
     if (!e.target.closest) return;
     if (e.target.closest('#tema-btn')) window.temaAlterna();
-    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+    else if (e.target.closest('#prompt-copia')) copiaPrompt();
+    else if (e.target.closest('#prompt-baixa')) baixaPrompt();
   });
+  document.addEventListener('toggle', function (e) {
+    if (e.target && e.target.id === 'prompt-caixa' && e.target.open) enchePrompt();
+  }, true);
 })();
 </script>
 <title>Painel do bar</title>
@@ -569,7 +595,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'd5ad347c8fae';
+  var BUILD = 'd252db947654';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),

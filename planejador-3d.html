@@ -35,11 +35,33 @@
     document.body.appendChild(d);
     setTimeout(function () { d.remove(); }, 2200);
   }
-  function copiaPrompt() {
+  function textoPrompt() {
     var el = document.getElementById('prompt-pagina');
-    if (!el) return;
-    var txt;
-    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    if (!el) return null;
+    try { return JSON.parse(el.textContent); } catch (e) { return null; }
+  }
+  // O textarea só recebe o texto quando a caixa abre.
+  function enchePrompt() {
+    var ta = document.getElementById('prompt-txt');
+    if (!ta || ta.value) return;
+    var txt = textoPrompt();
+    if (txt) ta.value = txt;
+  }
+  function baixaPrompt() {
+    var txt = textoPrompt();
+    if (!txt) return;
+    var cx = document.getElementById('prompt-caixa');
+    var nome = (cx && cx.getAttribute('data-arquivo')) || 'prompt-pagina.md';
+    var url = URL.createObjectURL(new Blob([txt], { type: 'text/markdown;charset=utf-8' }));
+    var a = document.createElement('a');
+    a.href = url; a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    aviso('Arquivo ' + nome + ' baixado');
+  }
+  function copiaPrompt() {
+    var txt = textoPrompt();
+    if (!txt) return;
     function reserva() {
       var t = document.createElement('textarea');
       t.value = txt; t.setAttribute('readonly', '');
@@ -57,8 +79,12 @@
   document.addEventListener('click', function (e) {
     if (!e.target.closest) return;
     if (e.target.closest('#tema-btn')) window.temaAlterna();
-    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+    else if (e.target.closest('#prompt-copia')) copiaPrompt();
+    else if (e.target.closest('#prompt-baixa')) baixaPrompt();
   });
+  document.addEventListener('toggle', function (e) {
+    if (e.target && e.target.id === 'prompt-caixa' && e.target.open) enchePrompt();
+  }, true);
 })();
 </script>
 <title>Planejador 3D · Painel do bar</title>
@@ -670,10 +696,30 @@
   a.card, .panel, .hub-cartao, .ficha { box-shadow: var(--sombra-card); }
   a.card, .hub-cartao { border-radius: 16px; }
   .marca-blk .topo-acoes { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
-  .prompt-bt { position: relative; flex: none; width: 34px; height: 34px; border-radius: 999px;
-    border: 1px solid var(--border); background: var(--card); color: var(--text-2); padding: 0;
-    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
-  .prompt-bt:hover, .prompt-bt:focus-visible { border-color: var(--acc); color: var(--acc); }
+  /* Caixa do prompt de construção (só Coordenação), no fim da página. */
+  .prompt-caixa { max-width: 980px; margin: 28px auto 8px; padding: 0 16px; box-sizing: border-box; }
+  .prompt-caixa > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--card);
+    color: var(--text-2); font-size: 14px; font-weight: 600; box-shadow: var(--sombra-card); }
+  .prompt-caixa > summary::-webkit-details-marker { display: none; }
+  .prompt-caixa > summary:hover, .prompt-caixa > summary:focus-visible { border-color: var(--acc); color: var(--text); }
+  .prompt-caixa .pc-ic, .prompt-caixa .pc-seta { display: inline-flex; color: var(--text-3); }
+  .prompt-caixa .pc-tam { margin-left: auto; font-weight: 500; font-size: 12px; color: var(--text-3); }
+  .prompt-caixa .pc-seta { transition: transform .18s; }
+  .prompt-caixa[open] .pc-seta { transform: rotate(180deg); }
+  .prompt-caixa[open] > summary { border-radius: 14px 14px 0 0; box-shadow: none; }
+  .prompt-caixa .pc-corpo { border: 1px solid var(--border); border-top: none; border-radius: 0 0 14px 14px;
+    background: var(--card); padding: 12px 14px 14px; }
+  .prompt-caixa .pc-txt { width: 100%; box-sizing: border-box; min-height: 340px; max-height: 70vh; resize: vertical;
+    font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--text);
+    background: var(--card-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .prompt-caixa .pc-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+  .prompt-caixa .pc-bt { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px;
+    border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text);
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .prompt-caixa .pc-bt.pc-pri { background: var(--acc); color: var(--acc-txt); border-color: var(--acc); }
+  .prompt-caixa .pc-bt:hover, .prompt-caixa .pc-bt:focus-visible { border-color: var(--acc); }
+  .prompt-caixa .pc-nota { font-size: 12px; color: var(--text-3); margin-left: auto; }
   /* Chave do modo escuro (2026-11-03, pedido do Rodrigo: "de forma discreta"):
      interruptor pequeno em tom apagado; a bolinha mostra o sol no claro e a
      lua no escuro, e corre para a direita quando o escuro liga. */
@@ -763,7 +809,7 @@
 <a class="volta-mural" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
 <div class="marca-blk"><button class="gv-abre" id="gv-abre" type="button" aria-label="Abrir o menu" aria-controls="gaveta" aria-expanded="false"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div class="marca-txt"><h1 class="marca">Painel do bar</h1>
-<div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" role="switch" title="Ligar modo escuro" aria-label="Modo escuro" aria-checked="false"><span class="tc-bola"><span class="ic-sol"><svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span><span class="ic-lua"><svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span></span></button><button class="prompt-bt" id="prompt-bt" type="button" data-niveis="coord" style="display:none" title="Copiar o prompt de construção desta página" aria-label="Copiar prompt da página"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button></div></div>
+<div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" role="switch" title="Ligar modo escuro" aria-label="Modo escuro" aria-checked="false"><span class="tc-bola"><span class="ic-sol"><svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span><span class="ic-lua"><svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span></span></button></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -1624,7 +1670,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'd5ad347c8fae';
+  var BUILD = 'd252db947654';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
