@@ -4,7 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#16130f">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-pressed', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function copiaPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return;
+    var txt;
+    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+  });
+})();
+</script>
 <title>Pedir acesso · Painel do bar</title>
 <script>
 (function () {
@@ -16,13 +72,13 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=a35ddccddc3c">
+<link rel="stylesheet" href="portal.css?v=211b8486957d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
 <a class="volta-mural vm-barra" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
-<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div></div>
+<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" title="Ligar modo escuro" aria-label="Modo escuro" aria-pressed="false"><span class="ic-lua"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span><span class="ic-sol"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span></button><button class="prompt-bt" id="prompt-bt" type="button" data-niveis="coord" style="display:none" title="Copiar o prompt de construção desta página" aria-label="Copiar prompt da página"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -100,6 +156,7 @@
 <button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="pomo-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
+<script type="application/json" id="prompt-pagina">"Construa uma página web chamada \"Pedir acesso\", seguindo o modelo da página \"Pedir acesso · Painel do bar\" (pedir-acesso) do Portal dos Bares do Grupo IZ. Mantenha a mesma estrutura e o mesmo comportamento descritos abaixo, adaptando nomes, dados e marca ao novo site.\n\n## Objetivo\nPeça sua senha do portal. A coordenação libera e te passa a senha — normalmente no mesmo d\n\n## Onde fica e quem vê\n- O acesso é conferido no servidor pela sessão (token assinado). Esconder na tela é só conforto, nunca a proteção.\n\n## Estrutura, de cima para baixo\n- Topo: logo, nome do painel, pílula do nível de quem entrou, busca, notificações e botão de modo escuro.\n- Título \"Pedir acesso\" e a linha de apoio: Peça sua senha do portal. A coordenação libera e te passa a senha — normalmente no mesmo d.\n\n## Ações (botões)\n- IZ\n- 1929\n- Grá\n- FAMU\n- Fulles\n- NIP\n- Bartender\n- Chefe de bar\n- Salão / garçom\n- Coordenação\n- Treinador / auditor operacional\n- Outra função\n- Pedir minha senha\n- Copiar\n\n## Dados\nRotas do servidor (Cloudflare Worker, com a sessão no cabeçalho):\n- /api/acesso/roster\n- /api/acesso/solicitar\nSem sessão válida, a página manda para o login. Dado que falta aparece como \"—\", nunca inventado.\n\n## Visual\n- Fonte Inter (Google Fonts), com system-ui de reserva. Títulos em peso 600 a 700, texto de 13 a 15 px.\n- Tema claro (padrão): fundo #f6f7f9; cartões brancos com borda #e4e7ec, cantos de 16 px e sombra bem leve; texto #101828, secundário #475467, apoio #667085; destaque preto #101828 com texto branco; links em preto com seta.\n- Modo escuro em grafite, não preto: fundo #1e1f22, cartões #27292d, borda #3a3d42, texto #ececee, secundário #b9bcc3; destaque claro com texto escuro.\n- Botão de lua/sol no topo liga e desliga o escuro, guarda a escolha no navegador (localStorage) e aplica antes de pintar a página, sem piscar.\n- Toda cor sai de variáveis CSS (:root e :root[data-tema=\"escuro\"]); nenhuma cor fixa.\n- Destaques com fundo suave: verde (#ecfdf3 / #067647), amarelo (#fef6dc, borda #f5d77a, texto #b54708), vermelho (#fef3f2 / #c0362c), azul (#eff8ff / #175cd3). Selo de categoria em pílula cinza.\n- Ícones SVG de linha (24x24, traço 1.8). Nenhum emoji.\n- Celular primeiro: largura máxima de 980 px, margem lateral de 16 a 20 px, alvos de toque de pelo menos 34 px, nada de rolagem horizontal.\n\n## Regras\n- Nenhum telefone na página. Valor em dinheiro só para os níveis autorizados e vindo do servidor.\n- Cada número mostrado diz de onde vem; sem dado, mostre o vazio, não um valor de exemplo."</script>
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
@@ -143,7 +200,7 @@ window.sessaoLer = function () {
     var f = document.createElement('div');
     f.id = 'previa-faixa';
     f.setAttribute('role', 'status');
-    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:#5a3fa0;color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--c-5a3fa0);color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
     f.textContent = 'Prévia · ' + (window.parent.portalPrevia.rotulo || s.nivel) +
       ' · o que você enviar aqui é gravado de verdade, com o seu login';
     document.body.insertBefore(f, document.body.firstChild);
@@ -963,7 +1020,7 @@ senha — normalmente no mesmo dia.</p>
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 30/10/2026.
+<p class="nota">Painel do bar · atualizado em 03/11/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -2412,17 +2469,17 @@ if ('serviceWorker' in navigator) {
      ausência de uma variável não pode deixar o aviso ilegível. */
   .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
     z-index: 96; margin: 0 auto; max-width: 460px; display: none;
-    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
     align-items: center; gap: 10px; }
   .ver-nova.on { display: flex; }
-  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
-  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
-  .vn-txt b { color: var(--text, #f3ede2); }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
   .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
-    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
-    color: var(--acc-txt, #16130f); }
-  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
@@ -2433,7 +2490,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -2547,8 +2604,8 @@ if ('serviceWorker' in navigator) {
      z-index com eles, só não ocupar o mesmo espaço na tela. */
   .atualiza-atalho { position: fixed; left: 12px; right: 12px;
     bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
   .atualiza-atalho.on { display: block; }
   .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
   .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }

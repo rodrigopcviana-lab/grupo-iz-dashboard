@@ -4,21 +4,115 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0f0d0a">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-pressed', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function copiaPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return;
+    var txt;
+    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+  });
+})();
+</script>
 <title>Painel do bar</title>
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
-<style>
+<style>/*tema:ini*/
   :root {
-    --bg: #16130f; --topo: #0f0d0a; --card: #211c15; --border: #3a3428;
-    --text: #f3ede2; --text-2: #c3baa9; --text-3: #8f8672;
-    --acc: #b89c6e; --acc-txt: #241a06;
+    --bg: #f6f7f9; --card: #ffffff; --card-2: #f2f4f7; --border: #e4e7ec; --border-2: #d0d5dd;
+    --text: #101828; --text-2: #475467; --text-3: #667085; --text-4: #98a2b3;
+    --acc: #101828; --acc-txt: #ffffff; --ouro: #a16207;
+    --verde: #067647; --verde-bg: #ecfdf3; --verde-borda: #abefc6; --verde-txt: #ffffff;
+    --amarelo: #b54708; --amarelo-bg: #fef6dc; --amarelo-borda: #f5d77a;
+    --vermelho: #c0362c; --vermelho-bg: #fef3f2; --rosa: #c11574;
+    --azul: #175cd3; --azul-bg: #eff8ff;
+    --lilas: #6941c6; --lilas-2: #7a5af8; --lilas-bg: #f4f3ff;
+    --casa-iz: #b7791f; --casa-1929: #b4533c; --casa-gra: #2f855a;
+    --casa-famu: #7c5cc4; --casa-fulles: #2b6cb0; --casa-nip: #b83280;
+    --casa-enttres: #6b7a1f; --setor-marketing: #0f8b80;
+    --tipo-ocorrencia: #c4320a; --tipo-solicitacao: #039855;
+    --urg-urgente: #d92d20; --urg-hoje: var(--amarelo); --urg-aguardar: var(--verde);
+    --urg-uma_semana: #c4320a; --urg-um_mes: #175cd3; --urg-tres_meses: var(--text-3);
+    --realce: 16,24,40; --sombra-k: .22;
+    --sombra-card: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.07);
+    --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --serif: var(--sans);
+    color-scheme: light;
+  }
+  :root[data-tema="escuro"] {
+    --bg: #1e1f22; --card: #27292d; --card-2: #2f3136; --border: #3a3d42; --border-2: #4b4f56;
+    --text: #ececee; --text-2: #b9bcc3; --text-3: #8d929b; --text-4: #676c75;
+    --acc: #ececee; --acc-txt: #1e1f22; --ouro: #d9b26a;
+    --verde: #8fdcc0; --verde-bg: #1d3a31; --verde-borda: #2c5a44; --verde-txt: #0d221b;
+    --amarelo: #e3b866; --amarelo-bg: #3b311c; --amarelo-borda: #6b5626;
+    --vermelho: #ec8c8c; --vermelho-bg: #3d2423; --rosa: #ef9db3;
+    --azul: #93c3ec; --azul-bg: #1f2e3d;
+    --lilas: #cbb8f0; --lilas-2: #a493d8; --lilas-bg: #2c2840;
+    --casa-iz: #d0a352; --casa-1929: #c9705a; --casa-gra: #8fd0a5;
+    --casa-famu: #a58fd0; --casa-fulles: #6fa8dc; --casa-nip: #d98fb0;
+    --casa-enttres: #a8b85c; --setor-marketing: #6cc2b8;
+    --tipo-ocorrencia: #e07a52; --tipo-solicitacao: #4fbf92;
+    --urg-urgente: #e5534b; --urg-uma_semana: #e0954c; --urg-um_mes: #8ec0ea;
+    --realce: 255,255,255; --sombra-k: 1;
+    --sombra-card: 0 1px 2px rgba(0,0,0,.28);
     color-scheme: dark;
   }
+/*tema:fim*/
+  /*tema:ini*/
+  :root { --topo: #ffffff; }
+  :root[data-tema="escuro"] { --topo: #18191b; }
+  /*tema:fim*/
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; margin: 0; overflow: hidden; }
   body { display: flex; flex-direction: column; background: var(--bg); color: var(--text);
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+    font-family: var(--sans); -webkit-text-size-adjust: 100%; }
   button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
   .ab-topo { flex: none; background: var(--topo); border-bottom: 1px solid var(--border);
     padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); }
@@ -85,7 +179,11 @@
 
   .ab-palco { margin-bottom: env(safe-area-inset-bottom, 0px); }
 </style>
-</head>
+<style>/*tema:ini*/
+  :root { --c-c9cdd6: #343944; --c-d8b26e: #a57a2c; }
+  :root[data-tema="escuro"] { --c-c9cdd6: #c9cdd6; --c-d8b26e: #d8b26e; }
+/*tema:fim*/
+</style></head>
 <body>
 <header class="ab-topo">
   <div class="ab-pc">
@@ -450,17 +548,17 @@ if ('serviceWorker' in navigator) {
      ausência de uma variável não pode deixar o aviso ilegível. */
   .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
     z-index: 96; margin: 0 auto; max-width: 460px; display: none;
-    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
     align-items: center; gap: 10px; }
   .ver-nova.on { display: flex; }
-  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
-  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
-  .vn-txt b { color: var(--text, #f3ede2); }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
   .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
-    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
-    color: var(--acc-txt, #16130f); }
-  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
@@ -471,7 +569,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -585,8 +683,8 @@ if ('serviceWorker' in navigator) {
      z-index com eles, só não ocupar o mesmo espaço na tela. */
   .atualiza-atalho { position: fixed; left: 12px; right: 12px;
     bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
   .atualiza-atalho.on { display: block; }
   .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
   .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }

@@ -4,7 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#16130f">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-pressed', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function copiaPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return;
+    var txt;
+    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+  });
+})();
+</script>
 <title>Minhas notas · Painel do bar</title>
 <script>
 (function () {
@@ -16,13 +72,13 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=a35ddccddc3c">
+<link rel="stylesheet" href="portal.css?v=211b8486957d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
 <a class="volta-mural vm-barra" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
-<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div></div>
+<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" title="Ligar modo escuro" aria-label="Modo escuro" aria-pressed="false"><span class="ic-lua"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span><span class="ic-sol"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span></button><button class="prompt-bt" id="prompt-bt" type="button" data-niveis="coord" style="display:none" title="Copiar o prompt de construção desta página" aria-label="Copiar prompt da página"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -100,6 +156,7 @@
 <button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="pomo-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
+<script type="application/json" id="prompt-pagina">"Construa uma página web chamada \"Rascunho\", seguindo o modelo da página \"Minhas notas · Painel do bar\" (notas) do Portal dos Bares do Grupo IZ. Mantenha a mesma estrutura e o mesmo comportamento descritos abaixo, adaptando nomes, dados e marca ao novo site.\n\n## Objetivo\nAnotações rápidas, listas e lembretes. Nascem só seus — e você pode compartilhar um rascun\n\n## Onde fica e quem vê\n- Níveis com acesso: Marketing\n- O acesso é conferido no servidor pela sessão (token assinado). Esconder na tela é só conforto, nunca a proteção.\n\n## Estrutura, de cima para baixo\n- Topo: logo, nome do painel, pílula do nível de quem entrou, busca, notificações e botão de modo escuro.\n- Título \"Rascunho\" e a linha de apoio: Anotações rápidas, listas e lembretes. Nascem só seus — e você pode compartilhar um rascun.\n- Abas e sub-abas (uma visível por vez, guardar a última aberta): Texto | Lista\n\n## Campos e filtros\n- Buscar nos rascunhos…\n- Título\n\n## Ações (botões)\n- Novo\n- Todos\n- Textos\n- Listas\n- Fixados\n- Recebidos\n- Carregar mais\n- voltar\n- Câmera\n- Galeria\n- Toda a equipe do meu bar\n- Incluir\n- Salvar\n- Compartilhar\n- Fixar\n- Cor\n- Foto\n- Virar demanda\n- Virar ficha\n\n## Dados\nRotas do servidor (Cloudflare Worker, com a sessão no cabeçalho):\n- /api/notas/destinos\n- /api/notas\n- /api/notas/anexo\nSem sessão válida, a página manda para o login. Dado que falta aparece como \"—\", nunca inventado.\n\n## Visual\n- Fonte Inter (Google Fonts), com system-ui de reserva. Títulos em peso 600 a 700, texto de 13 a 15 px.\n- Tema claro (padrão): fundo #f6f7f9; cartões brancos com borda #e4e7ec, cantos de 16 px e sombra bem leve; texto #101828, secundário #475467, apoio #667085; destaque preto #101828 com texto branco; links em preto com seta.\n- Modo escuro em grafite, não preto: fundo #1e1f22, cartões #27292d, borda #3a3d42, texto #ececee, secundário #b9bcc3; destaque claro com texto escuro.\n- Botão de lua/sol no topo liga e desliga o escuro, guarda a escolha no navegador (localStorage) e aplica antes de pintar a página, sem piscar.\n- Toda cor sai de variáveis CSS (:root e :root[data-tema=\"escuro\"]); nenhuma cor fixa.\n- Destaques com fundo suave: verde (#ecfdf3 / #067647), amarelo (#fef6dc, borda #f5d77a, texto #b54708), vermelho (#fef3f2 / #c0362c), azul (#eff8ff / #175cd3). Selo de categoria em pílula cinza.\n- Ícones SVG de linha (24x24, traço 1.8). Nenhum emoji.\n- Celular primeiro: largura máxima de 980 px, margem lateral de 16 a 20 px, alvos de toque de pelo menos 34 px, nada de rolagem horizontal.\n\n## Regras\n- Nenhum telefone na página. Valor em dinheiro só para os níveis autorizados e vindo do servidor.\n- Cada número mostrado diz de onde vem; sem dado, mostre o vazio, não um valor de exemplo."</script>
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
@@ -143,7 +200,7 @@ window.sessaoLer = function () {
     var f = document.createElement('div');
     f.id = 'previa-faixa';
     f.setAttribute('role', 'status');
-    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:#5a3fa0;color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--c-5a3fa0);color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
     f.textContent = 'Prévia · ' + (window.parent.portalPrevia.rotulo || s.nivel) +
       ' · o que você enviar aqui é gravado de verdade, com o seu login';
     document.body.insertBefore(f, document.body.firstChild);
@@ -681,28 +738,28 @@ window.msgAcessoNegado = function (nomePagina) {
 pode compartilhar um rascunho com quem precisar ver.</p>
 
 <style>
-  body { --np-acc: #9b8dcc; --np-acc-2: #c4b8e8; --np-bg: #18152a; --np-bg-2: #1e1a33;
-         --np-line: #2a2440; --np-line-2: #2f2850; }
+  body { --np-acc: var(--lilas-2); --np-acc-2: var(--lilas); --np-bg: var(--c-18152a); --np-bg-2: var(--c-1e1a33);
+         --np-line: var(--lilas-bg); --np-line-2: var(--c-2f2850); }
   .nt-gate { display: none; }
   .nt-app { display: none; }
   .nt-bar { display: flex; gap: 8px; align-items: center; margin: 4px 0 12px; }
-  .nt-busca { flex: 1; display: flex; align-items: center; gap: 8px; background: #0f0d1a;
+  .nt-busca { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--c-0f0d1a);
                border: 1px solid var(--np-line); border-radius: 10px; padding: 8px 11px; }
-  .nt-busca svg { width: 15px; height: 15px; color: #6b5da0; flex: none; }
+  .nt-busca svg { width: 15px; height: 15px; color: var(--lilas-2); flex: none; }
   .nt-busca input { flex: 1; background: none; border: none; outline: none; color: var(--text);
                      font: inherit; font-size: 14px; }
-  .nt-busca input::placeholder { color: #5a4f80; }
-  .nt-nova { display: flex; align-items: center; gap: 5px; background: #2a2440; color: var(--np-acc-2);
+  .nt-busca input::placeholder { color: var(--lilas-2); }
+  .nt-nova { display: flex; align-items: center; gap: 5px; background: var(--lilas-bg); color: var(--np-acc-2);
               border: 1px solid var(--np-acc); border-radius: 10px; padding: 8px 12px; cursor: pointer;
               font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; }
-  .nt-nova:hover { background: #322a54; }
+  .nt-nova:hover { background: var(--c-322a54); }
   .nt-nova svg { width: 15px; height: 15px; }
   .nt-filtros { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-  .nt-chip { background: #221d3a; color: #8a7fb5; border: none; border-radius: 99px;
+  .nt-chip { background: var(--lilas-bg); color: var(--lilas-2); border: none; border-radius: 99px;
               padding: 5px 13px; font: inherit; font-size: 12px; cursor: pointer; }
-  .nt-chip.on { background: #3a3160; color: #d8cff0; font-weight: 600; }
+  .nt-chip.on { background: var(--c-3a3160); color: var(--c-d8cff0); font-weight: 600; }
   .nt-sec-tit { font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase;
-                 color: #6b5da0; margin: 6px 2px 8px; display: flex; align-items: center; gap: 5px; }
+                 color: var(--lilas-2); margin: 6px 2px 8px; display: flex; align-items: center; gap: 5px; }
   .nt-sec-tit svg { width: 12px; height: 12px; }
   .nt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; margin-bottom: 18px; }
   @media (max-width: 420px) { .nt-grid { grid-template-columns: 1fr; } }
@@ -710,24 +767,24 @@ pode compartilhar um rascunho com quem precisar ver.</p>
               border-radius: 12px; padding: 12px 13px; cursor: pointer; overflow: hidden;
               min-height: 84px; transition: border-color .12s; }
   .nt-card:hover { border-color: var(--np-acc); }
-  .nt-card.cor-ambar { border-left: 3px solid #b89c6e; }
-  .nt-card.cor-roxo  { border-left: 3px solid #9b8dcc; }
-  .nt-card.cor-azul  { border-left: 3px solid #6fa8dc; }
-  .nt-card.cor-verde { border-left: 3px solid #6cc08a; }
-  .nt-card.cor-rosa  { border-left: 3px solid #cf7089; }
-  .nt-card-tit { font-size: 13.5px; font-weight: 600; color: #ece8f5; margin-bottom: 4px;
+  .nt-card.cor-ambar { border-left: 3px solid var(--acc); }
+  .nt-card.cor-roxo  { border-left: 3px solid var(--lilas-2); }
+  .nt-card.cor-azul  { border-left: 3px solid var(--casa-fulles); }
+  .nt-card.cor-verde { border-left: 3px solid var(--c-6cc08a); }
+  .nt-card.cor-rosa  { border-left: 3px solid var(--c-cf7089); }
+  .nt-card-tit { font-size: 13.5px; font-weight: 600; color: var(--c-ece8f5); margin-bottom: 4px;
                   padding-right: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .nt-card-prev { font-size: 11.5px; color: #8a7fb5; line-height: 1.45; max-height: 34px; overflow: hidden; }
-  .nt-card-data { font-size: 10px; color: #6b5da0; margin-top: 7px; }
-  .nt-card-pin { position: absolute; top: 10px; right: 10px; color: #b89c6e; width: 13px; height: 13px; }
+  .nt-card-prev { font-size: 11.5px; color: var(--lilas-2); line-height: 1.45; max-height: 34px; overflow: hidden; }
+  .nt-card-data { font-size: 10px; color: var(--lilas-2); margin-top: 7px; }
+  .nt-card-pin { position: absolute; top: 10px; right: 10px; color: var(--acc); width: 13px; height: 13px; }
   .nt-card-pin svg { width: 13px; height: 13px; display: block; }
   .nt-prog { height: 4px; background: var(--np-line); border-radius: 99px; overflow: hidden; margin: 6px 0 2px; }
-  .nt-prog > i { display: block; height: 100%; background: #6fa8dc; }
-  .nt-lista-tag { display: inline-block; font-size: 10px; color: #8ec0ea; background: #16283a;
+  .nt-prog > i { display: block; height: 100%; background: var(--casa-fulles); }
+  .nt-lista-tag { display: inline-block; font-size: 10px; color: var(--azul); background: var(--azul-bg);
                    border-radius: 6px; padding: 1px 7px; margin-top: 6px; }
-  .nt-vazio { text-align: center; color: #6b5da0; font-size: 13px; padding: 30px 14px; }
-  .nt-contador { font-size: 11.5px; color: #6b5da0; margin: -6px 2px 10px; }
-  .nt-mais { display: block; width: 100%; background: #221d3a; color: #a89fd0; border: 1px solid var(--np-line-2);
+  .nt-vazio { text-align: center; color: var(--lilas-2); font-size: 13px; padding: 30px 14px; }
+  .nt-contador { font-size: 11.5px; color: var(--lilas-2); margin: -6px 2px 10px; }
+  .nt-mais { display: block; width: 100%; background: var(--lilas-bg); color: var(--lilas); border: 1px solid var(--np-line-2);
               border-radius: 10px; padding: 10px; font: inherit; font-size: 13px; cursor: pointer; margin-bottom: 14px; }
   .nt-mais:hover { border-color: var(--np-acc); }
   /* Lição de CSS já documentada no CLAUDE.md: uma classe que define `display`
@@ -737,56 +794,56 @@ pode compartilhar um rascunho com quem precisar ver.</p>
      esconde. `.nt-acao` (base de #nt-ficha) tem o mesmo problema. */
   .nt-mais[hidden] { display: none; }
   /* Editor (tela cheia dentro da página) */
-  .nt-ed { display: none; background: var(--np-bg); border: 1px solid #6b5da0; border-radius: 14px; overflow: hidden; }
+  .nt-ed { display: none; background: var(--np-bg); border: 1px solid var(--lilas-2); border-radius: 14px; overflow: hidden; }
   .nt-ed-topo { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--np-line); }
   .nt-ed-back { background: none; border: none; color: var(--np-acc-2); cursor: pointer; font: inherit;
                  font-size: 13px; display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 7px; }
   .nt-ed-back:hover { background: var(--np-line); }
   .nt-ed-back svg { transform: rotate(90deg); width: 13px; height: 13px; }
-  .nt-ed-status { flex: 1; text-align: center; font-size: 11px; color: #6b5da0; }
-  .nt-ed-del { background: none; border: none; color: #8b4040; cursor: pointer; padding: 5px 7px;
+  .nt-ed-status { flex: 1; text-align: center; font-size: 11px; color: var(--lilas-2); }
+  .nt-ed-del { background: none; border: none; color: var(--c-8b4040); cursor: pointer; padding: 5px 7px;
                 border-radius: 7px; display: flex; }
-  .nt-ed-del:hover { background: #2a1a1a; color: #e07070; }
+  .nt-ed-del:hover { background: var(--c-2a1a1a); color: var(--c-e07070); }
   .nt-ed-del svg { width: 15px; height: 15px; }
   .nt-ed-tipo { display: flex; gap: 6px; padding: 10px 12px 0; }
-  .nt-tipo-b { flex: 1; background: #221d3a; color: #8a7fb5; border: 1px solid var(--np-line-2);
+  .nt-tipo-b { flex: 1; background: var(--lilas-bg); color: var(--lilas-2); border: 1px solid var(--np-line-2);
                 border-radius: 8px; padding: 6px; font: inherit; font-size: 12px; cursor: pointer; }
-  .nt-tipo-b.on { background: #2a2440; color: var(--np-acc-2); border-color: var(--np-acc); font-weight: 600; }
+  .nt-tipo-b.on { background: var(--lilas-bg); color: var(--np-acc-2); border-color: var(--np-acc); font-weight: 600; }
   .nt-tit-inp { width: 100%; box-sizing: border-box; background: none; border: none;
                  border-bottom: 1px solid var(--np-line); padding: 12px; font-size: 17px; font-weight: 700;
                  color: var(--text); outline: none; font-family: var(--serif); }
-  .nt-tit-inp::placeholder { color: #3d3660; }
+  .nt-tit-inp::placeholder { color: var(--c-3d3660); }
   .nt-corpo-inp { width: 100%; box-sizing: border-box; background: none; border: none; padding: 12px;
                    font-size: 14px; color: var(--text); outline: none; min-height: 180px; resize: none;
                    font-family: inherit; line-height: 1.6; }
-  .nt-corpo-inp::placeholder { color: #3d3660; }
+  .nt-corpo-inp::placeholder { color: var(--c-3d3660); }
   /* Checklist */
   .nt-itens { padding: 8px 12px 4px; }
   .nt-item { display: flex; align-items: center; gap: 9px; padding: 5px 0; }
-  .nt-item-box { width: 20px; height: 20px; border: 1.5px solid #6b5da0; border-radius: 6px; flex: none;
-                  cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6cc08a; }
-  .nt-item-box.ok { background: #17352b; border-color: #6cc08a; }
+  .nt-item-box { width: 20px; height: 20px; border: 1.5px solid var(--lilas-2); border-radius: 6px; flex: none;
+                  cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--c-6cc08a); }
+  .nt-item-box.ok { background: var(--verde-bg); border-color: var(--c-6cc08a); }
   .nt-item-box svg { width: 13px; height: 13px; display: none; }
   .nt-item-box.ok svg { display: block; }
   .nt-item-txt { flex: 1; background: none; border: none; outline: none; color: var(--text); font: inherit;
                   font-size: 14px; padding: 3px 0; }
-  .nt-item.ok .nt-item-txt { color: #6b5da0; text-decoration: line-through; }
-  .nt-item-x { background: none; border: none; color: #5a4f80; cursor: pointer; font-size: 16px; padding: 0 4px; }
-  .nt-add-item { display: flex; align-items: center; gap: 9px; padding: 6px 12px 12px; color: #8a7fb5;
+  .nt-item.ok .nt-item-txt { color: var(--lilas-2); text-decoration: line-through; }
+  .nt-item-x { background: none; border: none; color: var(--lilas-2); cursor: pointer; font-size: 16px; padding: 0 4px; }
+  .nt-add-item { display: flex; align-items: center; gap: 9px; padding: 6px 12px 12px; color: var(--lilas-2);
                   cursor: pointer; font-size: 13px; }
   .nt-add-item svg { width: 15px; height: 15px; }
   /* Rodapé de ações do editor */
   .nt-ed-acoes { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 12px 12px; border-top: 1px solid var(--np-line); }
-  .nt-acao { display: flex; align-items: center; gap: 5px; background: #221d3a; color: #a89fd0;
+  .nt-acao { display: flex; align-items: center; gap: 5px; background: var(--lilas-bg); color: var(--lilas);
               border: 1px solid var(--np-line-2); border-radius: 8px; padding: 6px 11px; font: inherit;
               font-size: 12px; cursor: pointer; }
   .nt-acao:hover { border-color: var(--np-acc); }
   .nt-acao[hidden] { display: none; }
   .nt-acao svg { width: 14px; height: 14px; }
-  .nt-acao.on { background: #211a12; border-color: #b89c6e; color: #f0e4c8; }
-  .nt-acao.dem { background: #16283a; border-color: #2d4a63; color: #8ec0ea; }
-  .nt-acao.ficha { background: #172b1e; border-color: #2d5c3c; color: #8ecba0; }
-  .nt-acao.salvar { background: var(--np-acc); border-color: var(--np-acc); color: #18152a; font-weight: 700; }
+  .nt-acao.on { background: var(--c-211a12); border-color: var(--acc); color: var(--c-f0e4c8); }
+  .nt-acao.dem { background: var(--azul-bg); border-color: var(--c-2d4a63); color: var(--azul); }
+  .nt-acao.ficha { background: var(--c-172b1e); border-color: var(--c-2d5c3c); color: var(--c-8ecba0); }
+  .nt-acao.salvar { background: var(--np-acc); border-color: var(--np-acc); color: var(--c-18152a); font-weight: 700; }
   .nt-acao.salvar:hover { filter: brightness(1.08); }
   .nt-acao.salvar:disabled { opacity: .55; cursor: default; }
   .nt-cores { display: none; gap: 7px; padding: 0 12px 12px; }
@@ -799,49 +856,49 @@ pode compartilhar um rascunho com quem precisar ver.</p>
      precedente do Controle de Doses). */
   .nt-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; padding: 0 12px 10px; }
   .nt-fotos:empty { display: none; }
-  .nt-foto-item { position: relative; aspect-ratio: 1; border-radius: 9px; overflow: hidden; background: #221d3a; }
+  .nt-foto-item { position: relative; aspect-ratio: 1; border-radius: 9px; overflow: hidden; background: var(--lilas-bg); }
   .nt-foto-item img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer; }
   .nt-foto-carregando { display: flex; align-items: center; justify-content: center; height: 100%;
-                          color: #6b5da0; font-size: 11px; }
+                          color: var(--lilas-2); font-size: 11px; }
   .nt-foto-x { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%;
-                background: rgba(10,8,20,.75); color: #f0e4c8; border: none; cursor: pointer; font-size: 14px;
+                background: rgba(10,8,20,.75); color: var(--c-f0e4c8); border: none; cursor: pointer; font-size: 14px;
                 line-height: 1; display: flex; align-items: center; justify-content: center; }
   .nt-foto-escolha { display: none; gap: 7px; padding: 0 12px 12px; }
   .nt-foto-escolha.show { display: flex; }
   .nt-toast { margin: 8px 0; padding: 8px 13px; border-radius: 9px; font-size: 12.5px;
-               background: #17352b; color: #9fe1cb; border: 1px solid #2e6b52; }
-  .nt-toast.err { background: #3a1c1c; color: #f09090; border-color: #6b2e2e; }
+               background: var(--verde-bg); color: var(--verde); border: 1px solid var(--c-2e6b52); }
+  .nt-toast.err { background: var(--vermelho-bg); color: var(--c-f09090); border-color: var(--c-6b2e2e); }
   /* Compartilhar (PLANO_RASCUNHOS_COMPARTILHADOS.md) */
   .nt-card-de { display: inline-flex; align-items: center; gap: 4px; font-size: 10px;
-                 color: #8ec0ea; background: #16283a; border-radius: 6px; padding: 1px 7px; margin-top: 6px; }
+                 color: var(--azul); background: var(--azul-bg); border-radius: 6px; padding: 1px 7px; margin-top: 6px; }
   .nt-card-de svg { width: 10px; height: 10px; }
-  .nt-card-comp { position: absolute; bottom: 10px; right: 10px; color: #7fc9a6; }
+  .nt-card-comp { position: absolute; bottom: 10px; right: 10px; color: var(--c-7fc9a6); }
   .nt-card-comp svg { width: 12px; height: 12px; display: block; }
-  .nt-acao.comp { background: #142b22; border-color: #2d5c47; color: #8ecbb0; }
-  .nt-acao.comp.on { background: #1c3e30; color: #b6e6cd; }
+  .nt-acao.comp { background: var(--c-142b22); border-color: var(--c-2d5c47); color: var(--c-8ecbb0); }
+  .nt-acao.comp.on { background: var(--c-1c3e30); color: var(--c-b6e6cd); }
   .nt-comp { display: none; padding: 0 12px 12px; }
   .nt-comp.show { display: block; }
   .nt-comp-tit { font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase;
-                  color: #6b5da0; margin: 10px 0 6px; }
+                  color: var(--lilas-2); margin: 10px 0 6px; }
   .nt-comp-alvos { display: flex; flex-wrap: wrap; gap: 6px; }
-  .nt-alvo { display: inline-flex; align-items: center; gap: 6px; background: #1c3e30;
-              border: 1px solid #2d5c47; color: #b6e6cd; border-radius: 99px;
+  .nt-alvo { display: inline-flex; align-items: center; gap: 6px; background: var(--c-1c3e30);
+              border: 1px solid var(--c-2d5c47); color: var(--c-b6e6cd); border-radius: 99px;
               padding: 4px 6px 4px 11px; font-size: 12px; }
-  .nt-alvo button { background: none; border: none; color: #7fc9a6; cursor: pointer;
+  .nt-alvo button { background: none; border: none; color: var(--c-7fc9a6); cursor: pointer;
                      font-size: 15px; line-height: 1; padding: 0 3px; }
-  .nt-comp-vazio { font-size: 12px; color: #6b5da0; }
+  .nt-comp-vazio { font-size: 12px; color: var(--lilas-2); }
   .nt-comp-linha { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .nt-comp-sel { background: #0f0d1a; border: 1px solid var(--np-line-2); color: var(--text);
+  .nt-comp-sel { background: var(--c-0f0d1a); border: 1px solid var(--np-line-2); color: var(--text);
                   border-radius: 8px; padding: 6px 9px; font: inherit; font-size: 12.5px; }
-  .nt-comp-add { display: flex; align-items: center; gap: 5px; background: #221d3a; color: #a89fd0;
+  .nt-comp-add { display: flex; align-items: center; gap: 5px; background: var(--lilas-bg); color: var(--lilas);
                   border: 1px solid var(--np-line-2); border-radius: 8px; padding: 6px 11px;
                   font: inherit; font-size: 12px; cursor: pointer; }
   .nt-comp-add:hover { border-color: var(--np-acc); }
-  .nt-comp-equipe { display: flex; align-items: center; gap: 6px; background: #1c3e30; color: #b6e6cd;
-                     border: 1px solid #2d5c47; border-radius: 8px; padding: 7px 12px; font: inherit;
+  .nt-comp-equipe { display: flex; align-items: center; gap: 6px; background: var(--c-1c3e30); color: var(--c-b6e6cd);
+                     border: 1px solid var(--c-2d5c47); border-radius: 8px; padding: 7px 12px; font: inherit;
                      font-size: 12.5px; font-weight: 600; cursor: pointer; }
   .nt-comp-equipe:hover { filter: brightness(1.12); }
-  .nt-comp-nota { font-size: 11.5px; color: #6b5da0; line-height: 1.5; margin-top: 8px; }
+  .nt-comp-nota { font-size: 11.5px; color: var(--lilas-2); line-height: 1.5; margin-top: 8px; }
   /* Mesma lição de CSS do .nt-mais/.nt-acao: classe com `display` explícito
      vence o [hidden] nativo — precisa da regra abaixo pra sumir de verdade. */
   .nt-comp-equipe[hidden], .nt-comp-linha[hidden], .nt-comp-add[hidden] { display: none; }
@@ -849,9 +906,9 @@ pode compartilhar um rascunho com quem precisar ver.</p>
      continuaria visível no rascunho recebido (que não é meu pra apagar). */
   .nt-ed-del[hidden] { display: none; }
   /* Rascunho RECEBIDO: leitura, sem editor. */
-  .nt-rec-fx { background: #16283a; border: 1px solid #2d4a63; color: #8ec0ea; border-radius: 10px;
+  .nt-rec-fx { background: var(--azul-bg); border: 1px solid var(--c-2d4a63); color: var(--azul); border-radius: 10px;
                 padding: 8px 12px; font-size: 12px; margin: 10px 12px 0; }
-  .nt-ro .nt-tit-inp, .nt-ro .nt-corpo-inp { color: #cfc8e0; }
+  .nt-ro .nt-tit-inp, .nt-ro .nt-corpo-inp { color: var(--c-cfc8e0); }
 </style>
 
 <div id="nt-gate" class="nt-gate"></div>
@@ -1787,7 +1844,7 @@ pode compartilhar um rascunho com quem precisar ver.</p>
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 30/10/2026.
+<p class="nota">Painel do bar · atualizado em 03/11/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -3236,17 +3293,17 @@ if ('serviceWorker' in navigator) {
      ausência de uma variável não pode deixar o aviso ilegível. */
   .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
     z-index: 96; margin: 0 auto; max-width: 460px; display: none;
-    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
     align-items: center; gap: 10px; }
   .ver-nova.on { display: flex; }
-  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
-  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
-  .vn-txt b { color: var(--text, #f3ede2); }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
   .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
-    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
-    color: var(--acc-txt, #16130f); }
-  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
@@ -3257,7 +3314,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -3371,8 +3428,8 @@ if ('serviceWorker' in navigator) {
      z-index com eles, só não ocupar o mesmo espaço na tela. */
   .atualiza-atalho { position: fixed; left: 12px; right: 12px;
     bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
   .atualiza-atalho.on { display: block; }
   .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
   .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }

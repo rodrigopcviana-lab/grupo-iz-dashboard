@@ -4,7 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#16130f">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-pressed', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function copiaPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return;
+    var txt;
+    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+  });
+})();
+</script>
 <title>Escala &amp; Horas · Painel do bar</title>
 <script>
 (function () {
@@ -16,13 +72,13 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=a35ddccddc3c">
+<link rel="stylesheet" href="portal.css?v=211b8486957d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
 <a class="volta-mural vm-barra" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
-<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div></div>
+<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" title="Ligar modo escuro" aria-label="Modo escuro" aria-pressed="false"><span class="ic-lua"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span><span class="ic-sol"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span></button><button class="prompt-bt" id="prompt-bt" type="button" data-niveis="coord" style="display:none" title="Copiar o prompt de construção desta página" aria-label="Copiar prompt da página"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -100,6 +156,7 @@
 <button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="pomo-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
+<script type="application/json" id="prompt-pagina">"Construa uma página web chamada \"Escala & Horas\", seguindo o modelo da página \"Escala & Horas · Painel do bar\" (escala-horas) do Portal dos Bares do Grupo IZ. Mantenha a mesma estrutura e o mesmo comportamento descritos abaixo, adaptando nomes, dados e marca ao novo site.\n\n## Objetivo\nRegras de escala, a escala da semana, o reforço, o banco de horas e as férias\n\n## Onde fica e quem vê\n- Menu: seção \"Gerir a equipe\", item \"Escala & Horas\"\n- Níveis com acesso: Chefe de Bar, Coordenação, RH\n- O acesso é conferido no servidor pela sessão (token assinado). Esconder na tela é só conforto, nunca a proteção.\n\n## Estrutura, de cima para baixo\n- Topo: logo, nome do painel, pílula do nível de quem entrou, busca, notificações e botão de modo escuro.\n- Título \"Escala & Horas\" e a linha de apoio: Regras de escala, a escala da semana, o reforço, o banco de horas e as férias.\n- Abas e sub-abas (uma visível por vez, guardar a última aberta): Regras | Escala | Reforço | Banco de Horas | Solicitações de férias | Planejamento de férias | Panorama | Pessoas | Plano | Conformidade\n- Seções:\n- Banco de horas (BH)\n- Trocas, folgas e férias\n- Precisa resolver algo?\n- Acesso restrito\n- Fora das regras de CLT\n- Nova versão da semana\n- Próximos alertas de reforço\n- Por time\n- Por casa\n- Pendências para o RH\n- Matrículas desativadas\n- Plano pra zerar horas extras\n- Selo de confiabilidade da coleta\n- Conformidade trabalhista\n- Trilha de auditoria\n- Nova solicitação\n- Planejar férias\n\n## Campos e filtros\n- Casa\n- Versão da semana\n- Nome do freelancer\n- Aplicar a partir de\n- Motivo (ex.: dia de hóspede, evento, cobertura de folga)\n- Nome (ex.: Bruno folga sábado)\n- A partir do Padrão — gera a semana pelo gabarito da equipe\n- Duplicar a versão atual — copia o que já está na tela\n- Em branco — começa a semana vazia\n- Buscar por nome…\n- Tipo\n- Início\n- Fim\n- Observação (opc.)\n- Só quem não tem férias marcadas\n- Saída (primeiro dia de férias)\n- Último dia de férias\n- Limite legal para tirar\n\n## Colunas das tabelas\n- Regra\n- Valor\n- Pessoa\n- Sexo\n- Turno base\n- Entrada\n- Saída\n- Folga fixa\n- Rodízio\n- Ativo\n- Horários por dia\n- Casa\n- Bar\n- Salão\n- Cozinha\n- Total\n- Time\n- Pessoas\n- Saldo líquido\n- Atenção / crítico\n- Devendo / a favor\n- Horas extras a pagar\n- Saldo\n- Tendência\n- Custo\n- Ação\n- Nome\n- Matrícula\n- Desativada\n- Bartender\n\n## Ações (botões)\n- Grade\n- Padrão\n- Tornar oficial\n- + Nova versão\n- Excluir\n- ← Semana anterior\n- Próxima semana →\n- + Adicionar pessoa só nesta semana\n- Salvar alterações pontuais\n- + Adicionar pessoa\n- Salvar padrão e aplicar\n- Salvar mesmo assim\n- Criar versão\n- Tudo\n- Só reforço\n- Feriados\n- Datas comerciais\n- Eventos da cidade\n- hoje\n- ver o que foi conferido\n\n## Dados\nRotas do servidor (Cloudflare Worker, com a sessão no cabeçalho):\n- /api/escala/validar\n- /api/escala/dia\n- /api/escala\n- /api/escala/versoes\n- /api/escala/versao/oficial\n- /api/escala/versao/excluir\n- /api/escala/versao\n- /api/escala/padrao\n- /api/banco-horas/trilha\n- /api/evento\n- /api/banco-horas/desativar\n- /api/banco-horas/checagem\n- /api/banco-horas/verificar\n- /api/banco-horas\n- /api/ferias\n- /api/ferias-plano\nSem sessão válida, a página manda para o login. Dado que falta aparece como \"—\", nunca inventado.\n\n## Visual\n- Fonte Inter (Google Fonts), com system-ui de reserva. Títulos em peso 600 a 700, texto de 13 a 15 px.\n- Tema claro (padrão): fundo #f6f7f9; cartões brancos com borda #e4e7ec, cantos de 16 px e sombra bem leve; texto #101828, secundário #475467, apoio #667085; destaque preto #101828 com texto branco; links em preto com seta.\n- Modo escuro em grafite, não preto: fundo #1e1f22, cartões #27292d, borda #3a3d42, texto #ececee, secundário #b9bcc3; destaque claro com texto escuro.\n- Botão de lua/sol no topo liga e desliga o escuro, guarda a escolha no navegador (localStorage) e aplica antes de pintar a página, sem piscar.\n- Toda cor sai de variáveis CSS (:root e :root[data-tema=\"escuro\"]); nenhuma cor fixa.\n- Destaques com fundo suave: verde (#ecfdf3 / #067647), amarelo (#fef6dc, borda #f5d77a, texto #b54708), vermelho (#fef3f2 / #c0362c), azul (#eff8ff / #175cd3). Selo de categoria em pílula cinza.\n- Ícones SVG de linha (24x24, traço 1.8). Nenhum emoji.\n- Celular primeiro: largura máxima de 980 px, margem lateral de 16 a 20 px, alvos de toque de pelo menos 34 px, nada de rolagem horizontal.\n\n## Regras\n- Nenhum telefone na página. Valor em dinheiro só para os níveis autorizados e vindo do servidor.\n- Cada número mostrado diz de onde vem; sem dado, mostre o vazio, não um valor de exemplo."</script>
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
@@ -143,7 +200,7 @@ window.sessaoLer = function () {
     var f = document.createElement('div');
     f.id = 'previa-faixa';
     f.setAttribute('role', 'status');
-    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:#5a3fa0;color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--c-5a3fa0);color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
     f.textContent = 'Prévia · ' + (window.parent.portalPrevia.rotulo || s.nivel) +
       ' · o que você enviar aqui é gravado de verdade, com o seu login';
     document.body.insertBefore(f, document.body.firstChild);
@@ -772,8 +829,8 @@ visível e o motivo fica gravado no dia. Chefe de bar vê a própria casa; coord
                     background: var(--card); color: var(--text); cursor: pointer; font-family: inherit; }
   .es-nav .lbl { flex: 1; text-align: center; font-size: 13.5px; color: var(--text-2); }
   .es-viol { border-radius: 10px; padding: 10px 13px; margin-bottom: 12px; font-size: 13px; }
-  .es-viol.bloqueio { background: rgba(226,75,74,.12); border: 1px solid rgba(226,75,74,.4); color: #f09b9b; }
-  .es-viol.aviso { background: rgba(230,170,60,.12); border: 1px solid rgba(230,170,60,.4); color: #e6aa3c; }
+  .es-viol.bloqueio { background: rgba(226,75,74,.12); border: 1px solid rgba(226,75,74,.4); color: var(--vermelho); }
+  .es-viol.aviso { background: rgba(230,170,60,.12); border: 1px solid rgba(230,170,60,.4); color: var(--c-e6aa3c); }
   .es-viol ul { margin: 6px 0 0; padding-left: 18px; }
   .es-viol li { margin-bottom: 3px; }
   .es-grade { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 14px; }
@@ -821,17 +878,17 @@ visível e o motivo fica gravado no dia. Chefe de bar vê a própria casa; coord
               padding: 9px 18px; font-size: 13px; color: var(--text); opacity: 0; pointer-events: none;
               transition: opacity .18s, transform .18s; }
   .es-toast.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
-  .es-toast.erro { border-color: rgba(226,75,74,.5); color: #f09b9b; }
+  .es-toast.erro { border-color: rgba(226,75,74,.5); color: var(--vermelho); }
   .es-modal { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center;
               background: rgba(0,0,0,.5); padding: 18px; }
   .es-modal.on { display: flex; }
   .es-modal-cx { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px;
                  max-width: 440px; width: 100%; }
   .es-modal-cx h3 { margin: 0 0 4px; font-size: 16px; display: flex; align-items: center; gap: 7px; }
-  .es-modal-cx h3 svg { color: #f09b9b; }
+  .es-modal-cx h3 svg { color: var(--vermelho); }
   .es-modal-cx .sub { margin: 0 0 10px; font-size: 12.5px; }
   .es-modal-viol { background: rgba(226,75,74,.1); border: 1px solid rgba(226,75,74,.35); border-radius: 9px;
-                   padding: 9px 12px; margin-bottom: 12px; font-size: 12.5px; color: #f0a19b; }
+                   padding: 9px 12px; margin-bottom: 12px; font-size: 12.5px; color: var(--c-f0a19b); }
   .es-modal-viol ul { margin: 0; padding-left: 17px; }
   .es-modal-viol li { margin-bottom: 3px; }
   .es-modal-cx label { display: block; font-size: 12.5px; color: var(--text-2); margin-bottom: 5px; }
@@ -1782,7 +1839,7 @@ visível e o motivo fica gravado no dia. Chefe de bar vê a própria casa; coord
   .leg { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0 14px; font-size: 13px; color: var(--text-2); }
   .leg span { display: inline-flex; align-items: center; gap: 6px; }
   .leg i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
-  .i-feriado { background: #e08a7a; } .i-comercial { background: var(--amarelo); }
+  .i-feriado { background: var(--c-e08a7a); } .i-comercial { background: var(--amarelo); }
   .i-cidade { background: var(--lilas); } .i-reforco { background: var(--urg-urgente); }
   .filtros { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
   .filtros button { background: var(--card); border: 1px solid var(--border); color: var(--text-2);
@@ -1808,22 +1865,22 @@ visível e o motivo fica gravado no dia. Chefe de bar vê a própria casa; coord
   .cal-dia.hoje .n { background: var(--acc); color: var(--acc-txt); font-weight: 700; border-radius: 999px;
                      width: 19px; height: 19px; display: inline-flex; align-items: center; justify-content: center;
                      align-self: flex-start; }
-  .cal-dia.sel { background: #362a15; border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
-  .cal-dia.reforco-alto { background: #3a1f1c; border-color: #6e3a2c; }
-  .cal-dia.reforco-medio { background: #2c2513; border-color: #5f4d1f; }
-  .cal-dia.tem:not(.reforco-alto):not(.reforco-medio) { background: #211c15; border-color: var(--acc); }
+  .cal-dia.sel { background: var(--amarelo-bg); border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
+  .cal-dia.reforco-alto { background: var(--vermelho-bg); border-color: var(--c-6e3a2c); }
+  .cal-dia.reforco-medio { background: var(--c-2c2513); border-color: var(--c-5f4d1f); }
+  .cal-dia.tem:not(.reforco-alto):not(.reforco-medio) { background: var(--card); border-color: var(--acc); }
   .cal-chip { font-size: 9px; line-height: 1.25; border-radius: 5px; padding: 1px 4px; font-weight: 700;
               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .cal-chip.feriado_nacional, .cal-chip.feriado_estadual, .cal-chip.feriado_municipal { background: #3a1f1c; color: #f0a595; }
-  .cal-chip.comercial { background: #3a2d12; color: var(--amarelo); }
-  .cal-chip.cidade { background: #241a33; color: var(--lilas); }
+  .cal-chip.feriado_nacional, .cal-chip.feriado_estadual, .cal-chip.feriado_municipal { background: var(--vermelho-bg); color: var(--c-f0a595); }
+  .cal-chip.comercial { background: var(--amarelo-bg); color: var(--amarelo); }
+  .cal-chip.cidade { background: var(--c-241a33); color: var(--lilas); }
   .cal-ptit { font-size: 13px; font-weight: 700; color: var(--text-2); margin: 8px 0 6px; }
   .cal-dica { font-size: 13px; color: var(--text-3); }
   .alerta { display: flex; gap: 12px; align-items: flex-start; background: var(--card); border: 1px solid var(--border);
             border-radius: 10px; padding: 11px 13px; margin-bottom: 8px; }
   .alerta.alto { border-left: 4px solid var(--urg-urgente); }
   .alerta.medio { border-left: 4px solid var(--amarelo); }
-  .a-data { flex: none; text-align: center; background: #2a2113; border-radius: 9px; padding: 7px 9px; min-width: 54px; }
+  .a-data { flex: none; text-align: center; background: var(--card-2); border-radius: 9px; padding: 7px 9px; min-width: 54px; }
   .a-data .dia { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--acc); letter-spacing: .05em; }
   .a-data .num { display: block; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .a-body { flex: 1; min-width: 0; }
@@ -1831,7 +1888,7 @@ visível e o motivo fica gravado no dia. Chefe de bar vê a própria casa; coord
   .a-meta { font-size: 12px; color: var(--text-2); }
   .pill { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
           border-radius: 999px; padding: 2px 8px; margin-left: 6px; }
-  .pill.alto { background: #4a241a; color: #ff9d84; } .pill.medio { background: #3a2d12; color: var(--amarelo); }
+  .pill.alto { background: var(--c-4a241a); color: var(--c-ff9d84); } .pill.medio { background: var(--amarelo-bg); color: var(--amarelo); }
 </style>
 <h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg> Escalas &amp; Reforço</h1>
 <p class="sub">Calendário anual de feriados, datas comemorativas e eventos de Goiânia (GO) —
@@ -1861,7 +1918,7 @@ para prever onde a casa provavelmente precisa de reforço na equipe.</p>
 <div id="cal-painel"></div>
 
 <h2 style="margin-top:22px">Próximos alertas de reforço</h2>
-<div class="alerta alto"><div class="a-data"><span class="dia">sáb</span><span class="num">31/10</span></div><div class="a-body"><div class="a-tit">Halloween<span class="pill alto">Reforço alto</span></div></div></div><div class="alerta medio"><div class="a-data"><span class="dia">dom</span><span class="num">15/11</span></div><div class="a-body"><div class="a-tit">Proclamação da República<span class="pill medio">Reforço médio</span></div></div></div><div class="alerta alto"><div class="a-data"><span class="dia">qui</span><span class="num">31/12</span></div><div class="a-body"><div class="a-tit">Véspera de Ano Novo (Réveillon)<span class="pill alto">Reforço alto</span></div></div></div><div class="alerta medio"><div class="a-data"><span class="dia">sex</span><span class="num">01/01</span></div><div class="a-body"><div class="a-tit">Confraternização Universal<span class="pill medio">Reforço médio</span></div><div class="a-meta">Muita gente ainda de folga da virada; movimento variável.</div></div></div><div class="alerta alto"><div class="a-data"><span class="dia">seg</span><span class="num">08/02</span></div><div class="a-body"><div class="a-tit">Carnaval (segunda-feira)<span class="pill alto">Reforço alto</span></div></div></div><div class="alerta alto"><div class="a-data"><span class="dia">ter</span><span class="num">09/02</span></div><div class="a-body"><div class="a-tit">Carnaval (terça-feira)<span class="pill alto">Reforço alto</span></div></div></div><div class="alerta medio"><div class="a-data"><span class="dia">sáb</span><span class="num">01/05</span></div><div class="a-body"><div class="a-tit">Dia do Trabalho<span class="pill medio">Reforço médio</span></div></div></div><div class="alerta medio"><div class="a-data"><span class="dia">dom</span><span class="num">09/05</span></div><div class="a-body"><div class="a-tit">Dia das Mães<span class="pill medio">Reforço médio</span></div><div class="a-meta">Forte no almoço em família; o pico de bar à noite costuma ser mais fraco que o normal.</div></div></div>
+<div class="alerta medio"><div class="a-data"><span class="dia">dom</span><span class="num">15/11</span></div><div class="a-body"><div class="a-tit">Proclamação da República<span class="pill medio">Reforço médio</span></div></div></div><div class="alerta alto"><div class="a-data"><span class="dia">qui</span><span class="num">31/12</span></div><div class="a-body"><div class="a-tit">Véspera de Ano Novo (Réveillon)<span class="pill alto">Reforço alto</span></div></div></div><div class="alerta medio"><div class="a-data"><span class="dia">sex</span><span class="num">01/01</span></div><div class="a-body"><div class="a-tit">Confraternização Universal<span class="pill medio">Reforço médio</span></div><div class="a-meta">Muita gente ainda de folga da virada; movimento variável.</div></div></div><div class="alerta alto"><div class="a-data"><span class="dia">seg</span><span class="num">08/02</span></div><div class="a-body"><div class="a-tit">Carnaval (segunda-feira)<span class="pill alto">Reforço alto</span></div></div></div><div class="alerta alto"><div class="a-data"><span class="dia">ter</span><span class="num">09/02</span></div><div class="a-body"><div class="a-tit">Carnaval (terça-feira)<span class="pill alto">Reforço alto</span></div></div></div><div class="alerta medio"><div class="a-data"><span class="dia">sáb</span><span class="num">01/05</span></div><div class="a-body"><div class="a-tit">Dia do Trabalho<span class="pill medio">Reforço médio</span></div></div></div><div class="alerta medio"><div class="a-data"><span class="dia">dom</span><span class="num">09/05</span></div><div class="a-body"><div class="a-tit">Dia das Mães<span class="pill medio">Reforço médio</span></div><div class="a-meta">Forte no almoço em família; o pico de bar à noite costuma ser mais fraco que o normal.</div></div></div><div class="alerta medio"><div class="a-data"><span class="dia">qui</span><span class="num">27/05</span></div><div class="a-body"><div class="a-tit">Corpus Christi<span class="pill medio">Reforço médio</span></div></div></div>
 
 <div class="panel" style="margin-top:14px">
 <p class="sub" style="margin:0">Eu pré-carrego o ano inteiro de Goiânia (GO)
@@ -1872,7 +1929,7 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
 <script type="text/plain" id="perf-src-reforco">
 (function () {
   var ITENS = [{"data":"2026-01-01","titulo":"Confraternização Universal","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio","nota":"Muita gente ainda de folga da virada; movimento variável."},{"data":"2026-02-16","titulo":"Carnaval (segunda-feira)","tipo":"comercial","filtro":"comercial","reforco":"alto"},{"data":"2026-02-17","titulo":"Carnaval (terça-feira)","tipo":"feriado_nacional","filtro":"feriado","reforco":"alto"},{"data":"2026-02-18","titulo":"Quarta-feira de Cinzas","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo","nota":"Ponto facultativo até 14h na maioria das prefeituras."},{"data":"2026-04-03","titulo":"Sexta-feira Santa","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo"},{"data":"2026-04-21","titulo":"Tiradentes","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo"},{"data":"2026-05-01","titulo":"Dia do Trabalho","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2026-05-10","titulo":"Dia das Mães","tipo":"comercial","filtro":"comercial","reforco":"medio","nota":"Forte no almoço em família; o pico de bar à noite costuma ser mais fraco que o normal."},{"data":"2026-05-24","titulo":"Nossa Senhora Auxiliadora (padroeira de Goiânia)","tipo":"feriado_municipal","filtro":"feriado","reforco":"baixo","nota":"Ponto facultativo municipal — confirmar decreto do ano."},{"data":"2026-06-04","titulo":"Corpus Christi","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2026-06-12","titulo":"Dia dos Namorados","tipo":"comercial","filtro":"comercial","reforco":"alto"},{"data":"2026-06-24","titulo":"São João","tipo":"comercial","filtro":"comercial","reforco":"medio","nota":"Pico das festas juninas em Goiânia costuma se espalhar por todo junho."},{"data":"2026-07-26","titulo":"Fundação de Goiás","tipo":"feriado_estadual","filtro":"feriado","reforco":"baixo"},{"data":"2026-08-09","titulo":"Dia dos Pais","tipo":"comercial","filtro":"comercial","reforco":"medio"},{"data":"2026-09-07","titulo":"Independência do Brasil","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2026-10-12","titulo":"Nossa Senhora Aparecida (Dia das Crianças)","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2026-10-24","titulo":"Aniversário de Goiânia","tipo":"feriado_municipal","filtro":"feriado","reforco":"alto","nota":"Data do lançamento da pedra fundamental (1933); costuma emendar fim de semana com festa na Praça Cívica."},{"data":"2026-10-31","titulo":"Halloween","tipo":"comercial","filtro":"comercial","reforco":"alto"},{"data":"2026-11-02","titulo":"Finados","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo"},{"data":"2026-11-15","titulo":"Proclamação da República","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2026-12-24","titulo":"Véspera de Natal","tipo":"comercial","filtro":"comercial","reforco":"baixo"},{"data":"2026-12-25","titulo":"Natal","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo"},{"data":"2026-12-31","titulo":"Véspera de Ano Novo (Réveillon)","tipo":"comercial","filtro":"comercial","reforco":"alto"},{"data":"2027-01-01","titulo":"Confraternização Universal","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio","nota":"Muita gente ainda de folga da virada; movimento variável."},{"data":"2027-02-08","titulo":"Carnaval (segunda-feira)","tipo":"comercial","filtro":"comercial","reforco":"alto"},{"data":"2027-02-09","titulo":"Carnaval (terça-feira)","tipo":"feriado_nacional","filtro":"feriado","reforco":"alto"},{"data":"2027-02-10","titulo":"Quarta-feira de Cinzas","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo","nota":"Ponto facultativo até 14h na maioria das prefeituras."},{"data":"2027-03-26","titulo":"Sexta-feira Santa","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo"},{"data":"2027-04-21","titulo":"Tiradentes","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo"},{"data":"2027-05-01","titulo":"Dia do Trabalho","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2027-05-09","titulo":"Dia das Mães","tipo":"comercial","filtro":"comercial","reforco":"medio","nota":"Forte no almoço em família; o pico de bar à noite costuma ser mais fraco que o normal."},{"data":"2027-05-24","titulo":"Nossa Senhora Auxiliadora (padroeira de Goiânia)","tipo":"feriado_municipal","filtro":"feriado","reforco":"baixo","nota":"Ponto facultativo municipal — confirmar decreto do ano."},{"data":"2027-05-27","titulo":"Corpus Christi","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2027-06-12","titulo":"Dia dos Namorados","tipo":"comercial","filtro":"comercial","reforco":"alto"},{"data":"2027-06-24","titulo":"São João","tipo":"comercial","filtro":"comercial","reforco":"medio","nota":"Pico das festas juninas em Goiânia costuma se espalhar por todo junho."},{"data":"2027-07-26","titulo":"Fundação de Goiás","tipo":"feriado_estadual","filtro":"feriado","reforco":"baixo"},{"data":"2027-08-08","titulo":"Dia dos Pais","tipo":"comercial","filtro":"comercial","reforco":"medio"},{"data":"2027-09-07","titulo":"Independência do Brasil","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2027-10-12","titulo":"Nossa Senhora Aparecida (Dia das Crianças)","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2027-10-24","titulo":"Aniversário de Goiânia","tipo":"feriado_municipal","filtro":"feriado","reforco":"alto","nota":"Data do lançamento da pedra fundamental (1933); costuma emendar fim de semana com festa na Praça Cívica."},{"data":"2027-10-31","titulo":"Halloween","tipo":"comercial","filtro":"comercial","reforco":"alto"},{"data":"2027-11-02","titulo":"Finados","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo"},{"data":"2027-11-15","titulo":"Proclamação da República","tipo":"feriado_nacional","filtro":"feriado","reforco":"medio"},{"data":"2027-12-24","titulo":"Véspera de Natal","tipo":"comercial","filtro":"comercial","reforco":"baixo"},{"data":"2027-12-25","titulo":"Natal","tipo":"feriado_nacional","filtro":"feriado","reforco":"baixo"},{"data":"2027-12-31","titulo":"Véspera de Ano Novo (Réveillon)","tipo":"comercial","filtro":"comercial","reforco":"alto"}];
-  var hoje = "2026-10-30";
+  var hoje = "2026-11-03";
   var filtroAtivo = 'tudo';
 
   function passaFiltro(it) {
@@ -1998,7 +2055,7 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
      cai em herdado em vez de vermelho. PLANO_BH_V2.md E1: reservado para
      prazo estourado, divergência de cadastro e dado não confiável — nunca
      mais para saldo positivo comum. */
-  body { --verm:#dc9a8e; }
+  body { --verm:var(--vermelho); }
 
   /* ---- 4 vistas (PLANO_BH_V2.md E1) --------------------------------------
      Panorama · Pessoas · Plano · Conformidade. A barra de filtros (setor,
@@ -2048,7 +2105,7 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
   table.bh-porcasa td.tot { border-top:2px solid var(--border); font-weight:700; }
   /* Linhas do "Por casa" são o filtro: clicar seleciona a casa. */
   table.bh-porcasa tr.bh-casa-linha { cursor:pointer; }
-  table.bh-porcasa tr.bh-casa-linha:hover td { background:rgba(255,255,255,.03); }
+  table.bh-porcasa tr.bh-casa-linha:hover td { background:rgba(var(--realce),.03); }
   table.bh-porcasa tr.bh-casa-sel td { background:rgba(224,178,74,.10); box-shadow:inset 3px 0 0 var(--amarelo); }
   .bh-porcasa-dica { font-size:11px; color:var(--text-3); margin:2px 0 0; }
   table.bh { width:100%; border-collapse:collapse; font-size:13px; }
@@ -2060,7 +2117,7 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
      .bh-nome/.bh-sub (abaixo) garante que casa/setor/matrícula na 2ª linha
      não estourem esse piso. */
   table.bh td { padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
-  table.bh tbody tr:hover { background:rgba(255,255,255,.03); }
+  table.bh tbody tr:hover { background:rgba(var(--realce),.03); }
   table.bh tbody tr:last-child td { border-bottom:none; }
   table.bh td.n, table.bh th.n { text-align:right; font-variant-numeric:tabular-nums; }
   .bh-nome { font-weight:600; line-height:1.15; }
@@ -2075,11 +2132,11 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
   .bh-saldo.neg { color:var(--text); }
   .bh-badge { display:inline-flex; align-items:center; font-size:11px; font-weight:600;
       padding:3px 9px; border-radius:999px; }
-  .bh-badge.ok { background:#17352b; color:var(--verde); }
-  .bh-badge.atencao { background:#3a2d12; color:var(--amarelo); }
-  .bh-badge.critico { background:#3a1414; color:var(--verm); }
-  .bh-badge.divergencia { background:#3a1414; color:var(--verm); cursor:help; }
-  .bh-badge.atipico { background:#33234a; color:#c9a6f2; cursor:help; }
+  .bh-badge.ok { background:var(--verde-bg); color:var(--verde); }
+  .bh-badge.atencao { background:var(--amarelo-bg); color:var(--amarelo); }
+  .bh-badge.critico { background:var(--vermelho-bg); color:var(--verm); }
+  .bh-badge.divergencia { background:var(--vermelho-bg); color:var(--verm); cursor:help; }
+  .bh-badge.atipico { background:var(--c-33234a); color:var(--lilas); cursor:help; }
 
   /* Selo de confiabilidade (E2.3). Barra estreita no topo — o selo é
      contexto pro número, não o assunto da página; roubar espaço do hero
@@ -2092,7 +2149,7 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
   .bh-selo-cab { display:flex; align-items:center; gap:9px; width:100%; padding:7px 12px;
     background:transparent; border:0; color:var(--text-2); font-size:12.5px;
     text-align:left; cursor:pointer; font-family:inherit; }
-  .bh-selo-cab:hover { background:rgba(255,255,255,.03); }
+  .bh-selo-cab:hover { background:rgba(var(--realce),.03); }
   .bh-selo-dot { width:9px; height:9px; border-radius:50%; flex:none; background:var(--text-3); }
   .bh-selo.verde   .bh-selo-dot { background:var(--verde); }
   .bh-selo.ambar   .bh-selo-dot { background:var(--amarelo); }
@@ -2121,12 +2178,12 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
      display:none nasce no atributo style inline de propósito — regra de
      CLASSE com display:none não volta com style.display='' — ver a "Lição de
      CSS" do Mural v3 no CLAUDE.md). */
-  .bh-atipico { border:1px solid #4a3568; background:#241a33; border-radius:10px;
+  .bh-atipico { border:1px solid var(--c-4a3568); background:var(--c-241a33); border-radius:10px;
     padding:8px 12px; margin:10px 0 0; font-size:12.5px; color:var(--text-2); }
-  .bh-atipico b { color:#c9a6f2; }
+  .bh-atipico b { color:var(--lilas); }
   .bh-atipico .bh-atipico-quem { display:block; margin-top:4px; color:var(--text-3); }
   table.bh-portime tr.bh-time-linha { cursor:pointer; }
-  table.bh-portime tr.bh-time-linha:hover td { background:rgba(255,255,255,.03); }
+  table.bh-portime tr.bh-time-linha:hover td { background:rgba(var(--realce),.03); }
   table.bh-portime tr.bh-time-sel td { background:rgba(224,178,74,.10); box-shadow:inset 3px 0 0 var(--amarelo); }
   table.bh-portime .bh-casa { font-weight:600; }
   table.bh-portime .bh-cont-neg { color:var(--verm); }
@@ -2163,8 +2220,8 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
       color:var(--text-3); cursor:pointer; transition:color .12s, border-color .12s, background .12s; }
   .bh-acao:hover { color:var(--verm); border-color:var(--verm); background:rgba(255,90,90,.08); }
   .bh-acao-reativar:hover { color:var(--verde); border-color:var(--verde); background:rgba(90,200,120,.08); }
-  .bh-acao-flag:hover { color:#c9a6f2; border-color:#c9a6f2; background:rgba(201,166,242,.10); }
-  .bh-acao-flag.on { color:#c9a6f2; border-color:#c9a6f2; background:rgba(201,166,242,.10); }
+  .bh-acao-flag:hover { color:var(--lilas); border-color:var(--lilas); background:rgba(201,166,242,.10); }
+  .bh-acao-flag.on { color:var(--lilas); border-color:var(--lilas); background:rgba(201,166,242,.10); }
   /* Lista de pessoas tem 2 botões (desativar + sinalizar RH); as demais
      tabelas (desativadas) têm só 1 — override mais específico só onde tem
      os dois, pra não alargar a coluna nas outras. */
@@ -2183,7 +2240,7 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
   .bh-rh-panel { display:flex; flex-direction:column; gap:10px; }
   .bh-rh-item { border:1px solid var(--border); border-radius:10px; padding:10px 12px;
     background:var(--card); }
-  .bh-rh-item.status-enviada_rh { border-color:#5a4a7a; }
+  .bh-rh-item.status-enviada_rh { border-color:var(--c-5a4a7a); }
   .bh-rh-cab { display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap; }
   .bh-rh-quem { font-weight:600; }
   .bh-rh-meta { font-size:11px; color:var(--text-3); }
@@ -2194,7 +2251,7 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
   .bh-rh-acoes button { font-size:11.5px; padding:5px 10px; border-radius:7px;
     border:1px solid var(--border); background:transparent; color:var(--text-2); cursor:pointer; }
   .bh-rh-acoes button:hover { border-color:var(--acc); color:var(--acc); }
-  .bh-rh-resposta { margin-top:6px; font-size:12.5px; background:rgba(255,255,255,.03);
+  .bh-rh-resposta { margin-top:6px; font-size:12.5px; background:rgba(var(--realce),.03);
     border-radius:8px; padding:8px 10px; }
   .bh-rh-resposta b { color:var(--text-2); }
   #bh-desativadas-wrap .bh-nome { color:var(--text-2); font-weight:600; }
@@ -2238,7 +2295,7 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
   table.bh-matriz td.bh-sem-cobertura { color:var(--text-3); font-size:11.5px; text-align:center; }
   .bh-pan-cards { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
   .bh-pan-card { flex:1; min-width:170px; border:1px solid var(--border); border-radius:10px; padding:8px 13px; }
-  .bh-pan-card.alerta { border-color:#4a3d22; background:#221c10; }
+  .bh-pan-card.alerta { border-color:var(--c-4a3d22); background:var(--c-221c10); }
   .bh-pan-card .v { font-size:21px; font-weight:700; }
   .bh-pan-card.alerta .v { color:var(--amarelo); }
   .bh-pan-card .l { font-size:11.5px; color:var(--text-2); line-height:1.45; }
@@ -5066,25 +5123,25 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
   .fe-datas { font-size:14.5px; font-family:var(--serif); }
   .fe-dias { font-size:11.5px; color:var(--text-3); }
   .fe-pill { margin-left:auto; font-size:10.5px; font-weight:700; letter-spacing:.03em; padding:3px 10px; border-radius:999px; }
-  .fe-pill.solicitado { background:#2a2418; color:var(--amarelo); }
-  .fe-pill.analise { background:#2a2418; color:var(--amarelo); }
-  .fe-pill.aprovado { background:#173a2a; color:var(--verde); }
-  .fe-pill.negado { background:#3a1c1c; color:#e08585; }
+  .fe-pill.solicitado { background:var(--card-2); color:var(--amarelo); }
+  .fe-pill.analise { background:var(--card-2); color:var(--amarelo); }
+  .fe-pill.aprovado { background:var(--verde-bg); color:var(--verde); }
+  .fe-pill.negado { background:var(--vermelho-bg); color:var(--vermelho); }
   .fe-pill.cancelado { background:var(--bg); color:var(--text-3); }
   .fe-quem { font-size:12px; color:var(--text-3); }
   .fe-obs { font-size:12.5px; color:var(--text-2); background:var(--bg); border-radius:8px; padding:8px 10px; }
   .fe-resp { font-size:12.5px; border-radius:8px; padding:8px 10px; }
-  .fe-resp.aprovado { background:#173a2a; color:#a8d8bc; }
-  .fe-resp.negado { background:#3a1c1c; color:#e0b0b0; }
-  .fe-resp.analise { background:#2a2418; color:#dcc48a; }
+  .fe-resp.aprovado { background:var(--verde-bg); color:var(--c-a8d8bc); }
+  .fe-resp.negado { background:var(--vermelho-bg); color:var(--c-e0b0b0); }
+  .fe-resp.analise { background:var(--card-2); color:var(--c-dcc48a); }
   .fe-resp b { display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px; opacity:.85; }
   .fe-acoes { display:flex; gap:7px; flex-wrap:wrap; margin-top:2px; }
   .fe-acoes button { padding:7px 13px; border-radius:8px; border:1px solid var(--border); background:var(--bg);
     color:var(--text-2); font-size:12.5px; cursor:pointer; }
   .fe-acoes button:hover { border-color:var(--acc); color:var(--acc); }
   .fe-acoes button.aprovar:hover { border-color:var(--verde); color:var(--verde); }
-  .fe-acoes button.negar:hover { border-color:#e08585; color:#e08585; }
-  .fe-acoes button.cancelar { color:#e08585; }
+  .fe-acoes button.negar:hover { border-color:var(--vermelho); color:var(--vermelho); }
+  .fe-acoes button.cancelar { color:var(--vermelho); }
   .fe-resp-ta { width:100%; box-sizing:border-box; margin-top:7px; padding:9px 10px; font-size:13px; font-family:inherit;
     border-radius:9px; border:1px solid var(--border); background:var(--bg); color:var(--text); resize:vertical; min-height:44px; }
   .fe-vazio { text-align:center; color:var(--text-3); font-size:13px; padding:30px 20px; }
@@ -5092,7 +5149,7 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
     justify-content:center; padding:40px 16px; z-index:60; }
   .fe-mback.on { display:flex; }
   .fe-modal { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;
-    width:100%; max-width:420px; box-shadow:0 14px 34px rgba(0,0,0,.5); }
+    width:100%; max-width:420px; box-shadow:0 14px 34px rgba(0,0,0,calc(.5*var(--sombra-k))); }
   .fe-modal h3 { font-size:16px; margin-bottom:14px; }
   .fe-campo { display:flex; flex-direction:column; gap:5px; margin-bottom:11px; }
   .fe-campo label { font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--text-3); }
@@ -5105,9 +5162,9 @@ cidade entram assim que a coordenação confirmar a data do ano — nada de data
   .fe-salvar { flex:1; padding:12px; border:none; border-radius:10px; background:var(--acc); color:var(--acc-txt); font-weight:600; font-size:14px; cursor:pointer; }
   .fe-salvar:disabled { opacity:.55; cursor:default; }
   .fe-cancel { padding:12px 15px; border:1px solid var(--border); border-radius:10px; background:none; color:var(--text-2); cursor:pointer; }
-  .fe-erro { color:#e08585; font-size:12.5px; min-height:1em; margin:2px 0 0; }
+  .fe-erro { color:var(--vermelho); font-size:12.5px; min-height:1em; margin:2px 0 0; }
   .fe-toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--card);
-    border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13.5px; box-shadow:0 12px 30px rgba(0,0,0,.5);
+    border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13.5px; box-shadow:0 12px 30px rgba(0,0,0,calc(.5*var(--sombra-k)));
     opacity:0; transition:.25s; z-index:70; pointer-events:none; }
   .fe-toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
   @media (max-width:559px){ .fe-dois{ grid-template-columns:1fr; } }
@@ -5427,8 +5484,8 @@ senha individual.</p>
     background:var(--card); border:1.5px solid var(--border); border-radius:12px; padding:12px 14px; }
   .fp-tile b { display:block; font-size:26px; line-height:1.1; }
   .fp-tile span { font-size:12px; color:var(--text-2); display:flex; align-items:center; gap:4px; }
-  .fp-tile.aviso b { color:#c2410c; }
-  .fp-tile.ruim b { color:#b91c1c; }
+  .fp-tile.aviso b { color:var(--tipo-ocorrencia); }
+  .fp-tile.ruim b { color:var(--vermelho); }
   .fp-tile.on { border-color:var(--acc); background:var(--card); }
   .fp-tile.on span { color:var(--acc); }
 
@@ -5440,8 +5497,8 @@ senha individual.</p>
     border-radius:999px; background:var(--card); color:var(--text-2); cursor:pointer; align-self:center; }
 
   .fp-alerta { display:flex; gap:9px; align-items:flex-start; border:1px solid var(--border);
-    border-left:3px solid #c2410c; border-radius:10px; padding:10px 13px; margin:0 0 10px; background:var(--card); }
-  .fp-alerta svg { flex:none; margin-top:2px; color:#c2410c; }
+    border-left:3px solid var(--tipo-ocorrencia); border-radius:10px; padding:10px 13px; margin:0 0 10px; background:var(--card); }
+  .fp-alerta svg { flex:none; margin-top:2px; color:var(--tipo-ocorrencia); }
   .fp-alerta p { margin:0; font-size:13.5px; }
   .fp-alerta p b { font-weight:600; }
 
@@ -5464,9 +5521,9 @@ senha individual.</p>
   .fp-vazio { color:var(--text-2); }
   .fp-pill { display:inline-block; font-size:11.5px; font-weight:600; padding:2px 9px; border-radius:999px;
     border:1px solid var(--border); color:var(--text-2); }
-  .fp-pill.ok { border-color:#15803d; color:#15803d; }
-  .fp-pill.aviso { border-color:#c2410c; color:#c2410c; }
-  .fp-pill.ruim { border-color:#b91c1c; color:#b91c1c; }
+  .fp-pill.ok { border-color:var(--verde); color:var(--verde); }
+  .fp-pill.aviso { border-color:var(--tipo-ocorrencia); color:var(--tipo-ocorrencia); }
+  .fp-pill.ruim { border-color:var(--vermelho); color:var(--vermelho); }
   .fp-c-acao { width:1%; }
   .fp-bt-ed { font:inherit; font-size:13px; padding:5px 12px; border:1.5px solid var(--border);
     border-radius:8px; background:var(--card); color:var(--text); cursor:pointer; white-space:nowrap; }
@@ -5483,12 +5540,12 @@ senha individual.</p>
   .fp-campo input { width:100%; font:inherit; font-size:15px; padding:9px 11px;
     border:1.5px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text); }
   .fp-msg { margin:0 0 12px; font-size:13px; min-height:18px; }
-  .fp-msg.erro { color:#b91c1c; }
+  .fp-msg.erro { color:var(--vermelho); }
   .fp-modal-bt { display:flex; gap:8px; align-items:center; }
   .fp-bt-pri, .fp-bt-sec, .fp-bt-limpar { font:inherit; font-size:14px; padding:9px 16px;
     border-radius:9px; cursor:pointer; border:1.5px solid var(--border); background:var(--card); color:var(--text); }
   .fp-bt-pri { background:var(--acc); border-color:var(--acc); color:var(--acc-txt); font-weight:600; }
-  .fp-bt-limpar { color:#b91c1c; border-color:var(--border); }
+  .fp-bt-limpar { color:var(--vermelho); border-color:var(--border); }
   .fp-bt-pri[disabled], .fp-bt-limpar[disabled] { opacity:.55; cursor:default; }
 
   /* Mobile: a tabela CABE na tela, sem rolagem lateral nem dentro do próprio
@@ -6085,7 +6142,7 @@ senha individual.</p>
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 30/10/2026.
+<p class="nota">Painel do bar · atualizado em 03/11/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -7534,17 +7591,17 @@ if ('serviceWorker' in navigator) {
      ausência de uma variável não pode deixar o aviso ilegível. */
   .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
     z-index: 96; margin: 0 auto; max-width: 460px; display: none;
-    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
     align-items: center; gap: 10px; }
   .ver-nova.on { display: flex; }
-  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
-  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
-  .vn-txt b { color: var(--text, #f3ede2); }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
   .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
-    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
-    color: var(--acc-txt, #16130f); }
-  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
@@ -7555,7 +7612,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -7669,8 +7726,8 @@ if ('serviceWorker' in navigator) {
      z-index com eles, só não ocupar o mesmo espaço na tela. */
   .atualiza-atalho { position: fixed; left: 12px; right: 12px;
     bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
   .atualiza-atalho.on { display: block; }
   .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
   .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }

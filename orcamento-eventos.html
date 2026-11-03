@@ -4,7 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#16130f">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-pressed', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function copiaPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return;
+    var txt;
+    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+  });
+})();
+</script>
 <title>Orçamento de Eventos · Painel do bar</title>
 <script>
 (function () {
@@ -16,13 +72,13 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=a35ddccddc3c">
+<link rel="stylesheet" href="portal.css?v=211b8486957d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
 <a class="volta-mural vm-barra" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
-<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div></div>
+<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" title="Ligar modo escuro" aria-label="Modo escuro" aria-pressed="false"><span class="ic-lua"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span><span class="ic-sol"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span></button><button class="prompt-bt" id="prompt-bt" type="button" data-niveis="coord" style="display:none" title="Copiar o prompt de construção desta página" aria-label="Copiar prompt da página"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -100,6 +156,7 @@
 <button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="pomo-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
+<script type="application/json" id="prompt-pagina">"Construa uma página web chamada \"Orçamento de Eventos\", seguindo o modelo da página \"Orçamento de Eventos · Painel do bar\" (orcamento-eventos) do Portal dos Bares do Grupo IZ. Mantenha a mesma estrutura e o mesmo comportamento descritos abaixo, adaptando nomes, dados e marca ao novo site.\n\n## Objetivo\nMonte o orçamento de um evento a partir do cardápio, número de convidados, duração e deslo\n\n## Onde fica e quem vê\n- Menu: seção \"Parcerias, eventos e marketing\", item \"Orçamento de eventos\"\n- Níveis com acesso: Chefe de Bar, Coordenação\n- O acesso é conferido no servidor pela sessão (token assinado). Esconder na tela é só conforto, nunca a proteção.\n\n## Estrutura, de cima para baixo\n- Topo: logo, nome do painel, pílula do nível de quem entrou, busca, notificações e botão de modo escuro.\n- Título \"Orçamento de Eventos\" e a linha de apoio: Monte o orçamento de um evento a partir do cardápio, número de convidados, duração e deslo.\n- Abas e sub-abas (uma visível por vez, guardar a última aberta): Calculadora | Meus Eventos | + Adicionar linha | + Adicionar dia\n- Seções:\n- Acesso restrito\n- Quanto o cliente tem\n- Consumo por convidado\n- Cardápio do evento\n- Resumo do orçamento\n- Orçamentos salvos\n- Novo evento\n\n## Campos e filtros\n- Convidados\n- Duração do evento (horas)\n- 0,00\n- Buscar item do cardápio…\n- Validade da proposta\n- Condições de pagamento\n- Ex.: 50% na reserva, saldo na véspera\n- Prazos\n- Ex.: confirmação de convidados até 5 dias antes\n- Áreas e nível de serviço\n- Necessidades técnicas e operacionais\n- Pré-evento — montagem (h)\n- Pós-evento — desmontagem (h)\n- Markup (insumo + mão de obra)\n- Deslocamento (R$)\n- Buffer de perda de insumo (%) ?\n- Piso — convidados/bartender ?\n- Meta de margem (%) — alerta ?\n- sem meta\n- Ratear operacional por ?\n- Coordenadores de turno ?\n- Gelo por convidado (kg)\n- Áreas de serviço (bares) ?\n- Mín. de bartenders por área ?\n- Preço do gelo (R$/kg)\n- Diária do barback (R$) ?\n- Diária do coordenador (R$)\n- a definir\n- Taxa/hora do bartender (R$)\n- Min./drink preparado ?\n\n## Colunas das tabelas\n- Data\n- Início\n- Convidados\n- Duração (h)\n- Pré (h)\n- Pós (h)\n- Estações\n- Coord.\n- Áreas\n\n## Ações (botões)\n- Montar pelo cardápio\n- Fechar por valor por pessoa\n- por pessoa\n- total\n- O que cabe nesse valor\n- Este cardápio por esse valor\n- Distribuir automático\n- Definir item a item\n- ajustar valor\n- Baixar proposta\n- Salvar como projeto\n- Novo evento\n- fechar sem salvar\n- por convidado/dia\n- Salvar orçamento\n- Cancelar edição\n\n## Dados\nRotas do servidor (Cloudflare Worker, com a sessão no cabeçalho):\n- /api/orcamento-eventos\n- /api/orcamento-eventos-cardapio\n- /api/eventos-mural\nSem sessão válida, a página manda para o login. Dado que falta aparece como \"—\", nunca inventado.\n\n## Visual\n- Fonte Inter (Google Fonts), com system-ui de reserva. Títulos em peso 600 a 700, texto de 13 a 15 px.\n- Tema claro (padrão): fundo #f6f7f9; cartões brancos com borda #e4e7ec, cantos de 16 px e sombra bem leve; texto #101828, secundário #475467, apoio #667085; destaque preto #101828 com texto branco; links em preto com seta.\n- Modo escuro em grafite, não preto: fundo #1e1f22, cartões #27292d, borda #3a3d42, texto #ececee, secundário #b9bcc3; destaque claro com texto escuro.\n- Botão de lua/sol no topo liga e desliga o escuro, guarda a escolha no navegador (localStorage) e aplica antes de pintar a página, sem piscar.\n- Toda cor sai de variáveis CSS (:root e :root[data-tema=\"escuro\"]); nenhuma cor fixa.\n- Destaques com fundo suave: verde (#ecfdf3 / #067647), amarelo (#fef6dc, borda #f5d77a, texto #b54708), vermelho (#fef3f2 / #c0362c), azul (#eff8ff / #175cd3). Selo de categoria em pílula cinza.\n- Ícones SVG de linha (24x24, traço 1.8). Nenhum emoji.\n- Celular primeiro: largura máxima de 980 px, margem lateral de 16 a 20 px, alvos de toque de pelo menos 34 px, nada de rolagem horizontal.\n\n## Regras\n- Nenhum telefone na página. Valor em dinheiro só para os níveis autorizados e vindo do servidor.\n- Cada número mostrado diz de onde vem; sem dado, mostre o vazio, não um valor de exemplo."</script>
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
@@ -143,7 +200,7 @@ window.sessaoLer = function () {
     var f = document.createElement('div');
     f.id = 'previa-faixa';
     f.setAttribute('role', 'status');
-    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:#5a3fa0;color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--c-5a3fa0);color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
     f.textContent = 'Prévia · ' + (window.parent.portalPrevia.rotulo || s.nivel) +
       ' · o que você enviar aqui é gravado de verdade, com o seu login';
     document.body.insertBefore(f, document.body.firstChild);
@@ -706,23 +763,23 @@ window.msgAcessoNegado = function (nomePagina) {
   .orz-presets { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px; }
   .orz-preset { padding:6px 13px; border-radius:999px; border:1px solid var(--border); background:var(--card);
       color:var(--text-2); font:inherit; font-size:12.5px; cursor:pointer; }
-  .orz-preset.on { background:var(--accent,#c9a24b); border-color:var(--accent,#c9a24b);
-      color:var(--acc-txt,#241a06); font-weight:600; }
+  .orz-preset.on { background:var(--accent,var(--ouro)); border-color:var(--accent,var(--ouro));
+      color:var(--acc-txt,var(--acc-txt)); font-weight:600; }
   .orz-saude { font-size:10.5px; font-weight:700; letter-spacing:.03em; border-radius:999px;
       padding:3px 10px; text-transform:uppercase; white-space:nowrap; display:inline-block; }
-  .orz-saude.ok { background:rgba(159,225,203,.12); color:var(--verde,#9fe1cb); }
-  .orz-saude.av { background:rgba(224,176,92,.13); color:var(--amarelo,#e0b05c); }
+  .orz-saude.ok { background:rgba(159,225,203,.12); color:var(--verde,var(--verde)); }
+  .orz-saude.av { background:rgba(224,176,92,.13); color:var(--amarelo,var(--amarelo)); }
   .orz-hero-linha { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
   .orz-urgencia { display:flex; align-items:center; gap:7px; font-size:12px; padding:8px 11px;
       border-radius:9px; margin:8px 0; line-height:1.45; }
-  .orz-urgencia.av { background:rgba(224,176,92,.11); color:var(--amarelo,#e0b05c); }
+  .orz-urgencia.av { background:rgba(224,176,92,.11); color:var(--amarelo,var(--amarelo)); }
   .orz-urgencia.ok { background:var(--card); border:1px solid var(--border); color:var(--text-3); }
   .orz-cenarios { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0 2px; }
   @media (max-width: 480px) { .orz-cenarios { grid-template-columns:1fr; } }
   .orz-cen { border:1px solid var(--border); border-radius:10px; padding:9px 10px; text-align:center; }
-  .orz-cen.on { border-color:var(--accent,#c9a24b); background:rgba(208,163,82,.06); }
+  .orz-cen.on { border-color:var(--accent,var(--ouro)); background:rgba(208,163,82,.06); }
   .orz-cen .n { font-size:10.5px; color:var(--text-3); text-transform:uppercase; letter-spacing:.05em; }
-  .orz-cen .p { font-size:16px; color:var(--accent,#c9a24b); margin:3px 0 1px;
+  .orz-cen .p { font-size:16px; color:var(--accent,var(--ouro)); margin:3px 0 1px;
       font-variant-numeric:tabular-nums; }
   .orz-cen .d { font-size:10.5px; color:var(--text-3); }
   .orz-grupo { font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-3);
@@ -736,7 +793,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-casa-pills { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
   .orev-casa-pill { padding:7px 14px; border-radius:999px; border:1px solid var(--border); background:var(--card);
       color:var(--text-2); font:inherit; font-size:13px; cursor:pointer; }
-  .orev-casa-pill.on { color:var(--acc-txt,#241a06); background:var(--accent,#c9a24b); border-color:var(--accent,#c9a24b);
+  .orev-casa-pill.on { color:var(--acc-txt,var(--acc-txt)); background:var(--accent,var(--ouro)); border-color:var(--accent,var(--ouro));
       font-weight:600; }
   .orev-cardapio-cat { font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em;
       margin:12px 0 6px; }
@@ -754,7 +811,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-item:last-child { border-bottom:none; }
   .orev-item .nome { flex:1; }
   .orev-item .custo { color:var(--text-3); font-size:12.5px; font-variant-numeric:tabular-nums; }
-  .orev-item.sem-custo .custo { color:var(--urg-hoje, #d99a2b); }
+  .orev-item.sem-custo .custo { color:var(--urg-hoje, var(--c-d99a2b)); }
   .orme-os-box { margin-top:12px; padding:10px 12px; border:1px solid var(--acc); border-radius:10px;
                   font-size:12.5px; color:var(--text-2); }
   .orme-os-box b { color:var(--text); }
@@ -770,7 +827,7 @@ window.msgAcessoNegado = function (nomePagina) {
       border-radius:999px; padding:3px 9px; font:inherit; font-size:10.5px; cursor:pointer;
       white-space:nowrap; flex:none; }
   .orev-item .orev-cli:disabled { opacity:.25; cursor:default; }
-  .orev-item .orev-cli.on { color:var(--accent,#c9a24b); border-color:var(--accent,#c9a24b); font-weight:600; }
+  .orev-item .orev-cli.on { color:var(--accent,var(--ouro)); border-color:var(--accent,var(--ouro)); font-weight:600; }
   table.orz-bebida { width:100%; border-collapse:collapse; font-size:11.5px; margin-top:6px; }
   table.orz-bebida th { text-align:right; font-size:9.5px; text-transform:uppercase; letter-spacing:.05em;
       color:var(--text-3); padding:0 4px 6px; font-weight:600; border-bottom:1px solid var(--border); }
@@ -780,7 +837,7 @@ window.msgAcessoNegado = function (nomePagina) {
   table.orz-bebida tr:last-child td { border-bottom:none; }
   table.orz-bebida td.nm { color:var(--text); }
   table.orz-bebida tr.tot td { font-weight:600; color:var(--text); border-top:1px solid var(--border); }
-  .orz-bebida-cli { font-size:9.5px; color:var(--accent,#c9a24b); border:1px solid var(--accent,#c9a24b);
+  .orz-bebida-cli { font-size:9.5px; color:var(--accent,var(--ouro)); border:1px solid var(--accent,var(--ouro));
       border-radius:5px; padding:1px 5px; margin-left:5px; white-space:nowrap; }
   .orev-resumo { position:sticky; top:12px; }
   .orev-sub { font-size:12.5px; color:var(--text-3); }
@@ -788,7 +845,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-tabs { display:flex; gap:8px; margin-bottom:16px; }
   .orev-tab { padding:9px 16px; border-radius:999px; border:1px solid var(--border); background:var(--card);
       color:var(--text-3); font:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
-  .orev-tab.on { color:var(--text); border-color:var(--accent, #c9a24b); }
+  .orev-tab.on { color:var(--text); border-color:var(--accent, var(--ouro)); }
   table.orev-dias { width:100%; border-collapse:collapse; font-size:13.5px; margin-bottom:10px; }
   table.orev-dias th { text-align:left; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
       color:var(--text-3); padding:4px 6px; }
@@ -799,7 +856,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .orev-status-tabs { display:flex; gap:6px; margin:18px 0 10px; flex-wrap:wrap; }
   .orev-status-tab { padding:7px 13px; border-radius:999px; border:1px solid var(--border); background:var(--card);
       color:var(--text-3); font:inherit; font-size:12.5px; cursor:pointer; }
-  .orev-status-tab.on { color:var(--text); border-color:var(--accent, #c9a24b); }
+  .orev-status-tab.on { color:var(--text); border-color:var(--accent, var(--ouro)); }
   .orev-evento { border:1px solid var(--border); border-left:4px solid var(--sc, var(--text-3)); border-radius:12px;
       padding:12px 14px; margin-bottom:10px; background:var(--card); }
   .orev-evento .tit { font-weight:600; display:flex; justify-content:space-between; align-items:center; gap:10px;
@@ -819,7 +876,7 @@ window.msgAcessoNegado = function (nomePagina) {
       font-weight:700; margin:8px 0 4px; }
   .orev-ev-fase { display:flex; gap:10px; padding:5px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
   .orev-ev-fase:last-child { border-bottom:none; }
-  .orev-ev-fase .quando { color:var(--accent,#c9a24b); font-variant-numeric:tabular-nums; white-space:nowrap; min-width:96px; }
+  .orev-ev-fase .quando { color:var(--accent,var(--ouro)); font-variant-numeric:tabular-nums; white-space:nowrap; min-width:96px; }
   .orev-ev-fase .oquê { color:var(--text-2); }
   .orev-ev-fase .oquê b { color:var(--text); font-weight:600; }
   .orev-evento .acoes { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
@@ -828,7 +885,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .orme-galeria-topo { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
       margin-bottom:10px; }
   .orz-novo-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border-radius:999px;
-      border:1px solid var(--accent, #c9a24b); background:none; color:var(--accent, #c9a24b); font:inherit;
+      border:1px solid var(--accent, var(--ouro)); background:none; color:var(--accent, var(--ouro)); font:inherit;
       font-size:13.5px; font-weight:600; cursor:pointer; }
   #orme-form-secao { margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
   .orme-form-cab { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
@@ -850,8 +907,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .orz-klabel { font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--text-3);
       font-weight:700; margin:0 0 2px; }
   .orz-hero-wrap { position:relative; }
-  .orz-hero { font-size:28px; font-weight:700; color:var(--accent,#c9a24b); letter-spacing:-.5px; line-height:1.15; margin:0; }
-  .orz-hero-input { font-size:26px; font-weight:700; color:var(--accent,#c9a24b); background:var(--card);
+  .orz-hero { font-size:28px; font-weight:700; color:var(--accent,var(--ouro)); letter-spacing:-.5px; line-height:1.15; margin:0; }
+  .orz-hero-input { font-size:26px; font-weight:700; color:var(--accent,var(--ouro)); background:var(--card);
       border:1px solid var(--border); border-radius:8px; width:100%; padding:2px 8px; box-sizing:border-box; display:none; }
   .orz-porconv { font-size:13px; color:var(--text-2); margin:2px 0 8px; }
   /* --- Por pessoa (2026-07-31): preço/custo/lucro/"só o bar" divididos pela
@@ -863,8 +920,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .orz-pp-kpi .k { display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.05em;
       color:var(--text-3); margin-bottom:3px; }
   .orz-pp-kpi .v { font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text); }
-  .orz-pp-kpi .v.acc { color:var(--accent,#c9a24b); }
-  .orz-pp-kpi .v.verde { color:var(--verde,#9fe1cb); }
+  .orz-pp-kpi .v.acc { color:var(--accent,var(--ouro)); }
+  .orz-pp-kpi .v.verde { color:var(--verde,var(--verde)); }
   .orz-pp-nota { font-size:11px; color:var(--text-3); margin:6px 0 0; line-height:1.5; }
   .orz-linha-pp { font-size:11px; color:var(--text-3); font-weight:400; margin-right:2px; }
   /* Multi-dia (2026-07-31): "mesmo público" é opt-in — sem marcar, só existe
@@ -872,41 +929,41 @@ window.msgAcessoNegado = function (nomePagina) {
   .orz-pp-multi { margin-top:8px; }
   .orz-pp-check { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--text-2);
       cursor:pointer; margin-bottom:8px; }
-  .orz-pp-check input { accent-color:var(--accent,#c9a24b); }
+  .orz-pp-check input { accent-color:var(--accent,var(--ouro)); }
   .orz-pp-grid-sec { margin-top:0; }
   /* Caminho reverso (2026-07-31): opt-in, o modo de hoje segue o default. */
   .orz-modocalc { display:flex; gap:6px; margin:0 0 14px; }
   .orz-modocalc-b { flex:1; padding:9px 8px; border-radius:10px; border:1px solid var(--border);
       background:var(--card); color:var(--text-3); font:inherit; font-size:13px; cursor:pointer; }
-  .orz-modocalc-b.on { background:var(--accent,#c9a24b); border-color:var(--accent,#c9a24b);
-      color:var(--acc-txt,#241a06); font-weight:600; }
+  .orz-modocalc-b.on { background:var(--accent,var(--ouro)); border-color:var(--accent,var(--ouro));
+      color:var(--acc-txt,var(--acc-txt)); font-weight:600; }
   /* flex-wrap não é decoração: sem ele o <input type=number> impõe a largura
      PREFERIDA dele como min-content da linha, e isso sobe pela coluna do grid
      (que tem min-width:auto) até virar rolagem lateral da página no celular —
      medido, 2px a 375px. min-width:0 no input não resolve sozinho. */
   .orz-rev-alvo { display:flex; gap:8px; align-items:center; margin:10px 0 4px; flex-wrap:wrap; }
   .orz-rev-alvo input { flex:1; min-width:0; padding:11px 10px; font-size:18px; font-weight:600;
-      border-radius:10px; border:1px solid var(--accent,#c9a24b); background:var(--card);
-      color:var(--accent,#c9a24b); font-variant-numeric:tabular-nums; box-sizing:border-box; }
+      border-radius:10px; border:1px solid var(--accent,var(--ouro)); background:var(--card);
+      color:var(--accent,var(--ouro)); font-variant-numeric:tabular-nums; box-sizing:border-box; }
   .orz-rev-un { display:flex; gap:0; border:1px solid var(--border); border-radius:9px; overflow:hidden; flex:none; }
   .orz-rev-un button { padding:9px 11px; border:none; background:var(--card); color:var(--text-3);
       font:inherit; font-size:12px; cursor:pointer; }
-  .orz-rev-un button.on { background:var(--accent,#c9a24b); color:var(--acc-txt,#241a06); font-weight:600; }
+  .orz-rev-un button.on { background:var(--accent,var(--ouro)); color:var(--acc-txt,var(--acc-txt)); font-weight:600; }
   .orz-rev-status { font-size:12.5px; line-height:1.5; padding:9px 11px; border-radius:9px; margin:10px 0 0; }
-  .orz-rev-status.ok { background:rgba(159,225,203,.10); color:var(--verde,#9fe1cb); }
-  .orz-rev-status.av { background:rgba(224,176,92,.12); color:var(--amarelo,#e0b05c); }
-  .orz-rev-status.no { background:rgba(226,75,74,.12); color:#e24b4a; }
+  .orz-rev-status.ok { background:rgba(159,225,203,.10); color:var(--verde,var(--verde)); }
+  .orz-rev-status.av { background:rgba(224,176,92,.12); color:var(--amarelo,var(--amarelo)); }
+  .orz-rev-status.no { background:rgba(226,75,74,.12); color:var(--urg-urgente); }
   .orz-rev-piso { font-size:12px; color:var(--text-2); margin:8px 0 0; line-height:1.7; }
   .orz-rev-piso b { color:var(--text); }
   .orz-cen { cursor:pointer; }
   .orz-edit-btn { background:none; border:none; color:var(--text-3); font-size:11.5px; text-decoration:underline;
       cursor:pointer; padding:0; margin:0 0 10px; display:block; }
-  .orz-override-msg { font-size:11.5px; color:var(--amarelo,#e0b05c); margin:0 0 10px; }
+  .orz-override-msg { font-size:11.5px; color:var(--amarelo,var(--amarelo)); margin:0 0 10px; }
   .orz-bar { display:flex; height:9px; border-radius:6px; overflow:hidden; margin:8px 0 6px; background:var(--border); }
   .orz-bar .c { background:var(--text-3); }
-  .orz-bar .l { background:var(--verde,#9fe1cb); }
+  .orz-bar .l { background:var(--verde,var(--verde)); }
   .orz-split { display:flex; justify-content:space-between; font-size:12px; color:var(--text-3); margin:0 0 6px; }
-  .orz-split .l { color:var(--verde,#9fe1cb); }
+  .orz-split .l { color:var(--verde,var(--verde)); }
   .orz-sec { font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--text-3);
       font-weight:700; margin:16px 0 6px; }
   .orz-help { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px;
@@ -923,36 +980,36 @@ window.msgAcessoNegado = function (nomePagina) {
   .orz-linha-chev { color:var(--text-3); font-size:10px; }
   .orz-linha-det { font-size:12px; color:var(--text-3); margin-top:6px; line-height:1.7; display:none; }
   .orz-linha-det.on { display:block; }
-  .orz-linha.total .orz-linha-cab { font-weight:700; color:var(--accent,#c9a24b); cursor:default; }
+  .orz-linha.total .orz-linha-cab { font-weight:700; color:var(--accent,var(--ouro)); cursor:default; }
   .orz-chips { display:flex; gap:6px; flex-wrap:wrap; }
-  .orz-chip { font-size:11.5px; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,.04);
+  .orz-chip { font-size:11.5px; padding:4px 10px; border-radius:20px; background:rgba(var(--realce),.04);
       border:1px solid var(--border); color:var(--text-2); }
-  .orz-chip.ok { color:var(--verde,#9fe1cb); border-color:var(--verde,#9fe1cb); }
-  .orz-chip.aviso { color:var(--amarelo,#e0b05c); border-color:var(--amarelo,#e0b05c); }
+  .orz-chip.ok { color:var(--verde,var(--verde)); border-color:var(--verde,var(--verde)); }
+  .orz-chip.aviso { color:var(--amarelo,var(--amarelo)); border-color:var(--amarelo,var(--amarelo)); }
   .orz-btns { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
   .orz-btns a, .orz-btns button { flex:1; min-width:110px; text-align:center; padding:11px; border-radius:10px;
       font-weight:600; font-size:13.5px; text-decoration:none; cursor:pointer; border:1px solid var(--border);
       background:var(--card); color:var(--text); }
-  a.orz-wpp { background:#25D366 !important; color:#08130d !important; border:none !important; }
+  a.orz-wpp { background:var(--c-25d366) !important; color:var(--c-08130d) !important; border:none !important; }
 
   /* --- driver de consumo + distribuição automática (redesenho 2026-07-23) --- */
   .orz-driver { background:linear-gradient(180deg, rgba(208,163,82,.09), transparent);
-      border:1px solid var(--accent,#c9a24b); border-radius:14px; padding:14px 16px; margin:0 0 14px; }
+      border:1px solid var(--accent,var(--ouro)); border-radius:14px; padding:14px 16px; margin:0 0 14px; }
   .orz-driver-tit { margin:0 0 2px; font-size:15px; }
   .orz-driver-sub { margin:0; font-size:11.5px; color:var(--text-3); }
   .orz-slider-row { display:flex; align-items:center; gap:10px; margin:12px 0 2px; flex-wrap:wrap; }
   .orz-slider-lab { font-size:12.5px; color:var(--text-2); min-width:74px; }
-  .orz-slider-row input[type=range] { flex:1; min-width:110px; accent-color:var(--accent,#c9a24b); }
-  .orz-slider-val { font-size:24px; font-weight:700; color:var(--accent,#c9a24b); min-width:34px; text-align:center;
+  .orz-slider-row input[type=range] { flex:1; min-width:110px; accent-color:var(--accent,var(--ouro)); }
+  .orz-slider-val { font-size:24px; font-weight:700; color:var(--accent,var(--ouro)); min-width:34px; text-align:center;
       font-variant-numeric:tabular-nums; }
   .orz-slider-un { font-size:11.5px; color:var(--text-3); }
   .orz-mkt { font-size:11px; color:var(--text-3); margin:3px 0 0; line-height:1.5; }
-  .orz-mkt b { color:var(--verde,#9fe1cb); font-weight:600; }
+  .orz-mkt b { color:var(--verde,var(--verde)); font-weight:600; }
   .orz-modo { display:flex; gap:6px; margin-top:12px; }
   .orz-modo-b { flex:1; padding:7px; border-radius:8px; border:1px solid var(--border); background:var(--card);
       color:var(--text-3); font:inherit; font-size:12px; cursor:pointer; }
-  .orz-modo-b.on { color:var(--accent,#c9a24b); border-color:var(--accent,#c9a24b); font-weight:600; }
-  .orev-un.manual { border-color:var(--accent,#c9a24b); }
+  .orz-modo-b.on { color:var(--accent,var(--ouro)); border-color:var(--accent,var(--ouro)); font-weight:600; }
+  .orev-un.manual { border-color:var(--accent,var(--ouro)); }
   .orz-avancado { border:none; margin:0; padding:0; }
   .orz-avancado > summary { padding:14px 16px; list-style:none; }
   .orz-avancado > summary::-webkit-details-marker { display:none; }
@@ -962,11 +1019,11 @@ window.msgAcessoNegado = function (nomePagina) {
     body * { visibility:hidden; }
     #orz-print-area, #orz-print-area * { visibility:visible; }
     #orz-print-area { display:block !important; position:absolute; left:0; top:0; width:100%;
-      padding:24px; color:#111; background:#fff; }
+      padding:24px; color:var(--c-111111); background:#fff; }
     #orz-print-area h1 { font-size:22px; margin:0 0 4px; }
     #orz-print-area h2 { font-size:26px; margin:16px 0 4px; }
     #orz-print-area h3 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 6px; }
-    #orz-print-area p, #orz-print-area li { font-size:13px; color:#333; }
+    #orz-print-area p, #orz-print-area li { font-size:13px; color:var(--c-333333); }
   }
 </style>
 
@@ -1488,7 +1545,7 @@ window.msgAcessoNegado = function (nomePagina) {
     </div>
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
       <button type="button" id="orme-salvar" style="padding:11px 16px;border-radius:10px;
-        border:none;background:var(--accent,#c9a24b);color:#1a1408;font-weight:600;cursor:pointer">Salvar orçamento</button>
+        border:none;background:var(--accent,var(--ouro));color:var(--c-1a1408);font-weight:600;cursor:pointer">Salvar orçamento</button>
       <button type="button" id="orme-cancelar-edicao" style="display:none;padding:11px 16px;border-radius:10px;
         border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer">Cancelar edição</button>
     </div>
@@ -2972,7 +3029,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var el = document.getElementById(prefix + '-avisos');
     if (!el) return;
     var avisos = [];
-    function avisa(txt, cor) { avisos.push({ txt: txt, cor: cor || 'var(--urg-urgente, #e24b4a)' }); }
+    function avisa(txt, cor) { avisos.push({ txt: txt, cor: cor || 'var(--urg-urgente, var(--urg-urgente))' }); }
     if (convidados > 0 && !itensSel.length) {
       avisa('Convidados definidos mas nenhum item do cardápio marcado — o custo de insumo vai ficar zerado.');
     }
@@ -2982,7 +3039,7 @@ window.msgAcessoNegado = function (nomePagina) {
     if (semCusto.length) {
       avisa('Sem custo cadastrado no Notion: ' + semCusto.join(', ') + '. Entra no tempo de bartender, '
         + 'mas o insumo fica fora da conta, então o preço sai abaixo do real até cadastrar a ficha.',
-        'var(--urg-hoje, #d99a2b)');
+        'var(--urg-hoje, var(--c-d99a2b))');
     }
     if (convidados > 0 && itensSel.length && (diaRef.bartenders || 0) === 0) {
       avisa('Nenhum bartender alocado — confira se algum item tem unidades/convidado > 0 e se o piso de cobertura não está zerado.');
@@ -3001,7 +3058,7 @@ window.msgAcessoNegado = function (nomePagina) {
           var margem = ((vf - calc.custoTotal) / vf) * 100;
           if (margem < meta) {
             avisa('Abaixo da meta: margem de ' + margem.toFixed(0) + '% (meta da casa: ' + meta.toFixed(0) + '%).',
-              'var(--urg-hoje, #d99a2b)');
+              'var(--urg-hoje, var(--c-d99a2b))');
           }
         }
       }
@@ -3806,7 +3863,7 @@ window.msgAcessoNegado = function (nomePagina) {
     // invisível — e é justamente o número que o cliente repete na negociação.
     if (det.alvoPorPessoa != null) {
       var alvoEl = document.createElement('p'); alvoEl.className = 'orz-pp-nota';
-      alvoEl.style.color = 'var(--accent,#c9a24b)';
+      alvoEl.style.color = 'var(--accent,var(--ouro))';
       alvoEl.textContent = 'Fechado pelo valor por pessoa: ' + fmtBRL(det.alvoPorPessoa)
         + ' por ' + unidadeLeitura.rotulo
         + (det.modoAlvo === 'margem' ? ' (preço travado no alvo, cardápio mantido).' : ' (cardápio ajustado pra caber).');
@@ -3944,7 +4001,7 @@ window.msgAcessoNegado = function (nomePagina) {
       var meio = document.createElement('div'); meio.style.cssText = 'flex:1;min-width:0';
       meio.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">'
         + '<span style="font-weight:600">Dia ' + (idx + 1) + (dia.data ? ' · ' + esc(dia.data) : '') + '</span>'
-        + '<span style="color:var(--accent,#c9a24b);font-weight:700">' + fmtBRL(vDia) + '</span></div>'
+        + '<span style="color:var(--accent,var(--ouro));font-weight:700">' + fmtBRL(vDia) + '</span></div>'
         + '<div style="font-size:12px;color:var(--text-3);margin-top:2px">' + (dia.convidados || 0) + ' convidados'
         + (multi ? ' · margem ' + mDia.toFixed(0) + '%' : '') + '</div>';
       cab.appendChild(chev); cab.appendChild(meio);
@@ -4022,7 +4079,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var msgEl = document.createElement('p'); msgEl.className = 'orev-sub'; msgEl.style.marginTop = '8px';
     var btnSalvar = document.createElement('button'); btnSalvar.type = 'button'; btnSalvar.textContent = 'Salvar roteiro';
     btnSalvar.style.cssText = 'margin-top:4px;padding:11px 16px;border-radius:10px;border:none;'
-      + 'background:var(--accent,#c9a24b);color:#1a1408;font-weight:600;cursor:pointer';
+      + 'background:var(--accent,var(--ouro));color:var(--c-1a1408);font-weight:600;cursor:pointer';
     btnSalvar.onclick = function () {
       var blocosDia = container.querySelectorAll('.orev-ev-diarot');
       var diasAtualizados = dias.map(function (dia, idx) {
@@ -4113,7 +4170,7 @@ window.msgAcessoNegado = function (nomePagina) {
         var itens = d.itens || [];
         lista.innerHTML = '';
         vazio.style.display = itens.length ? 'none' : '';
-        var STATUS_COR = { 'Em orçamento': 'var(--amarelo)', 'Fechado': 'var(--accent, #c9a24b)', 'Concluído': 'var(--verde)' };
+        var STATUS_COR = { 'Em orçamento': 'var(--amarelo)', 'Fechado': 'var(--accent, var(--ouro))', 'Concluído': 'var(--verde)' };
         itens.forEach(function (ev) {
           var card = document.createElement('div'); card.className = 'orev-evento';
           card.style.setProperty('--sc', STATUS_COR[ev.status] || 'var(--text-3)');
@@ -4506,9 +4563,9 @@ window.msgAcessoNegado = function (nomePagina) {
   function blocosParaHTML(blocos) {
     return blocos.map(function (b) {
       if (b.t === 'title') return '<h2>' + esc(b.s) + '</h2>';
-      if (b.t === 'sub') return '<p style="color:#666;margin:0 0 8px">' + esc(b.s) + '</p>';
-      if (b.t === 'hero') return '<p style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin:14px 0 0">'
-        + esc(b.k) + '</p><p style="font-size:30px;font-weight:800;margin:0 0 8px;color:#111">' + esc(b.v) + '</p>';
+      if (b.t === 'sub') return '<p style="color:var(--c-666666);margin:0 0 8px">' + esc(b.s) + '</p>';
+      if (b.t === 'hero') return '<p style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--c-888888);margin:14px 0 0">'
+        + esc(b.k) + '</p><p style="font-size:30px;font-weight:800;margin:0 0 8px;color:var(--c-111111)">' + esc(b.v) + '</p>';
       if (b.t === 'sec') return '<h3>' + esc(b.s) + '</h3>';
       if (b.t === 'kv') return '<p style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #eee;padding:4px 0;margin:0">'
         + '<span>' + esc(b.k) + '</span><b>' + esc(b.v) + '</b></p>';
@@ -4604,7 +4661,7 @@ window.msgAcessoNegado = function (nomePagina) {
     ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;'
       + 'align-items:flex-start;justify-content:center;overflow:auto;padding:20px';
     var box = document.createElement('div');
-    box.style.cssText = 'background:var(--card,#211c15);border:1px solid var(--border,#3a3428);border-radius:14px;'
+    box.style.cssText = 'background:var(--card,var(--card));border:1px solid var(--border,var(--border));border-radius:14px;'
       + 'max-width:640px;width:100%;padding:18px;margin:auto';
     var h = document.createElement('h3'); h.style.cssText = 'margin:0 0 4px'; h.textContent = 'Exportar para imagem';
     box.appendChild(h);
@@ -4621,12 +4678,12 @@ window.msgAcessoNegado = function (nomePagina) {
       var lab = document.createElement('p'); lab.className = 'orz-sec'; lab.textContent = par[0]; box.appendChild(lab);
       if (par[3]) {
         var aviso = document.createElement('p');
-        aviso.style.cssText = 'margin:0 0 6px;font-size:12px;font-weight:600;color:var(--urg-urgente,#e24b4a)';
+        aviso.style.cssText = 'margin:0 0 6px;font-size:12px;font-weight:600;color:var(--urg-urgente,var(--urg-urgente))';
         aviso.textContent = par[3];
         box.appendChild(aviso);
       }
       var img = document.createElement('img'); img.src = par[1].toDataURL('image/png');
-      img.style.cssText = 'width:100%;border-radius:10px;border:1px solid var(--border,#3a3428);display:block;margin-bottom:6px';
+      img.style.cssText = 'width:100%;border-radius:10px;border:1px solid var(--border,var(--border));display:block;margin-bottom:6px';
       box.appendChild(img);
       var bx = document.createElement('button'); bx.type = 'button'; bx.textContent = 'Baixar esta imagem';
       bx.style.cssText = 'padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);'
@@ -4640,8 +4697,8 @@ window.msgAcessoNegado = function (nomePagina) {
       // imagem de Custos nunca entra no share (só no Baixar) — é a barreira
       // real contra vazar margem, não só o rótulo vermelho acima.
       var bs = document.createElement('button'); bs.type = 'button'; bs.textContent = 'Compartilhar proposta (cliente)';
-      bs.style.cssText = 'flex:1;min-width:150px;padding:11px;border-radius:10px;border:none;background:#25D366;'
-        + 'color:#08130d;font-weight:600;cursor:pointer;font:inherit';
+      bs.style.cssText = 'flex:1;min-width:150px;padding:11px;border-radius:10px;border:none;background:var(--c-25d366);'
+        + 'color:var(--c-08130d);font-weight:600;cursor:pointer;font:inherit';
       bs.onclick = function () {
         Promise.all([blobDe(cvProposta), blobDe(cvRoteiro)]).then(function (bl) {
           var f1 = new File([bl[0]], slug + '-proposta.png', { type: 'image/png' });
@@ -4686,8 +4743,8 @@ window.msgAcessoNegado = function (nomePagina) {
         var dias = Math.floor((Date.now() - d.getTime()) / 86400000);
         var quando = dias <= 0 ? 'hoje' : (dias === 1 ? 'ontem' : 'há ' + dias + ' dias');
         txt = 'Custo do cardápio atualizado ' + quando + ' (' + d.toLocaleDateString('pt-BR') + ').';
-        if (dias > 10) { cor = 'var(--urg-urgente, #e24b4a)'; txt += ' Pode estar defasado — confira o pipeline de custo antes de fechar preço.'; }
-        else if (dias > 3) { cor = 'var(--urg-hoje, #d99a2b)'; txt += ' Confira se o custo ainda reflete os preços atuais.'; }
+        if (dias > 10) { cor = 'var(--urg-urgente, var(--urg-urgente))'; txt += ' Pode estar defasado — confira o pipeline de custo antes de fechar preço.'; }
+        else if (dias > 3) { cor = 'var(--urg-hoje, var(--c-d99a2b))'; txt += ' Confira se o custo ainda reflete os preços atuais.'; }
       }
     }
     els.forEach(function (el) { if (el) { el.textContent = txt; el.style.color = cor; } });
@@ -4872,7 +4929,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 30/10/2026.
+<p class="nota">Painel do bar · atualizado em 03/11/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -6321,17 +6378,17 @@ if ('serviceWorker' in navigator) {
      ausência de uma variável não pode deixar o aviso ilegível. */
   .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
     z-index: 96; margin: 0 auto; max-width: 460px; display: none;
-    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
     align-items: center; gap: 10px; }
   .ver-nova.on { display: flex; }
-  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
-  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
-  .vn-txt b { color: var(--text, #f3ede2); }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
   .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
-    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
-    color: var(--acc-txt, #16130f); }
-  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
@@ -6342,7 +6399,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -6456,8 +6513,8 @@ if ('serviceWorker' in navigator) {
      z-index com eles, só não ocupar o mesmo espaço na tela. */
   .atualiza-atalho { position: fixed; left: 12px; right: 12px;
     bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
   .atualiza-atalho.on { display: block; }
   .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
   .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }

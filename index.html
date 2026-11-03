@@ -4,7 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#16130f">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-pressed', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function copiaPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return;
+    var txt;
+    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+  });
+})();
+</script>
 <title>Painel do bar</title>
 <script>
 (function () {
@@ -16,13 +72,13 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=a35ddccddc3c">
+<link rel="stylesheet" href="portal.css?v=211b8486957d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
 
 <header class="topo">
-<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><h1 class="marca">Painel do bar</h1><div class="kicker">uso interno das equipes</div></div></div>
+<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><h1 class="marca">Painel do bar</h1><div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" title="Ligar modo escuro" aria-label="Modo escuro" aria-pressed="false"><span class="ic-lua"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span><span class="ic-sol"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span></button><button class="prompt-bt" id="prompt-bt" type="button" data-niveis="coord" style="display:none" title="Copiar o prompt de construção desta página" aria-label="Copiar prompt da página"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -100,6 +156,7 @@
 <button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="pomo-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
+<script type="application/json" id="prompt-pagina">"Construa uma página web chamada \"Painel do bar\", seguindo o modelo da página \"Painel do bar\" (index) do Portal dos Bares do Grupo IZ. Mantenha a mesma estrutura e o mesmo comportamento descritos abaixo, adaptando nomes, dados e marca ao novo site.\n\n## Objetivo\nPágina Painel do bar do painel interno das equipes de bar.\n\n## Onde fica e quem vê\n- Níveis com acesso: Equipe de Bar, Chefe de Bar, Coordenação, RH, Controladoria & Administração, Suprimentos, Treinador & Auditoria, Marketing\n- O acesso é conferido no servidor pela sessão (token assinado). Esconder na tela é só conforto, nunca a proteção.\n\n## Estrutura, de cima para baixo\n- Topo: logo, nome do painel, pílula do nível de quem entrou, busca, notificações e botão de modo escuro.\n- Título \"Painel do bar\".\n\n## Campos e filtros\n- Sua senha\n- Seu e-mail\n- voce@exemplo.com\n- E-mail que recebeu o código\n- Nome e sobrenome\n- Nome completo\n- Data de nascimento\n- DDD + número\n- Celular (com DDD)\n- Sua nova senha\n- Repita a nova senha\n- Anotar algo… (Enter salva)\n\n## Colunas das tabelas\n- Casa\n- Pessoas\n- Férias\n- BH atenção\n- Conduta\n\n## Ações (botões)\n- Receber código\n- Voltar\n- Criar meu acesso\n- Avarias\n- Criar\n- Notasbloco de notas pessoal\n- Nota\n- Criar a carta\n- Comprar e cuidar dos ativos\n- Operar o turno\n- Acompanhar resultados\n- Gerir a equipe\n- Treinar e manter o padrão\n- Parcerias, eventos e marketing\n- Administração\n\n## Dados\nRotas do servidor (Cloudflare Worker, com a sessão no cabeçalho):\n- /api/escala/minha\n- /api/escala/versoes\n- /api/escala\n- /api/demandas\n- /api/plano\n- /api/conferencia-compras\n- /api/nutricook\n- /api/acessos/pendentes\n- /api/agenda\n- /api/presenca\n- /api/cotacoes\n- /api/conciliacao-precos\n- /api/cmv-mensal\n- /api/auditorias\n- /api/treinamento/aplicacoes\n- /api/captacoes/pauta\n- /api/notas\n- /api/cocktails-ranking\n- /api/mural-rh\n- /api/conduta\n- /api/nivel\n- /api/cadastro/codigo\n- /api/cadastro/concluir\nSem sessão válida, a página manda para o login. Dado que falta aparece como \"—\", nunca inventado.\n\n## Visual\n- Fonte Inter (Google Fonts), com system-ui de reserva. Títulos em peso 600 a 700, texto de 13 a 15 px.\n- Tema claro (padrão): fundo #f6f7f9; cartões brancos com borda #e4e7ec, cantos de 16 px e sombra bem leve; texto #101828, secundário #475467, apoio #667085; destaque preto #101828 com texto branco; links em preto com seta.\n- Modo escuro em grafite, não preto: fundo #1e1f22, cartões #27292d, borda #3a3d42, texto #ececee, secundário #b9bcc3; destaque claro com texto escuro.\n- Botão de lua/sol no topo liga e desliga o escuro, guarda a escolha no navegador (localStorage) e aplica antes de pintar a página, sem piscar.\n- Toda cor sai de variáveis CSS (:root e :root[data-tema=\"escuro\"]); nenhuma cor fixa.\n- Destaques com fundo suave: verde (#ecfdf3 / #067647), amarelo (#fef6dc, borda #f5d77a, texto #b54708), vermelho (#fef3f2 / #c0362c), azul (#eff8ff / #175cd3). Selo de categoria em pílula cinza.\n- Ícones SVG de linha (24x24, traço 1.8). Nenhum emoji.\n- Celular primeiro: largura máxima de 980 px, margem lateral de 16 a 20 px, alvos de toque de pelo menos 34 px, nada de rolagem horizontal.\n\n## Regras\n- Nenhum telefone na página. Valor em dinheiro só para os níveis autorizados e vindo do servidor.\n- Cada número mostrado diz de onde vem; sem dado, mostre o vazio, não um valor de exemplo."</script>
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
@@ -143,7 +200,7 @@ window.sessaoLer = function () {
     var f = document.createElement('div');
     f.id = 'previa-faixa';
     f.setAttribute('role', 'status');
-    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:#5a3fa0;color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--c-5a3fa0);color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
     f.textContent = 'Prévia · ' + (window.parent.portalPrevia.rotulo || s.nivel) +
       ' · o que você enviar aqui é gravado de verdade, com o seu login';
     document.body.insertBefore(f, document.body.firstChild);
@@ -755,9 +812,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .explica-corpo { padding: 6px 6px 8px; font-size: 12.5px; color: var(--text-2); line-height: 1.55;
                     border-top: 1px dashed var(--border); margin-top: 8px; }
   .explica-corpo p { margin: 8px 0 6px; }
-  .explica-corpo .aviso-nivel { display: flex; align-items: center; gap: 8px; background: #17352b;
+  .explica-corpo .aviso-nivel { display: flex; align-items: center; gap: 8px; background: var(--verde-bg);
               border-left: 2px solid var(--verde); border-radius: 6px; padding: 9px 11px; font-size: 12px;
-              color: #d7ede4; margin: 8px 0 0; }
+              color: var(--c-d7ede4); margin: 8px 0 0; }
   .explica-corpo .aviso-nivel .ic { flex: none; }
   .ac-gate { border-top: 1px solid var(--border); padding: 11px 13px 13px; }
   /* Estado "acesso reconhecido" (2026-07-25): aparece no lugar do campo de
@@ -795,12 +852,12 @@ window.msgAcessoNegado = function (nomePagina) {
      peso visual do .ac-ok, pra suceder ser tão óbvio quanto errar. */
   .ac-enviado { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px;
                 padding: 13px; border-radius: 12px;
-                background: color-mix(in srgb, var(--verde, #3fae6a) 12%, var(--bg));
-                border: 1px solid color-mix(in srgb, var(--verde, #3fae6a) 35%, var(--border)); }
+                background: color-mix(in srgb, var(--verde, var(--c-3fae6a)) 12%, var(--bg));
+                border: 1px solid color-mix(in srgb, var(--verde, var(--c-3fae6a)) 35%, var(--border)); }
   .ac-enviado[hidden] { display: none; }
   .ac-enviado .ico { flex: none; width: 30px; height: 30px; border-radius: 8px;
-                      background: color-mix(in srgb, var(--verde, #3fae6a) 22%, var(--bg));
-                      display: flex; align-items: center; justify-content: center; color: var(--verde, #3fae6a); }
+                      background: color-mix(in srgb, var(--verde, var(--c-3fae6a)) 22%, var(--bg));
+                      display: flex; align-items: center; justify-content: center; color: var(--verde, var(--c-3fae6a)); }
   .ac-enviado .ico svg { width: 16px; height: 16px; }
   .ac-enviado .txt { font-size: 13px; color: var(--text); line-height: 1.5; }
   .ac-enviado .txt b { font-weight: 600; }
@@ -845,10 +902,10 @@ window.msgAcessoNegado = function (nomePagina) {
                 transition: filter .2s, opacity .2s, transform .2s, border-color .2s; }
   .casa-logo:hover, .casa-logo:focus-visible, .casa-logo.on { filter: none; opacity: 1; transform: translateY(-2px);
                 border-color: color-mix(in srgb, var(--acc) 50%, var(--border)); }
-  .balao-casa { position: absolute; bottom: 40px; background: #2c2416; border: 1px solid var(--acc);
+  .balao-casa { position: absolute; bottom: 40px; background: var(--card-2); border: 1px solid var(--acc);
                  color: var(--text); font-size: 11.5px; padding: 7px 12px; border-radius: 10px;
                  min-width: 130px; max-width: 220px; transform: translateX(-50%); display: none;
-                 box-shadow: 0 8px 22px rgba(0,0,0,.4); z-index: 5; text-align: left; }
+                 box-shadow: 0 8px 22px rgba(0,0,0,calc(.4*var(--sombra-k))); z-index: 5; text-align: left; }
   .balao-casa::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -4px;
                          border: 4px solid transparent; border-top-color: var(--acc); }
   .balao-casa-nome { font-weight: 700; color: var(--acc); white-space: nowrap; overflow: hidden;
@@ -976,7 +1033,7 @@ partir de agora.</p>
   .mn-agora ul { list-style: none; margin: 5px 0 0; padding: 0; }
   .mn-agora li { display: flex; align-items: baseline; gap: 8px; font-size: 13px; color: var(--text); padding: 3px 0; }
   .mn-agora li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); transform: translateY(-1px); }
-  .mn-agora li.alerta::before { background: #e192a6; }
+  .mn-agora li.alerta::before { background: var(--rosa); }
   .mn-agora li a { color: inherit; text-decoration: none; }
   .mn-agora li a:hover { text-decoration: underline; }
   .mn-blocos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 8px; }
@@ -992,7 +1049,7 @@ partir de agora.</p>
   .mn-corpo .mn-big { font-family: var(--serif); font-size: 20px; color: var(--acc); line-height: 1.1; }
   .mn-corpo .mn-nota { font-size: 11.5px; color: var(--text-3); margin-top: 3px; }
   .mn-carr { color: var(--text-3); font-size: 12px; }
-  .mn-ok { color: #8fd0a5; } .mn-wa { color: #e6b866; } .mn-dg { color: #e192a6; } .mn-mu { color: var(--text-3); }
+  .mn-ok { color: var(--casa-gra); } .mn-wa { color: var(--c-e6b866); } .mn-dg { color: var(--rosa); } .mn-mu { color: var(--text-3); }
   .mn-casas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
   .mn-casas .mn-c { border: 1px solid var(--border); border-radius: 8px; padding: 4px 2px; text-align: center; min-width: 0; }
   .mn-casas .mn-c b { display: block; font-size: 10.5px; color: var(--text-2); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1523,23 +1580,23 @@ partir de agora.</p>
   .pr-toggle-btn { position: relative; display: flex; flex-direction: column;
                     align-items: center; gap: 6px; padding: 9px 18px 11px;
                     border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 18px 18px;
-                    background: linear-gradient(180deg,#2a2419,var(--card)); color: var(--text);
-                    cursor: pointer; box-shadow: 0 7px 16px rgba(0,0,0,.45); text-decoration: none; }
+                    background: linear-gradient(180deg,var(--card-2),var(--card)); color: var(--text);
+                    cursor: pointer; box-shadow: 0 7px 16px rgba(0,0,0,calc(.45*var(--sombra-k))); text-decoration: none; }
   /* Criar — aba lateral esquerda */
   .pr-tab-p { width: 28%; max-width: 120px; border-color: rgba(208,163,82,.45); }
   .pr-tab-p.aberto { border-color: var(--acc); }
   /* Central de Demandas — link direto, aba central, maior que as laterais */
-  .pr-tab-c { width: 44%; max-width: 220px; background: linear-gradient(180deg,#3d3320,#241f13);
+  .pr-tab-c { width: 44%; max-width: 220px; background: linear-gradient(180deg,var(--c-3d3320),var(--c-241f13));
                border-color: rgba(208,163,82,.55); color: var(--text); }
-  .pr-tab-c .pr-pega { background: #e0c088; }
+  .pr-tab-c .pr-pega { background: var(--c-e0c088); }
   .pr-tab-c .pr-rot { font-size: 14px; gap: 6px; }
   /* Notas — aba lateral direita, mesmo tamanho da esquerda */
-  .pr-tab-n { width: 28%; max-width: 120px; background: linear-gradient(180deg,#1e1a30,#171428);
-               border-color: rgba(155,141,204,.45); color: #c4b8e8; }
-  .pr-tab-n.aberto { border-color: #9b8dcc; }
-  .np-pega { width: 30px; height: 4px; border-radius: 99px; background: #9b8dcc; opacity: 1; }
-  .pr-tab-n .pr-rot { font-size: 12px; gap: 5px; color: #c4b8e8; }
-  .np-toggle-ic { display: flex; align-items: center; color: #9b8dcc; transition: transform .18s; }
+  .pr-tab-n { width: 28%; max-width: 120px; background: linear-gradient(180deg,var(--c-1e1a30),var(--lilas-bg));
+               border-color: rgba(155,141,204,.45); color: var(--lilas); }
+  .pr-tab-n.aberto { border-color: var(--lilas-2); }
+  .np-pega { width: 30px; height: 4px; border-radius: 99px; background: var(--lilas-2); opacity: 1; }
+  .pr-tab-n .pr-rot { font-size: 12px; gap: 5px; color: var(--lilas); }
+  .np-toggle-ic { display: flex; align-items: center; color: var(--lilas-2); transition: transform .18s; }
   .np-toggle-ic svg { width: 13px; height: 13px; display: block; }
   .pr-tab-n.aberto .np-toggle-ic { transform: rotate(180deg); }
 
@@ -1553,13 +1610,13 @@ partir de agora.</p>
               font-size: 11.5px; cursor: pointer; text-align: center; transition: filter .15s; }
   a.pr-fx:hover, button.pr-fx:hover { filter: brightness(1.12); }
   .pr-fx-ic { display: flex; color: var(--acc); }
-  .pr-fx.pr-fx-avarias { border-color: #cf7089; }
-  .pr-fx.pr-fx-avarias .pr-fx-ic { color: #e192a6; }
-  .pr-fx.pr-fx-avarias.aberto { border-color: #e192a6; }
-  .pr-fx.pr-fx-nova { background: linear-gradient(135deg,#3d2420,#241713); border-color: #e07a52; font-weight: 600; }
-  .pr-fx.pr-fx-nova .pr-fx-ic { color: #f0a58f; }
-  .pr-fx.pr-fx-dose { border-color: #6fa8dc; }
-  .pr-fx.pr-fx-dose .pr-fx-ic { color: #8ec0ea; }
+  .pr-fx.pr-fx-avarias { border-color: var(--c-cf7089); }
+  .pr-fx.pr-fx-avarias .pr-fx-ic { color: var(--rosa); }
+  .pr-fx.pr-fx-avarias.aberto { border-color: var(--rosa); }
+  .pr-fx.pr-fx-nova { background: linear-gradient(135deg,var(--vermelho-bg),var(--c-241713)); border-color: var(--tipo-ocorrencia); font-weight: 600; }
+  .pr-fx.pr-fx-nova .pr-fx-ic { color: var(--vermelho); }
+  .pr-fx.pr-fx-dose { border-color: var(--casa-fulles); }
+  .pr-fx.pr-fx-dose .pr-fx-ic { color: var(--azul); }
 
   .painel-rapido { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 4px; }
   .painel-rapido[hidden] { display: none; }
@@ -1569,38 +1626,38 @@ partir de agora.</p>
               transition: filter .15s; font: inherit; cursor: pointer; width: 100%; box-sizing: border-box; }
   a.pr-card:hover, button.pr-card:hover { filter: brightness(1.12); }
   .pr-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
-  .pr-card.pr-receita { background: linear-gradient(135deg,#1c3327,#131f19); border-color: #8fd0a5; }
-  .pr-card.pr-receita::before { background: #a8dfba; }
-  .pr-card.pr-3d { background: linear-gradient(135deg,#241c34,#171222); border-color: #a58fd0; }
-  .pr-card.pr-3d::before { background: #bfa8e0; }
-  .pr-card.pr-ideia { background: linear-gradient(135deg,#3d2f14,#241c0d); border-color: #e0c060; }
-  .pr-card.pr-ideia::before { background: #f0d68a; }
-  .pr-card.pr-notas { background: linear-gradient(135deg,#241f38,#171428); border-color: #9b8dcc; }
-  .pr-card.pr-notas::before { background: #c4b8e8; }
-  .pr-card.pr-notas.aberto { border-color: #c4b8e8; }
+  .pr-card.pr-receita { background: linear-gradient(135deg,var(--c-1c3327),var(--c-131f19)); border-color: var(--casa-gra); }
+  .pr-card.pr-receita::before { background: var(--verde); }
+  .pr-card.pr-3d { background: linear-gradient(135deg,var(--c-241c34),var(--c-171222)); border-color: var(--casa-famu); }
+  .pr-card.pr-3d::before { background: var(--lilas); }
+  .pr-card.pr-ideia { background: linear-gradient(135deg,var(--c-3d2f14),var(--c-241c0d)); border-color: var(--c-e0c060); }
+  .pr-card.pr-ideia::before { background: var(--amarelo); }
+  .pr-card.pr-notas { background: linear-gradient(135deg,var(--c-241f38),var(--lilas-bg)); border-color: var(--lilas-2); }
+  .pr-card.pr-notas::before { background: var(--lilas); }
+  .pr-card.pr-notas.aberto { border-color: var(--lilas); }
   .pr-card .pr-chip { width: 32px; height: 32px; border-radius: 9px; display: flex;
                        align-items: center; justify-content: center; flex: none; }
   .pr-card .pr-chip svg { width: 17px; height: 17px; display: block; flex: none; }
-  .pr-card.pr-receita .pr-chip { background: rgba(143,208,165,.18); color: #a8dfba; }
-  .pr-card.pr-3d .pr-chip { background: rgba(165,143,208,.18); color: #bfa8e0; }
-  .pr-card.pr-ideia .pr-chip { background: rgba(224,192,96,.18); color: #f0d68a; }
-  .pr-card.pr-notas .pr-chip { background: rgba(155,141,204,.18); color: #c4b8e8; }
+  .pr-card.pr-receita .pr-chip { background: rgba(143,208,165,.18); color: var(--verde); }
+  .pr-card.pr-3d .pr-chip { background: rgba(165,143,208,.18); color: var(--lilas); }
+  .pr-card.pr-ideia .pr-chip { background: rgba(224,192,96,.18); color: var(--amarelo); }
+  .pr-card.pr-notas .pr-chip { background: rgba(155,141,204,.18); color: var(--lilas); }
   .pr-card .pr-tt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
   .pr-card .pr-tt .t { font-family: var(--serif); font-size: 13.5px; line-height: 1.2; white-space: nowrap;
                         overflow: hidden; text-overflow: ellipsis; }
   .pr-card .pr-tt .d { font-size: 10.5px; color: var(--text-3); line-height: 1.2; white-space: nowrap;
                         overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-  .pr-avarias-sub { border: 1px dashed #a85068; border-radius: 12px; padding: 9px; margin-top: 8px;
+  .pr-avarias-sub { border: 1px dashed var(--c-a85068); border-radius: 12px; padding: 9px; margin-top: 8px;
                      background: rgba(207,112,137,.07); }
   .pr-avarias-sub[hidden] { display: none; }
-  .pr-avarias-cab { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: #e192a6;
+  .pr-avarias-cab { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--rosa);
                      margin: 0 3px 7px; }
   .pr-avarias-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .pr-av-chip { display: flex; align-items: center; gap: 7px; border: 1px solid #6b3d48; border-radius: 9px;
+  .pr-av-chip { display: flex; align-items: center; gap: 7px; border: 1px solid var(--c-6b3d48); border-radius: 9px;
                 padding: 7px 9px; background: var(--card); font-size: 12px; color: var(--text);
                 text-decoration: none; }
-  .pr-av-chip:hover { border-color: #cf7089; }
-  .pr-av-ic { flex: none; display: flex; color: #e192a6; }
+  .pr-av-chip:hover { border-color: var(--c-cf7089); }
+  .pr-av-ic { flex: none; display: flex; color: var(--rosa); }
   @media (max-width: 420px) { .painel-rapido { gap: 6px; } .pr-fixos { gap: 6px; } }
 
   /* Painel Rápido — recolhido por padrão (pedido do Rodrigo, 2026-07-18):
@@ -1610,7 +1667,7 @@ partir de agora.</p>
   .pr-master-wrap { margin-bottom: 12px; }
   .pr-master-btn { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
                     border: 1.5px solid var(--acc); border-radius: 15px; padding: 12px 15px;
-                    background: linear-gradient(135deg,#3d3320,#241f13); color: var(--text);
+                    background: linear-gradient(135deg,var(--c-3d3320),var(--c-241f13)); color: var(--text);
                     font: inherit; cursor: pointer; box-shadow: 0 6px 18px rgba(208,163,82,.18); }
   .pr-master-btn:hover { filter: brightness(1.08); }
   .pr-master-chip { width: 38px; height: 38px; border-radius: 11px; flex: none; display: flex;
@@ -1655,10 +1712,10 @@ partir de agora.</p>
                  justify-content: center; background: rgba(208,163,82,.14); color: var(--acc); flex: none; }
   .prv-tb .ic svg { width: 17px; height: 17px; }
   .prv-tb b { font-size: 11px; font-weight: 600; line-height: 1.2; }
-  .prv-tb.prv-nova { background: linear-gradient(135deg,#3d2420,#241713); border-color: #e07a52; }
-  .prv-tb.prv-nova .ic { background: rgba(224,122,82,.18); color: #f0a58f; }
-  .prv-tb.prv-dem { background: linear-gradient(135deg,#2f2016,#20140f); border-color: #e07a52; }
-  .prv-tb.prv-dem .ic { background: rgba(224,122,82,.16); color: #f0a58f; }
+  .prv-tb.prv-nova { background: linear-gradient(135deg,var(--vermelho-bg),var(--c-241713)); border-color: var(--tipo-ocorrencia); }
+  .prv-tb.prv-nova .ic { background: rgba(224,122,82,.18); color: var(--vermelho); }
+  .prv-tb.prv-dem { background: linear-gradient(135deg,var(--c-2f2016),var(--c-20140f)); border-color: var(--tipo-ocorrencia); }
+  .prv-tb.prv-dem .ic { background: rgba(224,122,82,.16); color: var(--vermelho); }
   /* Flex, não grid de 3 colunas: `Dose` (#pr-dose-card) nasce display:none e só
      é revelado por JS pra bartender/chefe/coord — em grid, os 2 restantes
      ficavam presos às colunas 1-2 com um buraco à direita. */
@@ -1686,16 +1743,16 @@ partir de agora.</p>
                    text-decoration: none;
                    border: 1.5px solid rgba(201,163,224,.5); border-left: none;
                    border-radius: 0 14px 14px 0; padding: 8px 13px 8px 10px; cursor: pointer;
-                   background: linear-gradient(90deg,#2a2419,var(--card)); color: var(--text);
-                   box-shadow: 5px 4px 13px rgba(0,0,0,.34); }
+                   background: linear-gradient(90deg,var(--card-2),var(--card)); color: var(--text);
+                   box-shadow: 5px 4px 13px rgba(0,0,0,calc(.34*var(--sombra-k))); }
   .prv-mapa-aba:hover { filter: brightness(1.1); }
   .prv-mapa-aba b { font-weight: 600; }
-  .prv-mapa-aba .ic { display: flex; color: #c9a3e0; }
+  .prv-mapa-aba .ic { display: flex; color: var(--c-c9a3e0); }
   .prv-criar-aba { display: flex; align-items: center; gap: 7px; font: inherit; font-size: 11.5px;
                     border: 1.5px solid rgba(208,163,82,.5); border-right: none;
                     border-radius: 14px 0 0 14px; padding: 8px 13px 8px 10px; cursor: pointer;
-                    background: linear-gradient(270deg,#2a2419,var(--card)); color: var(--text);
-                    box-shadow: -5px 4px 13px rgba(0,0,0,.34); }
+                    background: linear-gradient(270deg,var(--card-2),var(--card)); color: var(--text);
+                    box-shadow: -5px 4px 13px rgba(0,0,0,calc(.34*var(--sombra-k))); }
   .prv-criar-aba:hover { filter: brightness(1.1); }
   .prv-criar-aba.aberto { border-color: var(--acc); }
   .prv-criar-aba b { font-weight: 600; }
@@ -1707,10 +1764,10 @@ partir de agora.</p>
   @keyframes prPuxaEsq { from { transform: translateX(13%); opacity: 0; }
                           to { transform: none; opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { #pr-conteudo:not([hidden]) { animation: none; } }
-  .prv-q-fichas { border-color: #8fd0a5; } .prv-q-fichas .ic { color: #a8dfba; }
-  .prv-q-avaria { border-color: #cf7089; } .prv-q-avaria .ic { color: #e192a6; }
-  .prv-q-avaria.aberto { border-color: #e192a6; }
-  .prv-q-dose { border-color: #6fa8dc; } .prv-q-dose .ic { color: #8ec0ea; }
+  .prv-q-fichas { border-color: var(--casa-gra); } .prv-q-fichas .ic { color: var(--verde); }
+  .prv-q-avaria { border-color: var(--c-cf7089); } .prv-q-avaria .ic { color: var(--rosa); }
+  .prv-q-avaria.aberto { border-color: var(--rosa); }
+  .prv-q-dose { border-color: var(--casa-fulles); } .prv-q-dose .ic { color: var(--azul); }
   @media (max-width: 380px) { .prv-tb b { font-size: 10px; } .prv-q { font-size: 10px; } }
 </style>
 <div class="prv-top3">
@@ -1755,34 +1812,34 @@ partir de agora.</p>
      3 recentes + "Abrir tudo →" (notas.html). O app completo mora em notas.html. -->
 <style>
   #np-painel { margin-top: 4px; margin-bottom: 8px; }
-  .npp { border: 1px solid #6b5da0; border-radius: 13px; background: #18152a; overflow: hidden; }
-  .npp-cap { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #2a2440; }
-  .npp-cap svg { width: 16px; height: 16px; color: #7d6fb0; flex: none; }
+  .npp { border: 1px solid var(--lilas-2); border-radius: 13px; background: var(--c-18152a); overflow: hidden; }
+  .npp-cap { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--lilas-bg); }
+  .npp-cap svg { width: 16px; height: 16px; color: var(--c-7d6fb0); flex: none; }
   .npp-cap input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--text);
                     font: inherit; font-size: 13.5px; }
-  .npp-cap input::placeholder { color: #5a4f80; }
-  .npp-tog { background: #2a2440; border: 1px solid #6b5da0; border-radius: 7px; color: #a89fd0; font: inherit;
+  .npp-cap input::placeholder { color: var(--lilas-2); }
+  .npp-tog { background: var(--lilas-bg); border: 1px solid var(--lilas-2); border-radius: 7px; color: var(--lilas); font: inherit;
               font-size: 10.5px; padding: 4px 9px; cursor: pointer; white-space: nowrap; flex: none; }
-  .npp-tog.lista { background: #16283a; border-color: #6fa8dc; color: #8ec0ea; }
+  .npp-tog.lista { background: var(--azul-bg); border-color: var(--casa-fulles); color: var(--azul); }
   /* Nova nota direto no 1º nível (2026-07-19, pedido do Rodrigo) — pula a
      captura rápida e abre o editor completo (camada 2) já em branco. */
-  .npp-plus { background: none; border: 1px solid #6b5da0; border-radius: 7px; color: #c4b8e8; font: inherit;
+  .npp-plus { background: none; border: 1px solid var(--lilas-2); border-radius: 7px; color: var(--lilas); font: inherit;
                font-size: 15px; line-height: 1; width: 26px; height: 26px; cursor: pointer; flex: none;
                display: flex; align-items: center; justify-content: center; }
-  .npp-plus:hover { background: #2a2440; }
-  .npp-item { padding: 9px 12px; border-bottom: 1px solid #1e1b33; cursor: pointer; }
-  .npp-item:hover { background: #201d38; }
+  .npp-plus:hover { background: var(--lilas-bg); }
+  .npp-item { padding: 9px 12px; border-bottom: 1px solid var(--c-1e1b33); cursor: pointer; }
+  .npp-item:hover { background: var(--c-201d38); }
   .npp-item:last-child { border-bottom: none; }
-  .npp-it-tit { font-size: 13px; font-weight: 600; color: #ece8f5; white-space: nowrap; overflow: hidden;
+  .npp-it-tit { font-size: 13px; font-weight: 600; color: var(--c-ece8f5); white-space: nowrap; overflow: hidden;
                  text-overflow: ellipsis; }
-  .npp-it-prev { font-size: 11px; color: #8a7fb5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  .npp-it-prev { font-size: 11px; color: var(--lilas-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                   margin-top: 2px; }
-  .npp-it-data { font-size: 10px; color: #6b5da0; margin-top: 3px; }
-  .npp-msg { padding: 16px 12px; text-align: center; font-size: 12.5px; color: #6b5da0; }
+  .npp-it-data { font-size: 10px; color: var(--lilas-2); margin-top: 3px; }
+  .npp-msg { padding: 16px 12px; text-align: center; font-size: 12.5px; color: var(--lilas-2); }
   .npp-foot { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px;
-               border-top: 1px solid #2a2440; background: #141127; }
-  .npp-foot .c { font-size: 11px; color: #6b5da0; }
-  .npp-foot a { font-size: 12px; font-weight: 600; color: #c4b8e8; text-decoration: none; }
+               border-top: 1px solid var(--lilas-bg); background: var(--c-141127); }
+  .npp-foot .c { font-size: 11px; color: var(--lilas-2); }
+  .npp-foot a { font-size: 12px; font-weight: 600; color: var(--lilas); text-decoration: none; }
 </style>
 <div id="np-painel" hidden>
   <div class="npp">
@@ -2005,7 +2062,7 @@ partir de agora.</p>
                gap: 6px; padding: 4px 2px; text-decoration: none; color: var(--text); }
   a.hg-cell:hover { background: rgba(208,163,82,.06); border-radius: 8px; }
   a.hg-cell + a.hg-cell::before { content: ""; position: absolute; left: 0; top: 20%; bottom: 20%;
-                                   width: 1px; background: #3a3126; }
+                                   width: 1px; background: var(--border); }
   .hg-ic { color: var(--acc); opacity: .8; display: flex; flex: none; }
   .hg-ic svg { width: 15px; height: 15px; }
   .hg-txt { display: flex; flex-direction: column; line-height: 1; }
@@ -2013,7 +2070,7 @@ partir de agora.</p>
            font-variant-numeric: tabular-nums; }
   .hg-t { font-size: 9px; color: var(--text-3); margin-top: 2px; }
   .hg-prox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2);
-              margin-top: 10px; padding-top: 10px; border-top: 1px dashed #3a3126; }
+              margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
   .hg-prox[hidden] { display: none; }
   .hg-prox svg { color: var(--acc); flex: none; }
   .hg-prox b { color: var(--text); font-weight: 600; }
@@ -2027,7 +2084,7 @@ partir de agora.</p>
   <a class="hg-cell" href="eventos.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg></span><span class="hg-txt"><span class="hg-n" id="hg-ev-n">—</span><span class="hg-t">Eventos</span></span></a>
   <a class="hg-cell" href="demandas.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg></span><span class="hg-txt"><span class="hg-n" id="hg-dm-n">—</span><span class="hg-t">Demandas</span></span></a>
   <a class="hg-cell" href="presenca.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg></span><span class="hg-txt"><span class="hg-n" id="hg-on-n">—</span><span class="hg-t">Online</span></span></a>
-  <a class="hg-cell" href="cocktails.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="hg-txt"><span class="hg-n">307</span><span class="hg-t">Receitas</span></span></a>
+  <a class="hg-cell" href="cocktails.html"><span class="hg-ic"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="hg-txt"><span class="hg-n">308</span><span class="hg-t">Receitas</span></span></a>
 </div>
 <div class="hg-prox" id="hg-prox" hidden><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Próximo: <b id="hg-prox-txt"></b></span><a class="go" href="eventos.html" aria-label="Ver o mural">›</a></div>
 </details>
@@ -2119,7 +2176,7 @@ partir de agora.</p>
      (revela só quando o dado carrega). Sem R$ — só unidades (regra do payload
      de equipe). -->
 <style>
-  .tcm { background: linear-gradient(135deg,#241d13,#1a1610); border: 1px solid #4a3f2a;
+  .tcm { background: linear-gradient(135deg,var(--c-241d13),var(--c-1a1610)); border: 1px solid var(--border-2);
           border-radius: 14px; padding: 10px 11px; margin-bottom: 12px; }
   .tcm-cab { display: flex; align-items: baseline; gap: 6px; margin-bottom: 7px; }
   .tcm-cab .k { font-size: 10.5px; letter-spacing: .09em; color: var(--text-3); text-transform: uppercase; }
@@ -2131,7 +2188,7 @@ partir de agora.</p>
                border: 1px solid var(--border); background: transparent; color: var(--text-2); cursor: pointer; white-space: nowrap; }
   .tcm-pill.on { background: var(--acc); border-color: var(--acc); color: var(--acc-txt); }
   .tcm5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
-  .tcm5 .it { position: relative; background: rgba(0,0,0,.22); border: 1px solid #3a3126; border-radius: 9px; padding: 16px 3px 6px; text-align: center; min-width: 0; }
+  .tcm5 .it { position: relative; background: rgba(0,0,0,.22); border: 1px solid var(--border); border-radius: 9px; padding: 16px 3px 6px; text-align: center; min-width: 0; }
   .tcm5 .it .rk { position: absolute; top: 3px; left: 4px; font-size: 10px; color: var(--text-3); font-family: var(--serif); line-height: 1; }
   .tcm5 .it .rk svg { width: 12px; height: 12px; color: var(--acc); vertical-align: top; }
   .tcm5 .it .nm { font-size: 9px; color: var(--text-2); line-height: 1.12; height: 20px; overflow: hidden;
@@ -2151,7 +2208,7 @@ partir de agora.</p>
 
 <style>
   .hero-hoje .coq-ico { color: var(--acc); flex: none; display: flex; }
-  .coq-historico { margin-top: 10px; padding-top: 10px; border-top: 1px solid #4a3f2a; }
+  .coq-historico { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-2); }
   .coq-historico .titulo { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
                              color: var(--text-2); margin-bottom: 6px; }
   .coq-historico ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-2); line-height: 1.8; }
@@ -2161,7 +2218,7 @@ partir de agora.</p>
 <summary class="k">MUNDO DA COQUETELARIA<span class="seta" aria-hidden="true">▾</span></summary>
 <div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span><b>Sustentabilidade operacional ganha peso concreto</b> — Batching pra reduzir desperdício por drink, reaproveitamento de cascas/sobras, compostagem com hortas urbanas e fim de descartáveis viram diferencial competitivo citado por múltiplas casas em 2026. (diageobaracademy.com)</span><a class="go" href="https://diageobaracademy.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Dandelion (Nova York)</b> — Bar do West Village pela equipe do Zero Bond e do reformado White Horse Tavern, com serviço dedicado de Martini e cozinha assinada por chef estrelado Michelin. (wwd.com)</span><a class="go" href="https://wwd.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Diageo World Class 2026</b> — Campeões regionais definidos (EUA: Alexis Ortega, Static Bar, Filadélfia; Hong Kong, Tailândia, Líbano, Cingapura já têm campeões); final global em outubro/2026 na Escócia. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span><b>Abertura: Cato (Londres)</b> — Bar de cinco andares do bartender Angelos Bafas em Covent Garden, dedicado ao clássico Julep; toda a produção e destilados são de origem britânica. (thespiritsbusiness.com)</span><a class="go" href="https://thespiritsbusiness.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Spirited Awards 2026 (Tales of the Cocktail)</b> — 20ª edição; cerimônia marcada para 23/jul/2026 em Nova Orleans. Finalistas Top 4 e vencedores de prêmios especiais (Helen David Lifetime Achievement, Tales Visionary Award) já anunciados. (talesofthecocktail.org)</span><a class="go" href="https://talesofthecocktail.org/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Destilados sem álcool atraem investimento pesado</b> — Lyre&#x27;s é hoje a mais capitalizada do setor (US$53 milhões levantados); previsão de crescimento de 36,7% em valor no segmento entre 2024-2028. (tracxn.com)</span><a class="go" href="https://tracxn.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg></span><span><b>Asia&#x27;s 50 Best Bars 2026</b> — Cerimônia em Macau em 28/jul/2026. Smoke &amp; Bitters (Sri Lanka) já venceu o Michter&#x27;s Art of Hospitality Award; Shelley Tai (Mius, Hong Kong) o prêmio Altos Bartenders&#x27; Bartender. (ttrweekly.com)</span><a class="go" href="https://ttrweekly.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg></span><span><b>Agave em transição: mezcal e reposado sobem sobre o blanco</b> — Mercado de agave se estabiliza após colapso de preço (pico ~32 pesos/kg para ~5 pesos/kg); oferta mais previsível, mas replantio baixo pode gerar novo aperto futuro. (theiwsr.com)</span><a class="go" href="https://theiwsr.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Sabor &quot;savory&quot;/umami dominando os menus</b> — Bartenders reportam alta de miso, shoyu, MSG e maior salinidade em coquetéis, criando perfis mais food-forward e complexos. (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Elderflower é eleito &quot;sabor do ano&quot; de 2026</b> — Floral/botânico domina cardápios, puxando também ervas nativas e infusões naturais como categoria em crescimento. (mrsipps.nl)</span><a class="go" href="https://mrsipps.nl/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Volta à simplicidade técnica</b> — Reação contra coquetéis de 5+ componentes e guarnições excessivas; foco em clássicos revisitados com ingredientes melhores (clarificação, soluções salinas, yuzu). (forbes.com)</span><a class="go" href="https://forbes.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div><div class="row"><span class="coq-ico"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span><b>Low/no-álcool vira parte estrutural do menu</b> — &quot;Zebra striping&quot; (alternar drink alcoólico e não-alcoólico) já é hábito de 78% da Gen Z; spritzes e clássicos com ABV reduzido seguem como base fixa de carta. (tastingtable.com)</span><a class="go" href="https://tastingtable.com/" target="_blank" rel="noopener" aria-label="Ver fonte">›</a></div>
 <div class="coq-historico"><p class="titulo">🏆 World&#39;s 50 Best Bars — últimos vencedores</p><ul><li>World&#x27;s 50 Best Bars 2024 — Handshake Speakeasy (Cidade do México)</li><li>World&#x27;s 50 Best Bars 2025 — Bar Leone (Hong Kong)</li><li>World&#x27;s 50 Best Bars 2023 — Sips (Barcelona)</li><li>World&#x27;s 50 Best Bars 2021 — Connaught Bar (Londres)</li><li>World&#x27;s 50 Best Bars 2022 — Paradiso (Barcelona)</li></ul></div>
-<p class="coq-foot">Atualizado em 30/10/2026 07:22.</p>
+<p class="coq-foot">Atualizado em 02/11/2026 07:18.</p>
 </details>
 <script>
 // Cocktail do mês (PLANO_RANKING_COCKTAILS.md §5) — mesmo Worker da presença
@@ -2270,11 +2327,11 @@ partir de agora.</p>
   .hsec-ov[hidden] { display: none; }
   .hsec-sheet { width: 100%; max-width: 560px; max-height: 86vh; background: var(--bg);
                  border: 1px solid var(--acc); border-radius: 16px; padding: 14px;
-                 display: flex; flex-direction: column; box-shadow: 0 12px 34px rgba(0,0,0,.55); }
+                 display: flex; flex-direction: column; box-shadow: 0 12px 34px rgba(0,0,0,calc(.55*var(--sombra-k))); }
   .hsec-cab { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
   .hsec-cab .hsec-ai { width: 30px; height: 30px; }
   .hsec-ti { font-family: var(--serif); font-size: 17px; flex: 1; }
-  .hsec-x { border: none; background: rgba(255,255,255,.06); color: var(--text-2); width: 30px; height: 30px;
+  .hsec-x { border: none; background: rgba(var(--realce),.06); color: var(--text-2); width: 30px; height: 30px;
              border-radius: 50%; font-size: 15px; cursor: pointer; flex: none; }
   /* flex+min-height:0 (não só overflow-y) — senão o filho não encolhe dentro do
      max-height do .hsec-sheet e o conteúdo vaza pra fora da caixa em vez de rolar. */
@@ -2310,12 +2367,12 @@ partir de agora.</p>
   .hsec-swdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 </style>
 <div class="mn-todas">Todas as páginas</div>
-<div class="hsecs"><button type="button" class="hsec" data-sec="carta" data-niveis="chefe controladoria coord equipe marketing treinador" data-nome="Criar a carta"><span class="hsec-ai" style="background:#362a15;color:var(--acc)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="hsec-an">Criar a carta</span><span class="hsec-ad" id="hsec-ct-carta"></span></button><button type="button" class="hsec" data-sec="estoque" data-niveis="chefe controladoria coord equipe" data-nome="Comprar e cuidar dos ativos"><span class="hsec-ai" style="background:#33290f;color:var(--amarelo)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span class="hsec-an">Comprar e cuidar dos ativos</span><span class="hsec-ad" id="hsec-ct-estoque"></span></button><button type="button" class="hsec" data-sec="dia" data-niveis="chefe controladoria coord equipe marketing rh treinador" data-nome="Operar o turno"><span class="hsec-ai" style="background:#17352b;color:var(--verde)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span><span class="hsec-an">Operar o turno</span><span class="hsec-ad" id="hsec-ct-dia"></span></button><button type="button" class="hsec" data-sec="numeros" data-niveis="chefe controladoria coord equipe rh" data-nome="Acompanhar resultados"><span class="hsec-ai" style="background:#152c3d;color:#86b6d8"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></span><span class="hsec-an">Acompanhar resultados</span><span class="hsec-ad" id="hsec-ct-numeros"></span></button><button type="button" class="hsec" data-sec="equipe" data-niveis="chefe controladoria coord equipe marketing rh treinador" data-nome="Gerir a equipe"><span class="hsec-ai" style="background:#302743;color:var(--lilas)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="hsec-an">Gerir a equipe</span><span class="hsec-ad" id="hsec-ct-equipe"></span></button><button type="button" class="hsec" data-sec="padrao" data-niveis="chefe coord equipe treinador" data-nome="Treinar e manter o padrão"><span class="hsec-ai" style="background:#1d3330;color:var(--verde)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span class="hsec-an">Treinar e manter o padrão</span><span class="hsec-ad" id="hsec-ct-padrao"></span></button><button type="button" class="hsec" data-sec="parcerias" data-niveis="chefe controladoria coord marketing" data-nome="Parcerias, eventos e marketing"><span class="hsec-ai" style="background:#3a2419;color:#d9967a"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10l4 5-9 11L3 9zM3 9h18M12 20L8 9l4-5 4 5z"/></svg></span><span class="hsec-an">Parcerias, eventos e marketing</span><span class="hsec-ad" id="hsec-ct-parcerias"></span></button><button type="button" class="hsec" data-sec="admin" data-niveis="coord" data-nome="Administração"><span class="hsec-ai" style="background:#2a251d;color:var(--text-2)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><path d="M9 3h6v3H9z"/><circle cx="12" cy="12" r="2.2"/><path d="M8.5 17c.6-1.5 2-2.3 3.5-2.3s2.9.8 3.5 2.3"/></svg></span><span class="hsec-an">Administração</span><span class="hsec-ad" id="hsec-ct-admin"></span></button></div>
+<div class="hsecs"><button type="button" class="hsec" data-sec="carta" data-niveis="chefe controladoria coord equipe marketing treinador" data-nome="Criar a carta"><span class="hsec-ai" style="background:var(--amarelo-bg);color:var(--acc)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg></span><span class="hsec-an">Criar a carta</span><span class="hsec-ad" id="hsec-ct-carta"></span></button><button type="button" class="hsec" data-sec="estoque" data-niveis="chefe controladoria coord equipe" data-nome="Comprar e cuidar dos ativos"><span class="hsec-ai" style="background:var(--c-33290f);color:var(--amarelo)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg></span><span class="hsec-an">Comprar e cuidar dos ativos</span><span class="hsec-ad" id="hsec-ct-estoque"></span></button><button type="button" class="hsec" data-sec="dia" data-niveis="chefe controladoria coord equipe marketing rh treinador" data-nome="Operar o turno"><span class="hsec-ai" style="background:var(--verde-bg);color:var(--verde)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span><span class="hsec-an">Operar o turno</span><span class="hsec-ad" id="hsec-ct-dia"></span></button><button type="button" class="hsec" data-sec="numeros" data-niveis="chefe controladoria coord equipe rh" data-nome="Acompanhar resultados"><span class="hsec-ai" style="background:var(--c-152c3d);color:var(--azul)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg></span><span class="hsec-an">Acompanhar resultados</span><span class="hsec-ad" id="hsec-ct-numeros"></span></button><button type="button" class="hsec" data-sec="equipe" data-niveis="chefe controladoria coord equipe marketing rh treinador" data-nome="Gerir a equipe"><span class="hsec-ai" style="background:var(--lilas-bg);color:var(--lilas)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg></span><span class="hsec-an">Gerir a equipe</span><span class="hsec-ad" id="hsec-ct-equipe"></span></button><button type="button" class="hsec" data-sec="padrao" data-niveis="chefe coord equipe treinador" data-nome="Treinar e manter o padrão"><span class="hsec-ai" style="background:var(--c-1d3330);color:var(--verde)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg></span><span class="hsec-an">Treinar e manter o padrão</span><span class="hsec-ad" id="hsec-ct-padrao"></span></button><button type="button" class="hsec" data-sec="parcerias" data-niveis="chefe controladoria coord marketing" data-nome="Parcerias, eventos e marketing"><span class="hsec-ai" style="background:var(--c-3a2419);color:var(--c-d9967a)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10l4 5-9 11L3 9zM3 9h18M12 20L8 9l4-5 4 5z"/></svg></span><span class="hsec-an">Parcerias, eventos e marketing</span><span class="hsec-ad" id="hsec-ct-parcerias"></span></button><button type="button" class="hsec" data-sec="admin" data-niveis="coord" data-nome="Administração"><span class="hsec-ai" style="background:var(--c-2a251d);color:var(--text-2)"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><path d="M9 3h6v3H9z"/><circle cx="12" cy="12" r="2.2"/><path d="M8.5 17c.6-1.5 2-2.3 3.5-2.3s2.9.8 3.5 2.3"/></svg></span><span class="hsec-an">Administração</span><span class="hsec-ad" id="hsec-ct-admin"></span></button></div>
 <div class="hsec-ov" id="hsec-ov" hidden>
   <div class="hsec-sheet" role="dialog" aria-modal="true">
     <div class="hsec-cab"><span class="hsec-ai" id="hsec-ai"></span><span class="hsec-ti" id="hsec-ti"></span><button type="button" class="hsec-x" id="hsec-x" aria-label="Fechar">✕</button></div>
-    <div class="hsec-lists"><div class="hsec-list" id="hsec-list-carta" hidden><a class="hsl-item" href="cocktails.html" data-niveis="equipe chefe coord treinador marketing"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Fichas técnicas</span></a><a class="hsl-item" href="laboratorio.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Laboratório<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="cardapio-definicao.html" data-niveis="chefe coord controladoria"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Cardápios<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-estoque" hidden><a class="hsl-item" href="gestao-produto.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Compras</span></a><a class="hsl-item" href="inventario.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Inventário</span></a><a class="hsl-item" href="investimentos.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Investimentos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="planejador-3d.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Planejador 3D</span></a></div><div class="hsec-list" id="hsec-list-dia" hidden><a class="hsl-item" href="rotinas.html" data-niveis="equipe chefe coord rh treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Rotinas</span></a><a class="hsl-item" href="contagens.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Contagens</span></a><a class="hsl-item" href="estoque.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Estoque do bar</span></a><a class="hsl-item" href="producao.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Produção</span></a><a class="hsl-item" href="transferencias.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Buscador entre casas</span></a><a class="hsl-item" href="turno.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Relatório de turno</span></a><a class="hsl-item" href="canais.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Intercom</span></a><a class="hsl-item" href="eventos.html" data-niveis="equipe chefe coord marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Agenda de eventos</span></a></div><div class="hsec-list" id="hsec-list-numeros" hidden><a class="hsl-item" href="minha-casa.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Minha casa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="performance.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Performance da carta</span></a><a class="hsl-item" href="analise-cmv.html" data-niveis="coord controladoria"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">CMV</span></a><a class="hsl-item" href="previsao-vendas.html" data-niveis="coord controladoria"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Previsão de vendas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="resultados.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Resultados &amp; Impacto<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="pessoas-numeros.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Pessoas em números<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="vendas/index.html" data-niveis="coord"><span class="hsl-dot" style="background:#86b6d8"></span><span class="hsl-tt">Vendas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-equipe" hidden><a class="hsl-item" href="time.html" data-niveis="equipe chefe coord rh controladoria treinador marketing"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Time</span></a><a class="hsl-item" href="escala-horas.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Escala &amp; Horas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="recrutamento.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Recrutamento<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="regimento.html" data-niveis="equipe chefe coord rh treinador"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Regimento Interno</span></a></div><div class="hsec-list" id="hsec-list-padrao" hidden><a class="hsl-item" href="treinamentos.html" data-niveis="equipe chefe coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Escola de Bar</span></a><a class="hsl-item" href="treinamentos-aplicados.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Treinamentos aplicados<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="auditorias.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Auditorias<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="nutricook.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Nutricook</span></a><a class="hsl-item" href="competicoes.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Competições</span></a></div><div class="hsec-list" id="hsec-list-parcerias" hidden><a class="hsl-item" href="ontrade.html" data-niveis="chefe coord controladoria"><span class="hsl-dot" style="background:#d9967a"></span><span class="hsl-tt">On Trade<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="orcamento-eventos.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:#d9967a"></span><span class="hsl-tt">Orçamento de eventos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="captacoes.html" data-niveis="chefe coord marketing"><span class="hsl-dot" style="background:#d9967a"></span><span class="hsl-tt">Captações<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-admin" hidden><a class="hsl-item" href="acessos.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--text-2)"></span><span class="hsl-tt">Acessos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="presenca.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--text-2)"></span><span class="hsl-tt">Presença online<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="ver-como.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--text-2)"></span><span class="hsl-tt">Ver como outro nível<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="lab-proposta.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--text-2)"></span><span class="hsl-tt">Lab 2.0 — proposta<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div></div>
-    <div class="hsec-switch"><button type="button" class="hsec-sw" data-sec="carta" data-niveis="chefe controladoria coord equipe marketing treinador"><span class="hsec-swdot" style="background:var(--acc)"></span>Criar a carta</button><button type="button" class="hsec-sw" data-sec="estoque" data-niveis="chefe controladoria coord equipe"><span class="hsec-swdot" style="background:var(--amarelo)"></span>Comprar e cuidar dos ativos</button><button type="button" class="hsec-sw" data-sec="dia" data-niveis="chefe controladoria coord equipe marketing rh treinador"><span class="hsec-swdot" style="background:var(--verde)"></span>Operar o turno</button><button type="button" class="hsec-sw" data-sec="numeros" data-niveis="chefe controladoria coord equipe rh"><span class="hsec-swdot" style="background:#86b6d8"></span>Acompanhar resultados</button><button type="button" class="hsec-sw" data-sec="equipe" data-niveis="chefe controladoria coord equipe marketing rh treinador"><span class="hsec-swdot" style="background:var(--lilas)"></span>Gerir a equipe</button><button type="button" class="hsec-sw" data-sec="padrao" data-niveis="chefe coord equipe treinador"><span class="hsec-swdot" style="background:var(--verde)"></span>Treinar e manter o padrão</button><button type="button" class="hsec-sw" data-sec="parcerias" data-niveis="chefe controladoria coord marketing"><span class="hsec-swdot" style="background:#d9967a"></span>Parcerias, eventos e marketing</button><button type="button" class="hsec-sw" data-sec="admin" data-niveis="coord"><span class="hsec-swdot" style="background:var(--text-2)"></span>Administração</button></div>
+    <div class="hsec-lists"><div class="hsec-list" id="hsec-list-carta" hidden><a class="hsl-item" href="cocktails.html" data-niveis="equipe chefe coord treinador marketing"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Fichas técnicas</span></a><a class="hsl-item" href="laboratorio.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Laboratório<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="cardapio-definicao.html" data-niveis="chefe coord controladoria"><span class="hsl-dot" style="background:var(--acc)"></span><span class="hsl-tt">Cardápios<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-estoque" hidden><a class="hsl-item" href="gestao-produto.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Compras</span></a><a class="hsl-item" href="inventario.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Inventário</span></a><a class="hsl-item" href="investimentos.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Investimentos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="planejador-3d.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--amarelo)"></span><span class="hsl-tt">Planejador 3D</span></a></div><div class="hsec-list" id="hsec-list-dia" hidden><a class="hsl-item" href="rotinas.html" data-niveis="equipe chefe coord rh treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Rotinas</span></a><a class="hsl-item" href="contagens.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Contagens</span></a><a class="hsl-item" href="estoque.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Estoque do bar</span></a><a class="hsl-item" href="producao.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Produção</span></a><a class="hsl-item" href="transferencias.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Buscador entre casas</span></a><a class="hsl-item" href="turno.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Relatório de turno</span></a><a class="hsl-item" href="canais.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Intercom</span></a><a class="hsl-item" href="eventos.html" data-niveis="equipe chefe coord marketing"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Agenda de eventos</span></a></div><div class="hsec-list" id="hsec-list-numeros" hidden><a class="hsl-item" href="minha-casa.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--azul)"></span><span class="hsl-tt">Minha casa<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="performance.html" data-niveis="equipe chefe coord controladoria"><span class="hsl-dot" style="background:var(--azul)"></span><span class="hsl-tt">Performance da carta</span></a><a class="hsl-item" href="analise-cmv.html" data-niveis="coord controladoria"><span class="hsl-dot" style="background:var(--azul)"></span><span class="hsl-tt">CMV</span></a><a class="hsl-item" href="previsao-vendas.html" data-niveis="coord controladoria"><span class="hsl-dot" style="background:var(--azul)"></span><span class="hsl-tt">Previsão de vendas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="resultados.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--azul)"></span><span class="hsl-tt">Resultados &amp; Impacto<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="pessoas-numeros.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--azul)"></span><span class="hsl-tt">Pessoas em números<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="vendas/index.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--azul)"></span><span class="hsl-tt">Vendas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-equipe" hidden><a class="hsl-item" href="time.html" data-niveis="equipe chefe coord rh controladoria treinador marketing"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Time</span></a><a class="hsl-item" href="escala-horas.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Escala &amp; Horas<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="recrutamento.html" data-niveis="chefe coord rh"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Recrutamento<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="regimento.html" data-niveis="equipe chefe coord rh treinador"><span class="hsl-dot" style="background:var(--lilas)"></span><span class="hsl-tt">Regimento Interno</span></a></div><div class="hsec-list" id="hsec-list-padrao" hidden><a class="hsl-item" href="treinamentos.html" data-niveis="equipe chefe coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Escola de Bar</span></a><a class="hsl-item" href="treinamentos-aplicados.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Treinamentos aplicados<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="auditorias.html" data-niveis="coord treinador"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Auditorias<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="nutricook.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Nutricook</span></a><a class="hsl-item" href="competicoes.html" data-niveis="equipe chefe coord"><span class="hsl-dot" style="background:var(--verde)"></span><span class="hsl-tt">Competições</span></a></div><div class="hsec-list" id="hsec-list-parcerias" hidden><a class="hsl-item" href="ontrade.html" data-niveis="chefe coord controladoria"><span class="hsl-dot" style="background:var(--c-d9967a)"></span><span class="hsl-tt">On Trade<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="orcamento-eventos.html" data-niveis="chefe coord"><span class="hsl-dot" style="background:var(--c-d9967a)"></span><span class="hsl-tt">Orçamento de eventos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="captacoes.html" data-niveis="chefe coord marketing"><span class="hsl-dot" style="background:var(--c-d9967a)"></span><span class="hsl-tt">Captações<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div><div class="hsec-list" id="hsec-list-admin" hidden><a class="hsl-item" href="acessos.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--text-2)"></span><span class="hsl-tt">Acessos<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="presenca.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--text-2)"></span><span class="hsl-tt">Presença online<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="ver-como.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--text-2)"></span><span class="hsl-tt">Ver como outro nível<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a><a class="hsl-item" href="lab-proposta.html" data-niveis="coord"><span class="hsl-dot" style="background:var(--text-2)"></span><span class="hsl-tt">Lab 2.0 — proposta<span class="lk"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></span></a></div></div>
+    <div class="hsec-switch"><button type="button" class="hsec-sw" data-sec="carta" data-niveis="chefe controladoria coord equipe marketing treinador"><span class="hsec-swdot" style="background:var(--acc)"></span>Criar a carta</button><button type="button" class="hsec-sw" data-sec="estoque" data-niveis="chefe controladoria coord equipe"><span class="hsec-swdot" style="background:var(--amarelo)"></span>Comprar e cuidar dos ativos</button><button type="button" class="hsec-sw" data-sec="dia" data-niveis="chefe controladoria coord equipe marketing rh treinador"><span class="hsec-swdot" style="background:var(--verde)"></span>Operar o turno</button><button type="button" class="hsec-sw" data-sec="numeros" data-niveis="chefe controladoria coord equipe rh"><span class="hsec-swdot" style="background:var(--azul)"></span>Acompanhar resultados</button><button type="button" class="hsec-sw" data-sec="equipe" data-niveis="chefe controladoria coord equipe marketing rh treinador"><span class="hsec-swdot" style="background:var(--lilas)"></span>Gerir a equipe</button><button type="button" class="hsec-sw" data-sec="padrao" data-niveis="chefe coord equipe treinador"><span class="hsec-swdot" style="background:var(--verde)"></span>Treinar e manter o padrão</button><button type="button" class="hsec-sw" data-sec="parcerias" data-niveis="chefe controladoria coord marketing"><span class="hsec-swdot" style="background:var(--c-d9967a)"></span>Parcerias, eventos e marketing</button><button type="button" class="hsec-sw" data-sec="admin" data-niveis="coord"><span class="hsec-swdot" style="background:var(--text-2)"></span>Administração</button></div>
   </div>
 </div>
 <script>
@@ -2371,14 +2428,14 @@ partir de agora.</p>
                 color:var(--text-3); margin:18px 0 8px 3px; display:flex;
                 align-items:center; gap:7px; }
   .mrh-sec-tt:first-child { margin-top:0; }
-  .mrh-sec-tt .dot { width:7px; height:7px; border-radius:99px; background:#a58fd0; }
+  .mrh-sec-tt .dot { width:7px; height:7px; border-radius:99px; background:var(--casa-famu); }
 
   .mrh-idfaixa { display:flex; align-items:center; gap:12px; padding:11px 13px;
-                 border:1px solid rgba(165,143,208,.4); border-left:3px solid #a58fd0;
+                 border:1px solid rgba(165,143,208,.4); border-left:3px solid var(--casa-famu);
                  background:rgba(165,143,208,.07); }
   .mrh-idfaixa .ic { width:34px; height:34px; border-radius:9px; flex:none;
                       display:flex; align-items:center; justify-content:center;
-                      background:rgba(165,143,208,.16); color:#a58fd0; }
+                      background:rgba(165,143,208,.16); color:var(--casa-famu); }
   .mrh-idfaixa b { font-family:var(--serif); font-size:16px; font-weight:600; display:block; }
   .mrh-idfaixa span { font-size:11px; color:var(--text-3); }
 
@@ -2388,19 +2445,19 @@ partir de agora.</p>
              gap:6px; text-align:center; border:1.5px solid var(--border);
              border-radius:13px; padding:12px 6px 10px; background:var(--card);
              font-size:11.5px; color:var(--text); text-decoration:none; }
-  .mrh-prb .ic { color:#a58fd0; display:flex; }
+  .mrh-prb .ic { color:var(--casa-famu); display:flex; }
   .mrh-prb .sub { font-size:9.5px; color:var(--text-3); line-height:1.2; }
-  .mrh-prb.q1 { border-color:#cf7089; background:linear-gradient(135deg,#33202a,#1e1418); }
-  .mrh-prb.q1 .ic { color:#e192a6; }
-  .mrh-prb.q2 { border-color:#a58fd0; background:linear-gradient(135deg,#272038,#181425); }
-  .mrh-prb.q3 { border-color:#e07a52; background:linear-gradient(135deg,#3d2420,#241713); }
-  .mrh-prb.q3 .ic { color:#f0a58f; }
+  .mrh-prb.q1 { border-color:var(--c-cf7089); background:linear-gradient(135deg,var(--c-33202a),var(--c-1e1418)); }
+  .mrh-prb.q1 .ic { color:var(--rosa); }
+  .mrh-prb.q2 { border-color:var(--casa-famu); background:linear-gradient(135deg,var(--c-272038),var(--c-181425)); }
+  .mrh-prb.q3 { border-color:var(--tipo-ocorrencia); background:linear-gradient(135deg,var(--vermelho-bg),var(--c-241713)); }
+  .mrh-prb.q3 .ic { color:var(--vermelho); }
   .mrh-badge { position:absolute; top:-7px; right:-5px; min-width:20px; height:20px;
                border-radius:99px; font-size:11px; font-weight:600; display:none;
                align-items:center; justify-content:center; padding:0 5px;
-               background:#cf7089; color:#2a1016; border:1.5px solid var(--bg); }
+               background:var(--c-cf7089); color:var(--c-2a1016); border:1.5px solid var(--bg); }
   .mrh-badge.on { display:flex; }
-  .mrh-badge.am { background:#e0b05c; color:#2a1f06; }
+  .mrh-badge.am { background:var(--amarelo); color:var(--c-2a1f06); }
 
   .mrh-risco { border:1px solid var(--border); border-radius:12px;
                background:var(--card); overflow:hidden; }
@@ -2410,27 +2467,27 @@ partir de agora.</p>
   .mrh-rlin .tag { flex:none; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
                     border-radius:5px; padding:3px 6px; margin-top:1px; min-width:62px;
                     text-align:center; }
-  .mrh-t-critico { background:rgba(224,139,139,.16); color:#e08b8b; }
-  .mrh-t-atencao { background:rgba(224,176,92,.16); color:#e0b05c; }
-  .mrh-t-ok      { background:rgba(159,225,203,.14); color:#9fe1cb; }
+  .mrh-t-critico { background:rgba(224,139,139,.16); color:var(--vermelho); }
+  .mrh-t-atencao { background:rgba(224,176,92,.16); color:var(--amarelo); }
+  .mrh-t-ok      { background:rgba(159,225,203,.14); color:var(--verde); }
   .mrh-rlin .txt { flex:1; min-width:0; }
   .mrh-rlin .txt b { font-weight:600; }
   .mrh-rlin .txt em { display:block; font-style:normal; font-size:10.5px;
                        color:var(--text-3); margin-top:2px; }
-  .mrh-rlin .go { flex:none; color:#a58fd0; font-size:16px; line-height:1; margin-top:2px; }
+  .mrh-rlin .go { flex:none; color:var(--casa-famu); font-size:16px; line-height:1; margin-top:2px; }
   .mrh-vazio { padding:14px; text-align:center; font-size:12px; color:var(--text-3); }
 
   .mrh-tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
   .mrh-tile { border:1px solid var(--border); border-radius:11px; background:var(--card);
               padding:10px 8px; text-align:center; }
-  .mrh-tile .n { font-family:var(--serif); font-size:20px; color:#a58fd0; line-height:1; }
+  .mrh-tile .n { font-family:var(--serif); font-size:20px; color:var(--casa-famu); line-height:1; }
   .mrh-tile .l { font-size:9.5px; color:var(--text-3); margin-top:5px; line-height:1.2; }
 
   table.mrh-casas { width:100%; border-collapse:collapse; font-size:12px;
                      border:1px solid var(--border); border-radius:12px; overflow:hidden; }
   table.mrh-casas th { font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
                         color:var(--text-3); font-weight:400; text-align:right;
-                        padding:8px 10px; background:#1b1712; }
+                        padding:8px 10px; background:var(--c-1b1712); }
   table.mrh-casas th:first-child { text-align:left; }
   table.mrh-casas td { padding:8px 10px; text-align:right; border-top:1px solid var(--border);
                         color:var(--text-2); }
@@ -2438,20 +2495,20 @@ partir de agora.</p>
   table.mrh-casas tr.mrh-total td { background:rgba(165,143,208,.06); color:var(--text); }
   .mrh-cdot { display:inline-block; width:7px; height:7px; border-radius:99px;
               margin-right:7px; vertical-align:1px; }
-  .mrh-alerta { color:#e08b8b; font-weight:600; }
-  .mrh-meio { color:#e0b05c; }
+  .mrh-alerta { color:var(--vermelho); font-weight:600; }
+  .mrh-meio { color:var(--amarelo); }
   .mrh-semfonte { color:var(--text-3); }
 
   .mrh-area { border:1px solid var(--border); border-radius:12px; background:var(--card);
               padding:10px 12px 12px; margin-bottom:9px; }
   .mrh-area h4 { margin:0 0 8px; font-size:12px; font-weight:600; display:flex;
                  align-items:center; gap:8px; color:var(--text); }
-  .mrh-area h4 .ic { color:#a58fd0; display:flex; }
+  .mrh-area h4 .ic { color:var(--casa-famu); display:flex; }
   .mrh-links { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
   .mrh-lk { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-2);
             border:1px solid var(--border); border-radius:9px; padding:7px 9px;
             text-decoration:none; }
-  .mrh-lk .d { width:6px; height:6px; border-radius:99px; background:#a58fd0; flex:none; }
+  .mrh-lk .d { width:6px; height:6px; border-radius:99px; background:var(--casa-famu); flex:none; }
 
   .mrh-aviso { font-size:10.5px; color:var(--text-3); text-align:center;
                padding:8px 0 2px; }
@@ -2504,9 +2561,9 @@ partir de agora.</p>
                  border-left:3px solid transparent; }
     .mrh-rlin .tag { min-width:0; padding:0; width:7px; height:7px; border-radius:99px;
                       overflow:hidden; text-indent:-99px; margin-top:4px; }
-    .mrh-t-critico { background:#e08b8b; }
-    .mrh-t-atencao { background:#e0b05c; }
-    .mrh-t-ok      { background:#9fe1cb; }
+    .mrh-t-critico { background:var(--vermelho); }
+    .mrh-t-atencao { background:var(--amarelo); }
+    .mrh-t-ok      { background:var(--verde); }
 
     /* ---- números: 3 cartões viram 1 linha (78px -> ~32px) ---- */
     .mrh-tiles { display:flex; gap:10px; padding:7px 9px; white-space:nowrap;
@@ -3572,7 +3629,7 @@ partir de agora.</p>
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 30/10/2026.
+<p class="nota">Painel do bar · atualizado em 03/11/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -5021,17 +5078,17 @@ if ('serviceWorker' in navigator) {
      ausência de uma variável não pode deixar o aviso ilegível. */
   .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
     z-index: 96; margin: 0 auto; max-width: 460px; display: none;
-    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
     align-items: center; gap: 10px; }
   .ver-nova.on { display: flex; }
-  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
-  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
-  .vn-txt b { color: var(--text, #f3ede2); }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
   .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
-    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
-    color: var(--acc-txt, #16130f); }
-  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
@@ -5042,7 +5099,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -5156,8 +5213,8 @@ if ('serviceWorker' in navigator) {
      z-index com eles, só não ocupar o mesmo espaço na tela. */
   .atualiza-atalho { position: fixed; left: 12px; right: 12px;
     bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
   .atualiza-atalho.on { display: block; }
   .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
   .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }

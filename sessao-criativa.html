@@ -4,7 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#16130f">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-pressed', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function copiaPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return;
+    var txt;
+    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+  });
+})();
+</script>
 <title>Sessão Criativa · Painel do bar</title>
 <script>
 (function () {
@@ -16,13 +72,13 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=a35ddccddc3c">
+<link rel="stylesheet" href="portal.css?v=211b8486957d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
 <a class="volta-mural vm-barra" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
-<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div></div>
+<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" title="Ligar modo escuro" aria-label="Modo escuro" aria-pressed="false"><span class="ic-lua"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span><span class="ic-sol"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span></button><button class="prompt-bt" id="prompt-bt" type="button" data-niveis="coord" style="display:none" title="Copiar o prompt de construção desta página" aria-label="Copiar prompt da página"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -100,6 +156,7 @@
 <button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="pomo-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
+<script type="application/json" id="prompt-pagina">"Construa uma página web chamada \"Sessão Criativa\", seguindo o modelo da página \"Sessão Criativa · Painel do bar\" (sessao-criativa) do Portal dos Bares do Grupo IZ. Mantenha a mesma estrutura e o mesmo comportamento descritos abaixo, adaptando nomes, dados e marca ao novo site.\n\n## Objetivo\nPágina Sessão Criativa do painel interno das equipes de bar.\n\n## Onde fica e quem vê\n- Níveis com acesso: Chefe de Bar, Coordenação\n- O acesso é conferido no servidor pela sessão (token assinado). Esconder na tela é só conforto, nunca a proteção.\n\n## Estrutura, de cima para baixo\n- Topo: logo, nome do painel, pílula do nível de quem entrou, busca, notificações e botão de modo escuro.\n- Título \"Sessão Criativa\".\n- Seções:\n- Sessão criativa\n\n## Campos e filtros\n- Folha sem título\n- drink ou sabor…\n- Nota da sessão\n- Caderno sem título\n- Conceito (escrito por você — a parte GERADA da Prateleira, quando existir, vai reagir a es\n- Teto do orçamento (opcional)\n- sem teto definido\n\n## Ações (botões)\n- Galeria\n- Convidar\n- Folha nova\n- Arquivar\n- Modo folha\n- Sair do modo folha\n- DesenharD\n- ApagarE\n- TextoT\n- Imagem\n- CartãoC\n- Formas\n- MoverV\n- Preço\n- Ideias\n- jabuticaba\n- gin\n- amargo\n- defumado\n- Consumo\n\n## Dados\nRotas do servidor (Cloudflare Worker, com a sessão no cabeçalho):\n- /api/caderno\n- /api/sessao/folha\n- /api/receita/catalogo\n- /api/transferencias\n- /api/estoque\n- /api/receita/criar\n- /api/sessao/sugerir\n- /api/sessao/imagem-busca\n- /api/sessao/pessoas\n- /api/sessao/folhas\n- /api/caderno/pessoas\nArquivos estáticos lidos pela página:\n- receitas_idx.json\n- fotos_idx.json\nSem sessão válida, a página manda para o login. Dado que falta aparece como \"—\", nunca inventado.\n\n## Visual\n- Fonte Inter (Google Fonts), com system-ui de reserva. Títulos em peso 600 a 700, texto de 13 a 15 px.\n- Tema claro (padrão): fundo #f6f7f9; cartões brancos com borda #e4e7ec, cantos de 16 px e sombra bem leve; texto #101828, secundário #475467, apoio #667085; destaque preto #101828 com texto branco; links em preto com seta.\n- Modo escuro em grafite, não preto: fundo #1e1f22, cartões #27292d, borda #3a3d42, texto #ececee, secundário #b9bcc3; destaque claro com texto escuro.\n- Botão de lua/sol no topo liga e desliga o escuro, guarda a escolha no navegador (localStorage) e aplica antes de pintar a página, sem piscar.\n- Toda cor sai de variáveis CSS (:root e :root[data-tema=\"escuro\"]); nenhuma cor fixa.\n- Destaques com fundo suave: verde (#ecfdf3 / #067647), amarelo (#fef6dc, borda #f5d77a, texto #b54708), vermelho (#fef3f2 / #c0362c), azul (#eff8ff / #175cd3). Selo de categoria em pílula cinza.\n- Ícones SVG de linha (24x24, traço 1.8). Nenhum emoji.\n- Celular primeiro: largura máxima de 980 px, margem lateral de 16 a 20 px, alvos de toque de pelo menos 34 px, nada de rolagem horizontal.\n\n## Regras\n- Nenhum telefone na página. Valor em dinheiro só para os níveis autorizados e vindo do servidor.\n- Cada número mostrado diz de onde vem; sem dado, mostre o vazio, não um valor de exemplo."</script>
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
@@ -143,7 +200,7 @@ window.sessaoLer = function () {
     var f = document.createElement('div');
     f.id = 'previa-faixa';
     f.setAttribute('role', 'status');
-    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:#5a3fa0;color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--c-5a3fa0);color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
     f.textContent = 'Prévia · ' + (window.parent.portalPrevia.rotulo || s.nivel) +
       ' · o que você enviar aqui é gravado de verdade, com o seu login';
     document.body.insertBefore(f, document.body.firstChild);
@@ -679,28 +736,28 @@ window.msgAcessoNegado = function (nomePagina) {
 <style>
   .sc-wrap{max-width:1180px;margin:0 auto;}
   .sc-topo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
-  .sc-tit{font-family:Georgia,serif;font-size:19px;background:none;border:0;color:var(--tx,#f3ede2);
+  .sc-tit{font-family:Georgia,serif;font-size:19px;background:none;border:0;color:var(--tx,var(--text));
           padding:4px 6px;border-radius:7px;min-width:180px;max-width:340px;}
-  .sc-tit:focus{outline:0;background:#211c15;}
-  .sc-est{font-size:11.5px;color:#8f8672;white-space:nowrap;}
+  .sc-tit:focus{outline:0;background:var(--card);}
+  .sc-est{font-size:11.5px;color:var(--text-3);white-space:nowrap;}
   /* Presença (item C): iniciais de quem tem acesso à folha. */
   .sc-presenca{display:flex;gap:-4px;align-items:center;}
   .sc-presenca[hidden]{display:none;}
-  .sc-pres-b{width:22px;height:22px;border-radius:50%;background:#2a2419;border:1px solid #3a3428;
-            color:#c3baa9;font-size:9px;font-weight:600;display:flex;align-items:center;
+  .sc-pres-b{width:22px;height:22px;border-radius:50%;background:var(--card-2);border:1px solid var(--border);
+            color:var(--text-2);font-size:9px;font-weight:600;display:flex;align-items:center;
             justify-content:center;margin-left:-5px;cursor:default;}
   .sc-pres-b:first-child{margin-left:0;}
-  .sc-pres-b.eu{background:#b89c6e;color:#241a06;border-color:#b89c6e;}
-  .sc-pres-b.mais{background:#16130f;color:#8f8672;}
-  .sc-est.erro{color:#e24b4a;}
+  .sc-pres-b.eu{background:var(--acc);color:var(--acc-txt);border-color:var(--acc);}
+  .sc-pres-b.mais{background:var(--bg);color:var(--text-3);}
+  .sc-est.erro{color:var(--urg-urgente);}
   .sc-acoes{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap;}
-  .sc-b{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#c3baa9;
-        background:#16130f;border:1px solid #3a3428;border-radius:8px;padding:6px 10px;cursor:pointer;}
-  .sc-b:hover{border-color:#5b5340;color:#f3ede2;}
-  .sc-b.pri{background:#b89c6e;border-color:#b89c6e;color:#241a06;font-weight:600;}
+  .sc-b{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);
+        background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;}
+  .sc-b:hover{border-color:var(--border-2);color:var(--text);}
+  .sc-b.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-txt);font-weight:600;}
   .sc-b[disabled]{opacity:.45;cursor:not-allowed;}
-  .sc-palco{display:flex;gap:0;border:1px solid #3a3428;border-radius:12px;overflow:hidden;
-            background:#1b1710;min-height:460px;}
+  .sc-palco{display:flex;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;
+            background:var(--bg);min-height:460px;}
 
   /* Nota da folha — pedido do Rodrigo (2026-08-05): "logo abaixo da página de
      trabalho da sessão ... só rolar pra baixo e vai estar lá de forma simples".
@@ -716,27 +773,27 @@ window.msgAcessoNegado = function (nomePagina) {
      que o modo folha existe pra evitar. */
   .sc-nota{margin-top:14px;}
   .sc-nota-h{display:flex;align-items:baseline;gap:9px;font-size:10px;letter-spacing:.1em;
-             text-transform:uppercase;color:#8f8672;margin-bottom:6px;}
-  .sc-nota-est{font-size:10px;letter-spacing:0;text-transform:none;color:#5f5a4a;}
-  .sc-nota-est.erro{color:#e24b4a;}
+             text-transform:uppercase;color:var(--text-3);margin-bottom:6px;}
+  .sc-nota-est{font-size:10px;letter-spacing:0;text-transform:none;color:var(--text-4);}
+  .sc-nota-est.erro{color:var(--urg-urgente);}
   .sc-nota-tx{display:block;width:100%;box-sizing:border-box;min-height:150px;resize:vertical;
-              background:#16130f;border:1px solid #3a3428;border-radius:12px;padding:12px 14px;
-              color:#f3ede2;font:inherit;font-size:13.5px;line-height:1.65;}
-  .sc-nota-tx::placeholder{color:#5f5a4a;}
-  .sc-nota-tx:focus{outline:none;border-color:#b89c6e;}
+              background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+              color:var(--text);font:inherit;font-size:13.5px;line-height:1.65;}
+  .sc-nota-tx::placeholder{color:var(--text-4);}
+  .sc-nota-tx:focus{outline:none;border-color:var(--acc);}
   body.sc-ff .sc-nota{display:none;}
-  .sc-barra{width:46px;flex:none;background:#211c15;border-right:1px solid #3a3428;
+  .sc-barra{width:46px;flex:none;background:var(--card);border-right:1px solid var(--border);
             display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 0;}
   .sc-t{width:31px;height:31px;border-radius:8px;display:flex;align-items:center;justify-content:center;
-        color:#c3baa9;border:1px solid transparent;background:none;cursor:pointer;}
+        color:var(--text-2);border:1px solid transparent;background:none;cursor:pointer;}
   /* Nome e tecla nascem escondidos: só o modo folha do PC os liga (item 6). */
   .sc-t .rot{display:none;align-items:center;gap:4px;white-space:nowrap;}
-  .sc-t:hover{background:#2a2419;color:#f3ede2;}
-  .sc-t.on{background:#b89c6e;color:#241a06;}
+  .sc-t:hover{background:var(--card-2);color:var(--text);}
+  .sc-t.on{background:var(--acc);color:var(--acc-txt);}
   .sc-t[disabled]{opacity:.3;cursor:not-allowed;}
-  .sc-sep{width:22px;height:1px;background:#3a3428;margin:3px 0;}
-  .sc-cor{width:19px;height:19px;border-radius:50%;border:2px solid #3a3428;cursor:pointer;padding:0;}
-  .sc-cor.on{border-color:#f3ede2;}
+  .sc-sep{width:22px;height:1px;background:var(--border);margin:3px 0;}
+  .sc-cor{width:19px;height:19px;border-radius:50%;border:2px solid var(--border);cursor:pointer;padding:0;}
+  .sc-cor.on{border-color:var(--text);}
   /* A largura vive numa CLASSE, não em style inline: no celular a barra vira
      horizontal e o media query precisa poder soltar esse limite. Preso em
      36 px, a paleta virava uma coluna de 6 linhas e a barra ficava com
@@ -745,8 +802,8 @@ window.msgAcessoNegado = function (nomePagina) {
   /* Espessura: PONTO, não palavra. "fino/médio/grosso" escrito vazava da
      barra de 46 px (medido na página renderizada, não no mockup). */
   .sc-w{width:31px;height:24px;border-radius:6px;border:1px solid transparent;background:none;
-        color:#c3baa9;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
-  .sc-w.on{background:#2a2419;color:#f3ede2;border-color:#3a3428;}
+        color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+  .sc-w.on{background:var(--card-2);color:var(--text);border-color:var(--border);}
   .sc-w i{display:block;border-radius:50%;background:currentColor;}
 
   /* ---------------- K2 (PLANO_CADERNO.md): 5 páginas por sessão ----------------
@@ -754,21 +811,21 @@ window.msgAcessoNegado = function (nomePagina) {
      Fica ANTES de `.sc-barra` (ferramentas) na ordem do flex: página é a
      pergunta "onde estou", ferramenta é "o que uso agora" — a primeira
      pergunta é mais externa que a segunda. */
-  .sc-pgs{width:44px;flex:none;background:#211c15;border-right:1px solid #3a3428;
+  .sc-pgs{width:44px;flex:none;background:var(--card);border-right:1px solid var(--border);
           display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 0;}
-  .sc-pgs-cap{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#8f8672;
+  .sc-pgs-cap{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);
              writing-mode:vertical-rl;transform:rotate(180deg);margin-bottom:1px;}
-  .sc-pgt{width:30px;height:34px;border:1px solid #3a3428;border-radius:7px;background:#16130f;
-         color:#8f8672;font-size:12px;display:flex;flex-direction:column;align-items:center;
+  .sc-pgt{width:30px;height:34px;border:1px solid var(--border);border-radius:7px;background:var(--bg);
+         color:var(--text-3);font-size:12px;display:flex;flex-direction:column;align-items:center;
          justify-content:center;gap:3px;cursor:pointer;padding:0;font-family:inherit;}
-  .sc-pgt:hover{border-color:#5b5340;color:#c3baa9;}
+  .sc-pgt:hover{border-color:var(--border-2);color:var(--text-2);}
   /* A miniatura só existe no modo folha do PC (item 6) — na coluna de 44px
      ou na fita do celular ela não seria legível. */
   .sc-pgt canvas{display:none;}
-  .sc-pgt .pt{width:4px;height:4px;border-radius:50%;background:#5b5340;opacity:.6;}
-  .sc-pgt.tem .pt{background:#b89c6e;opacity:1;}
-  .sc-pgt.on{border-color:#b89c6e;background:#b89c6e;color:#241a06;font-weight:700;}
-  .sc-pgt.on .pt{background:#241a06;}
+  .sc-pgt .pt{width:4px;height:4px;border-radius:50%;background:var(--border-2);opacity:.6;}
+  .sc-pgt.tem .pt{background:var(--acc);opacity:1;}
+  .sc-pgt.on{border-color:var(--acc);background:var(--acc);color:var(--acc-txt);font-weight:700;}
+  .sc-pgt.on .pt{background:var(--acc-txt);}
 
   /* ---------------- Modo folha (v2, 2026-08-05) ----------------
      A queixa era espaço pra desenhar. Medido na página real ANTES de mexer:
@@ -790,7 +847,7 @@ window.msgAcessoNegado = function (nomePagina) {
   body.sc-ff header.topo,
   body.sc-ff #nav-principal,
   body.sc-ff #pr-mini-wrap{display:none;}
-  body.sc-ff #sc-folha-view{position:fixed;inset:0;z-index:60;background:#12100c;
+  body.sc-ff #sc-folha-view{position:fixed;inset:0;z-index:60;background:var(--c-12100c);
                             padding:8px;margin:0;display:flex;flex-direction:column;gap:8px;}
   body.sc-ff .sc-topo{margin-bottom:0;flex:none;}
   /* `min-height:0` é obrigatório num filho de flex-column que precisa
@@ -807,22 +864,22 @@ window.msgAcessoNegado = function (nomePagina) {
      PC não herdar nada. */
   .sc-ctx{display:none;}
   .sc-pgm{display:none;position:absolute;left:50%;transform:translateX(-50%);top:8px;
-          align-items:center;gap:2px;background:rgba(33,28,21,.94);border:1px solid #3a3428;
+          align-items:center;gap:2px;background:rgba(33,28,21,.94);border:1px solid var(--border);
           border-radius:99px;padding:2px 4px;z-index:6;}
-  .sc-pgm button{background:none;border:0;color:#c3baa9;cursor:pointer;padding:4px 7px;
+  .sc-pgm button{background:none;border:0;color:var(--text-2);cursor:pointer;padding:4px 7px;
                  display:flex;align-items:center;}
   .sc-pgm button[disabled]{opacity:.3;}
-  .sc-pgm span{font-size:11px;color:#c3baa9;min-width:26px;text-align:center;
+  .sc-pgm span{font-size:11px;color:var(--text-2);min-width:26px;text-align:center;
                font-variant-numeric:tabular-nums;}
 
   .sc-tela{flex:1;position:relative;min-width:0;}
   .sc-tela canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair;}
   .sc-zoom{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:5px;
-           background:rgba(33,28,21,.92);border:1px solid #3a3428;border-radius:8px;padding:4px 6px;}
-  .sc-zoom button{background:none;border:0;color:#c3baa9;cursor:pointer;padding:2px 5px;font-size:13px;}
-  .sc-zoom span{font-size:10.5px;color:#8f8672;min-width:34px;text-align:center;}
-  .sc-dica{position:absolute;left:10px;top:10px;background:rgba(33,28,21,.94);border:1px solid #3a3428;
-           border-radius:7px;padding:5px 9px;font-size:11px;color:#c3baa9;pointer-events:none;
+           background:rgba(33,28,21,.92);border:1px solid var(--border);border-radius:8px;padding:4px 6px;}
+  .sc-zoom button{background:none;border:0;color:var(--text-2);cursor:pointer;padding:2px 5px;font-size:13px;}
+  .sc-zoom span{font-size:10.5px;color:var(--text-3);min-width:34px;text-align:center;}
+  .sc-dica{position:absolute;left:10px;top:10px;background:rgba(33,28,21,.94);border:1px solid var(--border);
+           border-radius:7px;padding:5px 9px;font-size:11px;color:var(--text-2);pointer-events:none;
            opacity:0;transition:opacity .18s;}
   .sc-dica.on{opacity:1;}
   /* z-index:6 é maior que o das 3 gavetas (.sc-preco/.sc-ideias/.sc-cons, todas
@@ -832,15 +889,15 @@ window.msgAcessoNegado = function (nomePagina) {
      da tabela compacta por baixo. Vale pra QUALQUER `.sc-ed` aberto com uma
      gaveta visível atrás — não só o K4. */
   .sc-ed{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(84%,340px);
-         background:#211c15;border:1px solid #b89c6e;border-radius:11px;padding:12px;z-index:6;}
-  .sc-ed textarea{width:100%;min-height:76px;background:#16130f;border:1px solid #3a3428;border-radius:7px;
-                  color:#f3ede2;font-size:14px;padding:8px;resize:vertical;font-family:Georgia,serif;}
+         background:var(--card);border:1px solid var(--acc);border-radius:11px;padding:12px;z-index:6;}
+  .sc-ed textarea{width:100%;min-height:76px;background:var(--bg);border:1px solid var(--border);border-radius:7px;
+                  color:var(--text);font-size:14px;padding:8px;resize:vertical;font-family:Georgia,serif;}
   .sc-ed .lin{display:flex;gap:7px;margin-top:9px;justify-content:flex-end;}
   .sc-gal{margin-top:16px;position:relative;}
   /* Galeria como TELA (2026-08-04): sem folha aberta em cima, ela deixa de
      ser rodapé e vira o conteúdo — daí o respiro maior e o título em corpo
      de página, não de seção. */
-  .sc-gal-sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8f8672;
+  .sc-gal-sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);
              font-weight:600;margin:18px 0 8px;}
   .sc-gal-sec:first-child{margin-top:0;}
   /* Atalho "continuar": borda dourada porque é a ação provável, não mais uma
@@ -848,48 +905,48 @@ window.msgAcessoNegado = function (nomePagina) {
      [hidden] — por isso a regra explícita logo abaixo (a mesma armadilha do
      `.ac-ok[hidden]` da tela de entrada, terceira vez no projeto). */
   .sc-gal-cont{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
-              background:#211c15;border:1px solid #b89c6e;border-radius:10px;
+              background:var(--card);border:1px solid var(--acc);border-radius:10px;
               padding:10px 12px;cursor:pointer;color:inherit;margin-bottom:4px;font-family:inherit;}
   .sc-gal-cont[hidden]{display:none;}
-  .sc-gal-cont:hover{background:#2a2419;}
+  .sc-gal-cont:hover{background:var(--card-2);}
   .sc-gal-cont .tx{min-width:0;flex:1;}
-  .sc-gal-cont .nm{display:block;font-family:Georgia,serif;font-size:13.5px;color:#f3ede2;
+  .sc-gal-cont .nm{display:block;font-family:Georgia,serif;font-size:13.5px;color:var(--text);
                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sc-gal-cont .qd{display:block;font-size:10.5px;color:#8f8672;margin-top:1px;}
+  .sc-gal-cont .qd{display:block;font-size:10.5px;color:var(--text-3);margin-top:1px;}
   .sc-gal-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px;}
   /* Corpo de página, não de seção: a galeria virou a tela de entrada. */
-  .sc-gal h3{font-family:Georgia,serif;font-size:19px;color:#f3ede2;margin:0;font-weight:500;}
+  .sc-gal h3{font-family:Georgia,serif;font-size:19px;color:var(--text);margin:0;font-weight:500;}
   .sc-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;}
-  .sc-tile{background:#211c15;border:1px solid #3a3428;border-radius:10px;overflow:hidden;
+  .sc-tile{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;
            cursor:pointer;text-align:left;padding:0;color:inherit;}
-  .sc-tile:hover{border-color:#b89c6e;}
-  .sc-tile.atual{border-color:#b89c6e;}
-  .sc-tile .mini{height:82px;background:#1b1710;display:flex;align-items:center;justify-content:center;
-                 color:#4d4636;overflow:hidden;}
+  .sc-tile:hover{border-color:var(--acc);}
+  .sc-tile.atual{border-color:var(--acc);}
+  .sc-tile .mini{height:82px;background:var(--bg);display:flex;align-items:center;justify-content:center;
+                 color:var(--c-4d4636);overflow:hidden;}
   .sc-tile .mini img{width:100%;height:100%;object-fit:cover;display:block;}
   .sc-tile .meta{padding:7px 9px 9px;}
-  .sc-tile .nm{font-family:Georgia,serif;font-size:12.5px;color:#f3ede2;
+  .sc-tile .nm{font-family:Georgia,serif;font-size:12.5px;color:var(--text);
                overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sc-tile .qd{font-size:10px;color:#8f8672;margin-top:2px;}
-  .sc-vazio{font-size:12.5px;color:#8f8672;border:1px dashed #3a3428;border-radius:9px;padding:14px;}
+  .sc-tile .qd{font-size:10px;color:var(--text-3);margin-top:2px;}
+  .sc-vazio{font-size:12.5px;color:var(--text-3);border:1px dashed var(--border);border-radius:9px;padding:14px;}
 
   /* ---------------- K5 (PLANO_CADERNO.md): Caderno ----------------
      Galeria MISTA (folhas soltas + cadernos, ver listaGaleria()) e, dentro
      de um caderno, a galeria de cards das sessões dele. Reusa .sc-tile,
      .sc-vazio, .sc-ed/.sc-conv-* (convite) e .sc-cad-* (campos de texto) já
      existentes — nenhuma família de classe nova pra isso. */
-  .sc-tile.cdn .mini{color:#8f8672;}
+  .sc-tile.cdn .mini{color:var(--text-3);}
   .sc-cdn-view{position:relative;margin-top:16px;}
   .sc-cdn-topo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
   .sc-cdn-titulo{flex:1;min-width:160px;}
-  .sc-cdn-casa{font-size:11px;color:#8f8672;white-space:nowrap;}
-  .sc-cdn-abas{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid #3a3428;margin-bottom:12px;padding-bottom:0;}
-  .sc-cdn-aba{background:none;border:0;border-bottom:2px solid transparent;color:#8f8672;
+  .sc-cdn-casa{font-size:11px;color:var(--text-3);white-space:nowrap;}
+  .sc-cdn-abas{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:12px;padding-bottom:0;}
+  .sc-cdn-aba{background:none;border:0;border-bottom:2px solid transparent;color:var(--text-3);
               font-size:12px;padding:7px 3px;cursor:pointer;margin-bottom:-1px;}
-  .sc-cdn-aba:hover{color:#c3baa9;}
-  .sc-cdn-aba.on{color:#f3ede2;border-color:#b89c6e;}
+  .sc-cdn-aba:hover{color:var(--text-2);}
+  .sc-cdn-aba.on{color:var(--text);border-color:var(--acc);}
   .sc-cdn-aba.futuro{opacity:.45;cursor:default;}
-  .sc-cdn-aba.futuro:hover{color:#8f8672;}
+  .sc-cdn-aba.futuro:hover{color:var(--text-3);}
   .sc-cdn-sessoes-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
   .sc-cdn-sel{width:auto;max-width:240px;}
   .sc-cdn-conceito{width:100%;min-height:120px;resize:vertical;}
@@ -898,12 +955,12 @@ window.msgAcessoNegado = function (nomePagina) {
      .sc-id-* (gaveta Ideias, E5) — mesmo vocabulário visual de "do livro"
      pra não criar um segundo símbolo de "isto é fato, não invenção". */
   .sc-prat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
-  .sc-prat-sec{background:#16130f;border:1px solid #3a3428;border-radius:10px;
+  .sc-prat-sec{background:var(--bg);border:1px solid var(--border);border-radius:10px;
               padding:11px 12px;min-width:0;}
-  .sc-prat-h{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8f8672;
+  .sc-prat-h{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text-3);
             text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
   .sc-prat-corpo{max-height:280px;overflow-y:auto;}
-  .sc-prat-link{display:inline-block;margin-top:8px;font-size:11px;color:#b89c6e;}
+  .sc-prat-link{display:inline-block;margin-top:8px;font-size:11px;color:var(--acc);}
   @media (max-width:640px){ .sc-prat{grid-template-columns:1fr;} }
   /* K8 — as duas faixas largas embaixo do grid de 3: Livros (fato) e a parte
      GERADA (sugestão). Largas porque as duas são texto corrido, não lista
@@ -913,13 +970,13 @@ window.msgAcessoNegado = function (nomePagina) {
   /* Estante: a lista curada à mão (BIBLIO_LIVROS), em colunas que quebram
      sozinhas — 13 títulos em coluna única seriam um paredão. */
   .sc-liv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px 14px;}
-  .sc-liv-i{font-size:11.5px;color:#c3baa9;padding:3px 0;}
-  .sc-liv-i b{color:#f3ede2;font-weight:600;}
-  .sc-liv-i .aa{color:#8f8672;}
-  .sc-liv-i.fonte b{color:#b89c6e;}
+  .sc-liv-i{font-size:11.5px;color:var(--text-2);padding:3px 0;}
+  .sc-liv-i b{color:var(--text);font-weight:600;}
+  .sc-liv-i .aa{color:var(--text-3);}
+  .sc-liv-i.fonte b{color:var(--acc);}
   .sc-prat-gerar{max-width:280px;}
-  .sc-prat-hist{font-size:11.5px;color:#c3baa9;line-height:1.55;margin-top:2px;}
-  .sc-prat-conf{display:block;font-size:10.5px;color:#c9a35c;line-height:1.45;margin-top:3px;}
+  .sc-prat-hist{font-size:11.5px;color:var(--text-2);line-height:1.55;margin-top:2px;}
+  .sc-prat-conf{display:block;font-size:10.5px;color:var(--c-c9a35c);line-height:1.45;margin-top:3px;}
 
   /* K6 (PLANO_CADERNO.md) — Orçamento do caderno. Reusa .sc-cons-ru,
      .sc-cons-parcial e .sc-cons-tb do K3 de PROPÓSITO: "sem preço" tem que
@@ -929,54 +986,54 @@ window.msgAcessoNegado = function (nomePagina) {
      O que nasce aqui é só o que não existia (barra de teto, ritmo, detalhe
      expansível). */
   .sc-orc-sec{margin-top:20px;}
-  .sc-orc-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8f8672;
+  .sc-orc-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);
            font-weight:600;margin-bottom:8px;}
-  .sc-orc-barra{height:10px;background:#16130f;border:1px solid #3a3428;border-radius:999px;
+  .sc-orc-barra{height:10px;background:var(--bg);border:1px solid var(--border);border-radius:999px;
                overflow:hidden;}
-  .sc-orc-barra i{display:block;height:100%;background:#9fe1cb;}
-  .sc-orc-barra.perto i{background:#e0b05c;}
-  .sc-orc-barra.estourou i{background:#e24b4a;}
+  .sc-orc-barra i{display:block;height:100%;background:var(--verde);}
+  .sc-orc-barra.perto i{background:var(--amarelo);}
+  .sc-orc-barra.estourou i{background:var(--urg-urgente);}
   .sc-orc-barra-l{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;
-                 color:#8f8672;margin-top:4px;font-variant-numeric:tabular-nums;}
-  .sc-orc-nota{font-size:11px;color:#8f8672;line-height:1.55;margin-top:7px;}
-  .sc-orc-nota b{color:#c3baa9;}
+                 color:var(--text-3);margin-top:4px;font-variant-numeric:tabular-nums;}
+  .sc-orc-nota{font-size:11px;color:var(--text-3);line-height:1.55;margin-top:7px;}
+  .sc-orc-nota b{color:var(--text-2);}
   .sc-orc-ritmo{display:flex;align-items:flex-end;gap:8px;height:104px;}
   .sc-orc-ritmo > div{flex:1;min-width:0;display:flex;flex-direction:column;
                      justify-content:flex-end;align-items:center;gap:3px;}
-  .sc-orc-bar{width:100%;background:#2b2519;border-radius:4px 4px 0 0;min-height:3px;}
-  .sc-orc-bar.tem{background:#b89c6e;}
-  .sc-orc-val{font-size:9.5px;color:#c3baa9;font-variant-numeric:tabular-nums;white-space:nowrap;}
-  .sc-orc-rot{font-size:9px;color:#5f5a4a;white-space:nowrap;}
+  .sc-orc-bar{width:100%;background:var(--card-2);border-radius:4px 4px 0 0;min-height:3px;}
+  .sc-orc-bar.tem{background:var(--acc);}
+  .sc-orc-val{font-size:9.5px;color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .sc-orc-rot{font-size:9px;color:var(--text-4);white-space:nowrap;}
   .sc-orc-exp{cursor:pointer;}
-  .sc-orc-exp:hover td b{color:#b89c6e;}
-  .sc-orc-seta{display:inline-block;width:10px;color:#5f5a4a;}
-  .sc-orc-det > td{background:#16130f;padding:0 0 9px 0;}
+  .sc-orc-exp:hover td b{color:var(--acc);}
+  .sc-orc-seta{display:inline-block;width:10px;color:var(--text-4);}
+  .sc-orc-det > td{background:var(--bg);padding:0 0 9px 0;}
   .sc-orc-det table{width:100%;border-collapse:collapse;font-size:10.5px;}
   .sc-orc-det th{text-align:left;font-size:9px;letter-spacing:.05em;text-transform:uppercase;
-                color:#5f5a4a;padding:5px 6px;font-weight:600;}
-  .sc-orc-det td{padding:4px 6px;border-bottom:1px solid #211c15;color:#c3baa9;}
+                color:var(--text-4);padding:5px 6px;font-weight:600;}
+  .sc-orc-det td{padding:4px 6px;border-bottom:1px solid var(--card);color:var(--text-2);}
   .sc-orc-det td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
-  .sc-orc-det td.sem{color:#5f5a4a;}
+  .sc-orc-det td.sem{color:var(--text-4);}
   /* `inline-block` não é enfeite: como INLINE puro, o selo era partido pelo
      `.sc-cons-sub` (display:block) que vem logo depois na mesma célula, e o
      pedaço órfão virava um borrão verde de 8px na linha de baixo — medido na
      página renderizada a 375px, invisível em qualquer harness de estrutura. */
   .sc-orc-tag{display:inline-block;vertical-align:middle;font-size:9px;letter-spacing:.05em;
-             text-transform:uppercase;border-radius:999px;padding:1px 7px;background:#2b2519;
-             color:#8f8672;margin-left:6px;white-space:nowrap;}
-  .sc-orc-tag.ficha{background:#163527;color:#9fe1cb;}
+             text-transform:uppercase;border-radius:999px;padding:1px 7px;background:var(--card-2);
+             color:var(--text-3);margin-left:6px;white-space:nowrap;}
+  .sc-orc-tag.ficha{background:var(--verde-bg);color:var(--verde);}
   @media (max-width:640px){
     .sc-orc-ritmo{height:86px;gap:5px;}
     .sc-orc-val{font-size:8.5px;}
     .sc-orc-tb .col-lan{display:none;}
   }
-  .sc-gate{background:#211c15;border:1px solid #3a3428;border-radius:11px;padding:16px;
-           font-size:13px;color:#c3baa9;line-height:1.6;}
-  .sc-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#211c15;
-            border:1px solid #3a3428;border-radius:9px;padding:9px 14px;font-size:12.5px;
-            color:#f3ede2;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;}
+  .sc-gate{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:16px;
+           font-size:13px;color:var(--text-2);line-height:1.6;}
+  .sc-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--card);
+            border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-size:12.5px;
+            color:var(--text);z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;}
   .sc-toast.on{opacity:1;}
-  .sc-toast.ruim{border-color:#e24b4a;color:#e24b4a;}
+  .sc-toast.ruim{border-color:var(--urg-urgente);color:var(--urg-urgente);}
 
   /* ---------------- E2: cartão de receita + gaveta Preço ---------------- */
   /* Editor do cartão — mesma família de .sc-ed (texto), variante maior.
@@ -984,33 +1041,33 @@ window.msgAcessoNegado = function (nomePagina) {
      receita de hoje (NOVA_RECEITA_JS) — mesmos campos, mesma unidade de
      medida, pra "virar ficha" (E3) não ter que traduzir nada. */
   .sc-ed.sc-ed-cartao{width:min(92%,420px);max-height:82%;overflow-y:auto;text-align:left;}
-  .sc-cad-lb{font-size:10.5px;color:#8f8672;display:block;margin:9px 0 3px;}
+  .sc-cad-lb{font-size:10.5px;color:var(--text-3);display:block;margin:9px 0 3px;}
   .sc-cad-lb:first-child{margin-top:0;}
-  .sc-cad-in{width:100%;background:#16130f;border:1px solid #3a3428;border-radius:7px;
-             color:#f3ede2;font-size:13px;padding:7px 9px;}
-  .sc-cad-in:focus{outline:0;border-color:#b89c6e;}
-  .sc-cad-nota{font-size:10.5px;color:#8f8672;margin-top:3px;line-height:1.4;}
+  .sc-cad-in{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;
+             color:var(--text);font-size:13px;padding:7px 9px;}
+  .sc-cad-in:focus{outline:0;border-color:var(--acc);}
+  .sc-cad-nota{font-size:10.5px;color:var(--text-3);margin-top:3px;line-height:1.4;}
   .sc-cad-2{display:grid;grid-template-columns:1fr 90px;gap:8px;}
   .sc-cad-ins-h{display:grid;grid-template-columns:1fr 52px 58px 62px 22px;gap:5px;
-               font-size:9.5px;color:#5f5a4a;text-transform:uppercase;letter-spacing:.04em;
+               font-size:9.5px;color:var(--text-4);text-transform:uppercase;letter-spacing:.04em;
                margin-top:10px;padding:0 2px;}
   .sc-cad-ins-row{display:grid;grid-template-columns:1fr 52px 58px 62px 22px;gap:5px;
                   margin-top:4px;align-items:center;}
-  .sc-cad-ins-row input,.sc-cad-ins-row select{width:100%;background:#16130f;border:1px solid #3a3428;
-    border-radius:6px;color:#f3ede2;font-size:12px;padding:5px 6px;}
-  .sc-cad-del{background:none;border:0;color:#8f8672;cursor:pointer;font-size:15px;padding:0;}
-  .sc-cad-del:hover{color:#e24b4a;}
-  .sc-cad-add{background:none;border:1px dashed #3a3428;border-radius:6px;color:#8f8672;
+  .sc-cad-ins-row input,.sc-cad-ins-row select{width:100%;background:var(--bg);border:1px solid var(--border);
+    border-radius:6px;color:var(--text);font-size:12px;padding:5px 6px;}
+  .sc-cad-del{background:none;border:0;color:var(--text-3);cursor:pointer;font-size:15px;padding:0;}
+  .sc-cad-del:hover{color:var(--urg-urgente);}
+  .sc-cad-add{background:none;border:1px dashed var(--border);border-radius:6px;color:var(--text-3);
              font-size:11px;padding:5px 8px;margin-top:7px;cursor:pointer;width:100%;}
-  .sc-cad-add:hover{border-color:#5b5340;color:#c3baa9;}
-  .sc-cad-resumo{margin-top:12px;padding-top:10px;border-top:1px solid #3a3428;
-                display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11.5px;color:#c3baa9;}
-  .sc-cad-resumo b{color:#f3ede2;font-variant-numeric:tabular-nums;}
+  .sc-cad-add:hover{border-color:var(--border-2);color:var(--text-2);}
+  .sc-cad-resumo{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);
+                display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--text-2);}
+  .sc-cad-resumo b{color:var(--text);font-variant-numeric:tabular-nums;}
   .sc-farol{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
            border-radius:999px;padding:2px 8px;}
-  .sc-farol.ok{background:#163527;color:#9fe1cb;}
-  .sc-farol.warn{background:#3a2f14;color:#e0b05c;}
-  .sc-farol.bad{background:#3a1c1a;color:#e24b4a;}
+  .sc-farol.ok{background:var(--verde-bg);color:var(--verde);}
+  .sc-farol.warn{background:var(--amarelo-bg);color:var(--amarelo);}
+  .sc-farol.bad{background:var(--c-3a1c1a);color:var(--urg-urgente);}
 
   /* ---------------- K9: contexto do bar por insumo ----------------
      Selo tem/está-em-outra-casa/não-existe, mesmas cores e rótulos do
@@ -1032,23 +1089,23 @@ window.msgAcessoNegado = function (nomePagina) {
      são ACIONÁVEIS (pego agora / peço transferência) e são a minoria. Então
      eles ficam coloridos e o "sem estoque" vira discreto — o vermelho fica
      guardado pra quando importa. A informação continua toda lá. */
-  .sc-cad-ins-fl.tem{background:#163527;color:#9fe1cb;}
-  .sc-cad-ins-fl.nao{background:none;color:#5f5a4a;padding-left:0;}
-  .sc-cad-ins-fl.outra{background:#3a2f14;color:#e0b05c;}
+  .sc-cad-ins-fl.tem{background:var(--verde-bg);color:var(--verde);}
+  .sc-cad-ins-fl.nao{background:none;color:var(--text-4);padding-left:0;}
+  .sc-cad-ins-fl.outra{background:var(--amarelo-bg);color:var(--amarelo);}
   .sc-preco-lin-fl{font-size:9px;padding:0 5px;border-radius:99px;white-space:nowrap;
                    line-height:1.5;flex:none;}
   /* Campo de custo de um produto que existe no B.D.1 mas está sem custo
      cadastrado: borda âmbar até alguém digitar. Sem isso o campo vazio
      parecia preenchido e o custo do drink saía menor do que é. */
-  .sc-falta-custo{border-color:#e0b05c !important;background:#2a2113 !important;}
+  .sc-falta-custo{border-color:var(--amarelo) !important;background:var(--card-2) !important;}
   /* Peso do insumo no custo + origem do preço. Ocupam a linha inteira do
      grid (`1/-1`) pra não mexer no `grid-template-columns` das 5 colunas —
      mesmo truque do selo de estoque logo abaixo. */
   .sc-cad-peso{grid-column:1/-1;display:flex;align-items:center;gap:6px;height:9px;margin:-2px 0 2px;}
   .sc-cad-peso[hidden]{display:none;}
-  .sc-cad-peso i{display:block;height:4px;border-radius:99px;background:#b89c6e;min-width:2px;}
-  .sc-cad-peso span{font-size:9px;color:#8f8672;font-variant-numeric:tabular-nums;}
-  .sc-cad-org{grid-column:1/-1;font-size:9px;color:#5f5a4a;margin:-2px 0 2px;}
+  .sc-cad-peso i{display:block;height:4px;border-radius:99px;background:var(--acc);min-width:2px;}
+  .sc-cad-peso span{font-size:9px;color:var(--text-3);font-variant-numeric:tabular-nums;}
+  .sc-cad-org{grid-column:1/-1;font-size:9px;color:var(--text-4);margin:-2px 0 2px;}
   .sc-cad-org[hidden]{display:none;}
   /* Conselho do farol: só existe quando o CMV sai da faixa. */
   /* `sticky` e não `fixed`: o rodapé gruda no fim do MODAL, não da janela —
@@ -1056,35 +1113,35 @@ window.msgAcessoNegado = function (nomePagina) {
      tela. O fundo precisa ser opaco, senão a lista rola por baixo e some
      atrás do texto. A margem negativa e o padding compensam o padding do
      próprio modal, pra faixa encostar nas bordas. */
-  .sc-cad-pe{position:sticky;bottom:0;background:#211c15;margin:0 -12px -12px;
-            padding:2px 12px 10px;border-top:1px solid #3a3428;}
-  .sc-cad-conselho{margin-top:8px;background:#2a2113;border:1px solid #3a3428;border-radius:8px;
+  .sc-cad-pe{position:sticky;bottom:0;background:var(--card);margin:0 -12px -12px;
+            padding:2px 12px 10px;border-top:1px solid var(--border);}
+  .sc-cad-conselho{margin-top:8px;background:var(--card-2);border:1px solid var(--border);border-radius:8px;
                   padding:8px 10px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
   .sc-cad-conselho[hidden]{display:none;}
-  .sc-cad-cons-tx{font-size:11.5px;color:#e0b05c;line-height:1.5;}
-  .sc-cad-cons-tx b{color:#f3ede2;}
-  .sc-cad-cons-chip{font-size:11px;color:#b89c6e;background:#241d10;border:1px solid #b89c6e;
+  .sc-cad-cons-tx{font-size:11.5px;color:var(--amarelo);line-height:1.5;}
+  .sc-cad-cons-tx b{color:var(--text);}
+  .sc-cad-cons-chip{font-size:11px;color:var(--acc);background:var(--c-241d10);border:1px solid var(--acc);
                    border-radius:99px;padding:4px 11px;cursor:pointer;font-family:inherit;}
-  .sc-cad-cons-chip:hover{background:#2f2614;color:#f3ede2;}
+  .sc-cad-cons-chip:hover{background:var(--c-2f2614);color:var(--text);}
   /* Estado inicial da gaveta Ideias: promessa + exemplos clicáveis. */
-  .sc-id-promessa{color:#c3baa9;margin-bottom:8px;}
-  .sc-id-bullet{margin-bottom:6px;padding-left:9px;border-left:2px solid #3a3428;line-height:1.5;}
-  .sc-id-bullet b{color:#f3ede2;font-weight:600;}
+  .sc-id-promessa{color:var(--text-2);margin-bottom:8px;}
+  .sc-id-bullet{margin-bottom:6px;padding-left:9px;border-left:2px solid var(--border);line-height:1.5;}
+  .sc-id-bullet b{color:var(--text);font-weight:600;}
   .sc-id-ex{margin-top:10px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;}
-  .sc-id-chip{font-size:11px;color:#b89c6e;background:#241d10;border:1px solid #3a3428;
+  .sc-id-chip{font-size:11px;color:var(--acc);background:var(--c-241d10);border:1px solid var(--border);
              border-radius:99px;padding:3px 9px;cursor:pointer;font-family:inherit;}
-  .sc-id-chip:hover{border-color:#b89c6e;color:#f3ede2;}
+  .sc-id-chip:hover{border-color:var(--acc);color:var(--text);}
   /* Mesma inversão do modal: o comum fica quieto, o acionável salta. */
-  .sc-preco-lin-fl.tem{background:#163527;color:#9fe1cb;}
-  .sc-preco-lin-fl.nao{background:none;color:#5f5a4a;padding:0;}
-  .sc-preco-lin-fl.outra{background:#3a2f14;color:#e0b05c;}
+  .sc-preco-lin-fl.tem{background:var(--verde-bg);color:var(--verde);}
+  .sc-preco-lin-fl.nao{background:none;color:var(--text-4);padding:0;}
+  .sc-preco-lin-fl.outra{background:var(--amarelo-bg);color:var(--amarelo);}
 
   /* Gaveta Preço — lingueta docada na borda direita de `.sc-tela`. Fechada,
      `right` deixa só a lingueta (26px) visível; puxar desliza o resto.
      `.sc-palco{overflow:hidden}` corta o excesso sozinho — não precisa de
      lógica extra pra "esconder". */
   .sc-preco{position:absolute;top:10px;bottom:10px;right:-204px;width:230px;
-           background:#211c15;border:1px solid #3a3428;border-radius:10px 0 0 10px;
+           background:var(--card);border:1px solid var(--border);border-radius:10px 0 0 10px;
            transition:right .18s;display:flex;flex-direction:column;z-index:5;}
   .sc-preco.on{right:0;}
 
@@ -1117,24 +1174,24 @@ window.msgAcessoNegado = function (nomePagina) {
     body.sc-ff .sc-palco{flex-direction:column;}
     body.sc-ff .sc-barra{width:auto;flex-direction:row;flex-wrap:wrap;align-items:center;
                          justify-content:flex-start;gap:3px;padding:6px 8px;
-                         border-right:0;border-bottom:1px solid #3a3428;}
+                         border-right:0;border-bottom:1px solid var(--border);}
     body.sc-ff .sc-barra .sc-t{width:auto;height:30px;padding:0 9px;gap:6px;font-size:11.5px;
-                               color:#c3baa9;font-family:inherit;}
+                               color:var(--text-2);font-family:inherit;}
     body.sc-ff .sc-barra .sc-t .rot{display:inline;}
-    body.sc-ff .sc-barra .sc-t .tec{font-size:9px;color:#8f8672;border:1px solid #3a3428;
+    body.sc-ff .sc-barra .sc-t .tec{font-size:9px;color:var(--text-3);border:1px solid var(--border);
                                     border-radius:4px;padding:0 3px;margin-left:1px;}
-    body.sc-ff .sc-barra .sc-t.on .tec{color:#241a06;border-color:rgba(36,26,6,.35);}
+    body.sc-ff .sc-barra .sc-t.on .tec{color:var(--acc-txt);border-color:rgba(36,26,6,.35);}
     body.sc-ff .sc-sep{width:1px;height:20px;margin:0 5px;}
     body.sc-ff .sc-cores{max-width:none;flex-wrap:nowrap;}
     /* O trilho de páginas sai da lateral e vira fita horizontal com
        miniatura — a coluna de 44px não comporta uma miniatura legível. */
     body.sc-ff .sc-pgs{width:auto;flex-direction:row;border-right:0;
-                       border-bottom:1px solid #3a3428;padding:6px 8px;justify-content:flex-start;}
+                       border-bottom:1px solid var(--border);padding:6px 8px;justify-content:flex-start;}
     body.sc-ff .sc-pgs-cap{writing-mode:horizontal-tb;transform:none;margin:0 6px 0 0;
                            align-self:center;}
     body.sc-ff .sc-pgt{width:46px;height:34px;}
     body.sc-ff .sc-pgt canvas{display:block;width:38px;height:22px;border-radius:3px;
-                              background:#16130f;}
+                              background:var(--bg);}
     body.sc-ff .sc-pgt .pt{display:none;}
     body.sc-ff .sc-pgt .nm{font-size:9px;line-height:1;}
 
@@ -1143,7 +1200,7 @@ window.msgAcessoNegado = function (nomePagina) {
        classe; docado, ela não deve mover mais nada. */
     body.sc-ff .sc-preco,
     body.sc-ff .sc-preco.on{right:-344px;width:330px;border-radius:10px;
-                            border-right:1px solid #3a3428;transition:none;}
+                            border-right:1px solid var(--border);transition:none;}
     body.sc-ff .sc-preco-tab{display:none;}
     /* Ideias e Consumo param ANTES do painel docado (344px), não sobre ele.
        Com `right:0` elas cobriam o preço inteiro — e o ponto de docar era
@@ -1154,59 +1211,59 @@ window.msgAcessoNegado = function (nomePagina) {
     body.sc-ff .sc-cons{right:calc(344px - 204px - 26px);}
   }
   .sc-preco-tab{position:absolute;left:-27px;top:14px;width:27px;height:92px;
-               background:#211c15;border:1px solid #3a3428;border-right:0;
-               border-radius:8px 0 0 8px;color:#c3baa9;font-size:10.5px;letter-spacing:.06em;
+               background:var(--card);border:1px solid var(--border);border-right:0;
+               border-radius:8px 0 0 8px;color:var(--text-2);font-size:10.5px;letter-spacing:.06em;
                display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
                cursor:pointer;padding:0;writing-mode:vertical-rl;}
-  .sc-preco-tab:hover{color:#f3ede2;}
+  .sc-preco-tab:hover{color:var(--text);}
   /* ---------------- precificação v2 (itens 7-10) ---------------- */
   .sc-par{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 5px;}
   .sc-par-c label{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;
-                 color:#8f8672;margin-bottom:3px;}
-  .sc-par-in{display:flex;align-items:center;gap:4px;background:#16130f;border:1px solid #3a3428;
+                 color:var(--text-3);margin-bottom:3px;}
+  .sc-par-in{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);
             border-radius:8px;padding:5px 8px;}
-  .sc-par-in span{font-size:11px;color:#8f8672;flex:none;}
-  .sc-par-in input{background:none;border:0;color:#f3ede2;font-size:16px;width:100%;min-width:0;
+  .sc-par-in span{font-size:11px;color:var(--text-3);flex:none;}
+  .sc-par-in input{background:none;border:0;color:var(--text);font-size:16px;width:100%;min-width:0;
                   padding:0;font-variant-numeric:tabular-nums;font-family:inherit;}
   .sc-par-in input:focus{outline:0;}
-  .sc-par-in:focus-within{border-color:#b89c6e;}
-  .sc-par-nota{font-size:10.5px;color:#8f8672;margin-bottom:10px;display:flex;
+  .sc-par-in:focus-within{border-color:var(--acc);}
+  .sc-par-nota{font-size:10.5px;color:var(--text-3);margin-bottom:10px;display:flex;
               align-items:center;gap:6px;}
   .sc-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px;}
-  .sc-chip{font-size:12px;color:#c9c1ae;background:#1b1813;border:1px solid #332d22;
+  .sc-chip{font-size:12px;color:var(--c-c9c1ae);background:var(--c-1b1813);border:1px solid var(--c-332d22);
           border-radius:99px;padding:4px 10px;cursor:pointer;font-family:inherit;
           display:flex;align-items:baseline;gap:5px;font-variant-numeric:tabular-nums;}
-  .sc-chip i{font-style:normal;font-size:9.5px;color:#8f8672;}
-  .sc-chip.on{border-color:#b89c6e;color:#f3ede2;background:#241d10;}
-  .sc-chip.ok i{color:#9fe1cb;} .sc-chip.warn i{color:#e0b05c;} .sc-chip.bad i{color:#e24b4a;}
+  .sc-chip i{font-style:normal;font-size:9.5px;color:var(--text-3);}
+  .sc-chip.on{border-color:var(--acc);color:var(--text);background:var(--c-241d10);}
+  .sc-chip.ok i{color:var(--verde);} .sc-chip.warn i{color:var(--amarelo);} .sc-chip.bad i{color:var(--urg-urgente);}
   /* Tabela de cenários: rola por dentro em vez de esticar o painel, senão a
      4ª coluna cairia fora dos 330px. */
   .sc-cen-wrap{overflow-x:auto;}
   .sc-cen{width:100%;border-collapse:collapse;font-size:11.5px;}
-  .sc-cen th{font-weight:400;color:#8f8672;font-size:9.5px;letter-spacing:.06em;
+  .sc-cen th{font-weight:400;color:var(--text-3);font-size:9.5px;letter-spacing:.06em;
             text-transform:uppercase;text-align:left;padding:0 0 4px;}
-  .sc-cen td{padding:5px 0;border-top:1px solid #241f18;color:#c9c1ae;}
+  .sc-cen td{padding:5px 0;border-top:1px solid var(--c-241f18);color:var(--c-c9c1ae);}
   .sc-cen .num{text-align:right;padding-left:8px;font-variant-numeric:tabular-nums;}
-  .sc-cen .forte{color:#f3ede2;font-size:13px;}
+  .sc-cen .forte{color:var(--text);font-size:13px;}
   .sc-cen tbody tr{cursor:pointer;}
-  .sc-cen tbody tr:hover td{color:#f3ede2;}
-  .sc-cen tr.on td{background:#201a11;}
-  .sc-cen-mk{display:inline-block;width:5px;height:5px;border-radius:50%;background:#b89c6e;
+  .sc-cen tbody tr:hover td{color:var(--text);}
+  .sc-cen tr.on td{background:var(--c-201a11);}
+  .sc-cen-mk{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--acc);
             margin-right:5px;vertical-align:middle;}
   .sc-cen-nota{margin-top:5px;}
   /* Selo "parcial" ENCOSTADO no número (item 10), não numa linha solta. */
-  .sc-parcial{font-size:9px;color:#e0b05c;background:#3a2f14;border-radius:99px;
+  .sc-parcial{font-size:9px;color:var(--amarelo);background:var(--amarelo-bg);border-radius:99px;
              padding:1px 7px;margin-left:6px;white-space:nowrap;cursor:help;}
-  .sc-falta{color:#e0b05c;}
+  .sc-falta{color:var(--amarelo);}
 
   .sc-preco-corpo{flex:1;overflow-y:auto;padding:12px 13px;min-width:0;}
-  .sc-preco-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8f8672;
+  .sc-preco-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);
              font-weight:600;margin-bottom:10px;}
-  .sc-preco-vazio{font-size:11.5px;color:#8f8672;line-height:1.6;}
-  .sc-preco-nome{font-family:Georgia,serif;font-size:14px;color:#f3ede2;margin-bottom:2px;}
-  .sc-preco-copo{font-size:10.5px;color:#8f8672;margin-bottom:8px;}
+  .sc-preco-vazio{font-size:11.5px;color:var(--text-3);line-height:1.6;}
+  .sc-preco-nome{font-family:Georgia,serif;font-size:14px;color:var(--text);margin-bottom:2px;}
+  .sc-preco-copo{font-size:10.5px;color:var(--text-3);margin-bottom:8px;}
   .sc-preco-lin{display:flex;align-items:center;justify-content:space-between;gap:6px;
-               font-size:11px;color:#c3baa9;padding:3px 0;border-bottom:1px dashed #2f2819;}
+               font-size:11px;color:var(--text-2);padding:3px 0;border-bottom:1px dashed var(--border);}
   /* K9: nome trunca com reticências em vez de quebrar linha — a gaveta é
      estreita (230px) e as OUTRAS gavetas (Ideias, e a de Consumo do K3) são
      abas fixas dockadas na MESMA borda direita, em posição vertical fixa;
@@ -1217,94 +1274,94 @@ window.msgAcessoNegado = function (nomePagina) {
      sempre com a MESMA altura de antes do K9 evita a colisão. */
   .sc-preco-lin span:first-child{flex:1 1 auto;min-width:0;overflow:hidden;
                                  text-overflow:ellipsis;white-space:nowrap;}
-  .sc-preco-lin span:last-child{font-variant-numeric:tabular-nums;color:#f3ede2;white-space:nowrap;flex:none;}
-  .sc-preco-lin .sc-sem{color:#5f5a4a;}
+  .sc-preco-lin span:last-child{font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;flex:none;}
+  .sc-preco-lin .sc-sem{color:var(--text-4);}
   .sc-preco-tot{display:flex;justify-content:space-between;align-items:center;margin-top:9px;
-               padding-top:8px;border-top:1px solid #3a3428;}
-  .sc-preco-tot b{font-size:15px;font-variant-numeric:tabular-nums;color:#f3ede2;}
-  .sc-preco-mini{font-size:10.5px;color:#8f8672;display:flex;justify-content:space-between;padding:2px 0;}
+               padding-top:8px;border-top:1px solid var(--border);}
+  .sc-preco-tot b{font-size:15px;font-variant-numeric:tabular-nums;color:var(--text);}
+  .sc-preco-mini{font-size:10.5px;color:var(--text-3);display:flex;justify-content:space-between;padding:2px 0;}
   .sc-preco-editar{width:100%;margin-top:10px;}
   .sc-preco-virar{width:100%;margin-top:7px;}
 
   /* ---------------- E3: virar ficha técnica ---------------- */
   .sc-vf-chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 4px;}
-  .sc-vf-chip{font-size:11.5px;color:#c3baa9;background:#16130f;border:1px solid #3a3428;
+  .sc-vf-chip{font-size:11.5px;color:var(--text-2);background:var(--bg);border:1px solid var(--border);
              border-radius:7px;padding:5px 10px;cursor:pointer;}
-  .sc-vf-chip.on{background:#b89c6e;border-color:#b89c6e;color:#241a06;font-weight:600;}
+  .sc-vf-chip.on{background:var(--acc);border-color:var(--acc);color:var(--acc-txt);font-weight:600;}
   .sc-vf-match{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
               border-radius:50%;font-size:11px;font-weight:700;}
-  .sc-vf-match.ok{background:#163527;color:#9fe1cb;}
-  .sc-vf-match.warn{background:#3a2f14;color:#e0b05c;}
+  .sc-vf-match.ok{background:var(--verde-bg);color:var(--verde);}
+  .sc-vf-match.warn{background:var(--amarelo-bg);color:var(--amarelo);}
 
   /* ---------------- E4: até 5 cenários ---------------- */
   .sc-vf-chip-add{border-style:dashed;}
   .sc-vf-chip-cen{padding:0;display:inline-flex;align-items:stretch;}
   .sc-vf-chip-cen .nm{padding:5px 8px;}
-  .sc-vf-chip-cen .rm{padding:5px 7px;border:0;background:none;border-left:1px solid #3a3428;
+  .sc-vf-chip-cen .rm{padding:5px 7px;border:0;background:none;border-left:1px solid var(--border);
                       color:inherit;font-size:12px;line-height:1;cursor:pointer;}
-  .sc-vf-chip-cen .rm:hover{color:#e24b4a;}
+  .sc-vf-chip-cen .rm:hover{color:var(--urg-urgente);}
   .sc-vf-chip-cen.on .rm{border-left-color:rgba(36,26,6,.3);}
   /* Comparação na Gaveta Preço: pilha vertical, não colunas lado a lado — a
      gaveta tem ~200-230px de largura, e 5 colunas com nome+valor+farol não
      caberiam legíveis. Cada linha já deixa comparar de relance. */
   .sc-preco-cen{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;padding-bottom:10px;
-               border-bottom:1px solid #3a3428;}
-  .sc-preco-cen-i{display:flex;align-items:center;gap:8px;width:100%;background:#16130f;
-                  border:1px solid #3a3428;border-radius:7px;padding:6px 8px;cursor:pointer;
-                  color:#c3baa9;font-size:11px;text-align:left;}
-  .sc-preco-cen-i.on{border-color:#b89c6e;}
+               border-bottom:1px solid var(--border);}
+  .sc-preco-cen-i{display:flex;align-items:center;gap:8px;width:100%;background:var(--bg);
+                  border:1px solid var(--border);border-radius:7px;padding:6px 8px;cursor:pointer;
+                  color:var(--text-2);font-size:11px;text-align:left;}
+  .sc-preco-cen-i.on{border-color:var(--acc);}
   .sc-preco-cen-i .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sc-preco-cen-i .vl{font-variant-numeric:tabular-nums;color:#f3ede2;white-space:nowrap;}
+  .sc-preco-cen-i .vl{font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;}
 
   /* ---------------- E5: gaveta Ideias (fato, sem IA) ---------------- */
   .sc-ideias{position:absolute;top:112px;bottom:10px;right:-204px;width:230px;
-            background:#211c15;border:1px solid #3a3428;border-radius:10px 0 0 10px;
+            background:var(--card);border:1px solid var(--border);border-radius:10px 0 0 10px;
             transition:right .18s;display:flex;flex-direction:column;z-index:5;}
   .sc-ideias.on{right:0;}
   .sc-ideias-tab{position:absolute;left:-27px;top:14px;width:27px;height:92px;
-                background:#211c15;border:1px solid #3a3428;border-right:0;
-                border-radius:8px 0 0 8px;color:#c3baa9;font-size:10.5px;letter-spacing:.06em;
+                background:var(--card);border:1px solid var(--border);border-right:0;
+                border-radius:8px 0 0 8px;color:var(--text-2);font-size:10.5px;letter-spacing:.06em;
                 display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
                 cursor:pointer;padding:0;writing-mode:vertical-rl;}
-  .sc-ideias-tab:hover{color:#f3ede2;}
+  .sc-ideias-tab:hover{color:var(--text);}
   .sc-ideias-corpo{flex:1;overflow-y:auto;padding:12px 13px;min-width:0;}
-  .sc-ideias-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8f8672;
+  .sc-ideias-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);
               font-weight:600;margin-bottom:10px;}
   .sc-id-busca{display:flex;gap:6px;margin-bottom:10px;}
-  .sc-id-busca input{flex:1;min-width:0;background:#16130f;border:1px solid #3a3428;border-radius:7px;
-                     color:#f3ede2;font-size:12px;padding:6px 8px;}
+  .sc-id-busca input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:7px;
+                     color:var(--text);font-size:12px;padding:6px 8px;}
   .sc-id-sec{margin-bottom:14px;}
-  .sc-id-sec-h{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8f8672;
+  .sc-id-sec-h{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text-3);
               text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
   .sc-id-selo{font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;
-             border-radius:999px;padding:1px 6px;background:#163527;color:#9fe1cb;}
-  .sc-id-item{font-size:12px;color:#c3baa9;padding:6px 0;border-bottom:1px dashed #2f2819;}
-  .sc-id-item b{color:#f3ede2;font-weight:600;}
-  .sc-id-item .qd{font-size:10.5px;color:#8f8672;display:block;margin-top:1px;}
-  .sc-id-vazio{font-size:11.5px;color:#8f8672;line-height:1.5;}
-  .sc-id-par{font-size:12px;color:#c3baa9;margin:4px 0;}
-  .sc-id-par b{color:#f3ede2;}
+             border-radius:999px;padding:1px 6px;background:var(--verde-bg);color:var(--verde);}
+  .sc-id-item{font-size:12px;color:var(--text-2);padding:6px 0;border-bottom:1px dashed var(--border);}
+  .sc-id-item b{color:var(--text);font-weight:600;}
+  .sc-id-item .qd{font-size:10.5px;color:var(--text-3);display:block;margin-top:1px;}
+  .sc-id-vazio{font-size:11.5px;color:var(--text-3);line-height:1.5;}
+  .sc-id-par{font-size:12px;color:var(--text-2);margin:4px 0;}
+  .sc-id-par b{color:var(--text);}
 
   /* ---------------- E6: a parte GERADA (selo lilás, D4) ----------------
      Selo diferente do verde de propósito: misturar fato com sugestão
      destruiria a confiança nos dois. */
-  .sc-id-selo.sug{background:#2a2038;color:#cbb4ee;}
-  .sc-id-sugb{width:100%;background:#2a2038;border:1px solid #46375e;border-radius:7px;
-             color:#cbb4ee;font-size:11.5px;padding:7px 8px;cursor:pointer;
+  .sc-id-selo.sug{background:var(--c-2a2038);color:var(--c-cbb4ee);}
+  .sc-id-sugb{width:100%;background:var(--c-2a2038);border:1px solid var(--c-46375e);border-radius:7px;
+             color:var(--c-cbb4ee);font-size:11.5px;padding:7px 8px;cursor:pointer;
              display:flex;align-items:center;justify-content:center;gap:6px;}
-  .sc-id-sugb:hover{background:#332845;color:#e2d5f6;}
+  .sc-id-sugb:hover{background:var(--c-332845);color:var(--c-e2d5f6);}
   .sc-id-sugb:disabled{opacity:.55;cursor:default;}
-  .sc-id-sugi{padding:6px 0;border-bottom:1px dashed #2f2819;font-size:12px;color:#c3baa9;}
+  .sc-id-sugi{padding:6px 0;border-bottom:1px dashed var(--border);font-size:12px;color:var(--text-2);}
   .sc-id-sugi:last-child{border-bottom:0;}
-  .sc-id-sugi b{color:#f3ede2;font-weight:600;}
-  .sc-id-sugi .pq{display:block;font-size:11px;color:#8f8672;line-height:1.45;margin-top:2px;}
-  .sc-id-sugi .tr{display:block;font-size:11px;color:#c3baa9;line-height:1.45;margin-top:2px;}
-  .sc-id-usar{background:none;border:1px solid #46375e;border-radius:999px;color:#cbb4ee;
+  .sc-id-sugi b{color:var(--text);font-weight:600;}
+  .sc-id-sugi .pq{display:block;font-size:11px;color:var(--text-3);line-height:1.45;margin-top:2px;}
+  .sc-id-sugi .tr{display:block;font-size:11px;color:var(--text-2);line-height:1.45;margin-top:2px;}
+  .sc-id-usar{background:none;border:1px solid var(--c-46375e);border-radius:999px;color:var(--c-cbb4ee);
              font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;
              margin-left:6px;cursor:pointer;vertical-align:middle;}
-  .sc-id-usar:hover{background:#2a2038;color:#e2d5f6;}
-  .sc-id-conc{font-size:11.5px;color:#c3baa9;line-height:1.55;}
-  .sc-id-aviso{font-size:10.5px;color:#c9a35c;line-height:1.45;margin-top:6px;}
+  .sc-id-usar:hover{background:var(--c-2a2038);color:var(--c-e2d5f6);}
+  .sc-id-conc{font-size:11.5px;color:var(--text-2);line-height:1.55;}
+  .sc-id-aviso{font-size:10.5px;color:var(--c-c9a35c);line-height:1.45;margin-top:6px;}
 
   /* ---------------- K3: gaveta Consumo (PLANO_CADERNO.md) ----------------
      A TERCEIRA lingueta é VERDE de propósito: Preço e Ideias são douradas
@@ -1314,58 +1371,58 @@ window.msgAcessoNegado = function (nomePagina) {
      borda (top:214px) pra as três linguetas não se sobreporem: 24-116,
      126-218, 228-320. */
   .sc-cons{position:absolute;top:214px;bottom:10px;right:-304px;width:330px;
-          background:#211c15;border:1px solid #2c5a44;border-radius:10px 0 0 10px;
+          background:var(--card);border:1px solid var(--verde-borda);border-radius:10px 0 0 10px;
           transition:right .18s;display:flex;flex-direction:column;z-index:5;}
   .sc-cons.on{right:0;}
   .sc-cons-tab{position:absolute;left:-27px;top:14px;width:27px;height:92px;
-              background:#211c15;border:1px solid #2c5a44;border-right:0;
-              border-radius:8px 0 0 8px;color:#9fe1cb;font-size:10.5px;letter-spacing:.06em;
+              background:var(--card);border:1px solid var(--verde-borda);border-right:0;
+              border-radius:8px 0 0 8px;color:var(--verde);font-size:10.5px;letter-spacing:.06em;
               display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
               cursor:pointer;padding:0;writing-mode:vertical-rl;}
-  .sc-cons-tab:hover{color:#d6f4e8;}
-  .sc-cons.on .sc-cons-tab{background:#163527;}
+  .sc-cons-tab:hover{color:var(--c-d6f4e8);}
+  .sc-cons.on .sc-cons-tab{background:var(--verde-bg);}
   .sc-cons-corpo{flex:1;overflow-y:auto;padding:12px 13px;min-width:0;}
-  .sc-cons-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#9fe1cb;
+  .sc-cons-h{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--verde);
             font-weight:700;margin-bottom:10px;}
   .sc-cons-ru{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
-  .sc-cons-ru > div{flex:1;min-width:88px;border:1px solid #3a3428;border-radius:8px;padding:5px 8px;}
-  .sc-cons-ru .l{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#8f8672;}
-  .sc-cons-ru .v{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:#f3ede2;}
-  .sc-cons-ru .v.verde{color:#9fe1cb;}
-  .sc-cons-ru .v.ama{color:#e0b05c;}
-  .sc-cons-parcial{font-size:10.5px;color:#e0b05c;line-height:1.45;margin:-4px 0 9px;}
+  .sc-cons-ru > div{flex:1;min-width:88px;border:1px solid var(--border);border-radius:8px;padding:5px 8px;}
+  .sc-cons-ru .l{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);}
+  .sc-cons-ru .v{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);}
+  .sc-cons-ru .v.verde{color:var(--verde);}
+  .sc-cons-ru .v.ama{color:var(--amarelo);}
+  .sc-cons-parcial{font-size:10.5px;color:var(--amarelo);line-height:1.45;margin:-4px 0 9px;}
   .sc-cons-tb{width:100%;border-collapse:collapse;font-size:11px;}
   .sc-cons-tb th{text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;
-                color:#5f5a4a;font-weight:600;padding:0 5px 5px 0;border-bottom:1px solid #3a3428;}
-  .sc-cons-tb td{padding:6px 5px 6px 0;border-bottom:1px solid #2b2519;color:#c3baa9;
+                color:var(--text-4);font-weight:600;padding:0 5px 5px 0;border-bottom:1px solid var(--border);}
+  .sc-cons-tb td{padding:6px 5px 6px 0;border-bottom:1px solid var(--card-2);color:var(--text-2);
                 vertical-align:top;}
-  .sc-cons-tb td b{color:#f3ede2;font-weight:600;}
+  .sc-cons-tb td b{color:var(--text);font-weight:600;}
   .sc-cons-tb td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
   /* `sc-cons-sub`, e não um `.sub` curto: o `portal.css` tem um `.sub` GLOBAL
      com `margin-bottom:22px`, e ele vazava pra dentro desta tabela — cada
      linha ficava ~23px mais alta por sub-linha (medido na página renderizada,
      não no mockup, que não carrega o portal.css). Classe curta dentro do
      chrome do portal é armadilha; prefixar é a regra. */
-  .sc-cons-tb .sc-cons-sub{display:block;font-size:9px;color:#5f5a4a;margin:1px 0 0;}
+  .sc-cons-tb .sc-cons-sub{display:block;font-size:9px;color:var(--text-4);margin:1px 0 0;}
   /* Ausência de preço é "—" cinza, nunca um zero em reais (A7 do plano). */
-  .sc-cons-tb .sem{color:#5f5a4a;}
-  .sc-cons-tb tr.tot td{border-bottom:0;padding-top:9px;color:#f3ede2;font-weight:700;font-size:12px;}
-  .sc-cons-x{background:none;border:0;color:#5f5a4a;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;}
-  .sc-cons-x:hover{color:#e24b4a;}
-  .sc-cons-vazio{font-size:11.5px;color:#8f8672;line-height:1.6;}
-  .sc-preco-reg{width:100%;margin-top:9px;border-color:#2c5a44;color:#9fe1cb;}
-  .sc-preco-reg:hover{background:#163527;color:#d6f4e8;}
-  .sc-preco-reg-nota{font-size:10px;color:#5f5a4a;line-height:1.45;margin-top:5px;}
+  .sc-cons-tb .sem{color:var(--text-4);}
+  .sc-cons-tb tr.tot td{border-bottom:0;padding-top:9px;color:var(--text);font-weight:700;font-size:12px;}
+  .sc-cons-x{background:none;border:0;color:var(--text-4);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;}
+  .sc-cons-x:hover{color:var(--urg-urgente);}
+  .sc-cons-vazio{font-size:11.5px;color:var(--text-3);line-height:1.6;}
+  .sc-preco-reg{width:100%;margin-top:9px;border-color:var(--verde-borda);color:var(--verde);}
+  .sc-preco-reg:hover{background:var(--verde-bg);color:var(--c-d6f4e8);}
+  .sc-preco-reg-nota{font-size:10px;color:var(--text-4);line-height:1.45;margin-top:5px;}
   /* O passo "quantas vezes" (D23) — mesma família de .sc-ed, borda verde. */
-  .sc-ed.sc-ed-cons{width:min(90%,320px);border-color:#2c5a44;text-align:left;}
+  .sc-ed.sc-ed-cons{width:min(90%,320px);border-color:var(--verde-borda);text-align:left;}
   .sc-cons-vezes{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
-  .sc-cons-vz{background:#16130f;border:1px solid #3a3428;border-radius:999px;color:#c3baa9;
+  .sc-cons-vz{background:var(--bg);border:1px solid var(--border);border-radius:999px;color:var(--text-2);
              font-size:12px;padding:6px 13px;cursor:pointer;min-width:44px;}
-  .sc-cons-vz.on{background:#163527;border-color:#9fe1cb;color:#9fe1cb;font-weight:700;}
-  .sc-cons-vz-in{width:74px;background:#16130f;border:1px solid #3a3428;border-radius:7px;
-                color:#f3ede2;font-size:13px;padding:6px 8px;}
-  .sc-cons-previa{font-size:11px;color:#8f8672;line-height:1.5;margin-top:6px;}
-  .sc-cons-previa b{color:#f3ede2;}
+  .sc-cons-vz.on{background:var(--verde-bg);border-color:var(--verde);color:var(--verde);font-weight:700;}
+  .sc-cons-vz-in{width:74px;background:var(--bg);border:1px solid var(--border);border-radius:7px;
+                color:var(--text);font-size:13px;padding:6px 8px;}
+  .sc-cons-previa{font-size:11px;color:var(--text-3);line-height:1.5;margin-top:6px;}
+  .sc-cons-previa b{color:var(--text);}
 
   /* ---------------- K4 (PLANO_CADERNO.md): tabela cheia + avulso ----------
      Dois botões novos no rodapé da gaveta Consumo (compacta demais pra 9
@@ -1374,41 +1431,41 @@ window.msgAcessoNegado = function (nomePagina) {
   .sc-cons-acoes{display:flex;gap:6px;margin-top:9px;}
   .sc-cons-acoes .sc-b{flex:1;padding:7px 6px;font-size:11px;justify-content:center;}
   .sc-ed.sc-ed-cheia{width:min(96%,900px);max-height:88%;overflow-y:auto;
-                     border-color:#2c5a44;text-align:left;}
+                     border-color:var(--verde-borda);text-align:left;}
   .sc-cheia-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px;}
   .sc-cheia-h .t{font-size:11px;letter-spacing:.1em;text-transform:uppercase;
-                 color:#9fe1cb;font-weight:700;}
-  .sc-cheia-h .n{font-size:10.5px;color:#8f8672;margin-left:auto;}
+                 color:var(--verde);font-weight:700;}
+  .sc-cheia-h .n{font-size:10.5px;color:var(--text-3);margin-left:auto;}
   .sc-cheia-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;}
-  .sc-cheia-chip{font-size:10.5px;border:1px solid #3a3428;border-radius:999px;
-                 padding:4px 10px;color:#8f8672;background:none;cursor:pointer;}
-  .sc-cheia-chip.on{border-color:#9fe1cb;background:#163527;color:#9fe1cb;font-weight:700;}
+  .sc-cheia-chip{font-size:10.5px;border:1px solid var(--border);border-radius:999px;
+                 padding:4px 10px;color:var(--text-3);background:none;cursor:pointer;}
+  .sc-cheia-chip.on{border-color:var(--verde);background:var(--verde-bg);color:var(--verde);font-weight:700;}
   .sc-cheia-rolo{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:4px;}
   .sc-cheia-tb{width:100%;border-collapse:collapse;font-size:11.5px;min-width:660px;}
   .sc-cheia-tb th{text-align:left;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
-                  color:#5f5a4a;font-weight:600;padding:0 8px 6px 0;border-bottom:1px solid #3a3428;
+                  color:var(--text-4);font-weight:600;padding:0 8px 6px 0;border-bottom:1px solid var(--border);
                   white-space:nowrap;}
-  .sc-cheia-tb td{padding:6px 8px 6px 0;border-bottom:1px solid #2b2519;color:#c3baa9;
+  .sc-cheia-tb td{padding:6px 8px 6px 0;border-bottom:1px solid var(--card-2);color:var(--text-2);
                   vertical-align:top;white-space:nowrap;}
   .sc-cheia-tb td.item{white-space:normal;min-width:140px;}
-  .sc-cheia-tb td b{color:#f3ede2;font-weight:600;}
+  .sc-cheia-tb td b{color:var(--text);font-weight:600;}
   .sc-cheia-tb td.num{text-align:right;font-variant-numeric:tabular-nums;}
-  .sc-cheia-tb .sem{color:#5f5a4a;}
-  .sc-cheia-tb tr.tot td{border-bottom:0;padding-top:9px;color:#f3ede2;font-weight:700;font-size:12.5px;}
+  .sc-cheia-tb .sem{color:var(--text-4);}
+  .sc-cheia-tb tr.tot td{border-bottom:0;padding-top:9px;color:var(--text);font-weight:700;font-size:12.5px;}
   .sc-cheia-op{font-size:8.5px;border-radius:999px;padding:1px 6px;font-weight:700;letter-spacing:.04em;}
-  .sc-cheia-op.ficha{background:#2a2317;color:#b89c6e;}
-  .sc-cheia-op.avulso{background:#2b2438;color:#cbb8f0;}
-  .sc-cheia-x{background:none;border:0;color:#5f5a4a;cursor:pointer;font-size:14px;
+  .sc-cheia-op.ficha{background:var(--c-2a2317);color:var(--acc);}
+  .sc-cheia-op.avulso{background:var(--c-2b2438);color:var(--lilas);}
+  .sc-cheia-x{background:none;border:0;color:var(--text-4);cursor:pointer;font-size:14px;
              line-height:1;padding:2px 4px;}
-  .sc-cheia-x:hover{color:#e24b4a;}
-  .sc-cheia-porh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#9fe1cb;
+  .sc-cheia-x:hover{color:var(--urg-urgente);}
+  .sc-cheia-porh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--verde);
                  font-weight:700;margin:14px 0 7px;}
   .sc-cheia-pins{display:flex;flex-direction:column;gap:6px;}
   .sc-cheia-pin{display:grid;grid-template-columns:150px 1fr 74px 40px;gap:8px;align-items:center;
-               font-size:11.5px;color:#c3baa9;}
-  .sc-cheia-pin b{color:#f3ede2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sc-cheia-pin .barra{height:7px;border-radius:99px;background:#2b2519;overflow:hidden;}
-  .sc-cheia-pin .barra i{display:block;height:100%;background:#9fe1cb;}
+               font-size:11.5px;color:var(--text-2);}
+  .sc-cheia-pin b{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sc-cheia-pin .barra{height:7px;border-radius:99px;background:var(--card-2);overflow:hidden;}
+  .sc-cheia-pin .barra i{display:block;height:100%;background:var(--verde);}
   .sc-cheia-pin .num{text-align:right;font-variant-numeric:tabular-nums;}
   .sc-cheia-rodape{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;}
   @media (max-width:640px){
@@ -1417,33 +1474,33 @@ window.msgAcessoNegado = function (nomePagina) {
 
   /* Lançamento avulso — mesmos campos `.sc-cad-*` do cartão de receita
      (nunca uma segunda família de input). */
-  .sc-ed.sc-ed-avulso{width:min(90%,340px);border-color:#2c5a44;text-align:left;}
-  .sc-cons-av-dica{font-size:10px;color:#8f8672;margin-top:3px;line-height:1.4;}
-  .sc-cons-av-dica.achou{color:#9fe1cb;}
+  .sc-ed.sc-ed-avulso{width:min(90%,340px);border-color:var(--verde-borda);text-align:left;}
+  .sc-cons-av-dica{font-size:10px;color:var(--text-3);margin-top:3px;line-height:1.4;}
+  .sc-cons-av-dica.achou{color:var(--verde);}
 
   /* ---------------- E7: buscador de imagens (web + acervo) ---------------- */
   .sc-ed.sc-ed-img{width:min(94%,460px);max-height:82%;overflow-y:auto;text-align:left;}
   .sc-img-tabs{display:flex;gap:6px;margin-bottom:9px;}
-  .sc-img-tab{flex:1;background:#16130f;border:1px solid #3a3428;border-radius:7px;
-             color:#c3baa9;font-size:12px;padding:7px;cursor:pointer;}
-  .sc-img-tab.on{border-color:#b89c6e;color:#f3ede2;background:#241f16;}
+  .sc-img-tab{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;
+             color:var(--text-2);font-size:12px;padding:7px;cursor:pointer;}
+  .sc-img-tab.on{border-color:var(--acc);color:var(--text);background:var(--c-241f16);}
   .sc-img-busca-row{display:flex;gap:6px;margin-bottom:10px;}
-  .sc-img-busca-row input{flex:1;min-width:0;background:#16130f;border:1px solid #3a3428;border-radius:7px;
-                          color:#f3ede2;font-size:13px;padding:7px 9px;}
+  .sc-img-busca-row input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:7px;
+                          color:var(--text);font-size:13px;padding:7px 9px;}
   .sc-img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;
               max-height:340px;overflow-y:auto;}
-  .sc-img-tile{background:#16130f;border:1px solid #3a3428;border-radius:8px;overflow:hidden;
+  .sc-img-tile{background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;
               cursor:pointer;padding:0;color:inherit;text-align:left;position:relative;}
-  .sc-img-tile:hover{border-color:#b89c6e;}
-  .sc-img-tile .mini{height:88px;background:#1b1710;display:flex;align-items:center;justify-content:center;
-                     color:#4d4636;overflow:hidden;}
+  .sc-img-tile:hover{border-color:var(--acc);}
+  .sc-img-tile .mini{height:88px;background:var(--bg);display:flex;align-items:center;justify-content:center;
+                     color:var(--c-4d4636);overflow:hidden;}
   .sc-img-tile .mini img{width:100%;height:100%;object-fit:cover;display:block;}
-  .sc-img-tile .cred{font-size:9.5px;color:#8f8672;padding:4px 6px;line-height:1.3;
+  .sc-img-tile .cred{font-size:9.5px;color:var(--text-3);padding:4px 6px;line-height:1.3;
                      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sc-img-tile .selo-ref{position:absolute;top:5px;left:5px;font-size:8px;letter-spacing:.04em;
                          text-transform:uppercase;font-weight:700;border-radius:999px;padding:1px 6px;
-                         background:#3a2a12;color:#e2b46b;}
-  .sc-img-msg{font-size:12px;color:#8f8672;padding:10px 2px;}
+                         background:var(--c-3a2a12);color:var(--c-e2b46b);}
+  .sc-img-msg{font-size:12px;color:var(--text-3);padding:10px 2px;}
 
   /* Marca discreta no canto de uma imagem de REFERÊNCIA (não é banco de
      imagem livre) — desenhada no canvas, não é DOM: imagem é pixel. D5:
@@ -1452,33 +1509,33 @@ window.msgAcessoNegado = function (nomePagina) {
 
   /* ---------------- E8: convidar pra folha ---------------- */
   .sc-ed.sc-ed-conv{width:min(92%,400px);max-height:80%;overflow-y:auto;text-align:left;}
-  .sc-conv-h{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#8f8672;
+  .sc-conv-h{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);
             font-weight:600;margin:12px 0 7px;}
   .sc-conv-h:first-child{margin-top:0;}
   .sc-conv-lin{display:flex;align-items:center;gap:8px;padding:7px 0;
-              border-bottom:1px dashed #2f2819;font-size:12.5px;color:#c3baa9;}
+              border-bottom:1px dashed var(--border);font-size:12.5px;color:var(--text-2);}
   .sc-conv-lin:last-child{border-bottom:0;}
-  .sc-conv-lin .nm{flex:1;min-width:0;color:#f3ede2;overflow:hidden;
+  .sc-conv-lin .nm{flex:1;min-width:0;color:var(--text);overflow:hidden;
                    text-overflow:ellipsis;white-space:nowrap;}
-  .sc-conv-lin .cs{font-size:10.5px;color:#8f8672;}
+  .sc-conv-lin .cs{font-size:10.5px;color:var(--text-3);}
   /* Alvo de toque: medido a 375px, o botão saía com 18px de altura — pequeno
      demais pro dedo, e "tirar" remove o acesso de alguém. min-height 32 no
      próprio botão + área clicável esticada pelo ::after (que não muda o
      desenho da pílula nem empurra o layout da linha). */
-  .sc-conv-b{background:none;border:1px solid #3a3428;border-radius:999px;color:#c3baa9;
+  .sc-conv-b{background:none;border:1px solid var(--border);border-radius:999px;color:var(--text-2);
             font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:2px 9px;cursor:pointer;
             min-height:32px;position:relative;flex:none;}
   .sc-conv-b::after{content:"";position:absolute;left:0;right:0;top:50%;
             transform:translateY(-50%);height:44px;}
-  .sc-conv-b:hover{border-color:#b89c6e;color:#f3ede2;}
-  .sc-conv-b.tira:hover{border-color:#e24b4a;color:#e24b4a;}
-  .sc-conv-msg{font-size:11.5px;color:#8f8672;line-height:1.5;}
+  .sc-conv-b:hover{border-color:var(--acc);color:var(--text);}
+  .sc-conv-b.tira:hover{border-color:var(--urg-urgente);color:var(--urg-urgente);}
+  .sc-conv-msg{font-size:11.5px;color:var(--text-3);line-height:1.5;}
   /* Selo "a dois" no topo: a folha compartilhada tem que se anunciar, senão
      a pessoa não entende por que o desenho dela muda sozinho. */
   .sc-selo-conv{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;
-               border-radius:999px;padding:2px 8px;background:#1d2a33;color:#8fc7e2;
+               border-radius:999px;padding:2px 8px;background:var(--c-1d2a33);color:var(--c-8fc7e2);
                white-space:nowrap;}
-  .sc-tile .dono{font-size:9.5px;color:#8fc7e2;margin-top:2px;
+  .sc-tile .dono{font-size:9.5px;color:var(--c-8fc7e2);margin-top:2px;
                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   @media (max-width:640px){
@@ -1505,7 +1562,7 @@ window.msgAcessoNegado = function (nomePagina) {
        apontado na v2 — o que a linha contextual resolve é justamente não
        precisar mostrar cor e espessura o tempo todo. */
     .sc-barra{width:auto;flex-direction:row;flex-wrap:nowrap;justify-content:space-around;
-              border-right:0;border-top:1px solid #3a3428;padding:6px 4px;gap:2px;}
+              border-right:0;border-top:1px solid var(--border);padding:6px 4px;gap:2px;}
     .sc-barra .sc-t{flex:1;max-width:64px;height:38px;}
     /* Some do rodapé o que virou linha contextual ou não cabe em 5 alvos. */
     .sc-barra .sc-sep,
@@ -1520,8 +1577,8 @@ window.msgAcessoNegado = function (nomePagina) {
     /* Linha contextual: só o que a ferramenta ativa usa (item 4). Fica
        ENTRE o papel e a barra, colada na barra, pra o polegar ir de uma à
        outra sem atravessar a tela. Undo/redo moram na direita dela. */
-    .sc-ctx{display:flex;align-items:center;gap:6px;padding:5px 8px;background:#1b1710;
-            border-top:1px solid #3a3428;min-height:38px;}
+    .sc-ctx{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg);
+            border-top:1px solid var(--border);min-height:38px;}
     /* O lado esquerdo TEM que ser flex: como `div` comum ele empilhava a
        paleta e as 3 espessuras em coluna, e a "linha" contextual nascia com
        111px de altura — 73px roubados do papel (medido na página). */
@@ -1594,7 +1651,7 @@ window.msgAcessoNegado = function (nomePagina) {
     .sc-preco-tab,.sc-ideias-tab,.sc-cons-tab{
       position:absolute;left:0;right:0;top:-30px;width:auto;height:30px;
       writing-mode:horizontal-tb;flex-direction:row;border-radius:10px 10px 0 0;
-      border-right:1px solid #3a3428;border-bottom:0;font-size:11px;}
+      border-right:1px solid var(--border);border-bottom:0;font-size:11px;}
     /* Com a mesa aberta a alça sai do caminho: ela já cumpriu o papel e
        ficaria flutuando sobre o papel a 30px do topo da mesa. */
     .sc-preco.on .sc-preco-tab,
@@ -3534,7 +3591,7 @@ window.msgAcessoNegado = function (nomePagina) {
       // saber de qual receita é o preço na tela.
       '<div class="sc-preco-nome">' + esc(o.nome||'Cartão sem nome') + '</div>' +
       '<div class="sc-preco-copo">' + (o.copo ? esc(o.copo) : 'Copo não definido') +
-        ' <span style="color:#5f5a4a">· banco de copos ainda não integrado</span></div>' +
+        ' <span style="color:var(--text-4)">· banco de copos ainda não integrado</span></div>' +
 
       // O CUSTO VEM PRIMEIRO: é a base de tudo que vem abaixo. Ele estava
       // depois da tabela de cenários, que já mostra o custo do cenário ativo
@@ -4545,7 +4602,7 @@ window.msgAcessoNegado = function (nomePagina) {
         '<th class="col-pg">Pg</th><th>Item</th><th class="num">Qtde</th><th class="num">R$</th><th></th>' +
       '</tr></thead><tbody>' + corpo +
       '<tr class="tot"><td colspan="3">Total da sessão</td>' +
-        '<td class="num" style="color:#9fe1cb">' + brl(rs.gasto) + '</td><td></td></tr>' +
+        '<td class="num" style="color:var(--verde)">' + brl(rs.gasto) + '</td><td></td></tr>' +
       '</tbody></table>';
     Array.prototype.forEach.call(elConsConteudo.querySelectorAll('[data-del]'), function(b){
       b.onclick = function(){ apagaConsumo(b.dataset.del); };
@@ -4604,10 +4661,10 @@ window.msgAcessoNegado = function (nomePagina) {
     var box = document.createElement('div');
     box.className = 'sc-ed sc-ed-cons';
     box.innerHTML =
-      '<label class="sc-cad-lb" style="color:#9fe1cb;font-weight:700;letter-spacing:.08em;' +
+      '<label class="sc-cad-lb" style="color:var(--verde);font-weight:700;letter-spacing:.08em;' +
         'text-transform:uppercase">Registrar consumo</label>' +
-      '<div class="sc-cad-nota" style="font-size:12px;color:#c3baa9">Quantas vezes você fez ' +
-        '<b style="color:#f3ede2">' + esc(rotulo) + '</b> agora?</div>' +
+      '<div class="sc-cad-nota" style="font-size:12px;color:var(--text-2)">Quantas vezes você fez ' +
+        '<b style="color:var(--text)">' + esc(rotulo) + '</b> agora?</div>' +
       '<div class="sc-cons-vezes" id="sc-cons-vz">' +
         '<button class="sc-cons-vz on" type="button" data-v="1">1</button>' +
         '<button class="sc-cons-vz" type="button" data-v="3">3</button>' +
@@ -4792,7 +4849,7 @@ window.msgAcessoNegado = function (nomePagina) {
           '<td>' + (l.pagina || '—') + '</td>' +
           '<td>' + esc(consQuando(l.quando)) + '</td>' +
           '<td class="item"><b>' + esc(l.item) + '</b>' +
-            (l.nota ? '<br><span style="color:#5f5a4a">' + esc(l.nota) + '</span>' : '') + '</td>' +
+            (l.nota ? '<br><span style="color:var(--text-4)">' + esc(l.nota) + '</span>' : '') + '</td>' +
           '<td class="num">' + brlQtde(l.qtde) + '</td>' +
           '<td>' + esc(l.unidade) + '</td>' +
           '<td class="num' + (l.custo_unit != null ? '' : ' sem') + '">' + (l.custo_unit != null ? brl(l.custo_unit) : '—') + '</td>' +
@@ -4823,9 +4880,9 @@ window.msgAcessoNegado = function (nomePagina) {
           '<th>Pg</th><th>Quando</th><th>Item</th><th class="num">Qtde</th><th>Un</th>' +
           '<th class="num">R$/un</th><th class="num">Total</th><th>Origem</th><th>Quem</th>' +
         '</tr></thead><tbody>' +
-          (corpo || '<tr><td colspan="9" style="color:#5f5a4a">nenhum lançamento com este filtro</td></tr>') +
+          (corpo || '<tr><td colspan="9" style="color:var(--text-4)">nenhum lançamento com este filtro</td></tr>') +
           '<tr class="tot"><td colspan="6">Total do filtro</td>' +
-            '<td class="num" style="color:#9fe1cb">' + brl(gastoFiltrado) + '</td><td colspan="2"></td></tr>' +
+            '<td class="num" style="color:var(--verde)">' + brl(gastoFiltrado) + '</td><td colspan="2"></td></tr>' +
         '</tbody></table></div>' +
         (semPrecoFiltrado ? '<div class="sc-cons-parcial">' + semPrecoFiltrado +
           ' lançamento(s) sem preço no B.D.1 — o total do filtro é parcial.</div>' : '') +
@@ -4914,7 +4971,7 @@ window.msgAcessoNegado = function (nomePagina) {
     var opPg = '<option value="">sessão inteira</option>' +
       [1,2,3,4,5].map(function(n){ return '<option value="' + n + '">página ' + n + '</option>'; }).join('');
     box.innerHTML =
-      '<label class="sc-cad-lb" style="color:#9fe1cb;font-weight:700;letter-spacing:.08em;' +
+      '<label class="sc-cad-lb" style="color:var(--verde);font-weight:700;letter-spacing:.08em;' +
         'text-transform:uppercase">Custo avulso</label>' +
       '<div class="sc-cad-nota">Gelo, a garrafa aberta só pra provar, o maço que estragou — ' +
         'coisas que se gastam sem estar numa ficha.</div>' +
@@ -6022,7 +6079,7 @@ window.msgAcessoNegado = function (nomePagina) {
     }
     h += (linhasSess || '<tr><td colspan="4" class="sem">Nenhuma sessão neste caderno ainda.</td></tr>') +
       '<tr class="tot"><td colspan="2">Total do caderno</td>' +
-      '<td class="num" style="color:#9fe1cb">' + orcRs(r.gasto) + '</td><td></td></tr>' +
+      '<td class="num" style="color:var(--verde)">' + orcRs(r.gasto) + '</td><td></td></tr>' +
       '</tbody></table>';
     h += '<div class="sc-orc-nota">' +
       (ret.usos != null
@@ -6436,7 +6493,7 @@ window.msgAcessoNegado = function (nomePagina) {
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 30/10/2026.
+<p class="nota">Painel do bar · atualizado em 03/11/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -7885,17 +7942,17 @@ if ('serviceWorker' in navigator) {
      ausência de uma variável não pode deixar o aviso ilegível. */
   .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
     z-index: 96; margin: 0 auto; max-width: 460px; display: none;
-    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
     align-items: center; gap: 10px; }
   .ver-nova.on { display: flex; }
-  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
-  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
-  .vn-txt b { color: var(--text, #f3ede2); }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
   .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
-    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
-    color: var(--acc-txt, #16130f); }
-  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
@@ -7906,7 +7963,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -8020,8 +8077,8 @@ if ('serviceWorker' in navigator) {
      z-index com eles, só não ocupar o mesmo espaço na tela. */
   .atualiza-atalho { position: fixed; left: 12px; right: 12px;
     bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
   .atualiza-atalho.on { display: block; }
   .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
   .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }

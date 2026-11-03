@@ -4,7 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#16130f">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-pressed', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function copiaPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return;
+    var txt;
+    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+  });
+})();
+</script>
 <title>Mural de eventos · Painel do bar</title>
 <script>
 (function () {
@@ -16,13 +72,13 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=a35ddccddc3c">
+<link rel="stylesheet" href="portal.css?v=211b8486957d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
 <a class="volta-mural vm-barra" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
-<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div></div>
+<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" title="Ligar modo escuro" aria-label="Modo escuro" aria-pressed="false"><span class="ic-lua"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span><span class="ic-sol"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span></button><button class="prompt-bt" id="prompt-bt" type="button" data-niveis="coord" style="display:none" title="Copiar o prompt de construção desta página" aria-label="Copiar prompt da página"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -100,6 +156,7 @@
 <button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="pomo-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
+<script type="application/json" id="prompt-pagina">"Construa uma página web chamada \"Mural de eventos\", seguindo o modelo da página \"Mural de eventos · Painel do bar\" (eventos) do Portal dos Bares do Grupo IZ. Mantenha a mesma estrutura e o mesmo comportamento descritos abaixo, adaptando nomes, dados e marca ao novo site.\n\n## Objetivo\nOS do Comercial, atualizadas automaticamente. Cancelado aparece riscado\n\n## Onde fica e quem vê\n- Menu: seção \"Operar o turno\", item \"Agenda de eventos\"\n- Níveis com acesso: Equipe de Bar, Chefe de Bar, Coordenação, Marketing\n- O acesso é conferido no servidor pela sessão (token assinado). Esconder na tela é só conforto, nunca a proteção.\n\n## Estrutura, de cima para baixo\n- Topo: logo, nome do painel, pílula do nível de quem entrou, busca, notificações e botão de modo escuro.\n- Título \"Mural de eventos\" e a linha de apoio: OS do Comercial, atualizadas automaticamente. Cancelado aparece riscado.\n- Seções:\n- Próximos (0)\n\n## Colunas das tabelas\n- Data\n- Dia\n- Casa\n- Tipo\n- Pax\n- Horário\n\n## Ações (botões)\n- Lista\n- Tabela\n- Calendário\n- Todas as casas\n- IZ\n- 1929\n- Grá\n- FAMU\n- Fulles\n- NIP\n- hoje\n\n## Dados\nRotas do servidor (Cloudflare Worker, com a sessão no cabeçalho):\n- /api/eventos-mural\n- /api/orcamento-eventos\nSem sessão válida, a página manda para o login. Dado que falta aparece como \"—\", nunca inventado.\n\n## Visual\n- Fonte Inter (Google Fonts), com system-ui de reserva. Títulos em peso 600 a 700, texto de 13 a 15 px.\n- Tema claro (padrão): fundo #f6f7f9; cartões brancos com borda #e4e7ec, cantos de 16 px e sombra bem leve; texto #101828, secundário #475467, apoio #667085; destaque preto #101828 com texto branco; links em preto com seta.\n- Modo escuro em grafite, não preto: fundo #1e1f22, cartões #27292d, borda #3a3d42, texto #ececee, secundário #b9bcc3; destaque claro com texto escuro.\n- Botão de lua/sol no topo liga e desliga o escuro, guarda a escolha no navegador (localStorage) e aplica antes de pintar a página, sem piscar.\n- Toda cor sai de variáveis CSS (:root e :root[data-tema=\"escuro\"]); nenhuma cor fixa.\n- Destaques com fundo suave: verde (#ecfdf3 / #067647), amarelo (#fef6dc, borda #f5d77a, texto #b54708), vermelho (#fef3f2 / #c0362c), azul (#eff8ff / #175cd3). Selo de categoria em pílula cinza.\n- Ícones SVG de linha (24x24, traço 1.8). Nenhum emoji.\n- Celular primeiro: largura máxima de 980 px, margem lateral de 16 a 20 px, alvos de toque de pelo menos 34 px, nada de rolagem horizontal.\n\n## Regras\n- Nenhum telefone na página. Valor em dinheiro só para os níveis autorizados e vindo do servidor.\n- Cada número mostrado diz de onde vem; sem dado, mostre o vazio, não um valor de exemplo."</script>
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
@@ -143,7 +200,7 @@ window.sessaoLer = function () {
     var f = document.createElement('div');
     f.id = 'previa-faixa';
     f.setAttribute('role', 'status');
-    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:#5a3fa0;color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--c-5a3fa0);color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
     f.textContent = 'Prévia · ' + (window.parent.portalPrevia.rotulo || s.nivel) +
       ' · o que você enviar aqui é gravado de verdade, com o seu login';
     document.body.insertBefore(f, document.body.firstChild);
@@ -682,29 +739,29 @@ window.msgAcessoNegado = function (nomePagina) {
   .evento.cancelado { opacity: .55; }
   .evento.passado { opacity: .75; }
   .ev-head { display: flex; gap: 14px; align-items: flex-start; }
-  .ev-data { flex: none; text-align: center; background: #362a15; border-radius: 10px;
+  .ev-data { flex: none; text-align: center; background: var(--amarelo-bg); border-radius: 10px;
              padding: 8px 10px; min-width: 62px; }
-  .evento.cancelado .ev-data { background: #3a1f1c; }
+  .evento.cancelado .ev-data { background: var(--vermelho-bg); }
   .ev-data .dia { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase;
                   color: var(--acc); letter-spacing: .06em; }
-  .evento.cancelado .ev-data .dia { color: #f09595; }
+  .evento.cancelado .ev-data .dia { color: var(--c-f09595); }
   .ev-data .num { display: block; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .ev-tit { flex: 1; min-width: 0; }
   .ev-linha1 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 4px; }
   .ev-tipo { font-weight: 600; font-size: 15px; }
-  .badge-cancel { font-size: 11px; font-weight: 700; color: #f09595; background: #3a1f1c;
+  .badge-cancel { font-size: 11px; font-weight: 700; color: var(--c-f09595); background: var(--vermelho-bg);
                   border-radius: 999px; padding: 2px 8px; }
-  .badge-nota { font-size: 11px; font-weight: 600; color: var(--amarelo); background: #3a2d12;
+  .badge-nota { font-size: 11px; font-weight: 600; color: var(--amarelo); background: var(--amarelo-bg);
                 border-radius: 999px; padding: 2px 8px; }
   .ev-meta { font-size: 13px; color: var(--text-2); margin: 2px 0; }
-  .ev-bebidas { margin-top: 10px; background: #1b2a21; border: 1px solid #2e4636;
+  .ev-bebidas { margin-top: 10px; background: var(--c-1b2a21); border: 1px solid var(--c-2e4636);
                 border-radius: 8px; padding: 10px 12px; }
   .ev-bebidas h4 { font-size: 12px; font-weight: 700; color: var(--verde);
                    text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
   .bgrupo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
   .bgrupo:first-of-type { margin-top: 2px; }
   .btit { flex-basis: 100%; font-size: 12px; font-weight: 600; color: var(--text-2); }
-  .bchip { font-size: 13px; background: #22352a; border: 1px solid #3a5546; border-radius: 999px;
+  .bchip { font-size: 13px; background: var(--c-22352a); border: 1px solid var(--c-3a5546); border-radius: 999px;
            padding: 4px 11px; color: var(--text); }
   details.ev-comida { margin-top: 8px; }
   details.ev-comida summary { font-size: 13px; color: var(--text-3); cursor: pointer; }
@@ -741,24 +798,24 @@ window.msgAcessoNegado = function (nomePagina) {
   .cal-dia { min-height: 56px; min-width: 0; background: var(--card); border: 1px solid var(--border);
              border-radius: 8px; padding: 5px 6px; display: flex; flex-direction: column; gap: 4px; }
   .cal-dia.fora { background: none; border-color: transparent; }
-  .cal-dia.fds:not(.fora):not(.tem) { background: #211b12; }
+  .cal-dia.fds:not(.fora):not(.tem) { background: var(--c-211b12); }
   .cal-dia .n { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
-  .cal-dia.tem { cursor: pointer; background: #2b2213; border-color: #56421f; }
+  .cal-dia.tem { cursor: pointer; background: var(--c-2b2213); border-color: var(--c-56421f); }
   .cal-dia.tem .n { color: var(--text); font-weight: 700; font-size: 13px; }
   .cal-dia.hoje { cursor: pointer; border-color: var(--acc); }
   .cal-dia.hoje .n { background: var(--acc); color: var(--acc-txt); font-weight: 700;
                      min-width: 20px; height: 20px; padding: 0 3px; border-radius: 999px;
                      display: inline-flex; align-items: center; justify-content: center;
                      align-self: flex-start; }
-  .cal-dia.sel { background: #362a15; border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
+  .cal-dia.sel { background: var(--amarelo-bg); border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
   .pts { display: flex; flex-wrap: wrap; gap: 3px; }
   .pt { width: 8px; height: 8px; border-radius: 50%; flex: none; }
   .pt.canc { opacity: .35; }
   .pt.mais { width: auto; height: auto; font-size: 9px; font-style: normal;
              color: var(--text-3); line-height: 1; align-self: center; }
-  .pt-iz { background: #d0a352; }  .pt-1929 { background: #c9705a; }
-  .pt-gra { background: #8fd0a5; } .pt-famu { background: #a58fd0; }
-  .pt-fulles { background: #6fa8dc; } .pt-nip { background: #d98fb0; }
+  .pt-iz { background: var(--casa-iz); }  .pt-1929 { background: var(--casa-1929); }
+  .pt-gra { background: var(--casa-gra); } .pt-famu { background: var(--casa-famu); }
+  .pt-fulles { background: var(--casa-fulles); } .pt-nip { background: var(--casa-nip); }
   .cal-leg { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 12px 2px 4px;
              font-size: 12px; color: var(--text-2); }
   .cal-leg span { display: inline-flex; align-items: center; gap: 5px; }
@@ -777,9 +834,9 @@ window.msgAcessoNegado = function (nomePagina) {
   .evento-card.passado { opacity: .72; }
   .evento-card.cancelado { opacity: .6; }
   .evento-card.cancelado .ec-tipo { text-decoration: line-through; color: var(--text-3); }
-  .ec-data { flex: none; width: 48px; text-align: center; line-height: 1.1; background: #362a15;
+  .ec-data { flex: none; width: 48px; text-align: center; line-height: 1.1; background: var(--amarelo-bg);
       border-radius: 10px; padding: 7px 4px; }
-  .evento-card.cancelado .ec-data { background: #3a1f1c; }
+  .evento-card.cancelado .ec-data { background: var(--vermelho-bg); }
   .ec-data .dia { display: block; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--acc); }
   .evento-card.cancelado .ec-data .dia { color: var(--rosa); }
   .ec-data .num { display: block; font-family: var(--serif); font-size: 16px; color: var(--text);
@@ -820,7 +877,7 @@ window.msgAcessoNegado = function (nomePagina) {
   @media (prefers-reduced-motion: reduce) { #evento-detalhe { transition: none; } }
   #evento-detalhe .d-inner { max-width: 620px; margin: 0 auto; min-height: 100%; background: var(--bg); }
   #evento-detalhe .d-top { display: flex; align-items: center; gap: 10px; padding: 10px 16px;
-      border-bottom: 1px solid #2a2419; position: sticky; top: 0; background: var(--bg); z-index: 2; }
+      border-bottom: 1px solid var(--card-2); position: sticky; top: 0; background: var(--bg); z-index: 2; }
   #evento-detalhe .d-top .back { font: inherit; background: none; border: none; color: var(--text);
       cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 14px; padding: 0; }
   #evento-detalhe .d-top .crumb { font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
@@ -834,10 +891,10 @@ window.msgAcessoNegado = function (nomePagina) {
       line-height: 1.08; margin: 0; }
   #evento-detalhe .d-thumb { width: 56px; height: 56px; border-radius: 9px; object-fit: cover;
       flex: none; border: 1px solid var(--border); }
-  #evento-detalhe .d-meta { display: flex; margin: 12px 0 0; border-top: 1px solid #2a2419;
-      border-bottom: 1px solid #2a2419; }
+  #evento-detalhe .d-meta { display: flex; margin: 12px 0 0; border-top: 1px solid var(--card-2);
+      border-bottom: 1px solid var(--card-2); }
   #evento-detalhe .d-meta div { flex: 1; padding: 7px 0; }
-  #evento-detalhe .d-meta div + div { border-left: 1px solid #2a2419; padding-left: 12px; }
+  #evento-detalhe .d-meta div + div { border-left: 1px solid var(--card-2); padding-left: 12px; }
   #evento-detalhe .d-meta .k { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
   #evento-detalhe .d-meta .v { font-size: 13px; color: var(--text); margin-top: 1px; }
   #evento-detalhe .d-meta .v.venda { color: var(--acc); font-variant-numeric: tabular-nums; }
@@ -849,7 +906,7 @@ window.msgAcessoNegado = function (nomePagina) {
   #evento-detalhe .build-head .lbl { font-family: var(--serif); font-size: 14px; }
   #evento-detalhe .build-head .col { font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
   #evento-detalhe .row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-      padding: 7px 0; border-bottom: 1px solid #2a2419; }
+      padding: 7px 0; border-bottom: 1px solid var(--card-2); }
   #evento-detalhe .row:last-child { border-bottom: none; }
   #evento-detalhe .row .ingr { font-size: 14px; color: var(--text); line-height: 1.3; }
   #evento-detalhe .row .dose { font-family: var(--serif); font-size: 14.5px; color: var(--acc);
@@ -857,13 +914,13 @@ window.msgAcessoNegado = function (nomePagina) {
   #evento-detalhe .row.nodose .ingr::before { content: ""; display: inline-block; width: 4px; height: 4px;
       border-radius: 50%; background: var(--acc); margin-right: 9px; vertical-align: middle; }
   #evento-detalhe .sem-dose { font-size: 11px; color: var(--text-3); font-style: italic; margin-bottom: 4px; }
-  #evento-detalhe .prep { background: #17352b; border-left: 2px solid var(--verde);
+  #evento-detalhe .prep { background: var(--verde-bg); border-left: 2px solid var(--verde);
       padding: 9px 12px; margin-top: 14px; }
   #evento-detalhe .prep .lbl { font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
       color: var(--verde); margin-bottom: 4px; }
-  #evento-detalhe .prep p { margin: 0; font-size: 13.5px; color: #e7f4ee; line-height: 1.4; }
+  #evento-detalhe .prep p { margin: 0; font-size: 13.5px; color: var(--c-e7f4ee); line-height: 1.4; }
   #evento-detalhe .guarn { margin-top: 10px; display: flex; gap: 10px; align-items: baseline;
-      border-bottom: 1px solid #2a2419; padding-bottom: 10px; }
+      border-bottom: 1px solid var(--card-2); padding-bottom: 10px; }
   #evento-detalhe .guarn .lbl { font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
       color: var(--text-3); flex: none; width: 66px; padding-top: 2px; }
   #evento-detalhe .guarn p { margin: 0; font-size: 13px; color: var(--text-2); line-height: 1.4; }
@@ -871,7 +928,7 @@ window.msgAcessoNegado = function (nomePagina) {
   #evento-detalhe .perfil .lbl { font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
       color: var(--text-3); flex: none; }
   #evento-detalhe .perfil .lbl em { font-style: italic; text-transform: none; letter-spacing: 0; }
-  #evento-detalhe .perfil .bar { position: relative; height: 3px; background: #2a2419; border-radius: 999px; flex: 1; }
+  #evento-detalhe .perfil .bar { position: relative; height: 3px; background: var(--card-2); border-radius: 999px; flex: 1; }
   #evento-detalhe .perfil .bar i { position: absolute; top: -3px; width: 9px; height: 9px; border-radius: 50%;
       background: var(--text-3); margin-left: -4.5px; }
   #evento-detalhe .perfil .end { font-size: 10px; color: var(--text-3); flex: none; }
@@ -888,7 +945,7 @@ window.msgAcessoNegado = function (nomePagina) {
   #evento-detalhe .d-exportar:hover { border-color: var(--acc); color: var(--text); }
   #evento-detalhe .d-exportar[disabled] { opacity: .55; cursor: wait; }
   /* Precificação por ingrediente (B.D.2), recolhida por padrão (2026-10-28) */
-  #evento-detalhe .precif { margin-top: 14px; border-top: 1px solid #2a2419; border-bottom: 1px solid #2a2419; }
+  #evento-detalhe .precif { margin-top: 14px; border-top: 1px solid var(--card-2); border-bottom: 1px solid var(--card-2); }
   #evento-detalhe .precif > summary { display: flex; align-items: baseline; gap: 10px; padding: 9px 0;
       cursor: pointer; list-style: none; }
   #evento-detalhe .precif > summary::-webkit-details-marker { display: none; }
@@ -907,7 +964,7 @@ window.msgAcessoNegado = function (nomePagina) {
   #evento-detalhe .precif-tab col.c-qtd { width: 50px; }
   #evento-detalhe .precif-tab col.c-ml { width: 74px; }
   #evento-detalhe .precif-tab col.c-custo { width: 68px; }
-  #evento-detalhe .precif-tab td { padding: 6px 0; border-bottom: 1px solid #2a2419; text-align: right;
+  #evento-detalhe .precif-tab td { padding: 6px 0; border-bottom: 1px solid var(--card-2); text-align: right;
       color: var(--text-2); vertical-align: top; }
   #evento-detalhe .precif-tab td:first-child { color: var(--text); padding-right: 8px; overflow-wrap: anywhere; }
   #evento-detalhe .precif-tab td.sem { color: var(--text-3); }
@@ -1370,7 +1427,7 @@ window.iniciaMural = function (EVENTOS) {
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 30/10/2026.
+<p class="nota">Painel do bar · atualizado em 03/11/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -2819,17 +2876,17 @@ if ('serviceWorker' in navigator) {
      ausência de uma variável não pode deixar o aviso ilegível. */
   .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
     z-index: 96; margin: 0 auto; max-width: 460px; display: none;
-    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
     align-items: center; gap: 10px; }
   .ver-nova.on { display: flex; }
-  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
-  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
-  .vn-txt b { color: var(--text, #f3ede2); }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
   .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
-    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
-    color: var(--acc-txt, #16130f); }
-  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
@@ -2840,7 +2897,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -2954,8 +3011,8 @@ if ('serviceWorker' in navigator) {
      z-index com eles, só não ocupar o mesmo espaço na tela. */
   .atualiza-atalho { position: fixed; left: 12px; right: 12px;
     bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
   .atualiza-atalho.on { display: block; }
   .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
   .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }

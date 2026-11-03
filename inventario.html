@@ -4,7 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#16130f">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-pressed', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function copiaPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return;
+    var txt;
+    try { txt = JSON.parse(el.textContent); } catch (e) { return; }
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-bt')) copiaPrompt();
+  });
+})();
+</script>
 <title>Inventário · Painel do bar</title>
 <script>
 (function () {
@@ -16,13 +72,13 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=a35ddccddc3c">
+<link rel="stylesheet" href="portal.css?v=211b8486957d">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
 <a class="volta-mural vm-barra" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
 <header class="topo">
-<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div></div>
+<div class="marca-blk"><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" title="Ligar modo escuro" aria-label="Modo escuro" aria-pressed="false"><span class="ic-lua"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span><span class="ic-sol"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span></button><button class="prompt-bt" id="prompt-bt" type="button" data-niveis="coord" style="display:none" title="Copiar o prompt de construção desta página" aria-label="Copiar prompt da página"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></button></div></div>
 <div class="topo-linha">
 <a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
 <a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
@@ -100,6 +156,7 @@
 <button class="pomo-btn" id="pomo-btn" type="button" title="Modo Foco (Pomodoro)" aria-label="Modo Foco (Pomodoro)"><svg class="pomo-ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pomo-tomate"/></svg><span class="badge" id="pomo-badge">25</span></button>
 </div>
 </header>
+<script type="application/json" id="prompt-pagina">"Construa uma página web chamada \"Inventário\", seguindo o modelo da página \"Inventário · Painel do bar\" (inventario) do Portal dos Bares do Grupo IZ. Mantenha a mesma estrutura e o mesmo comportamento descritos abaixo, adaptando nomes, dados e marca ao novo site.\n\n## Objetivo\nOs bens da casa: patrimônio, equipamentos, vidraria e venda de equipamentos\n\n## Onde fica e quem vê\n- Menu: seção \"Comprar e cuidar dos ativos\", item \"Inventário\"\n- Níveis com acesso: Chefe de Bar, Coordenação\n- O acesso é conferido no servidor pela sessão (token assinado). Esconder na tela é só conforto, nunca a proteção.\n\n## Estrutura, de cima para baixo\n- Topo: logo, nome do painel, pílula do nível de quem entrou, busca, notificações e botão de modo escuro.\n- Título \"Inventário\" e a linha de apoio: Os bens da casa: patrimônio, equipamentos, vidraria e venda de equipamentos.\n- Abas e sub-abas (uma visível por vez, guardar a última aberta): Controle de Patrimônio | Equipamentos & Vidraria | Venda de equipamentos\n- Seções:\n- Acesso restrito\n- Cadastrar equipamento\n- Definir mínimo de vidraria\n- Cadastrar item\n\n## Campos e filtros\n- Casa\n- Equipamento *\n- Buscar no catálogo…\n- Nome *\n- Ex.: Freezer horizontal Metalfrio VF50\n- Categoria\n- Preço (R$)\n- Ex.: 4200\n- Dimensões (A x L x P)\n- Ex.: 90 x 60 x 200 cm\n- Fornecedor\n- Ex.: Metalfrio Distribuidora\n- Quantidade\n- Estado\n- Observação\n- Tipo de vidraria *\n- Mínimo *\n- Ex.: 24\n- Buscar item pelo nome…\n- Mostrar À venda Só disponíveis Só reservados Vendidos Descartados Tudo\n- Local\n- Ex.: Bancada refrigerada 1,8m\n- Local *\n- Tipo\n- Status\n- R$ novo\n- % uso (desconto)\n- Ex.: 65\n- Ex.: 90 x 180 x 60\n- Opcional\n\n## Colunas das tabelas\n- Equipamento\n- Categoria\n- Qtd\n- Estado\n- Registrado por\n- Data\n- Tipo\n- Mínimo\n- Tem hoje\n- Definido por\n- Atualizado\n\n## Ações (botões)\n- Equipamentos\n- Mínimos de vidraria\n- cancelar edição\n- + Não encontrou? Cadastrar novo item no catálogo\n- Salvar no catálogo\n- Adicionar equipamento\n- Confirmar exclusão\n- Definir mínimo\n- Catálogo\n- Montar orçamento\n- Orçamentos\n- Recarregar página\n- Câmera\n- Galeria\n- Cadastrar selecionados\n- descartar leitura\n- Cadastrar item\n- Adicionar do catálogo\n- Salvar orçamento\n\n## Dados\nRotas do servidor (Cloudflare Worker, com a sessão no cabeçalho):\n- /api/patrimonio\n- /api/patrimonio/mes\n- /api/vidraria-contagem\n- /api/catalogo-equipamentos\n- /api/catalogo-equipamento\n- /api/equipamento\n- /api/equipamentos\n- /api/vidraria-minimos\n- /api/vidraria-minimo\n- /api/venda-catalogo\n- /api/agenda\n- /api/venda-catalogo/foto\n- /api/venda-catalogo/ler-foto\n- /api/venda-orcamento\nSem sessão válida, a página manda para o login. Dado que falta aparece como \"—\", nunca inventado.\n\n## Visual\n- Fonte Inter (Google Fonts), com system-ui de reserva. Títulos em peso 600 a 700, texto de 13 a 15 px.\n- Tema claro (padrão): fundo #f6f7f9; cartões brancos com borda #e4e7ec, cantos de 16 px e sombra bem leve; texto #101828, secundário #475467, apoio #667085; destaque preto #101828 com texto branco; links em preto com seta.\n- Modo escuro em grafite, não preto: fundo #1e1f22, cartões #27292d, borda #3a3d42, texto #ececee, secundário #b9bcc3; destaque claro com texto escuro.\n- Botão de lua/sol no topo liga e desliga o escuro, guarda a escolha no navegador (localStorage) e aplica antes de pintar a página, sem piscar.\n- Toda cor sai de variáveis CSS (:root e :root[data-tema=\"escuro\"]); nenhuma cor fixa.\n- Destaques com fundo suave: verde (#ecfdf3 / #067647), amarelo (#fef6dc, borda #f5d77a, texto #b54708), vermelho (#fef3f2 / #c0362c), azul (#eff8ff / #175cd3). Selo de categoria em pílula cinza.\n- Ícones SVG de linha (24x24, traço 1.8). Nenhum emoji.\n- Celular primeiro: largura máxima de 980 px, margem lateral de 16 a 20 px, alvos de toque de pelo menos 34 px, nada de rolagem horizontal.\n\n## Regras\n- Nenhum telefone na página. Valor em dinheiro só para os níveis autorizados e vindo do servidor.\n- Cada número mostrado diz de onde vem; sem dado, mostre o vazio, não um valor de exemplo."</script>
 
 <script>
 window.SESSAO_LS = 'portal_sessao';
@@ -143,7 +200,7 @@ window.sessaoLer = function () {
     var f = document.createElement('div');
     f.id = 'previa-faixa';
     f.setAttribute('role', 'status');
-    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:#5a3fa0;color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--c-5a3fa0);color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
     f.textContent = 'Prévia · ' + (window.parent.portalPrevia.rotulo || s.nivel) +
       ' · o que você enviar aqui é gravado de verdade, com o seu login';
     document.body.insertBefore(f, document.body.firstChild);
@@ -907,7 +964,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .eq-salvar:disabled { opacity:.55; cursor:default; }
   .eq-aviso { font-size:12.5px; margin:10px 0 0; min-height:1em; }
   .eq-aviso.ok { color:var(--verde); }
-  .eq-aviso.err { color:#e08585; }
+  .eq-aviso.err { color:var(--vermelho); }
   .eq-lista { overflow-x:auto; }
   table.eq-tab { width:100%; border-collapse:collapse; font-size:13.5px; }
   table.eq-tab th, table.eq-tab td { padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
@@ -921,23 +978,23 @@ window.msgAcessoNegado = function (nomePagina) {
       border-radius:7px; border:1px solid var(--border); background:var(--card); color:var(--text-3);
       cursor:pointer; padding:0; }
   .eq-icon-btn:hover { border-color:var(--acc); color:var(--acc); }
-  .eq-icon-btn.perigo:hover { border-color:#e08585; color:#e08585; }
+  .eq-icon-btn.perigo:hover { border-color:var(--vermelho); color:var(--vermelho); }
   .eq-editando { display:none; background:var(--bg); border:1px solid var(--acc); border-radius:10px;
       padding:9px 12px; margin:-2px 0 12px; font-size:12.5px; color:var(--text-2); }
   .eq-editando.on { display:block; }
   .eq-cancelar { background:none; border:none; color:var(--text-3); text-decoration:underline; cursor:pointer;
       font:inherit; font-size:12.5px; padding:0; margin-left:10px; }
-  .eq-confirma-del { display:none; background:var(--bg); border:1px solid #e08585; border-radius:10px;
+  .eq-confirma-del { display:none; background:var(--bg); border:1px solid var(--vermelho); border-radius:10px;
       padding:10px 12px; font-size:12.5px; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
   .eq-confirma-del.on { display:flex; }
-  .eq-confirma-del .btn-del { background:#e08585; color:#241505; border:none; border-radius:7px;
+  .eq-confirma-del .btn-del { background:var(--vermelho); color:var(--c-241505); border:none; border-radius:7px;
       padding:7px 14px; font-size:12.5px; font-weight:600; cursor:pointer; }
   .farol { display:inline-flex; align-items:center; }
   .farol .pt { width:8px; height:8px; border-radius:50%; flex:none; }
   .farol .pt.ok { background:var(--verde); }
-  .farol .pt.baixo { background:#e08585; }
+  .farol .pt.baixo { background:var(--vermelho); }
   table.eq-tab td.tem-ok { color:var(--verde); font-weight:600; }
-  table.eq-tab td.tem-baixo { color:#e08585; font-weight:600; }
+  table.eq-tab td.tem-baixo { color:var(--vermelho); font-weight:600; }
   .eq-combo { position:relative; }
   .eq-combo-lista { display:none; position:absolute; left:0; right:0; top:100%; margin-top:4px;
       background:var(--card); border:1px solid var(--border); border-radius:10px;
@@ -1028,7 +1085,7 @@ window.msgAcessoNegado = function (nomePagina) {
   <div class="eq-confirma-del" id="eqf-confirma-del">
     <span>Excluir <b id="eqf-confirma-del-nome"></b>? Isso arquiva no Notion — some da lista, mas não perde o histórico.</span>
     <div style="display:flex;align-items:center;gap:10px">
-      <span id="eqf-confirma-del-erro" style="color:#e08585"></span>
+      <span id="eqf-confirma-del-erro" style="color:var(--vermelho)"></span>
       <button type="button" class="eq-cancelar" id="eqf-cancelar-del">cancelar</button>
       <button type="button" class="btn-del" id="eqf-confirmar-del">Confirmar exclusão</button>
     </div>
@@ -1585,7 +1642,7 @@ window.msgAcessoNegado = function (nomePagina) {
       font:inherit; font-size:12.5px; padding:0; margin-left:10px; }
   .ve-aviso { font-size:12.5px; margin:10px 0 0; min-height:1em; }
   .ve-aviso.ok { color:var(--verde); }
-  .ve-aviso.err { color:#e08585; }
+  .ve-aviso.err { color:var(--vermelho); }
   .ve-lista { display:flex; flex-direction:column; gap:8px; }
   .ve-card { display:flex; gap:12px; align-items:center; background:var(--card); border:1px solid var(--border);
       border-radius:12px; padding:12px; }
@@ -1597,8 +1654,8 @@ window.msgAcessoNegado = function (nomePagina) {
   .ve-card-preco .v.pend { color:var(--amarelo); font-size:12px; }
   .ve-card-preco .d { font-size:11px; color:var(--text-3); }
   .ve-badge { font-size:10px; padding:4px 9px; border-radius:999px; flex:none; }
-  .ve-badge.disponivel { background:#1d2a26; color:var(--verde); }
-  .ve-badge.reservado { background:#2f2a1a; color:var(--amarelo); }
+  .ve-badge.disponivel { background:var(--c-1d2a26); color:var(--verde); }
+  .ve-badge.reservado { background:var(--c-2f2a1a); color:var(--amarelo); }
   .ve-badge.vendido, .ve-badge.descartado { background:var(--bg); color:var(--text-3); }
   /* No celular o cartão em 5 colunas espremia o nome em 3 linhas encostado no
      preço (achado OLHANDO a captura em 375px — a medida de overflow dava 0,
@@ -1639,14 +1696,14 @@ window.msgAcessoNegado = function (nomePagina) {
       align-items:center; justify-content:center; padding:24px; flex-direction:column; gap:12px; }
   .ve-lightbox.on { display:flex; }
   .ve-lightbox img { max-width:100%; max-height:78vh; border-radius:8px; object-fit:contain; }
-  .ve-lightbox-legenda { color:#e9e2d3; font-size:13px; text-align:center; max-width:520px; }
-  .ve-lightbox-erro { color:#e9e2d3; font-size:13px; text-align:center; max-width:360px; line-height:1.6; }
+  .ve-lightbox-legenda { color:var(--text); font-size:13px; text-align:center; max-width:520px; }
+  .ve-lightbox-erro { color:var(--text); font-size:13px; text-align:center; max-width:360px; line-height:1.6; }
   .ve-lightbox-erro button { margin-top:10px; padding:9px 18px; border-radius:9px; border:1px solid var(--acc);
       background:none; color:var(--acc); font:inherit; font-size:13px; cursor:pointer; }
   .ve-lightbox-fecha { position:absolute; top:16px; right:18px; width:36px; height:36px; border-radius:50%;
-      border:none; background:rgba(255,255,255,.12); color:#fff; font-size:20px; cursor:pointer; line-height:1; }
+      border:none; background:rgba(var(--realce),.12); color:#fff; font-size:20px; cursor:pointer; line-height:1; }
   .ve-lightbox-nav { position:absolute; top:50%; transform:translateY(-50%); width:44px; height:44px;
-      border-radius:50%; border:none; background:rgba(255,255,255,.12); color:#fff; font-size:20px; cursor:pointer; }
+      border-radius:50%; border:none; background:rgba(var(--realce),.12); color:#fff; font-size:20px; cursor:pointer; }
   .ve-lightbox-nav.prev { left:14px; }
   .ve-lightbox-nav.next { right:14px; }
 
@@ -1669,9 +1726,9 @@ window.msgAcessoNegado = function (nomePagina) {
       box-sizing:border-box; border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:inherit; }
   .ve-mut-baixa { font-size:10.5px; color:var(--amarelo); grid-column:1/-1; }
   .ve-badge.rascunho { background:var(--bg); color:var(--text-3); }
-  .ve-badge.enviado { background:#2f2a1a; color:var(--amarelo); }
-  .ve-badge.aceito { background:#1d2a26; color:var(--verde); }
-  .ve-badge.perdido { background:#3a2020; color:#e08585; }
+  .ve-badge.enviado { background:var(--c-2f2a1a); color:var(--amarelo); }
+  .ve-badge.aceito { background:var(--c-1d2a26); color:var(--verde); }
+  .ve-badge.perdido { background:var(--c-3a2020); color:var(--vermelho); }
   .ve-editar { flex:none; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
       border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text-3); cursor:pointer; }
   .ve-editar:hover { border-color:var(--acc); color:var(--acc); }
@@ -1698,7 +1755,7 @@ window.msgAcessoNegado = function (nomePagina) {
   .ve-linha .tot.pend { color:var(--amarelo); }
   .ve-linha .tirar { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:15px;
       line-height:1; padding:4px; }
-  .ve-linha .tirar:hover { color:#e08585; }
+  .ve-linha .tirar:hover { color:var(--vermelho); }
   .ve-orc-rodape { display:flex; justify-content:space-between; align-items:flex-end; gap:12px;
       flex-wrap:wrap; padding:14px 2px 0; }
   .ve-orc-total .r { font-size:11px; color:var(--text-3); }
@@ -1731,10 +1788,10 @@ window.msgAcessoNegado = function (nomePagina) {
   .veL-acao { display:inline-flex; align-items:center; gap:6px; font:inherit; font-size:11.5px; padding:6px 11px;
       border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text-2); cursor:pointer; }
   .veL-acao.dest { border-color:var(--acc); color:var(--acc); }
-  .veL-acao.perigo:hover { border-color:#e08585; color:#e08585; }
+  .veL-acao.perigo:hover { border-color:var(--vermelho); color:var(--vermelho); }
   .veL-sel-status { font:inherit; font-size:11.5px; padding:6px 9px; border-radius:8px; border:1px solid var(--border);
       background:var(--bg); color:var(--text-2); }
-  .ve-confirma-del { display:none; background:var(--bg); border:1px solid #e08585; border-radius:10px;
+  .ve-confirma-del { display:none; background:var(--bg); border:1px solid var(--vermelho); border-radius:10px;
       padding:12px 14px; font-size:12.5px; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
       margin-bottom:12px; }
   .ve-confirma-del.on { display:flex; }
@@ -1887,7 +1944,7 @@ window.msgAcessoNegado = function (nomePagina) {
     <span>Excluir o orçamento de <b id="veL-confirma-del-nome"></b>? Isso arquiva no Notion — some da lista, mas não perde o histórico.</span>
     <div style="display:flex;align-items:center;gap:10px">
       <button type="button" class="ve-cancelar" id="veL-cancelar-del">cancelar</button>
-      <button type="button" class="ve-salvar" id="veL-confirmar-del" style="width:auto;padding:8px 16px;margin-top:0;background:#e08585;color:#241505">Confirmar exclusão</button>
+      <button type="button" class="ve-salvar" id="veL-confirmar-del" style="width:auto;padding:8px 16px;margin-top:0;background:var(--vermelho);color:var(--c-241505)">Confirmar exclusão</button>
     </div>
   </div>
 </div>
@@ -3471,7 +3528,7 @@ function nomeArquivoSeguro(base) {
 
 <button class="ia-aba" id="ia-aba" type="button" title="Assistente de IA" aria-label="Abrir o assistente de IA" aria-expanded="false" hidden><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M9 11h6M9 14h4"/></svg><span>IA</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-label="Assistente de IA" hidden><div class="ia-cab"><div><b>Assistente</b><small id="ia-sub">Responde com os dados do portal que o seu acesso permite.</small></div><div class="ia-cab-bt"><button class="ia-lnk" id="ia-nova" type="button">Nova conversa</button><button class="ia-x" id="ia-fecha" type="button" aria-label="Fechar o assistente"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><form class="ia-form" id="ia-form"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte ao assistente…" aria-label="Sua pergunta"></textarea><button type="submit" id="ia-envia">Enviar</button></form><div class="ia-rodape" id="ia-rodape">A IA só sugere. Nada é enviado nem salvo sem o seu toque em Autorizar.</div></aside>
-<p class="nota">Painel do bar · atualizado em 30/10/2026.
+<p class="nota">Painel do bar · atualizado em 03/11/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -4920,17 +4977,17 @@ if ('serviceWorker' in navigator) {
      ausência de uma variável não pode deixar o aviso ilegível. */
   .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
     z-index: 96; margin: 0 auto; max-width: 460px; display: none;
-    background: #2c2416; border: 1px solid var(--acc, #d8b26e); border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
     align-items: center; gap: 10px; }
   .ver-nova.on { display: flex; }
-  .ver-nova svg { flex: none; color: var(--acc, #d8b26e); }
-  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, #c9cdd6); line-height: 1.4; }
-  .vn-txt b { color: var(--text, #f3ede2); }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
   .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
-    border-radius: 999px; cursor: pointer; background: var(--acc, #d8b26e); border: none;
-    color: var(--acc-txt, #16130f); }
-  .vn-x { flex: none; background: none; border: none; color: var(--text-2, #c9cdd6);
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
@@ -4941,7 +4998,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -5055,8 +5112,8 @@ if ('serviceWorker' in navigator) {
      z-index com eles, só não ocupar o mesmo espaço na tela. */
   .atualiza-atalho { position: fixed; left: 12px; right: 12px;
     bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-    background: #2c2416; border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.45); display: none; }
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
   .atualiza-atalho.on { display: block; }
   .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
   .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }

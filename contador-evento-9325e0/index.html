@@ -840,8 +840,14 @@ async function montaPicker(){
       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '-' + (data || Date.now()));
     this.disabled = true;
     try {
+      // Evento já configurado só muda com sessão de chefe ou coord (o Worker confere).
+      var hCriar = {'Content-Type':'application/json'};
+      try {
+        var sessPortal = JSON.parse(localStorage.getItem('portal_sessao') || 'null');
+        if (sessPortal && sessPortal.token && sessPortal.exp > Date.now()) hCriar['X-Token'] = sessPortal.token;
+      } catch(e) {}
       var r = await fetchComTimeout(CFG.workerUrl + '/api/evento/criar', {
-        method:'POST', headers:{'Content-Type':'application/json'},
+        method:'POST', headers:hCriar,
         body: JSON.stringify({ id: id, nome: nome, casa: casa, data: data, drinkIds: drinkIds }),
       });
       var d = await r.json();
@@ -1033,7 +1039,7 @@ init();
 </div>
 <script>
 (function () {
-  var BUILD = 'a35ddccddc3c';
+  var BUILD = '211b8486957d';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
