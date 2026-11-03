@@ -845,6 +845,62 @@
   .nav-tog[aria-expanded="true"] { border-color: var(--acc); }
   .nav-tog[aria-expanded="true"] .cv { transform: rotate(180deg); color: var(--acc); }
 
+  /* Gaveta lateral do menu (portal_gaveta.py) */
+  .gv-abre { flex: none; width: 36px; height: 36px; margin-left: -6px; padding: 0; border: none;
+    border-radius: 10px; background: none; color: var(--text); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; }
+  .gv-abre:hover, .gv-abre:focus-visible { background: var(--card-2); }
+  .gv-fundo { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.42);
+    opacity: 0; transition: opacity .2s; }
+  .gv-fundo[hidden] { display: none; }
+  body.gv-aberta .gv-fundo { opacity: 1; }
+  body.gv-aberta { overflow: hidden; }
+  .gaveta { position: fixed; top: 0; bottom: 0; left: 0; z-index: 201; width: min(320px, 86vw);
+    display: flex; flex-direction: column; background: var(--card); border-right: 1px solid var(--border);
+    box-shadow: 0 0 40px rgba(0,0,0,calc(.35*var(--sombra-k))); transform: translateX(-104%); visibility: hidden;
+    transition: transform .22s ease, visibility .22s; padding-top: env(safe-area-inset-top, 0px); }
+  body.gv-aberta .gaveta { transform: none; visibility: visible; }
+  .gv-cab { display: flex; align-items: center; gap: 10px; padding: 14px 14px 12px 12px;
+    border-bottom: 1px solid var(--border); }
+  .gv-cab .gv-abre { margin-left: 0; }
+  .gv-tt { min-width: 0; }
+  .gv-tt b { display: block; font-size: 16px; font-weight: 700; color: var(--text); }
+  .gv-tt span { display: block; font-size: 12.5px; color: var(--text-3); margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gv-corpo { flex: 1; overflow-y: auto; overscroll-behavior: contain;
+    padding: 8px 10px calc(28px + env(safe-area-inset-bottom, 0px)); }
+  .gv-sec + .gv-sec { margin-top: 2px; }
+  .gv-sec-cab { width: 100%; display: flex; align-items: center; gap: 9px; padding: 11px 8px;
+    border: none; border-radius: 8px; background: none; font: inherit; font-size: 12px; font-weight: 600;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); cursor: pointer; text-align: left; }
+  .gv-sec-cab:hover { color: var(--text); }
+  .gv-sec-cab > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gv-cv { flex: none; display: flex; transition: transform .18s; }
+  .gv-sec.aberta > .gv-sec-cab { color: var(--text-2); }
+  .gv-sec.aberta > .gv-sec-cab .gv-cv { transform: rotate(180deg); }
+  .gv-sec-lista { display: none; padding: 0 0 6px; }
+  .gv-sec.aberta > .gv-sec-lista { display: block; }
+  .gv-it { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .gv-pg { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px; border-radius: 10px;
+    color: var(--text); text-decoration: none; font-size: 15px; }
+  .gv-pg > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gv-pg .ic { flex: none; color: var(--text-2); }
+  .gv-pg .lk { display: inline-flex; flex: none; margin-left: -4px; opacity: .55; }
+  .gv-pg:hover { background: var(--card-2); }
+  .gv-pg.on { background: var(--card-2); font-weight: 600; }
+  .gv-pg.on .ic { color: var(--text); }
+  .gv-sub-tog { width: 34px; height: 34px; padding: 0; border: none; border-radius: 8px; background: none;
+    color: var(--text-3); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .gv-sub-tog:hover { background: var(--card-2); color: var(--text); }
+  .gv-sub-tog svg { transition: transform .18s; }
+  .gv-sub-tog[aria-expanded="true"] svg { transform: rotate(180deg); }
+  .gv-subs { grid-column: 1 / -1; margin: 0 0 4px 21px; padding-left: 12px; border-left: 1px solid var(--border); }
+  .gv-subs[hidden] { display: none; }
+  .gv-sub { display: block; padding: 8px 10px; border-radius: 8px; font-size: 14px; color: var(--text-2);
+    text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gv-sub:hover { background: var(--card-2); color: var(--text); }
+  .gv-sub.on { background: var(--card-2); color: var(--text); font-weight: 600; }
+
   body { font-family: var(--sans); -webkit-font-smoothing: antialiased; }
   h1 { font-weight: 700; letter-spacing: -.015em; }
   h2 { font-weight: 600; letter-spacing: -.01em; }
