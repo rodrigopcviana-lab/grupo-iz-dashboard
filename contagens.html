@@ -98,7 +98,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=21dd39be3186">
+<link rel="stylesheet" href="portal.css?v=5ad7650e2c98">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -1127,7 +1127,6 @@ window.msgAcessoNegado = function (nomePagina) {
       '<li>Cada número é salvo sozinho, mesmo sem internet. Verde: salvo. Amarelo: salvando ou esperando você confirmar. Vermelho: não salvou.</li>' +
       '<li>Acabou o produto? Toque em "Não tem", que grava zero. Em branco quer dizer "não contei".</li>' +
       '<li>Terminou de olhar o local? "Zerar os sem número" fecha o que não está nele.</li>' +
-      '<li>Em cada categoria vêm primeiro os produtos que estavam neste local na semana passada. Os outros vêm depois e também se contam.</li>' +
       '<li>Número muito acima do normal pede confirmação antes de salvar.</li>' +
       '<li>Com todos os locais completos, o chefe conclui e a contagem vai para o Pedido de Compras.</li>' +
       '</ul></details>';
@@ -1172,34 +1171,16 @@ window.msgAcessoNegado = function (nomePagina) {
   }
 
   // --- tela 2: um local -----------------------------------------------------
-  // Dentro de cada categoria, primeiro o que tinha número neste local na
-  // contagem anterior; o resto vem depois, visível e contável. A ordem só olha a
-  // semana passada, então nada pula de lugar enquanto a pessoa digita.
-  function ordemDoLocal(lista, local) {
-    var saida = [], resto = [], cat;
-    lista.forEach(function (p) {
-      if (p.categoria !== cat) { saida = saida.concat(resto); resto = []; cat = p.categoria; }
-      (p.ant_valores && p.ant_valores[local] > 0 ? saida : resto).push(p);
-    });
-    return saida.concat(resto);
-  }
-  // Sem `ant_valores` (Worker antigo, ou a leitura da semana anterior falhou),
-  // fica o total de todos os locais, como antes.
-  function referencia(p, local) {
-    var m = p.min != null ? ' · mínimo ' + fmt(p.min) : '';
-    if (!p.ant_valores) return 'semana passada ' + fmt(p.ant_contado) + m;
-    return 'semana passada aqui ' + fmt(p.ant_valores[local]) + m;
-  }
   function telaLocal(local, rolar) {
     localSel = local;
     document.body.classList.add('cg-contando');
     try { localStorage.setItem(LS_ULTIMO, JSON.stringify({ db: dados.semana.db_id, local: local })); } catch (e) {}
     var bloqueado = fechada();
-    var lista = ordemDoLocal(dados.produtos.filter(function (p) {
+    var lista = dados.produtos.filter(function (p) {
       if (termo && p.nome.toLowerCase().indexOf(termo) < 0) return false;
       if (soFaltando && valor(p, local) !== null) return false;
       return true;
-    }), local);
+    });
     var falta = faltaNoLocal(local).length, pl = pctLocal(local), iso = isoSemana();
     var html = '<div class="cg-topo"><div class="cg-linha"><button class="cg-btn peq" type="button" id="cg-voltar">‹ Locais</button>' +
       '<div class="cg-tit"><strong>' + esc(local.trim()) + '</strong><small>' + esc(nomeCasa(casa)) + (iso ? ' · ' + dataCurta(iso) : '') + '</small></div>' +
@@ -1215,7 +1196,7 @@ window.msgAcessoNegado = function (nomePagina) {
       var mostrado = segurados[k] != null ? segurados[k] : v;
       var cls = falhas[k] ? ' falhou' : (fila.some(function (x) { return x.chave === k; }) ? ' pendente' : (v !== null ? ' salvo' : ''));
       html += '<div class="cg-prod" data-k="' + esc(k) + '"><div class="cg-prod-l"><div class="cg-nome"><b>' + esc(p.nome) + '</b>' +
-        '<small>' + esc(referencia(p, local)) + '</small></div>' +
+        '<small>semana passada ' + fmt(p.ant_contado) + (p.min != null ? ' · mínimo ' + fmt(p.min) : '') + '</small></div>' +
         '<input class="cg-num' + cls + '" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="next"' +
         ' data-p="' + p.page_id + '" value="' + (mostrado == null ? '' : String(mostrado).replace('.', ',')) + '"' +
         (bloqueado ? ' disabled' : '') + ' aria-label="' + esc(p.nome) + ' em ' + esc(local) + '">' +
@@ -3853,7 +3834,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '21dd39be3186';
+  var BUILD = '5ad7650e2c98';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
