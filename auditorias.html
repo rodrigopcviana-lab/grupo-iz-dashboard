@@ -98,7 +98,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=cb915cb0d755">
+<link rel="stylesheet" href="portal.css?v=5cd69ee7b4ee">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -1102,44 +1102,85 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
       topo -= n * tm * 1.25 + 7;
       atual.push({ forma: 'lin', p: [MG, topo, MG + larg, topo], cor: 0.15, esp: 0.9 });
     }
-    function faixa(sec, dir) {
-      var h = tam * 1.5 + 7;
-      atual.push({ forma: 'ret', p: [MG, topo - h, larg, h], cor: 0.9 });
-      var bl = topo - h / 2 - tam * 0.35;
-      atual.push({ x: MG + pad, y: bl, tam: tam, negrito: true, txt: corta(String(sec).toUpperCase(), larg * 0.65, tam), cor: 0 });
-      if (dir) atual.push({ x: MG + larg - pdfLarguraAprox(dir, tamS) - pad, y: bl, tam: tamS, negrito: false, txt: dir, cor: 0.3 });
-      topo -= h;
+    // Categoria (2026-11-12, pedido do Rodrigo: "tudo muito junto"): faixa
+    // ESCURA com o nome em branco (não se confunde com o cinza das linhas),
+    // respiro antes, linha forte fechando a categoria e linhas alternadas
+    // dentro dela, recomeçando a cada categoria. Na página nova, a categoria
+    // que continua ganha uma faixa clara "continuação".
+    var hFaixa = tam * 1.9 + 8, zebra = 0, temLinha = false;
+    function fecha() {
+      if (!temLinha) return;
+      atual.push({ forma: 'lin', p: [MG, topo, MG + larg, topo], cor: 0.15, esp: 1.3 });
+      temLinha = false;
     }
-    function cabe(h) {
-      if (topo - h >= MG + 8) return;
+    function faixa(sec, dir, cont) {
+      var h = cont ? tam * 1.5 + 6 : hFaixa;
+      atual.push({ forma: 'ret', p: [MG, topo - h, larg, h], cor: cont ? 0.88 : 0.2 });
+      var tN = cont ? tam : tam + 1.5, bl = topo - h / 2 - tN * 0.35;
+      var nome = String(sec).toUpperCase() + (cont ? '  ·  continuação' : '');
+      atual.push({ x: MG + pad + 2, y: bl, tam: tN, negrito: true, txt: corta(nome, larg * 0.65, tN), cor: cont ? 0.15 : 1 });
+      if (dir) atual.push({ x: MG + larg - pdfLarguraAprox(dir, tamS) - pad - 2, y: bl, tam: tamS, negrito: !cont, txt: dir, cor: cont ? 0.3 : 0.85 });
+      topo -= h;
+      zebra = 0;
+    }
+    function cabe(h, novaSecao) {
+      if (topo - h >= MG + 8) return false;
+      fecha();
       if (atual.length) paginas.push(atual);
       atual = []; topo = PH - MG;
       cabecalho();
-      if (secAtual) faixa(secAtual.secao + ' (continuação)', secAtual.dir);
+      if (secAtual && !novaSecao) faixa(secAtual.secao, secAtual.dir, true);
+      return true;
     }
+    // Mede uma linha de item: nome quebrado, descrições e altura total.
+    function mede(l) {
+      var nome = l.cels[0], nomeT = typeof nome === 'object' ? nome.t : nome;
+      var recM = l.marca ? Math.max(6, tam * 0.85) + 4 : 0;
+      var ls = pdfQuebra(String(nomeT == null ? '' : nomeT), tam, cols[0].larg - pad * 2 - recM);
+      var subs = [], recR = 64;
+      // Rótulo das descrições na largura do maior ("Impresso e Tagme:"
+      // encostava no texto com o recuo fixo de 64).
+      (l.sub || []).forEach(function (sb) { if (sb.r) recR = Math.max(recR, pdfLarguraAprox(sb.r, tamS) + 8); });
+      (l.sub || []).forEach(function (sb) {
+        var rec = sb.r ? recR : 0, linhas = pdfQuebra(sb.t, tamS, larg - pad * 2 - 10 - rec);
+        linhas.forEach(function (t, k) { subs.push({ r: k === 0 ? sb.r : '', t: t, rec: rec }); });
+      });
+      var h = pad + 1 + ls.length * tam * 1.3 + (subs.length ? 2 + subs.length * tamS * 1.3 : 0) + pad + 1;
+      return { recM: recM, ls: ls, subs: subs, h: h };
+    }
+    // Cabeçalho das colunas só começa a tabela se couber junto a faixa da
+    // primeira categoria e o primeiro item; senão a tabela abre na página
+    // seguinte (o cabeçalho ficava sozinho no pé da página).
+    var l0 = b.linhas[0], l1 = b.linhas[1];
+    var hIni = 30 + (l0 && l0.secao !== undefined ? 4 + hFaixa + (l1 && l1.secao === undefined ? mede(l1).h : 0)
+                                                 : (l0 ? mede(l0).h : 0));
+    if (topo - hIni < MG + 8 && atual.length) { paginas.push(atual); atual = []; topo = PH - MG; }
     cabecalho();
-    b.linhas.forEach(function (l) {
+    var primeira = true;
+    b.linhas.forEach(function (l, li) {
       if (l.secao !== undefined) {
-        cabe(tam * 1.5 + 7 + 30);
+        fecha();
+        // Faixa + respiro + o primeiro item inteiro: a categoria nunca fica
+        // sozinha no pé da página.
+        var resp = primeira ? 4 : 14, prox = b.linhas[li + 1];
+        var h1 = prox && prox.secao === undefined ? mede(prox).h : 0;
+        if (!cabe(resp + hFaixa + h1, true)) topo -= resp;
+        else topo -= 4;
+        primeira = false;
         secAtual = l;
         faixa(l.secao, l.dir);
         return;
       }
-      var nome = l.cels[0], nomeT = typeof nome === 'object' ? nome.t : nome;
-      var recM = l.marca ? Math.max(6, tam * 0.85) + 4 : 0;
-      var ls = pdfQuebra(String(nomeT == null ? '' : nomeT), tam, cols[0].larg - pad * 2 - recM);
-      var subs = [];
-      (l.sub || []).forEach(function (sb) {
-        var rec = sb.r ? 64 : 0, linhas = pdfQuebra(sb.t, tamS, larg - pad * 2 - 10 - rec);
-        linhas.forEach(function (t, k) { subs.push({ r: k === 0 ? sb.r : '', t: t, rec: rec }); });
-      });
-      var h = pad + ls.length * tam * 1.3 + (subs.length ? 2 + subs.length * tamS * 1.3 : 0) + pad;
+      var m = mede(l), recM = m.recM, ls = m.ls, subs = m.subs, h = m.h;
       cabe(h);
-      if (l.destaque) atual.push({ forma: 'ret', p: [MG, topo - h, larg, h], cor: 0.955 });
-      var bl = topo - pad - tam * 0.8;
-      if (l.marca) marcaPdf(l.marca, MG + pad, bl, tam);
+      // Linhas alternadas dentro da categoria; o destaque (preço ou descrição
+      // nova) é uma barra preta à esquerda, não mais um fundo cinza.
+      if (zebra++ % 2) atual.push({ forma: 'ret', p: [MG, topo - h, larg, h], cor: 0.955 });
+      if (l.destaque) atual.push({ forma: 'ret', p: [MG, topo - h, 3, h], cor: 0 });
+      var bl = topo - pad - 1 - tam * 0.8;
+      if (l.marca) marcaPdf(l.marca, MG + pad + 2, bl, tam);
       ls.forEach(function (t, k) {
-        atual.push({ x: MG + pad + recM, y: bl - k * tam * 1.3, tam: tam, negrito: true, txt: t, cor: 0 });
+        atual.push({ x: MG + pad + 2 + recM, y: bl - k * tam * 1.3, tam: tam, negrito: true, txt: t, cor: 0 });
       });
       var x = MG + cols[0].larg;
       for (var i = 1; i < cols.length; i++) {
@@ -1152,12 +1193,14 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
       var ys = bl - ls.length * tam * 1.3 - 2;
       subs.forEach(function (sb, k) {
         var yy = ys - k * tamS * 1.3;
-        if (sb.r) atual.push({ x: MG + pad + 10, y: yy, tam: tamS, negrito: true, txt: sb.r, cor: 0.35 });
-        atual.push({ x: MG + pad + 10 + sb.rec, y: yy, tam: tamS, negrito: false, txt: sb.t, cor: 0.3 });
+        if (sb.r) atual.push({ x: MG + pad + 12, y: yy, tam: tamS, negrito: true, txt: sb.r, cor: 0.35 });
+        atual.push({ x: MG + pad + 12 + sb.rec, y: yy, tam: tamS, negrito: false, italico: true, txt: sb.t, cor: 0.3 });
       });
       topo -= h;
-      atual.push({ forma: 'lin', p: [MG, topo, MG + larg, topo], cor: 0.8, esp: 0.4 });
+      atual.push({ forma: 'lin', p: [MG, topo, MG + larg, topo], cor: 0.85, esp: 0.3 });
+      temLinha = true;
     });
+    fecha();
     y = topo - 16;
   }
 
@@ -1206,24 +1249,26 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
 
   var objs = [], corpo = '%PDF-1.4\n';
   function add(txt) { objs.push(corpo.length); corpo += txt; }
-  // 1 catálogo, 2 páginas, 3 e 4 fontes, 5 a imagem (só quando há logo),
-  // depois 2 objetos por página.
+  // 1 catálogo, 2 páginas, 3, 4 e 5 fontes (normal, negrito, itálico: este
+  // desde 2026-11-12, descrição da prévia do cardápio), 6 a imagem (só
+  // quando há logo), depois 2 objetos por página.
   var nPag = paginas.length;
   var nImg = logo ? 1 : 0;
-  var basePag = 5 + nImg;
+  var basePag = 6 + nImg;
   var kids = [];
   for (var i = 0; i < nPag; i++) kids.push((basePag + i * 2) + ' 0 R');
   add('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
   add('2 0 obj\n<</Type/Pages/Kids[' + kids.join(' ') + ']/Count ' + nPag + '>>\nendobj\n');
   add('3 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>\nendobj\n');
   add('4 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>\nendobj\n');
+  add('5 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Oblique/Encoding/WinAnsiEncoding>>\nendobj\n');
   if (logo) {
     // JPEG entra CRU no PDF (DCTDecode) — sem recodificar, sem canvas. Os
     // logos são baseline 120x120 RGB (conferido em build); JPEG progressivo
     // NÃO funciona aqui, e por isso as dimensões e o nº de componentes vêm
     // medidos do Python, nunca adivinhados no cliente.
     var img = atob(logo.b64);
-    add('5 0 obj\n<</Type/XObject/Subtype/Image/Width ' + logo.w + '/Height ' + logo.h +
+    add('6 0 obj\n<</Type/XObject/Subtype/Image/Width ' + logo.w + '/Height ' + logo.h +
         '/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ' + img.length +
         '>>\nstream\n' + img + '\nendstream\nendobj\n');
   }
@@ -1250,7 +1295,7 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
       if (l.forma) return;
       var cor = l.cor || 0;
       if (cor !== corAtual) { fluxo += cor + ' g\n'; corAtual = cor; }
-      var f = l.negrito ? '/F2' : '/F1';
+      var f = l.negrito ? '/F2' : l.italico ? '/F3' : '/F1';
       if (f !== fonteAtual || l.tam !== tamAtual) {
         fluxo += f + ' ' + l.tam + ' Tf\n';
         fonteAtual = f; tamAtual = l.tam;
@@ -1259,8 +1304,8 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
       fluxo += '(' + pdfEsc(winansi(l.txt)) + ') Tj\n';
     });
     fluxo += 'ET';
-    var recursos = '<</Font<</F1 3 0 R/F2 4 0 R>>' +
-      (logo && idx === 0 ? '/XObject<</Im0 5 0 R>>' : '') + '>>';
+    var recursos = '<</Font<</F1 3 0 R/F2 4 0 R/F3 5 0 R>>' +
+      (logo && idx === 0 ? '/XObject<</Im0 6 0 R>>' : '') + '>>';
     add(num + ' 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 ' + PW.toFixed(2) + ' ' + PH.toFixed(2) +
         ']/Resources' + recursos + '/Contents ' + (num + 1) + ' 0 R>>\nendobj\n');
     add((num + 1) + ' 0 obj\n<</Length ' + fluxo.length + '>>\nstream\n' + fluxo + '\nendstream\nendobj\n');
@@ -3037,7 +3082,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'cb915cb0d755';
+  var BUILD = '5cd69ee7b4ee';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
