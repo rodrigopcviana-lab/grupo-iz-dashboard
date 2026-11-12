@@ -98,7 +98,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=5ad7650e2c98">
+<link rel="stylesheet" href="portal.css?v=9f16ad64d5bc">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -1006,26 +1006,29 @@ function pdfLarguraAprox(txt, tam) { return String(txt).length * tam * 0.52; }
 //   opts.tituloCentro = true      título/subtítulo centralizados
 function pdfMonta(titulo, subtitulo, blocos, opts) {
   opts = opts || {};
-  var larg = PDF_L - PDF_MARGEM * 2;
-  var paginas = [], atual = [], y = PDF_A - PDF_MARGEM;
-  function novaPagina() { if (atual.length) paginas.push(atual); atual = []; y = PDF_A - PDF_MARGEM; }
-  function escreve(txt, tam, negrito, recuo, centro) {
+  // opts.paisagem (A4 deitado), opts.margem e opts.rodape: 2026-11-12, prévia
+  // de preços do Cardápio. Sem eles o PDF sai como sempre saiu.
+  var PW = opts.paisagem ? PDF_A : PDF_L, PH = opts.paisagem ? PDF_L : PDF_A, MG = opts.margem || PDF_MARGEM;
+  var larg = PW - MG * 2;
+  var paginas = [], atual = [], y = PH - MG;
+  function novaPagina() { if (atual.length) paginas.push(atual); atual = []; y = PH - MG; }
+  function escreve(txt, tam, negrito, recuo, centro, cor) {
     var linhas = pdfQuebra(txt, tam, larg - (recuo || 0));
     for (var i = 0; i < linhas.length; i++) {
-      if (y < PDF_MARGEM + 28) novaPagina();
-      var x = PDF_MARGEM + (recuo || 0);
-      if (centro) x = (PDF_L - pdfLarguraAprox(linhas[i], tam)) / 2;
-      atual.push({ x: x, y: y, tam: tam, negrito: negrito, txt: linhas[i] });
+      if (y < MG + 28) novaPagina();
+      var x = MG + (recuo || 0);
+      if (centro) x = (PW - pdfLarguraAprox(linhas[i], tam)) / 2;
+      atual.push({ x: x, y: y, tam: tam, negrito: negrito, txt: linhas[i], cor: cor || 0 });
       y -= tam * 1.42;
     }
   }
   // Nome à esquerda e preço à direita na MESMA linha — é a forma de cardápio,
   // e um `escreve` normal empilharia os dois.
   function escreveLinha(esq, dir, tam, negrito) {
-    if (y < PDF_MARGEM + 28) novaPagina();
-    atual.push({ x: PDF_MARGEM, y: y, tam: tam, negrito: negrito, txt: String(esq) });
+    if (y < MG + 28) novaPagina();
+    atual.push({ x: MG, y: y, tam: tam, negrito: negrito, txt: String(esq) });
     if (dir) {
-      var xd = PDF_L - PDF_MARGEM - pdfLarguraAprox(dir, tam);
+      var xd = PW - MG - pdfLarguraAprox(dir, tam);
       atual.push({ x: xd, y: y, tam: tam, negrito: negrito, txt: String(dir) });
     }
     y -= tam * 1.42;
@@ -1043,8 +1046,8 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
       return t;
     }
     function linha(cels, negrito) {
-      if (y < PDF_MARGEM + 28) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
-      var x = PDF_MARGEM;
+      if (y < MG + 28) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
+      var x = MG;
       b.colunas.forEach(function (c, i) {
         var t = corta(cels[i], c.larg);
         if (t) atual.push({ x: c.dir ? x + c.larg - pdfLarguraAprox(t, tam) - 2 : x, y: y, tam: tam, negrito: negrito, txt: t });
@@ -1057,17 +1060,17 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
       if (l && l.nota !== undefined) {
         var ls = pdfQuebra(String(l.nota), tam - 0.5, larg - 14);
         ls.forEach(function (t) {
-          if (y < PDF_MARGEM + 28) novaPagina();
-          atual.push({ x: PDF_MARGEM + 10, y: y, tam: tam - 0.5, negrito: false, txt: t });
+          if (y < MG + 28) novaPagina();
+          atual.push({ x: MG + 10, y: y, tam: tam - 0.5, negrito: false, txt: t });
           y -= (tam - 0.5) * 1.4;
         });
         y -= 1;
         return;
       }
       if (l && l.secao !== undefined) {
-        if (y < PDF_MARGEM + 40) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
+        if (y < MG + 40) { novaPagina(); linha(b.colunas.map(function (c) { return c.t; }), true); }
         y -= 3;
-        atual.push({ x: PDF_MARGEM, y: y, tam: tam + 1, negrito: true, txt: String(l.secao).toUpperCase() });
+        atual.push({ x: MG, y: y, tam: tam + 1, negrito: true, txt: String(l.secao).toUpperCase() });
         y -= alt + 1;
         return;
       }
@@ -1094,13 +1097,128 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     // Quebra de página explícita (2026-10-28, uma ficha técnica por página).
     if (b.tipo === 'pagina') { novaPagina(); return; }
     if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0, !!b.centro); y -= 3; return; }
+
+  // ---- blocos para impressão (2026-11-12, prévia de preços do Cardápio) ----
+  // Aqui `topo` é a borda de cima do que vem a seguir (não a linha de base
+  // do texto, como no resto do pdfMonta). Formas: {forma:'ret'|'cont'|'lin'}.
+  function topoAtual(tam) { return y + tam * 0.8; }
+  // Caixa com contorno e texto em negrito: o aviso de "prévia, nada confirmado".
+  function escreveAviso(b) {
+    var tam = 9, ls = pdfQuebra(b.texto, tam, larg - 20), h = ls.length * tam * 1.35 + 12;
+    var topo = topoAtual(tam);
+    atual.push({ forma: 'cont', p: [MG, topo - h, larg, h], cor: 0.25, esp: 0.9 });
+    ls.forEach(function (t, k) {
+      atual.push({ x: MG + 10, y: topo - 6 - tam * 0.8 - k * tam * 1.35, tam: tam, negrito: true, txt: t, cor: 0 });
+    });
+    y = topo - h - 14;
+  }
+  // Fileira de caixas com um número grande e o rótulo embaixo.
+  function escreveResumo(b) {
+    var k = b.itens.length, gap = 8, w = (larg - gap * (k - 1)) / k, h = 42, topo = topoAtual(9);
+    b.itens.forEach(function (it, i) {
+      var x = MG + i * (w + gap), n = String(it.n), r = String(it.l);
+      atual.push({ forma: 'cont', p: [x, topo - h, w, h], cor: 0.72, esp: 0.6 });
+      atual.push({ x: x + (w - pdfLarguraAprox(n, 15)) / 2, y: topo - 20, tam: 15, negrito: true, txt: n, cor: 0 });
+      var rr = pdfQuebra(r, 7.5, w - 6)[0] || '';
+      atual.push({ x: x + (w - pdfLarguraAprox(rr, 7.5)) / 2, y: topo - 33, tam: 7.5, negrito: false, txt: rr, cor: 0.35 });
+    });
+    y = topo - h - 16;
+  }
+  // Tabela de cardápio para imprimir: a 1a coluna (o item) ocupa o que sobra
+  // e QUEBRA a linha em vez de cortar; números alinhados à direita; faixa
+  // cinza por categoria; descrições embaixo do item, na largura toda;
+  // cabeçalho repetido em cada página.
+  //   b.colunas [{t, larg, dir}] (a larg da 1a é ignorada)
+  //   b.linhas  {secao, dir} | {cels:[texto | {t, b}], sub:[{r, t}], destaque}
+  function escreveTabela2(b) {
+    var tam = b.tam || 8.5, tamS = tam - 1, pad = 4, fixo = 0, secAtual = null;
+    b.colunas.forEach(function (c, i) { if (i) fixo += c.larg; });
+    var cols = b.colunas.map(function (c, i) { return { t: c.t, larg: i ? c.larg : larg - fixo, dir: !!c.dir }; });
+    var topo = topoAtual(tam);
+    if (topo < MG + 90) { if (atual.length) paginas.push(atual); atual = []; topo = PH - MG; }
+    function corta(t, w, tm) {
+      t = String(t == null ? '' : t);
+      while (t.length > 1 && pdfLarguraAprox(t, tm) > w - pad) t = t.slice(0, -2) + '…';
+      return t;
+    }
+    function cabecalho() {
+      var tm = tam - 1, ls = cols.map(function (c) { return pdfQuebra(c.t, tm, c.larg - pad * 2); });
+      var n = Math.max.apply(null, ls.map(function (l) { return l.length; }));
+      var x = MG;
+      cols.forEach(function (c, i) {
+        ls[i].forEach(function (t, k) {
+          var yy = topo - 3 - tm * 0.8 - (n - ls[i].length + k) * tm * 1.25;
+          atual.push({ x: c.dir ? x + c.larg - pdfLarguraAprox(t, tm) - pad : x + pad, y: yy, tam: tm, negrito: true, txt: t, cor: 0.3 });
+        });
+        x += c.larg;
+      });
+      topo -= n * tm * 1.25 + 7;
+      atual.push({ forma: 'lin', p: [MG, topo, MG + larg, topo], cor: 0.15, esp: 0.9 });
+    }
+    function faixa(sec, dir) {
+      var h = tam * 1.5 + 7;
+      atual.push({ forma: 'ret', p: [MG, topo - h, larg, h], cor: 0.9 });
+      var bl = topo - h / 2 - tam * 0.35;
+      atual.push({ x: MG + pad, y: bl, tam: tam, negrito: true, txt: corta(String(sec).toUpperCase(), larg * 0.65, tam), cor: 0 });
+      if (dir) atual.push({ x: MG + larg - pdfLarguraAprox(dir, tamS) - pad, y: bl, tam: tamS, negrito: false, txt: dir, cor: 0.3 });
+      topo -= h;
+    }
+    function cabe(h) {
+      if (topo - h >= MG + 8) return;
+      if (atual.length) paginas.push(atual);
+      atual = []; topo = PH - MG;
+      cabecalho();
+      if (secAtual) faixa(secAtual.secao + ' (continuação)', secAtual.dir);
+    }
+    cabecalho();
+    b.linhas.forEach(function (l) {
+      if (l.secao !== undefined) {
+        cabe(tam * 1.5 + 7 + 30);
+        secAtual = l;
+        faixa(l.secao, l.dir);
+        return;
+      }
+      var nome = l.cels[0], nomeT = typeof nome === 'object' ? nome.t : nome;
+      var ls = pdfQuebra(String(nomeT == null ? '' : nomeT), tam, cols[0].larg - pad * 2);
+      var subs = [];
+      (l.sub || []).forEach(function (sb) {
+        var rec = sb.r ? 64 : 0, linhas = pdfQuebra(sb.t, tamS, larg - pad * 2 - 10 - rec);
+        linhas.forEach(function (t, k) { subs.push({ r: k === 0 ? sb.r : '', t: t, rec: rec }); });
+      });
+      var h = pad + ls.length * tam * 1.3 + (subs.length ? 2 + subs.length * tamS * 1.3 : 0) + pad;
+      cabe(h);
+      if (l.destaque) atual.push({ forma: 'ret', p: [MG, topo - h, larg, h], cor: 0.955 });
+      var bl = topo - pad - tam * 0.8;
+      ls.forEach(function (t, k) {
+        atual.push({ x: MG + pad, y: bl - k * tam * 1.3, tam: tam, negrito: true, txt: t, cor: 0 });
+      });
+      var x = MG + cols[0].larg;
+      for (var i = 1; i < cols.length; i++) {
+        var c = cols[i], v = l.cels[i], neg = false;
+        if (v && typeof v === 'object') { neg = !!v.b; v = v.t; }
+        var t = corta(v, c.larg, tam);
+        if (t) atual.push({ x: c.dir ? x + c.larg - pdfLarguraAprox(t, tam) - pad : x + pad, y: bl, tam: tam, negrito: neg, txt: t, cor: 0 });
+        x += c.larg;
+      }
+      var ys = bl - ls.length * tam * 1.3 - 2;
+      subs.forEach(function (sb, k) {
+        var yy = ys - k * tamS * 1.3;
+        if (sb.r) atual.push({ x: MG + pad + 10, y: yy, tam: tamS, negrito: true, txt: sb.r, cor: 0.35 });
+        atual.push({ x: MG + pad + 10 + sb.rec, y: yy, tam: tamS, negrito: false, txt: sb.t, cor: 0.3 });
+      });
+      topo -= h;
+      atual.push({ forma: 'lin', p: [MG, topo, MG + larg, topo], cor: 0.8, esp: 0.4 });
+    });
+    y = topo - 16;
+  }
+
     if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0, !!b.centro); y -= 2; return; }
     if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }
     if (b.tipo === 'linha') { escreveLinha(b.esq, b.dir, b.tam || 11, !!b.negrito); return; }
     if (b.tipo === 'tabela') { escreveTabela(b); return; }
     // Descrição do item: respiro embaixo, senão ela encosta no nome do item
     // seguinte e o cardápio vira um bloco só (visto na primeira prova impressa).
-    if (b.tipo === 'nota') { escreve(b.texto, 9, false, b.recuo || 0); y -= 5; return; }
+    if (b.tipo === 'nota') { escreve(b.texto, b.tam || 9, !!b.negrito, b.recuo || 0, false, b.cor); y -= (b.respiro === undefined ? 5 : b.respiro); return; }
     escreve(b.texto, 10.5, false, 0, !!b.centro);
     y -= 4;
   });
@@ -1117,6 +1235,9 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
   var kids = [];
   for (var i = 0; i < nPag; i++) kids.push((basePag + i * 2) + ' 0 R');
   add('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
+    if (b.tipo === 'tabela2') { escreveTabela2(b); return; }
+    if (b.tipo === 'aviso') { escreveAviso(b); return; }
+    if (b.tipo === 'resumo') { escreveResumo(b); return; }
   add('2 0 obj\n<</Type/Pages/Kids[' + kids.join(' ') + ']/Count ' + nPag + '>>\nendobj\n');
   add('3 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>\nendobj\n');
   add('4 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>\nendobj\n');
@@ -1125,6 +1246,13 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     // logos são baseline 120x120 RGB (conferido em build); JPEG progressivo
     // NÃO funciona aqui, e por isso as dimensões e o nº de componentes vêm
     // medidos do Python, nunca adivinhados no cliente.
+  // Rodapé com "página X de Y" (só quando o chamador pede).
+  if (opts.rodape) paginas.forEach(function (pg, i) {
+    var dir = 'página ' + (i + 1) + ' de ' + paginas.length;
+    pg.push({ forma: 'lin', p: [MG, MG - 10, PW - MG, MG - 10], cor: 0.75, esp: 0.4 });
+    pg.push({ x: MG, y: MG - 22, tam: 7.5, negrito: false, txt: opts.rodape, cor: 0.4 });
+    pg.push({ x: PW - MG - pdfLarguraAprox(dir, 7.5), y: MG - 22, tam: 7.5, negrito: false, txt: dir, cor: 0.4 });
+  });
     var img = atob(logo.b64);
     add('5 0 obj\n<</Type/XObject/Subtype/Image/Width ' + logo.w + '/Height ' + logo.h +
         '/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ' + img.length +
@@ -1134,12 +1262,12 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     var num = basePag + idx * 2;
     var fluxo = '';
     if (logo && idx === 0) {
-      var lx = ((PDF_L - logoLado) / 2).toFixed(2);
-      var ly = (PDF_A - PDF_MARGEM - logoLado).toFixed(2);
+      var lx = ((PW - logoLado) / 2).toFixed(2);
+      var ly = (PH - MG - logoLado).toFixed(2);
       fluxo += 'q ' + logoLado + ' 0 0 ' + logoLado + ' ' + lx + ' ' + ly + ' cm /Im0 Do Q\n';
     }
     fluxo += 'BT\n';
-    var fonteAtual = null, tamAtual = null;
+    var fonteAtual = null, tamAtual = null, corAtual = 0;
     linhas.forEach(function (l) {
       var f = l.negrito ? '/F2' : '/F1';
       if (f !== fonteAtual || l.tam !== tamAtual) {
@@ -1152,14 +1280,26 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     fluxo += 'ET';
     var recursos = '<</Font<</F1 3 0 R/F2 4 0 R>>' +
       (logo && idx === 0 ? '/XObject<</Im0 5 0 R>>' : '') + '>>';
-    add(num + ' 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 ' + PDF_L.toFixed(2) + ' ' + PDF_A.toFixed(2) +
+    add(num + ' 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 ' + PW.toFixed(2) + ' ' + PH.toFixed(2) +
         ']/Resources' + recursos + '/Contents ' + (num + 1) + ' 0 R>>\nendobj\n');
     add((num + 1) + ' 0 obj\n<</Length ' + fluxo.length + '>>\nstream\n' + fluxo + '\nendstream\nendobj\n');
   });
   // O padding do xref é montado em laço de propósito: um literal de 10 zeros
+    // Formas antes do texto (o texto fica por cima do fundo cinza).
+    linhas.forEach(function (l) {
+      if (!l.forma) return;
+      var q = l.p.map(function (v) { return v.toFixed(2); }).join(' ');
+      if (l.forma === 'ret') fluxo += 'q ' + l.cor + ' g ' + q + ' re f Q\n';
+      else if (l.forma === 'cont') fluxo += 'q ' + l.cor + ' G ' + (l.esp || 0.5) + ' w ' + q + ' re S Q\n';
+      else if (l.forma === 'lin') fluxo += 'q ' + l.cor + ' G ' + (l.esp || 0.5) + ' w ' + l.p[0].toFixed(2) + ' ' + l.p[1].toFixed(2)
+        + ' m ' + l.p[2].toFixed(2) + ' ' + l.p[3].toFixed(2) + ' l S Q\n';
+    });
   // aqui é lido como TELEFONE pelo _checa_publica e aborta a geração do portal
   // inteiro (mesma armadilha que o build id já causou no Bento).
   function pad10(n) { var s = String(n); while (s.length < 10) s = '0' + s; return s; }
+      if (l.forma) return;
+      var cor = l.cor || 0;
+      if (cor !== corAtual) { fluxo += cor + ' g\n'; corAtual = cor; }
   var inicioXref = corpo.length;
   var total = objs.length + 1;
   var xref = 'xref\n0 ' + total + '\n' + pad10(0) + ' 65535 f \n';
@@ -1642,7 +1782,7 @@ function xlsBaixa(nomeArquivo, abaNome, colunas, linhas) {
 <button class="ia-aba" id="ia-aba" type="button" title="Pergunte ao assistente" aria-label="Abrir o assistente" aria-expanded="false" hidden><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg><span>Pergunte</span></button>
 <aside class="ia-painel" id="ia-painel" role="dialog" aria-labelledby="ia-tt" hidden><div class="ia-cab"><span class="ia-av"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></span><div class="ia-cab-t"><b id="ia-tt">Assistente do bar</b><small><span class="ia-on" aria-hidden="true"></span><span id="ia-sub">Cérebros do portal</span></small></div><button class="ia-ic" id="ia-nova" type="button" title="Nova conversa" aria-label="Nova conversa"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z"/><path d="M13 7l4 4"/></svg></button><button class="ia-ic" id="ia-fecha" type="button" title="Fechar" aria-label="Fechar o assistente"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><div class="ia-pe"><div class="ia-casa" id="ia-casa-box" hidden><label for="ia-casa">Casa</label><select id="ia-casa"></select></div><form class="ia-form" id="ia-form"><div class="ia-campo"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte qualquer coisa do bar…" aria-label="Sua pergunta"></textarea><button class="ia-envia" type="submit" id="ia-envia" aria-label="Enviar" disabled><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button></div></form><div class="ia-rodape" id="ia-rodape">A IA pode errar: confira na fonte. Nada sai sem você autorizar.</div></div><template id="ia-ic-av"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></template><template id="ia-ic-copia"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></template></aside>
 <details class="prompt-caixa" id="prompt-caixa" data-niveis="coord" style="display:none" data-arquivo="prompt-investimentos.md"><summary><span class="pc-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span>Prompt de construção desta página<span class="pc-tam">107 linhas</span><span class="pc-seta"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></summary><div class="pc-corpo"><textarea class="pc-txt" id="prompt-txt" readonly spellcheck="false" aria-label="Prompt de construção desta página"></textarea><div class="pc-acoes"><button class="pc-bt pc-pri" id="prompt-copia" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg>Copiar</button><button class="pc-bt" id="prompt-baixa" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg>Baixar .md</button><span class="pc-nota">Sai do HTML que está no ar e se atualiza a cada publicação.</span></div></div></details>
-<p class="nota">Painel do bar · atualizado em 11/11/2026.
+<p class="nota">Painel do bar · atualizado em 12/11/2026.
 Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
 
 <script>
@@ -3024,7 +3164,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '5ad7650e2c98';
+  var BUILD = '9f16ad64d5bc';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
