@@ -98,7 +98,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=9f16ad64d5bc">
+<link rel="stylesheet" href="portal.css?v=cb915cb0d755">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -1017,25 +1017,6 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     });
   }
 
-  // Espaço reservado pro logo ANTES de qualquer texto (só na página 1). A
-  // imagem em si é desenhada na emissão do fluxo, mas o espaço tem que sair
-  // daqui, senão o título nasceria por cima dela.
-  var logo = opts.logo && opts.logo.b64 ? opts.logo : null;
-  var logoLado = 0;
-  if (logo) {
-    logoLado = 56;
-    y -= logoLado + 14;
-  }
-
-  escreve(titulo, 18, true, 0, !!opts.tituloCentro); y -= 4;
-  if (subtitulo) { escreve(subtitulo, 9.5, false, 0, !!opts.tituloCentro); }
-  y -= 10;
-  blocos.forEach(function (b) {
-    if (!b) return;
-    if (b.tipo === 'sep') { y -= 9; return; }
-    // Quebra de página explícita (2026-10-28, uma ficha técnica por página).
-    if (b.tipo === 'pagina') { novaPagina(); return; }
-    if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0, !!b.centro); y -= 3; return; }
 
   // ---- blocos para impressão (2026-11-12, prévia de preços do Cardápio) ----
   // Aqui `topo` é a borda de cima do que vem a seguir (não a linha de base
@@ -1050,6 +1031,32 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
       atual.push({ x: MG + 10, y: topo - 6 - tam * 0.8 - k * tam * 1.35, tam: tam, negrito: true, txt: t, cor: 0 });
     });
     y = topo - h - 14;
+  }
+  // Marca de item que entra no menu (2026-11-12, prévia do cardápio):
+  // quadrado vazado com "+" = já vendido, passa a aparecer no menu; quadrado
+  // cheio com "+" claro = novo também no sistema de vendas. Desenhada com
+  // formas (a fonte do PDF não tem ícone) e legível em preto e branco.
+  // Devolve a largura ocupada. `yb` é a linha de base do texto ao lado.
+  function marcaPdf(tipo, x, yb, tam) {
+    var s = Math.max(6, tam * 0.85), y0 = yb - tam * 0.05, m = s * 0.25, c = tipo === 'novo' ? 1 : 0;
+    if (tipo === 'novo') atual.push({ forma: 'ret', p: [x, y0, s, s], cor: 0 });
+    else atual.push({ forma: 'cont', p: [x, y0, s, s], cor: 0, esp: 0.8 });
+    atual.push({ forma: 'lin', p: [x + s / 2, y0 + m, x + s / 2, y0 + s - m], cor: c, esp: 0.9 });
+    atual.push({ forma: 'lin', p: [x + m, y0 + s / 2, x + s - m, y0 + s / 2], cor: c, esp: 0.9 });
+    return s + 4;
+  }
+  // Legenda das marcas: b.itens [{marca, t}], uma linha por marca.
+  function escreveLegenda(b) {
+    var tam = b.tam || 8, rec = Math.max(6, tam * 0.85) + 4;
+    b.itens.forEach(function (it) {
+      pdfQuebra(it.t, tam, larg - rec).forEach(function (t, k) {
+        if (y < MG + 28) novaPagina();
+        if (k === 0 && it.marca) marcaPdf(it.marca, MG, y, tam);
+        atual.push({ x: MG + rec, y: y, tam: tam, negrito: false, txt: t, cor: b.cor === undefined ? 0.3 : b.cor });
+        y -= tam * 1.35;
+      });
+    });
+    y -= 2;
   }
   // Fileira de caixas com um número grande e o rótulo embaixo.
   function escreveResumo(b) {
@@ -1068,7 +1075,8 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
   // cinza por categoria; descrições embaixo do item, na largura toda;
   // cabeçalho repetido em cada página.
   //   b.colunas [{t, larg, dir}] (a larg da 1a é ignorada)
-  //   b.linhas  {secao, dir} | {cels:[texto | {t, b}], sub:[{r, t}], destaque}
+  //   b.linhas  {secao, dir} | {cels:[texto | {t, b}], sub:[{r, t}], destaque, marca}
+  //   marca: 'entra' | 'novo' desenha a marca de marcaPdf antes do item.
   function escreveTabela2(b) {
     var tam = b.tam || 8.5, tamS = tam - 1, pad = 4, fixo = 0, secAtual = null;
     b.colunas.forEach(function (c, i) { if (i) fixo += c.larg; });
@@ -1118,7 +1126,8 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
         return;
       }
       var nome = l.cels[0], nomeT = typeof nome === 'object' ? nome.t : nome;
-      var ls = pdfQuebra(String(nomeT == null ? '' : nomeT), tam, cols[0].larg - pad * 2);
+      var recM = l.marca ? Math.max(6, tam * 0.85) + 4 : 0;
+      var ls = pdfQuebra(String(nomeT == null ? '' : nomeT), tam, cols[0].larg - pad * 2 - recM);
       var subs = [];
       (l.sub || []).forEach(function (sb) {
         var rec = sb.r ? 64 : 0, linhas = pdfQuebra(sb.t, tamS, larg - pad * 2 - 10 - rec);
@@ -1128,8 +1137,9 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
       cabe(h);
       if (l.destaque) atual.push({ forma: 'ret', p: [MG, topo - h, larg, h], cor: 0.955 });
       var bl = topo - pad - tam * 0.8;
+      if (l.marca) marcaPdf(l.marca, MG + pad, bl, tam);
       ls.forEach(function (t, k) {
-        atual.push({ x: MG + pad, y: bl - k * tam * 1.3, tam: tam, negrito: true, txt: t, cor: 0 });
+        atual.push({ x: MG + pad + recM, y: bl - k * tam * 1.3, tam: tam, negrito: true, txt: t, cor: 0 });
       });
       var x = MG + cols[0].larg;
       for (var i = 1; i < cols.length; i++) {
@@ -1151,10 +1161,33 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     y = topo - 16;
   }
 
+  // Espaço reservado pro logo ANTES de qualquer texto (só na página 1). A
+  // imagem em si é desenhada na emissão do fluxo, mas o espaço tem que sair
+  // daqui, senão o título nasceria por cima dela.
+  var logo = opts.logo && opts.logo.b64 ? opts.logo : null;
+  var logoLado = 0;
+  if (logo) {
+    logoLado = 56;
+    y -= logoLado + 14;
+  }
+
+  escreve(titulo, 18, true, 0, !!opts.tituloCentro); y -= 4;
+  if (subtitulo) { escreve(subtitulo, 9.5, false, 0, !!opts.tituloCentro); }
+  y -= 10;
+  blocos.forEach(function (b) {
+    if (!b) return;
+    if (b.tipo === 'sep') { y -= 9; return; }
+    // Quebra de página explícita (2026-10-28, uma ficha técnica por página).
+    if (b.tipo === 'pagina') { novaPagina(); return; }
+    if (b.tipo === 'h1') { y -= 8; escreve(b.texto, 14, true, 0, !!b.centro); y -= 3; return; }
     if (b.tipo === 'h2') { y -= 5; escreve(b.texto, 11.5, true, 0, !!b.centro); y -= 2; return; }
     if (b.tipo === 'li') { escreve('- ' + b.texto, 10, false, 12); return; }
     if (b.tipo === 'linha') { escreveLinha(b.esq, b.dir, b.tam || 11, !!b.negrito); return; }
     if (b.tipo === 'tabela') { escreveTabela(b); return; }
+    if (b.tipo === 'tabela2') { escreveTabela2(b); return; }
+    if (b.tipo === 'aviso') { escreveAviso(b); return; }
+    if (b.tipo === 'resumo') { escreveResumo(b); return; }
+    if (b.tipo === 'legenda') { escreveLegenda(b); return; }
     // Descrição do item: respiro embaixo, senão ela encosta no nome do item
     // seguinte e o cardápio vira um bloco só (visto na primeira prova impressa).
     if (b.tipo === 'nota') { escreve(b.texto, b.tam || 9, !!b.negrito, b.recuo || 0, false, b.cor); y -= (b.respiro === undefined ? 5 : b.respiro); return; }
@@ -1163,6 +1196,13 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
   });
   if (atual.length) paginas.push(atual);
   if (!paginas.length) paginas.push([]);
+  // Rodapé com "página X de Y" (só quando o chamador pede).
+  if (opts.rodape) paginas.forEach(function (pg, i) {
+    var dir = 'página ' + (i + 1) + ' de ' + paginas.length;
+    pg.push({ forma: 'lin', p: [MG, MG - 10, PW - MG, MG - 10], cor: 0.75, esp: 0.4 });
+    pg.push({ x: MG, y: MG - 22, tam: 7.5, negrito: false, txt: opts.rodape, cor: 0.4 });
+    pg.push({ x: PW - MG - pdfLarguraAprox(dir, 7.5), y: MG - 22, tam: 7.5, negrito: false, txt: dir, cor: 0.4 });
+  });
 
   var objs = [], corpo = '%PDF-1.4\n';
   function add(txt) { objs.push(corpo.length); corpo += txt; }
@@ -1174,9 +1214,6 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
   var kids = [];
   for (var i = 0; i < nPag; i++) kids.push((basePag + i * 2) + ' 0 R');
   add('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
-    if (b.tipo === 'tabela2') { escreveTabela2(b); return; }
-    if (b.tipo === 'aviso') { escreveAviso(b); return; }
-    if (b.tipo === 'resumo') { escreveResumo(b); return; }
   add('2 0 obj\n<</Type/Pages/Kids[' + kids.join(' ') + ']/Count ' + nPag + '>>\nendobj\n');
   add('3 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>\nendobj\n');
   add('4 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>\nendobj\n');
@@ -1185,13 +1222,6 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     // logos são baseline 120x120 RGB (conferido em build); JPEG progressivo
     // NÃO funciona aqui, e por isso as dimensões e o nº de componentes vêm
     // medidos do Python, nunca adivinhados no cliente.
-  // Rodapé com "página X de Y" (só quando o chamador pede).
-  if (opts.rodape) paginas.forEach(function (pg, i) {
-    var dir = 'página ' + (i + 1) + ' de ' + paginas.length;
-    pg.push({ forma: 'lin', p: [MG, MG - 10, PW - MG, MG - 10], cor: 0.75, esp: 0.4 });
-    pg.push({ x: MG, y: MG - 22, tam: 7.5, negrito: false, txt: opts.rodape, cor: 0.4 });
-    pg.push({ x: PW - MG - pdfLarguraAprox(dir, 7.5), y: MG - 22, tam: 7.5, negrito: false, txt: dir, cor: 0.4 });
-  });
     var img = atob(logo.b64);
     add('5 0 obj\n<</Type/XObject/Subtype/Image/Width ' + logo.w + '/Height ' + logo.h +
         '/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ' + img.length +
@@ -1205,9 +1235,21 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
       var ly = (PH - MG - logoLado).toFixed(2);
       fluxo += 'q ' + logoLado + ' 0 0 ' + logoLado + ' ' + lx + ' ' + ly + ' cm /Im0 Do Q\n';
     }
+    // Formas antes do texto (o texto fica por cima do fundo cinza).
+    linhas.forEach(function (l) {
+      if (!l.forma) return;
+      var q = l.p.map(function (v) { return v.toFixed(2); }).join(' ');
+      if (l.forma === 'ret') fluxo += 'q ' + l.cor + ' g ' + q + ' re f Q\n';
+      else if (l.forma === 'cont') fluxo += 'q ' + l.cor + ' G ' + (l.esp || 0.5) + ' w ' + q + ' re S Q\n';
+      else if (l.forma === 'lin') fluxo += 'q ' + l.cor + ' G ' + (l.esp || 0.5) + ' w ' + l.p[0].toFixed(2) + ' ' + l.p[1].toFixed(2)
+        + ' m ' + l.p[2].toFixed(2) + ' ' + l.p[3].toFixed(2) + ' l S Q\n';
+    });
     fluxo += 'BT\n';
     var fonteAtual = null, tamAtual = null, corAtual = 0;
     linhas.forEach(function (l) {
+      if (l.forma) return;
+      var cor = l.cor || 0;
+      if (cor !== corAtual) { fluxo += cor + ' g\n'; corAtual = cor; }
       var f = l.negrito ? '/F2' : '/F1';
       if (f !== fonteAtual || l.tam !== tamAtual) {
         fluxo += f + ' ' + l.tam + ' Tf\n';
@@ -1224,21 +1266,9 @@ function pdfMonta(titulo, subtitulo, blocos, opts) {
     add((num + 1) + ' 0 obj\n<</Length ' + fluxo.length + '>>\nstream\n' + fluxo + '\nendstream\nendobj\n');
   });
   // O padding do xref é montado em laço de propósito: um literal de 10 zeros
-    // Formas antes do texto (o texto fica por cima do fundo cinza).
-    linhas.forEach(function (l) {
-      if (!l.forma) return;
-      var q = l.p.map(function (v) { return v.toFixed(2); }).join(' ');
-      if (l.forma === 'ret') fluxo += 'q ' + l.cor + ' g ' + q + ' re f Q\n';
-      else if (l.forma === 'cont') fluxo += 'q ' + l.cor + ' G ' + (l.esp || 0.5) + ' w ' + q + ' re S Q\n';
-      else if (l.forma === 'lin') fluxo += 'q ' + l.cor + ' G ' + (l.esp || 0.5) + ' w ' + l.p[0].toFixed(2) + ' ' + l.p[1].toFixed(2)
-        + ' m ' + l.p[2].toFixed(2) + ' ' + l.p[3].toFixed(2) + ' l S Q\n';
-    });
   // aqui é lido como TELEFONE pelo _checa_publica e aborta a geração do portal
   // inteiro (mesma armadilha que o build id já causou no Bento).
   function pad10(n) { var s = String(n); while (s.length < 10) s = '0' + s; return s; }
-      if (l.forma) return;
-      var cor = l.cor || 0;
-      if (cor !== corAtual) { fluxo += cor + ' g\n'; corAtual = cor; }
   var inicioXref = corpo.length;
   var total = objs.length + 1;
   var xref = 'xref\n0 ' + total + '\n' + pad10(0) + ' 65535 f \n';
@@ -3007,7 +3037,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '9f16ad64d5bc';
+  var BUILD = 'cb915cb0d755';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
