@@ -1,0 +1,2453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f6f7f9"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"><script>
+(function () {
+  var COR = {"claro": "#f6f7f9", "escuro": "#1e1f22"};
+  function le() { try { return localStorage.getItem('portal_tema') === 'escuro' ? 'escuro' : 'claro'; } catch (e) { return 'claro'; } }
+  function aplica(t) {
+    var r = document.documentElement;
+    if (t === 'escuro') r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', COR[t]);
+    var b = document.getElementById('tema-btn');
+    if (b) {
+      b.setAttribute('aria-checked', t === 'escuro' ? 'true' : 'false');
+      b.title = t === 'escuro' ? 'Desligar modo escuro' : 'Ligar modo escuro';
+    }
+  }
+  aplica(le());
+  window.temaAtual = le;
+  window.temaAlterna = function () {
+    var t = le() === 'escuro' ? 'claro' : 'escuro';
+    try { localStorage.setItem('portal_tema', t); } catch (e) {}
+    aplica(t);
+  };
+  // Outras abas e os iframes da casca de abas recebem a troca por aqui.
+  addEventListener('storage', function (e) { if (e.key === 'portal_tema') aplica(le()); });
+  document.addEventListener('DOMContentLoaded', function () { aplica(le()); });
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.className = 'tema-aviso'; d.setAttribute('role', 'status'); d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 2200);
+  }
+  function textoPrompt() {
+    var el = document.getElementById('prompt-pagina');
+    if (!el) return null;
+    try { return JSON.parse(el.textContent); } catch (e) { return null; }
+  }
+  // O textarea só recebe o texto quando a caixa abre.
+  function enchePrompt() {
+    var ta = document.getElementById('prompt-txt');
+    if (!ta || ta.value) return;
+    var txt = textoPrompt();
+    if (txt) ta.value = txt;
+  }
+  function baixaPrompt() {
+    var txt = textoPrompt();
+    if (!txt) return;
+    var cx = document.getElementById('prompt-caixa');
+    var nome = (cx && cx.getAttribute('data-arquivo')) || 'prompt-pagina.md';
+    var url = URL.createObjectURL(new Blob([txt], { type: 'text/markdown;charset=utf-8' }));
+    var a = document.createElement('a');
+    a.href = url; a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    aviso('Arquivo ' + nome + ' baixado');
+  }
+  function copiaPrompt() {
+    var txt = textoPrompt();
+    if (!txt) return;
+    function reserva() {
+      var t = document.createElement('textarea');
+      t.value = txt; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      aviso(ok ? 'Prompt da página copiado' : 'Não deu para copiar');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
+    } else reserva();
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest) return;
+    if (e.target.closest('#tema-btn')) window.temaAlterna();
+    else if (e.target.closest('#prompt-copia')) copiaPrompt();
+    else if (e.target.closest('#prompt-baixa')) baixaPrompt();
+  });
+  document.addEventListener('toggle', function (e) {
+    if (e.target && e.target.id === 'prompt-caixa' && e.target.open) enchePrompt();
+  }, true);
+})();
+</script>
+<title>Saúde do robô · Painel do bar</title>
+<script>
+(function () {
+  try {
+    if (window.top !== window.self) return;
+    if (/[?&]solo=1(&|$)/.test(location.search)) return;
+    var arq = location.pathname.split('/').pop() || 'index.html';
+    location.replace('abas.html#p=' + encodeURIComponent(arq + location.search + location.hash));
+  } catch (e) {}
+})();
+</script>
+<script>
+(function () {
+  var URL_ERRO = "https://contagem-bares.rodrigopcviana.workers.dev";
+  if (!URL_ERRO || !navigator.sendBeacon) return;
+  var n = 0, vistos = {};
+  var REDE = /Failed to fetch|NetworkError|Load failed|network error|AbortError/i;
+  function manda(msg, src, lin, col) {
+    try {
+      msg = String(msg || '').slice(0, 300);
+      if (!msg || REDE.test(msg)) return;
+      var arq = String(src || '').split('/').pop().split('?')[0];
+      var k = msg + '|' + arq + '|' + lin;
+      if (vistos[k] || n >= 5) return;
+      vistos[k] = 1; n++;
+      var pag = location.pathname.split('/').pop() || 'index.html';
+      var corpo = JSON.stringify({ tipo: 'erro_js', build: '5f1eb965f613',
+        ref: pag + ' ' + arq + ':' + (lin || 0) + ':' + (col || 0) + ' ' + msg });
+      navigator.sendBeacon(URL_ERRO + '/api/evento', new Blob([corpo], { type: 'text/plain' }));
+    } catch (e) {}
+  }
+  window.addEventListener('error', function (e) {
+    if (e && e.target && e.target !== window) return;
+    manda(e && e.message, e && e.filename, e && e.lineno, e && e.colno);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e && e.reason;
+    manda('promise: ' + ((r && r.message) || r), '', 0, 0);
+  });
+})();
+</script>
+<link rel="stylesheet" href="portal.css?v=5f1eb965f613">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
+</head>
+<body>
+<a class="volta-mural vm-barra" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11.5 5.5 5 12l6.5 6.5"/></svg>Mural</a>
+<header class="topo">
+<div class="marca-blk"><button class="gv-abre" id="gv-abre" type="button" aria-label="Abrir o menu" aria-controls="gaveta" aria-expanded="false"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><svg class="logo-iz" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Painel do bar"><rect x="1" y="1" width="30" height="30" rx="8" stroke-opacity=".45"/><path d="M9 9h14l-7 8z"/><path d="M16 17v6M12.5 23h7"/></svg><div class="marca-txt"><div class="marca">Painel do bar</div><div class="kicker">uso interno das equipes</div></div><div class="topo-acoes"><button class="tema-btn" id="tema-btn" type="button" role="switch" title="Ligar modo escuro" aria-label="Modo escuro" aria-checked="false"><span class="tc-bola"><span class="ic-sol"><svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7"/><path d="M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg></span><span class="ic-lua"><svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3z"/></svg></span></span></button></div></div>
+<div class="topo-linha">
+<a class="nivel-pill" id="nivel-pill" href="meu-perfil.html"><span class="np-pre">Nível:</span> <b id="nivel-pill-txt">Equipe de Bar</b><span class="np-niv" id="np-niv"></span><span class="np-tr">Perfil</span></a>
+<a class="nivel-tr" id="nivel-tr" href="index.html#nivel" title="Trocar acesso" aria-label="Trocar acesso"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg></a>
+
+<button class="lupa-busca" id="lupa-busca" type="button" aria-label="Buscar no portal" title="Buscar no portal (/)">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4.5 4.5"/></svg>
+<span class="lb-txt">Buscar</span>
+</button>
+<div id="busca-global-ov" role="dialog" aria-modal="true" aria-label="Buscar no portal">
+<div class="bg-caixa">
+<div class="bg-topo">
+<input id="bg-input" type="search" placeholder="Página, receita ou item…" autocomplete="off">
+<button class="bg-fechar" id="bg-fechar" type="button" aria-label="Fechar busca">&times;</button>
+</div>
+<div class="bg-chips" id="bg-chips" role="group" aria-label="Filtrar por fonte">
+<button class="bg-chip ativo" type="button" data-fonte="tudo" aria-pressed="true">Tudo</button>
+<button class="bg-chip" type="button" data-fonte="paginas" aria-pressed="false">Páginas</button>
+<button class="bg-chip" type="button" data-fonte="receitas" aria-pressed="false">Receitas</button>
+<button class="bg-chip" type="button" data-fonte="itens" aria-pressed="false">Itens</button>
+</div>
+<div class="bg-res" id="bg-res">
+<p class="bg-dica" id="bg-msg">Digite ao menos 2 letras.</p>
+<div class="bg-sec" id="bg-sec-paginas" hidden><p class="bg-sec-tt">Páginas</p><div class="bg-sec-lista"></div></div>
+<div class="bg-sec" id="bg-sec-receitas" hidden><p class="bg-sec-tt">Receitas</p><div class="bg-sec-lista"></div></div>
+<div class="bg-sec" id="bg-sec-itens" hidden><p class="bg-sec-tt">Itens no estoque das casas</p><div class="bg-sec-lista"></div></div>
+</div>
+</div>
+</div>
+
+<button class="sino-btn" id="sino-btn" type="button" title="Notificações" aria-label="Notificações" aria-expanded="false" hidden><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg><span class="sino-badge" id="sino-badge" hidden>0</span></button>
+
+
+</div>
+</header>
+<div class="gv-fundo" id="gv-fundo" hidden></div><nav class="gaveta" id="gaveta" aria-label="Menu do portal" aria-hidden="true"><div class="gv-cab"><button class="gv-abre" id="gv-fecha" type="button" aria-label="Fechar o menu"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div class="gv-tt"><b>Painel do bar</b><span id="gv-quem"></span></div></div><div class="gv-corpo"><section class="gv-sec" data-niveis="chefe controladoria coord equipe marketing rh suprimentos treinador"><button class="gv-sec-cab" type="button" aria-expanded="false"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Geral</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it" data-niveis="equipe chefe coord rh controladoria suprimentos treinador marketing"><a class="gv-pg" href="index.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a></div><div class="gv-it" data-niveis="equipe chefe coord treinador marketing"><a class="gv-pg" href="demandas.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Central de Demandas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-1" aria-expanded="false" aria-label="Subpáginas de Central de Demandas"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-1" hidden><a class="gv-sub" href="demandas.html?tab=central" data-tab="central" data-niveis="equipe chefe coord treinador marketing">Central</a><a class="gv-sub" href="demandas.html?tab=casa" data-tab="casa" data-niveis="chefe coord">Por casa / por setor</a><a class="gv-sub" href="demandas.html?tab=analise" data-tab="analise" data-niveis="chefe coord">Análise</a><a class="gv-sub" href="demandas.html?tab=obrigacoes" data-tab="obrigacoes" data-niveis="coord">Obrigações recorrentes</a></div></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="pergunte.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg><span>Pergunte ao bar</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-2" aria-expanded="false" aria-label="Subpáginas de Pergunte ao bar"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-2" hidden><a class="gv-sub" href="pergunte.html?tab=pergunte" data-tab="pergunte" data-niveis="equipe chefe coord">Pergunte</a><a class="gv-sub" href="pergunte.html?tab=numeros" data-tab="numeros" data-niveis="chefe coord">Números (vendas, margem, preço)</a></div></div><div class="gv-it" data-niveis="equipe chefe coord rh treinador marketing"><a class="gv-pg" href="avisos.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg><span>Avisos</span></a></div><div class="gv-it" data-niveis="chefe coord"><a class="gv-pg" href="agenda.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Minha Mesa</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></div></section><section class="gv-sec" data-niveis="chefe controladoria coord equipe marketing treinador"><button class="gv-sec-cab" type="button" aria-expanded="false"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Criar a carta</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it" data-niveis="equipe chefe coord treinador marketing"><a class="gv-pg" href="cocktails.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Fichas técnicas</span></a></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="laboratorio.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z"/><path d="M13 7l4 4"/></svg><span>Laboratório</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-3" aria-expanded="false" aria-label="Subpáginas de Laboratório"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-3" hidden><a class="gv-sub" href="laboratorio.html?tab=constelacao" data-tab="constelacao" data-niveis="equipe chefe coord">Constelação de Sabores</a><a class="gv-sub" href="laboratorio.html?tab=harmonizacao" data-tab="harmonizacao" data-niveis="equipe chefe coord">Harmonização de sala</a><a class="gv-sub" href="laboratorio.html?tab=lab" data-tab="lab" data-niveis="coord">Lab de Drinks</a></div></div><div class="gv-it" data-niveis="chefe coord controladoria"><a class="gv-pg" href="cardapio-definicao.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg><span>Cardápios</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-4" aria-expanded="false" aria-label="Subpáginas de Cardápios"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-4" hidden><a class="gv-sub" href="cardapio-definicao.html?tab=cardapios" data-tab="cardapios" data-niveis="chefe coord controladoria">Cardápios</a><a class="gv-sub" href="cardapio-definicao.html?tab=recomendacao" data-tab="recomendacao" data-niveis="chefe coord">Recomendação</a></div></div></div></section><section class="gv-sec" data-niveis="chefe controladoria coord equipe"><button class="gv-sec-cab" type="button" aria-expanded="false"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Comprar e cuidar dos ativos</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it" data-niveis="equipe chefe coord controladoria"><a class="gv-pg" href="gestao-produto.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Compras</span></a></div><div class="gv-it" data-niveis="chefe coord"><a class="gv-pg" href="inventario.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Inventário</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-5" aria-expanded="false" aria-label="Subpáginas de Inventário"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-5" hidden><a class="gv-sub" href="inventario.html?tab=patrimonio" data-tab="patrimonio" data-niveis="chefe coord">Controle de Patrimônio</a><a class="gv-sub" href="inventario.html?tab=equipamentos" data-tab="equipamentos" data-niveis="chefe coord">Equipamentos &amp; Vidraria</a><a class="gv-sub" href="inventario.html?tab=venda" data-tab="venda" data-niveis="chefe coord">Venda de equipamentos</a></div></div><div class="gv-it" data-niveis="chefe coord"><a class="gv-pg" href="investimentos.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Investimentos</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="coord"><a class="gv-pg" href="planejador-3d.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Planejador 3D</span></a></div></div></section><section class="gv-sec" data-niveis="chefe controladoria coord equipe marketing rh treinador"><button class="gv-sec-cab" type="button" aria-expanded="false"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Operar o turno</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it" data-niveis="equipe chefe coord rh treinador"><a class="gv-pg" href="rotinas.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Rotinas</span></a></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="contagens.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M8 20h8"/><path d="M3 8h18"/><path d="M6.5 8 3 14h7z"/><path d="M17.5 8 14 14h7z"/></svg><span>Contagens</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-6" aria-expanded="false" aria-label="Subpáginas de Contagens"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-6" hidden><a class="gv-sub" href="contagens.html?tab=insumos" data-tab="insumos" data-niveis="equipe chefe coord">Insumos</a><a class="gv-sub" href="contagens.html?tab=copos" data-tab="copos" data-niveis="equipe chefe coord">Copos</a></div></div><div class="gv-it" data-niveis="equipe chefe coord controladoria"><a class="gv-pg" href="estoque.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l6 6 4-4 6 7M20 16v-4M20 16h-4"/></svg><span>Estoque do bar</span></a></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="producao.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Produção</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-7" aria-expanded="false" aria-label="Subpáginas de Produção"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-7" hidden><a class="gv-sub" href="producao.html?tab=possivel" data-tab="possivel" data-niveis="equipe chefe coord">Produção possível</a><a class="gv-sub" href="producao.html?tab=preparos" data-tab="preparos" data-niveis="equipe chefe coord">Preparos (cítricos)</a><a class="gv-sub" href="producao.html?tab=interna" data-tab="interna" data-niveis="equipe chefe coord">Produção interna</a><a class="gv-sub" href="producao.html?tab=calculadora" data-tab="calculadora" data-niveis="equipe chefe coord">Calculadora PB</a></div></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="transferencias.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4.5L20 8v9l-8 4.5L4 17z"/><path d="M4 8l8 4.5M12 12.5L20 8M12 12.5V21"/></svg><span>Buscador entre casas</span></a></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="turno.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>Relatório de turno</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-8" aria-expanded="false" aria-label="Subpáginas de Relatório de turno"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-8" hidden><a class="gv-sub" href="turno.html?tab=relatorio" data-tab="relatorio" data-niveis="equipe chefe coord">Relatório</a><a class="gv-sub" href="turno.html?tab=fechamento" data-tab="fechamento" data-niveis="chefe coord">Fechamento</a></div></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="canais.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/></svg><span>Intercom</span></a></div><div class="gv-it" data-niveis="equipe chefe coord marketing"><a class="gv-pg" href="eventos.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Agenda de eventos</span></a></div></div></section><section class="gv-sec" data-niveis="chefe controladoria coord equipe rh"><button class="gv-sec-cab" type="button" aria-expanded="false"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Acompanhar resultados</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it" data-niveis="chefe coord"><a class="gv-pg" href="minha-casa.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>Minha casa</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="equipe chefe coord controladoria"><a class="gv-pg" href="performance.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg><span>Performance da carta</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-9" aria-expanded="false" aria-label="Subpáginas de Performance da carta"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-9" hidden><a class="gv-sub" href="performance.html?tab=ranking" data-tab="ranking" data-niveis="equipe chefe coord">Ranking de Cocktails</a><a class="gv-sub" href="performance.html?tab=curva" data-tab="curva" data-niveis="chefe coord controladoria">Curva ABC</a><a class="gv-sub" href="performance.html?tab=rent" data-tab="rent" data-niveis="coord controladoria">Rentabilidade</a></div></div><div class="gv-it" data-niveis="coord controladoria"><a class="gv-pg" href="analise-cmv.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V7M17 20v-9"/></svg><span>CMV</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-10" aria-expanded="false" aria-label="Subpáginas de CMV"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-10" hidden><a class="gv-sub" href="analise-cmv.html?tab=analise" data-tab="analise" data-niveis="coord controladoria">Simulação e real</a><a class="gv-sub" href="analise-cmv.html?tab=mensal" data-tab="mensal" data-niveis="coord controladoria">Mensal</a></div></div><div class="gv-it" data-niveis="coord controladoria"><a class="gv-pg" href="previsao-vendas.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Previsão de vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="resultados.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l6-6 4 4 6-7M20 8v4M20 8h-4"/></svg><span>Resultados &amp; Impacto</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="chefe coord rh"><a class="gv-pg" href="pessoas-numeros.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Pessoas em números</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-11" aria-expanded="false" aria-label="Subpáginas de Pessoas em números"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-11" hidden><a class="gv-sub" href="pessoas-numeros.html?tab=garcons" data-tab="garcons" data-niveis="chefe coord">Garçons</a><a class="gv-sub" href="pessoas-numeros.html?tab=doses" data-tab="doses" data-niveis="chefe coord">Doses</a><a class="gv-sub" href="pessoas-numeros.html?tab=atividade" data-tab="atividade" data-niveis="chefe coord rh">Atividade por pessoa</a></div></div><div class="gv-it" data-niveis="coord" data-dono="1"><a class="gv-pg" href="vendas/index.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18l5-5 3 3 7-8"/><path d="M15 8h5v5"/></svg><span>Vendas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></div></section><section class="gv-sec" data-niveis="chefe controladoria coord equipe marketing rh treinador"><button class="gv-sec-cab" type="button" aria-expanded="false"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Gerir a equipe</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it" data-niveis="equipe chefe coord rh controladoria treinador marketing"><a class="gv-pg" href="time.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Time</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-12" aria-expanded="false" aria-label="Subpáginas de Time"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-12" hidden><a class="gv-sub" href="time.html?tab=equipe" data-tab="equipe" data-niveis="chefe coord rh">Equipe</a><a class="gv-sub" href="time.html?tab=metas" data-tab="metas" data-niveis="equipe chefe coord controladoria treinador">Metas &amp; Desenv.</a><a class="gv-sub" href="time.html?tab=contatos" data-tab="contatos" data-niveis="chefe coord">Contatos</a><a class="gv-sub" href="time.html?tab=organograma" data-tab="organograma" data-niveis="chefe coord rh">Organograma</a></div></div><div class="gv-it" data-niveis="chefe coord rh"><a class="gv-pg" href="escala-horas.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Escala &amp; Horas</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-13" aria-expanded="false" aria-label="Subpáginas de Escala &amp; Horas"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-13" hidden><a class="gv-sub" href="escala-horas.html?tab=regras" data-tab="regras" data-niveis="chefe coord rh">Regras</a><a class="gv-sub" href="escala-horas.html?tab=escala" data-tab="escala" data-niveis="chefe coord rh">Escala</a><a class="gv-sub" href="escala-horas.html?tab=reforco" data-tab="reforco" data-niveis="chefe coord rh">Reforço</a><a class="gv-sub" href="escala-horas.html?tab=banco" data-tab="banco" data-niveis="chefe coord rh">Banco de Horas</a><a class="gv-sub" href="escala-horas.html?tab=solicitacoes" data-tab="solicitacoes" data-niveis="equipe chefe coord">Solicitações de férias</a><a class="gv-sub" href="escala-horas.html?tab=planejamento" data-tab="planejamento" data-niveis="chefe coord rh">Planejamento de férias</a></div></div><div class="gv-it" data-niveis="chefe coord rh"><a class="gv-pg" href="recrutamento.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M18 8v6M15 11h6"/></svg><span>Recrutamento</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="equipe chefe coord rh treinador"><a class="gv-pg" href="regimento.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Regimento Interno</span></a></div></div></section><section class="gv-sec" data-niveis="chefe coord equipe treinador"><button class="gv-sec-cab" type="button" aria-expanded="false"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><path d="M12 11.5h.01"/></svg><span>Treinar e manter o padrão</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it" data-niveis="equipe chefe coord treinador"><a class="gv-pg" href="treinamentos.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Escola de Bar</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-14" aria-expanded="false" aria-label="Subpáginas de Escola de Bar"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-14" hidden><a class="gv-sub" href="treinamentos.html?tab=inicio" data-tab="inicio" data-niveis="equipe chefe coord treinador">Início</a><a class="gv-sub" href="treinamentos.html?tab=trilha" data-tab="trilha" data-niveis="equipe chefe coord treinador">Trilha da casa</a><a class="gv-sub" href="treinamentos.html?tab=modulos" data-tab="modulos" data-niveis="equipe chefe coord">Módulos de treino</a><a class="gv-sub" href="treinamentos.html?tab=biblioteca" data-tab="biblioteca" data-niveis="equipe chefe coord">Biblioteca</a><a class="gv-sub" href="treinamentos.html?tab=glossario" data-tab="glossario" data-niveis="equipe chefe coord">Glossário</a></div></div><div class="gv-it" data-niveis="coord treinador"><a class="gv-pg" href="treinamentos-aplicados.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg><span>Treinamentos aplicados</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-15" aria-expanded="false" aria-label="Subpáginas de Treinamentos aplicados"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-15" hidden><a class="gv-sub" href="treinamentos-aplicados.html?tab=aplicados" data-tab="aplicados" data-niveis="coord treinador">Treinamentos aplicados</a><a class="gv-sub" href="treinamentos-aplicados.html?tab=evolucao" data-tab="evolucao" data-niveis="coord treinador">Evolução</a></div></div><div class="gv-it" data-niveis="coord treinador"><a class="gv-pg" href="auditorias.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Auditorias</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="nutricook.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg><span>Nutricook</span></a></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="competicoes.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M9 17h6v3H9z"/></svg><span>Competições</span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-16" aria-expanded="false" aria-label="Subpáginas de Competições"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-16" hidden><a class="gv-sub" href="competicoes.html?tab=competicoes" data-tab="competicoes" data-niveis="equipe chefe coord">Competições</a><a class="gv-sub" href="competicoes.html?tab=rooftop" data-tab="rooftop" data-niveis="equipe chefe coord">Montagem do Rooftop</a><a class="gv-sub" href="competicoes.html?tab=adedonha" data-tab="adedonha" data-niveis="equipe chefe coord">Adedonha de cocktails</a><a class="gv-sub" href="competicoes.html?tab=premiacoes" data-tab="premiacoes" data-niveis="equipe chefe coord">Premiações</a></div></div></div></section><section class="gv-sec" data-niveis="chefe controladoria coord marketing"><button class="gv-sec-cab" type="button" aria-expanded="false"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10l4 5-9 11L3 9zM3 9h18M12 20L8 9l4-5 4 5z"/></svg><span>Parcerias, eventos e marketing</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it" data-niveis="chefe coord controladoria"><a class="gv-pg" href="ontrade.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10l4 5-9 11L3 9zM3 9h18M12 20L8 9l4-5 4 5z"/></svg><span>On Trade</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a><button class="gv-sub-tog" type="button" aria-controls="gv-subs-17" aria-expanded="false" aria-label="Subpáginas de On Trade"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="gv-subs" id="gv-subs-17" hidden><a class="gv-sub" href="ontrade.html?tab=contratos" data-tab="contratos" data-niveis="coord controladoria">Contratos</a><a class="gv-sub" href="ontrade.html?tab=viabilidade" data-tab="viabilidade" data-niveis="coord">Viabilidade</a><a class="gv-sub" href="ontrade.html?tab=parcerias" data-tab="parcerias" data-niveis="coord">Parcerias</a><a class="gv-sub" href="ontrade.html?tab=backbar" data-tab="backbar" data-niveis="chefe coord">Backbar dos parceiros</a><a class="gv-sub" href="ontrade.html?tab=radar" data-tab="radar" data-niveis="coord">Radar de Mercado</a></div></div><div class="gv-it" data-niveis="chefe coord"><a class="gv-pg" href="orcamento-eventos.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01"/></svg><span>Orçamento de eventos</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="chefe coord marketing"><a class="gv-pg" href="captacoes.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg><span>Captações</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></div></section><section class="gv-sec aberta" data-niveis="coord"><button class="gv-sec-cab" type="button" aria-expanded="true"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><path d="M9 3h6v3H9z"/><circle cx="12" cy="12" r="2.2"/><path d="M8.5 17c.6-1.5 2-2.3 3.5-2.3s2.9.8 3.5 2.3"/></svg><span>Administração</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it" data-niveis="coord" data-dono="1"><a class="gv-pg" href="acessos.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><path d="M9 3h6v3H9z"/><circle cx="12" cy="12" r="2.2"/><path d="M8.5 17c.6-1.5 2-2.3 3.5-2.3s2.9.8 3.5 2.3"/></svg><span>Acessos</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="coord"><a class="gv-pg" href="presenca.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg><span>Presença online</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="coord"><a class="gv-pg" href="ver-como.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Ver como outro nível</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="coord"><a class="gv-pg on" href="saude.html" aria-current="page"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg><span>Saúde do robô</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div><div class="gv-it" data-niveis="coord"><a class="gv-pg" href="lab-proposta.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Lab 2.0 — proposta</span><span class="lk"><svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></a></div></div></section><section class="gv-sec"><button class="gv-sec-cab" type="button" aria-expanded="false"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/></svg><span>Você</span><i class="gv-cv"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></i></button><div class="gv-sec-lista"><div class="gv-it"><a class="gv-pg" href="meu-perfil.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/></svg><span>Meu perfil</span></a></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="minha-atividade.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Minha atividade</span></a></div><div class="gv-it" data-niveis="equipe chefe coord"><a class="gv-pg" href="ferias.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v2"/><path d="M4 13a8 8 0 0 1 16 0z"/><path d="M12 13v8M9 21h6"/></svg><span>Meu pedido de férias</span></a></div><div class="gv-it"><a class="gv-pg" href="tutorial.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Como usar o portal</span></a></div><div class="gv-it" data-niveis="equipe chefe coord rh controladoria treinador marketing"><a class="gv-pg" href="mapa.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mapa do sistema</span></a></div><div class="gv-it"><a class="gv-pg" href="index.html#nivel"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg><span>Trocar acesso</span></a></div></div></section></div></nav>
+<script type="application/json" id="prompt-pagina">"Construa uma página web chamada \"Saúde do robô\", seguindo o modelo da página \"Saúde do robô · Painel do bar\" (saude) do Portal dos Bares do Grupo IZ. Mantenha a mesma estrutura e o mesmo comportamento descritos abaixo, adaptando nomes, dados e marca ao novo site.\n\n## Objetivo\nComo foi a última rodada do robô das 7h, o que ficou velho no cofre e quando foi o último\n\n## Onde fica e quem vê\n- Menu: seção \"Administração\", item \"Saúde do robô\"\n- Níveis com acesso: Coordenação\n- O acesso é conferido no servidor pela sessão (token assinado). Esconder na tela é só conforto, nunca a proteção.\n\n## Estrutura, de cima para baixo\n- Topo: logo, nome do painel, pílula do nível de quem entrou, busca, notificações e botão de modo escuro.\n- Título \"Saúde do robô\" e a linha de apoio: Como foi a última rodada do robô das 7h, o que ficou velho no cofre e quando foi o último.\n- Seções:\n- Acesso restrito\n\n## Dados\nRotas do servidor (Cloudflare Worker, com a sessão no cabeçalho):\n- /api/saude\nSem sessão válida, a página manda para o login. Dado que falta aparece como \"—\", nunca inventado.\n\n## Comportamento\n- Estados de tela: carregando (esqueleto ou aviso curto), vazio (frase explicando o que falta e o que fazer), erro (mensagem clara e botão de tentar de novo).\n- Números no formato brasileiro (1.234,5) e datas dd/mm/aaaa; horário de Brasília.\n\n## Moldura comum do portal (vem pronta em toda página)\n- Gaveta lateral recolhível com as seções do menu; cada seção abre e fecha e mostra as páginas e subpáginas. Cada nível só vê o que pode abrir.\n- Barra fixa embaixo no celular: Mural, Registrar, Pergunte (abre o chat do assistente) e atalhos do nível.\n- Chat do assistente: cérebros do portal respondem números, carta, banco de horas e harmonização com a fonte; o resto vai para a IA, que só vê o que o acesso permite.\n- Sino de novidades (changelog) e busca global no topo.\n\n## Visual\n- Fonte Inter (Google Fonts), com system-ui de reserva. Títulos em peso 600 a 700, texto de 13 a 15 px.\n- Tema claro (padrão): fundo #f6f7f9; cartões brancos com borda #e4e7ec, cantos de 16 px e sombra bem leve; texto #101828, secundário #475467, apoio #667085; destaque preto #101828 com texto branco; links em preto com seta.\n- Modo escuro em grafite, não preto: fundo #1e1f22, cartões #27292d, borda #3a3d42, texto #ececee, secundário #b9bcc3; destaque claro com texto escuro.\n- Chave pequena e discreta no topo (sol no claro, lua no escuro) liga e desliga o escuro, guarda a escolha no navegador (localStorage) e aplica antes de pintar a página, sem piscar.\n- Toda cor sai de variáveis CSS (:root e :root[data-tema=\"escuro\"]); nenhuma cor fixa.\n- Destaques com fundo suave: verde (#ecfdf3 / #067647), amarelo (#fef6dc, borda #f5d77a, texto #b54708), vermelho (#fef3f2 / #c0362c), azul (#eff8ff / #175cd3). Selo de categoria em pílula cinza.\n- Ícones SVG de linha (24x24, traço 1.8). Nenhum emoji.\n- Celular primeiro: largura máxima de 980 px, margem lateral de 16 a 20 px, alvos de toque de pelo menos 34 px, nada de rolagem horizontal.\n\n## Regras\n- Nenhum telefone na página. Valor em dinheiro só para os níveis autorizados e vindo do servidor.\n- Cada número mostrado diz de onde vem; sem dado, mostre o vazio, não um valor de exemplo.\n- Português do Brasil, frases curtas, sem jargão. Nenhum emoji na interface.\n- A página publicada é só casca (HTML/CSS/JS); dado protegido vem do servidor, que confere o nível em cada pedido e responde com Cache-Control: no-store.\n\n## Critérios de aceite\n- Abre sem erro no console no celular (375 px) e no computador, nos dois temas.\n- Quem não tem o nível não vê a página no menu e o servidor recusa os dados (401).\n- Todos os campos, abas, listas e botões acima existem e funcionam.\n- Sem dado, cada bloco mostra o estado vazio; com falha de rede, o estado de erro."</script>
+
+<script>
+window.SESSAO_LS = 'portal_sessao';
+// Níveis de fora da empresa: nunca contam como sessão do portal interno.
+// Espelha o NIVEIS_EXTERNOS do contagem-worker.
+window.NIVEIS_EXTERNOS = ['parceiro'];
+window.PAGINA_EXTERNA = { parceiro: 'parceiro.html' };
+// Prévia dos murais (ver-como.html): a página roda numa moldura cuja página
+// MÃE é ver-como.html, do mesmo site, e se comporta como o nível escolhido lá.
+// Só liga com sessão REAL de coordenação, e o token continua o da
+// coordenação: o Worker decide pelo acesso real, nenhum nível ganha nada.
+window.previaPortal = function () {
+  try {
+    if (window.parent === window.self) return null;
+    if (window.parent.location.pathname.split('/').pop() !== 'ver-como.html') return null;
+    var p = window.parent.portalPrevia;
+    return p && p.nivel ? p : null;
+  } catch (e) { return null; }
+};
+window.sessaoLer = function () {
+  try {
+    var raw = localStorage.getItem(window.SESSAO_LS);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.token || !s.exp || Date.now() > s.exp) return null;
+    // Recusa E apaga: a próxima carga já nasce limpa.
+    if (window.NIVEIS_EXTERNOS.indexOf(s.nivel) >= 0) { window.sessaoLimpar(); return null; }
+    var pv = s.nivel === 'coord' ? window.previaPortal() : null;
+    if (pv) return { nivel: pv.nivel, casa: pv.casa || null, pessoa: pv.pessoa || null,
+                     token: s.token, exp: s.exp, previa: true };
+    return s;
+  } catch (e) { return null; }
+};
+// Faixa fixa dentro da moldura: a prévia nunca se confunde com a tela real, e
+// o que se envia dali é gravado de verdade, com o login da coordenação.
+(function () {
+  var s = window.sessaoLer();
+  if (!s || !s.previa) return;
+  function faixa() {
+    if (document.getElementById('previa-faixa')) return;
+    var f = document.createElement('div');
+    f.id = 'previa-faixa';
+    f.setAttribute('role', 'status');
+    f.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--c-5a3fa0);color:#fff;font:600 12px/1.35 system-ui,sans-serif;padding:7px 12px;text-align:center';
+    f.textContent = 'Prévia · ' + (window.parent.portalPrevia.rotulo || s.nivel) +
+      ' · o que você enviar aqui é gravado de verdade, com o seu login';
+    document.body.insertBefore(f, document.body.firstChild);
+  }
+  if (document.body) faixa(); else document.addEventListener('DOMContentLoaded', faixa);
+})();
+// casa (Missão 5, 2026-07-10): slug da casa do chefe logado, "*" pra
+// master/coord/boss, null pra níveis sem casa própria. Opcional na chamada
+// pra não quebrar quem ainda chama sessaoSalvar(nivel, token, exp) direto.
+// pessoa (2026-07-13, Registro Rápido): nome da senha INDIVIDUAL (Escola de
+// Bar F7/Missão 5) — o /api/nivel já devolvia isso no corpo, mas até aqui a
+// sessão do navegador descartava o campo. Sem isso, registro.html não tinha
+// como pré-preencher "Seu nome" com a identidade real de quem logou.
+// Dentro da prévia, "Trocar acesso" ou um login na moldura NÃO mexem na sessão
+// real: o localStorage é o mesmo da aba de fora.
+window.sessaoSalvar = function (nivel, token, exp, casa, pessoa) {
+  if (window.previaPortal()) return;
+  try { localStorage.setItem(window.SESSAO_LS, JSON.stringify({ nivel: nivel, token: token, exp: exp, casa: casa || null, pessoa: pessoa || null })); } catch (e) {}
+};
+window.sessaoLimpar = function () {
+  if (window.previaPortal()) return;
+  try { localStorage.removeItem(window.SESSAO_LS); } catch (e) {}
+};
+// Id do aparelho (localStorage, por NAVEGADOR e não por pessoa). Nasceu no
+// heartbeat de presença (JS_PRESENCA) e subiu pra cá porque o LOGIN também
+// precisa dele: senha de tier compartilhado não gera evento de presença
+// nenhum, então o login é o único ponto onde essas sessões deixam rastro de
+// qual aparelho entrou. Mesma chave dos dois lados, senão o mesmo aparelho
+// apareceria com dois ids e o apelido não valeria nos dois lugares.
+// Guardado em TRÊS lugares (localStorage, cookie e IndexedDB) porque limpar
+// um só é comum e apagava o rastro em silêncio: o aparelho voltava como novo
+// e o histórico dele recomeçava do zero sem ninguém notar. localStorage e
+// cookie são síncronos e resolvem na hora; o IndexedDB é assíncrono e serve
+// de resgate — se ele guardar um id ANTERIOR, adotamos o antigo e os pings
+// seguintes voltam a casar com o histórico (o heartbeat se repete, então a
+// correção se propaga sozinha).
+window.PORTAL_DEV_K = 'portal_device';
+function _pdCookieLer() {
+  try {
+    var m = document.cookie.match(/(?:^|;\s*)portal_device=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch (e) { return null; }
+}
+function _pdCookieGravar(v) {
+  try {
+    document.cookie = 'portal_device=' + encodeURIComponent(v) +
+      ';path=/;max-age=' + (60 * 60 * 24 * 365) + ';SameSite=Lax';
+  } catch (e) {}
+}
+function _pdIdb(fn) {
+  try {
+    var req = indexedDB.open('portal_dev', 1);
+    req.onupgradeneeded = function () { req.result.createObjectStore('kv'); };
+    req.onsuccess = function () {
+      try { fn(req.result); } catch (e) {}
+    };
+    req.onerror = function () {};
+  } catch (e) {}
+}
+window.portalDeviceId = function () {
+  var k = null;
+  try { k = localStorage.getItem(window.PORTAL_DEV_K); } catch (e) {}
+  if (!k) k = _pdCookieLer();
+  if (!k) k = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  try { localStorage.setItem(window.PORTAL_DEV_K, k); } catch (e) {}
+  _pdCookieGravar(k);
+  return k;
+};
+// Resgate/gravação no IndexedDB, uma vez por carga.
+(function () {
+  var atual = null;
+  try { atual = window.portalDeviceId(); } catch (e) { return; }
+  _pdIdb(function (db) {
+    var tx = db.transaction('kv', 'readwrite');
+    var st = tx.objectStore('kv');
+    var g = st.get('id');
+    g.onsuccess = function () {
+      var antigo = g.result;
+      if (antigo && antigo !== atual) {
+        // O id do IndexedDB é o mais antigo que sobreviveu — ele é a
+        // identidade do aparelho; o que acabou de nascer é fruto de limpeza.
+        try { localStorage.setItem(window.PORTAL_DEV_K, antigo); } catch (e) {}
+        _pdCookieGravar(antigo);
+      } else if (!antigo) {
+        try { st.put(atual, 'id'); } catch (e) {}
+      }
+    };
+  });
+})();
+
+// ─── Assinatura de hardware ────────────────────────────────────────────────
+// GPU, canvas e áudio. É a identificação de MÁQUINA mais forte possível sem
+// instalar nada: sobrevive a limpar tudo dentro do mesmo navegador e separa
+// dois aparelhos que pelo User-Agent seriam idênticos. Calculada UMA vez e
+// guardada — canvas e áudio custam alguns milissegundos e não podem rodar a
+// cada ping.
+function _pdHash(s) {
+  var h = 5381, i = s.length;
+  while (i) h = ((h * 33) ^ s.charCodeAt(--i)) >>> 0;
+  return h.toString(36);
+}
+function _pdGpu() {
+  try {
+    var c = document.createElement('canvas');
+    var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+    if (!gl) return null;
+    var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    if (!dbg) return null;
+    // Vem legível: "Apple M2 Pro", "ANGLE (NVIDIA GeForce RTX 3060 ...)".
+    return String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '').slice(0, 90) || null;
+  } catch (e) { return null; }
+}
+function _pdCanvas() {
+  try {
+    var c = document.createElement('canvas'); c.width = 200; c.height = 40;
+    var x = c.getContext('2d'); if (!x) return null;
+    x.textBaseline = 'top'; x.font = '14px Arial';
+    x.fillStyle = '#f60'; x.fillRect(0, 0, 100, 20);
+    x.fillStyle = '#069'; x.fillText('Bar.IZ presenca', 2, 4);
+    x.strokeStyle = 'rgba(0,0,255,.4)'; x.beginPath(); x.arc(50, 20, 18, 0, Math.PI * 2); x.stroke();
+    return _pdHash(c.toDataURL());
+  } catch (e) { return null; }
+}
+function _pdAudio(cb) {
+  try {
+    var OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OC) return cb(null);
+    // Offline: renderiza sem tocar nada e sem exigir gesto do usuário.
+    var ctx = new OC(1, 5000, 44100);
+    var osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = 10000;
+    var comp = ctx.createDynamicsCompressor();
+    osc.connect(comp); comp.connect(ctx.destination); osc.start(0);
+    ctx.startRendering().then(function (buf) {
+      var d = buf.getChannelData(0), s = 0;
+      for (var i = 2000; i < 3000; i++) s += Math.abs(d[i]);
+      cb(_pdHash(String(s)));
+    }).catch(function () { cb(null); });
+  } catch (e) { cb(null); }
+}
+// Fontes instaladas: mede a largura de um texto em cada fonte contra as três
+// genéricas. Se difere, a fonte existe. Lista curta e representativa de
+// propósito — o conjunto completo custaria caro e o ganho satura rápido.
+// Vira uma máscara compacta, não a lista (a lista é longa e não se lê).
+var _PD_FONTES = ['Arial','Calibri','Cambria','Consolas','Courier New','Georgia',
+  'Helvetica Neue','Impact','Lucida Grande','Menlo','Monaco','Segoe UI',
+  'Tahoma','Times New Roman','Trebuchet MS','Verdana','Roboto','Noto Sans',
+  'Ubuntu','DejaVu Sans','Optima','Futura','Gill Sans','Franklin Gothic Medium'];
+function _pdFontes() {
+  try {
+    var base = ['monospace','sans-serif','serif'], teste = 'mmmmmmmmmmlli', px = '72px';
+    var c = document.createElement('canvas').getContext('2d');
+    if (!c) return null;
+    var padrao = {};
+    base.forEach(function (b) { c.font = px + ' ' + b; padrao[b] = c.measureText(teste).width; });
+    var bits = '';
+    _PD_FONTES.forEach(function (f) {
+      var achou = base.some(function (b) {
+        c.font = px + " '" + f + "'," + b;
+        return c.measureText(teste).width !== padrao[b];
+      });
+      bits += achou ? '1' : '0';
+    });
+    // Guarda a máscara crua (24 bits, comparável direto) + um hash curto.
+    return bits;
+  } catch (e) { return null; }
+}
+// Contagem de câmeras e microfones. Sem permissão nenhuma vem só a
+// quantidade e o tipo — nome do aparelho exigiria permissão e não é pedido.
+function _pdMidia(cb) {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return cb(null);
+    navigator.mediaDevices.enumerateDevices().then(function (ds) {
+      var cam = 0, mic = 0, alt = 0;
+      ds.forEach(function (d) {
+        if (d.kind === 'videoinput') cam++;
+        else if (d.kind === 'audioinput') mic++;
+        else if (d.kind === 'audiooutput') alt++;
+      });
+      cb(cam + 'c/' + mic + 'm/' + alt + 's');
+    }).catch(function () { cb(null); });
+  } catch (e) { cb(null); }
+}
+// Vozes de síntese de fala: revela os pacotes de idioma instalados no
+// sistema. Entropia alta e ninguém limpa. Chega assíncrono em alguns
+// navegadores, daí o evento.
+function _pdVozes(cb) {
+  try {
+    var ss = window.speechSynthesis;
+    if (!ss) return cb(null);
+    var pega = function () {
+      var v = ss.getVoices() || [];
+      if (!v.length) return false;
+      cb(v.length + 'v/' + _pdHash(v.map(function (x) { return x.name + '|' + x.lang; }).sort().join(',')));
+      return true;
+    };
+    if (pega()) return;
+    ss.onvoiceschanged = function () { ss.onvoiceschanged = null; if (!pega()) cb(null); };
+    setTimeout(function () { if (ss.onvoiceschanged) { ss.onvoiceschanged = null; cb(null); } }, 1500);
+  } catch (e) { cb(null); }
+}
+// Layout físico do teclado (Chromium): distingue ABNT2 de teclado americano,
+// ou seja, máquina comprada no Brasil ou fora.
+function _pdTeclado(cb) {
+  try {
+    if (!navigator.keyboard || !navigator.keyboard.getLayoutMap) return cb(null);
+    navigator.keyboard.getLayoutMap().then(function (m) {
+      // A tecla à direita do L muda de layout pra layout.
+      cb(String(m.get('Semicolon') || '') + '/' + String(m.get('Quote') || '') || null);
+    }).catch(function () { cb(null); });
+  } catch (e) { cb(null); }
+}
+function _pdBateria(cb) {
+  try {
+    if (!navigator.getBattery) return cb(null);
+    navigator.getBattery().then(function (b) {
+      cb(Math.round(b.level * 100) + '%' + (b.charging ? ' carregando' : ''));
+    }).catch(function () { cb(null); });
+  } catch (e) { cb(null); }
+}
+// Detalhes extras da GPU — fabricante, limite de textura e nº de extensões.
+// Somam entropia sobre o nome do renderizador que já pego.
+function _pdGl() {
+  try {
+    var gl = document.createElement('canvas').getContext('webgl');
+    if (!gl) return null;
+    var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    var vend = dbg ? String(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) || '') : '';
+    var ext = (gl.getSupportedExtensions() || []).length;
+    return (vend.slice(0, 40) || '?') + '/' + gl.getParameter(gl.MAX_TEXTURE_SIZE) + '/' + ext;
+  } catch (e) { return null; }
+}
+window._pdHw = null;
+(function () {
+  try {
+    var guardado = localStorage.getItem('portal_hw');
+    // `v` protege contra ler um blob de versão antiga sem os campos novos.
+    if (guardado) {
+      var g = JSON.parse(guardado);
+      if (g && g.v === 2) { window._pdHw = g; return; }
+    }
+  } catch (e) {}
+  var hw = { v: 2, gpu: _pdGpu(), gl: _pdGl(), canvas: _pdCanvas(), fontes: _pdFontes(),
+             audio: null, midia: null, vozes: null, teclado: null, bateria: null };
+  window._pdHw = hw;
+  var salva = function () { try { localStorage.setItem('portal_hw', JSON.stringify(hw)); } catch (e) {} };
+  _pdAudio(function (a) { hw.audio = a; salva(); });
+  _pdMidia(function (m) { hw.midia = m; salva(); });
+  _pdVozes(function (v) { hw.vozes = v; salva(); });
+  _pdTeclado(function (t) { hw.teclado = t; salva(); });
+  // Bateria NÃO entra no blob guardado: ela muda o tempo todo, e cachear
+  // congelaria um valor falso. Fica só na memória desta carga.
+  _pdBateria(function (b) { hw.bateria = b; });
+})();
+// Impressão digital do aparelho. O que ela resolve NÃO é "de que marca é o
+// celular" — é sobreviver a limpar o localStorage: sem ela, quem limpa vira
+// um device id novo e o rastro se perde sem ninguém perceber. Só lê o que o
+// navegador expõe sem permissão nenhuma; nada aqui pergunta nada ao usuário.
+window._pfpAlta = null;
+window.portalFingerprint = function () {
+  var fp = {};
+  try {
+    fp.tela = (screen.width | 0) + 'x' + (screen.height | 0) + '@' + (window.devicePixelRatio || 1);
+    fp.idioma = (navigator.languages && navigator.languages.join(',')) || navigator.language || '';
+    fp.tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+    fp.cpu = navigator.hardwareConcurrency || null;
+    fp.mem = navigator.deviceMemory || null;
+    fp.toque = navigator.maxTouchPoints || 0;
+  } catch (e) {}
+  try {
+    // Tipo de conexão (Chromium): separa wifi de rede celular, o que o IP
+    // sozinho nem sempre diz.
+    var cn = navigator.connection;
+    if (cn && cn.effectiveType) fp.conexao = cn.effectiveType + (cn.downlink ? ' ~' + cn.downlink + 'Mb' : '');
+  } catch (e) {}
+  try {
+    // De onde a pessoa chegou: link compartilhado, busca, ou digitado direto.
+    if (document.referrer && document.referrer.indexOf(location.host) < 0) {
+      fp.ref = document.referrer.slice(0, 80);
+    }
+  } catch (e) {}
+  try {
+    // Tela útil: expõe a configuração de barra de tarefas/dock, que varia de
+    // pessoa pra pessoa mesmo em monitores idênticos.
+    if (screen.availWidth) fp.util = (screen.availWidth | 0) + 'x' + (screen.availHeight | 0);
+    // Preferências de acessibilidade/aparência: estáveis por pessoa e pouco
+    // óbvias — quase ninguém pensa nelas como identificação.
+    var mq = function (q) { try { return matchMedia(q).matches; } catch (e) { return false; } };
+    var pref = [];
+    if (mq('(prefers-color-scheme: dark)')) pref.push('escuro');
+    if (mq('(prefers-reduced-motion: reduce)')) pref.push('menos-movimento');
+    if (mq('(forced-colors: active)')) pref.push('alto-contraste');
+    if (mq('(pointer: coarse)')) pref.push('toque');
+    if (mq('(hover: none)')) pref.push('sem-hover');
+    // App instalado na tela inicial: quem instalou não é curioso de passagem.
+    if (mq('(display-mode: standalone)') || navigator.standalone) pref.push('app-instalado');
+    if (pref.length) fp.pref = pref.join(',');
+    var io = Intl.DateTimeFormat().resolvedOptions();
+    if (io && io.hourCycle) fp.hora = io.hourCycle; // 12h x 24h, e calendário
+    if (performance && performance.memory && performance.memory.jsHeapSizeLimit) {
+      fp.heap = Math.round(performance.memory.jsHeapSizeLimit / 1048576); // classe do aparelho
+    }
+    // Desvio do relógio contra o servidor: alguns segundos de diferença viram
+    // assinatura. Calculado na resposta anterior (window._pdSkew).
+    if (typeof window._pdSkew === 'number') fp.relogio = window._pdSkew;
+  } catch (e) {}
+  var hw = window._pdHw;
+  if (hw) {
+    fp.gpu = hw.gpu; fp.canvas = hw.canvas; fp.audio = hw.audio;
+    fp.gl = hw.gl; fp.fontes = hw.fontes; fp.midia = hw.midia;
+    fp.vozes = hw.vozes; fp.teclado = hw.teclado; fp.bateria = hw.bateria;
+  }
+  // Preenchidos pelos Client Hints abaixo, que são assíncronos.
+  if (window._pfpAlta) {
+    fp.modelo = window._pfpAlta.modelo; fp.so = window._pfpAlta.so;
+    fp.arq = window._pfpAlta.arq; fp.nav = window._pfpAlta.nav;
+  }
+  return fp;
+};
+// Client Hints de alta entropia: só o Chromium responde (Safari recusa por
+// política, então iPhone NUNCA devolve modelo — não é falha, é o navegador).
+// É assíncrono e dispara uma vez por carga: o primeiro envio da página pode
+// sair sem `modelo`, os seguintes levam.
+(function () {
+  try {
+    var uad = navigator.userAgentData;
+    if (!uad || !uad.getHighEntropyValues) return;
+    uad.getHighEntropyValues(['model', 'platformVersion', 'architecture', 'bitness', 'uaFullVersion']).then(function (v) {
+      window._pfpAlta = {
+        modelo: v.model || null,
+        so: ((v.platform || '') + ' ' + (v.platformVersion || '')).trim() || null,
+        arq: ((v.architecture || '') + (v.bitness ? ' ' + v.bitness + ' bits' : '')).trim() || null,
+        nav: v.uaFullVersion || null, // build exato, não só a versão maior
+      };
+    }).catch(function () {});
+  } catch (e) {}
+})();
+// Desvio do relógio do aparelho contra o do servidor. Alguns segundos de
+// diferença viram assinatura estável — poucos aparelhos têm o mesmo desvio.
+// Calculado da resposta de qualquer chamada ao Worker (cabeçalho Date), sem
+// requisição dedicada.
+window._pdSkew = null;
+window.pdMedeRelogio = function (resp) {
+  try {
+    var d = resp && resp.headers && resp.headers.get('Date');
+    if (!d) return;
+    var srv = new Date(d).getTime();
+    if (!srv) return;
+    window._pdSkew = Math.round((Date.now() - srv) / 1000);
+  } catch (e) {}
+};
+window.loginSenha = function (worker, senha) {
+  return fetch(worker + '/api/nivel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      senha: senha, device: window.portalDeviceId(),
+      pg: location.pathname, fp: window.portalFingerprint(),
+    }),
+  }).then(function (r) {
+    window.pdMedeRelogio(r);
+    if (r.status === 401) return { ok: false, status: 401 };
+    if (!r.ok) return { ok: false, status: r.status };
+    return r.json().then(function (d) {
+      // ── Autocadastro por e-mail (2026-08-07) ─────────────────────────────
+      // Duas respostas 200 que NÃO são login e por isso não gravam sessão
+      // nenhuma. Quem chamou (hoje só a tela de entrada do mural) abre a etapa
+      // correspondente; qualquer outra página que use loginSenha simplesmente
+      // não recebe `token` e não abre o portal — que é o certo.
+      // (a) senha compartilhada com autocadastro ligado: virou bilhete de
+      //     cadastro. `chave` diz QUAL senha foi, e volta ao Worker no
+      //     POST /api/cadastro/codigo.
+      if (d.cadastro) {
+        return { ok: true, cadastro: true, chave: d.chave || null };
+      }
+      // (b) o que foi digitado é um código provisório válido: primeiro acesso.
+      //     `email` é só pra tela confirmar pra quem o código foi mandado.
+      if (d.primeiro_acesso) {
+        // Sem `email`: o Worker deixou de devolvê-lo de propósito (oráculo).
+        return { ok: true, primeiroAcesso: true };
+      }
+      // Nível de fora: grava na chave da própria superfície e devolve
+      // `externo` + `destino` pra quem chamou desviar.
+      if (d.token && window.NIVEIS_EXTERNOS.indexOf(d.nivel) >= 0) {
+        var destino = window.PAGINA_EXTERNA[d.nivel] || null;
+        try {
+          localStorage.setItem('parceiro_sessao', JSON.stringify({
+            token: d.token, exp: d.exp, marca: d.marca || null, pessoa: d.pessoa || null,
+          }));
+        } catch (e) {}
+        // Sessão interna anterior no mesmo aparelho não sobrevive a um login
+        // externo (senão sobra estado interno já renderizado na tela).
+        window.sessaoLimpar();
+        return { ok: true, externo: true, nivel: d.nivel, destino: destino,
+                 marca: d.marca || null, pessoa: d.pessoa || null };
+      }
+      if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa, d.pessoa);
+      return { ok: true, nivel: d.nivel, casa: d.casa, pessoa: d.pessoa, token: d.token };
+    });
+  }).catch(function () { return { ok: false, status: 0 }; });
+};
+// Gate padrão das páginas protegidas (2026-07-09): a senha é digitada SÓ na
+// home. Sem sessão -> manda pra home logar, com volta automática pra cá.
+// Sessão de nível insuficiente -> NÃO redireciona (senão a home logada
+// devolveria pra cá e viraria loop); a página mostra a mensagem e o caminho
+// é a pill "Trocar acesso". Só para páginas na raiz do portal — as cascas
+// de /vendas/ (repo do site) replicam a própria versão com '../'.
+window.irParaLogin = function (slug) {
+  location.replace('index.html?volta=' + encodeURIComponent(slug) + '#nivel');
+};
+window.exigirNivel = function (niveisOk, slug) {
+  var s = window.sessaoLer();
+  // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz: passa em
+  // qualquer página que a equipe abre. Páginas de treino ainda listam
+  // 'bartender' explicitamente pra tratar o comportamento por pessoa.
+  var efet = (s && s.nivel === 'bartender' && niveisOk.indexOf('bartender') < 0 &&
+              niveisOk.indexOf('equipe') >= 0) ? 'equipe' : (s ? s.nivel : null);
+  if (s && (niveisOk.indexOf(s.nivel) >= 0 || niveisOk.indexOf(efet) >= 0)) return { ok: true, sessao: s };
+  if (!s) { window.irParaLogin(slug); return { ok: false, redirecionou: true }; }
+  return { ok: false, nivelAtual: s.nivel };
+};
+// Mensagem padrão de nível insuficiente (2026-07-14): antes cada página
+// reescrevia esta frase à mão — 16 cópias, algumas com link clicável
+// ("Trocar acesso" em <a>), outras só texto. Centralizado aqui pra toda
+// página protegida usar a mesma redação e o mesmo link.
+window.msgTrocarAcesso = function () {
+  return 'Toque em <a href="index.html#nivel">Trocar acesso</a> para entrar com a senha certa.';
+};
+window.msgAcessoNegado = function (nomePagina) {
+  return 'Seu acesso atual não abre ' + nomePagina + '. ' + window.msgTrocarAcesso();
+};
+</script>
+
+
+<script>
+(function () {
+  var PRES_WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  // Delega pro helper de JS_SESSAO (injetado antes deste bloco) pra login e
+  // presença carimbarem o MESMO id; a cópia local fica só como reserva se a
+  // ordem de injeção mudar algum dia.
+  function deviceId() {
+    if (window.portalDeviceId) return window.portalDeviceId();
+    try {
+      var k = localStorage.getItem('portal_device');
+      if (!k) { k = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('portal_device', k); }
+      return k;
+    } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
+  }
+  // Rótulo grosseiro do aparelho (iPhone/Android/Mac...) derivado do
+  // User-Agent — mandado no heartbeat pra a coordenação identificar QUAL
+  // aparelho está logado, mesmo em sessão sem nome (senha compartilhada).
+  function deviceLabel() {
+    try { var m = localStorage.getItem('portal_device_label'); if (m) return m; } catch (e) {}
+    var ua = navigator.userAgent || '';
+    if (/iPhone/.test(ua)) return 'iPhone';
+    if (/iPad/.test(ua)) return 'iPad';
+    if (/Android/.test(ua)) return 'Android';
+    if (/Macintosh|Mac OS X/.test(ua)) return 'Mac';
+    if (/Windows/.test(ua)) return 'Windows';
+    if (/Linux/.test(ua)) return 'Linux';
+    return 'Navegador';
+  }
+  window.marcaPresenca = function () {
+    var s = window.sessaoLer && window.sessaoLer();
+    if (!s || !PRES_WORKER) return;
+    try {
+      var ult = +(localStorage.getItem('portal_presenca_ts') || 0);
+      if (Date.now() - ult < 90000) return;
+      localStorage.setItem('portal_presenca_ts', String(Date.now()));
+    } catch (e) {}
+    fetch(PRES_WORKER + '/api/presenca', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      // `pg` = em que página o ping aconteceu; `fp` = impressão digital do
+      // aparelho (helpers em JS_SESSAO). Os dois só servem à Presença online,
+      // que é coord-only — nenhuma outra superfície lê isso.
+      body: JSON.stringify({
+        device: deviceId(), label: deviceLabel(),
+        pg: location.pathname,
+        fp: window.portalFingerprint ? window.portalFingerprint() : null,
+      }),
+    }).then(function (r) { if (window.pdMedeRelogio) window.pdMedeRelogio(r); })
+      .catch(function () {});
+  };
+  window.marcaPresenca();
+  // Intervalo do heartbeat (2026-07-24, achado por acidente: publicar o
+  // Bento falhou porque a CONTA Cloudflare — não o Worker do Bento — bateu
+  // o limite grátis de 1.000 escritas/dia em KV). Cada ping aqui é 1
+  // KV.put() no contagem-worker (VENDAS_KV.put presenca:v1:<device>).
+  // Em 2min, 4 aparelhos abertos 8h já somam ~960 escritas — a cota do dia
+  // inteira, sem sobrar nada pra publicar nenhum portal. Subir pra 10min
+  // corta o gasto em 5x (de ~960 pra ~192 nesse mesmo cenário) e o número
+  // "Online agora" fica ~10min mais velho no pior caso — troca aceitável
+  // pra um indicador de enfeite. Ver PRESENCA_TTL_S (contagem-worker/
+  // worker.js) e GAP_SESSAO_MS (gera_presenca, portal_gen.py) — os três
+  // valores têm que crescer juntos, senão presença "pisca" ou uma sessão
+  // contínua vira várias sessões curtas na tela de detalhe.
+  setInterval(window.marcaPresenca, 600000);
+})();
+</script>
+<div class="bx-wrap">
+<nav class="bx" id="barra-v2" aria-label="Atalhos"><a class="bx-it" href="index.html" data-niveis="equipe chefe coord rh controladoria suprimentos treinador marketing"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mural</span></a><a class="bx-it" href="demandas.html" data-niveis="equipe chefe coord treinador marketing"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Demandas</span></a><button class="bx-it" type="button" data-folha="bx-folha-registrar" aria-expanded="false" aria-controls="bx-folha-registrar" data-niveis="equipe chefe coord rh controladoria treinador marketing"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Registrar</span></button><a class="bx-it" href="pergunte.html" data-niveis="equipe chefe coord" data-abre-ia aria-expanded="false"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg><span>Pergunte</span></a><button class="bx-it" type="button" data-folha="bx-folha-eu" aria-expanded="false" aria-controls="bx-folha-eu"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/></svg><span>Eu</span></button></nav>
+<div class="bx-folha bx-folha-reg" id="bx-folha-registrar" hidden><a href="registro.html" data-niveis="equipe chefe coord rh controladoria treinador marketing"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4.5l1.5 3h4l1.5-3H20"/><path d="M6 4h12l2 8v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/></svg><span>Nova demanda</span></a><a href="avarias.html" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l-3 9 4 1-2 8 9-11-4-1 3-6z"/></svg><span>Avaria</span></a><a href="dose.html" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3z"/><path d="M9 13h6"/></svg><span>Dose</span></a><a href="ideia.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 1 3.6 10.7c-.7.6-1 1.4-1.1 2.3h-5c-.1-.9-.4-1.7-1.1-2.3A6 6 0 0 1 12 3z"/><path d="M10 19.5h4"/></svg><span>Ideia</span></a><a href="notas.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12.5h6M9 16h4"/></svg><span>Rascunho</span></a><div class="bx-sep"></div><a href="cocktails.html#nova" data-niveis="equipe chefe coord treinador marketing"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-8 9z"/><path d="M12 14v6M8 20h8"/></svg><span>Nova receita</span></a><a href="planejador-3d.html" data-niveis="coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v9M20 7.5l-8 4.5-8-4.5"/></svg><span>Projeto 3D</span></a></div>
+<div class="bx-folha bx-folha-eu" id="bx-folha-eu" hidden><a href="meu-perfil.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/></svg><span>Meu perfil</span></a><a href="agenda.html" data-niveis="chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/></svg><span>Minha Mesa</span></a><a href="minha-atividade.html" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4.2 2.6-6.2 5.5-6.2s5.1 2 5.5 6.2"/><circle cx="17.2" cy="9" r="2.2"/><path d="M15.6 13.3c2.2.4 3.5 2.1 3.9 5.2"/></svg><span>Minha atividade</span></a><a href="ferias.html" data-niveis="equipe chefe coord"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v2"/><path d="M4 13a8 8 0 0 1 16 0z"/><path d="M12 13v8M9 21h6"/></svg><span>Meu pedido de férias</span></a><div class="bx-sep"></div><a href="tutorial.html"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Como usar o portal</span></a><a href="mapa.html" data-niveis="equipe chefe coord rh controladoria treinador marketing"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Mapa do sistema</span></a><a href="index.html#nivel"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h14"/><path d="M13 3l4 4-4 4"/><path d="M21 17H7"/><path d="M11 21l-4-4 4-4"/></svg><span>Trocar acesso</span></a></div>
+</div>
+<script>
+(function () {
+  var botoes = document.querySelectorAll('.bx-it[data-folha]');
+  function fecha(exceto) {
+    botoes.forEach(function (b) {
+      if (b === exceto) return;
+      b.setAttribute('aria-expanded', 'false');
+      var f = document.getElementById(b.dataset.folha);
+      if (f) f.hidden = true;
+    });
+  }
+  botoes.forEach(function (b) {
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var f = document.getElementById(b.dataset.folha);
+      var abrir = f.hidden;
+      fecha(b);
+      f.hidden = !abrir;
+      b.setAttribute('aria-expanded', String(abrir));
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.bx-folha')) fecha(null);
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fecha(null); });
+})();
+</script>
+
+
+<style>
+.sd-faixa { border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin:0 0 12px;
+  display:flex; flex-direction:column; gap:4px; }
+.sd-faixa b { color:var(--text); }
+.sd-faixa span { color:var(--text-2); font-size:14px; }
+.sd-lista { margin:6px 0 14px; padding-left:20px; color:var(--text-2); }
+.sd-lista li { margin:3px 0; overflow-wrap:anywhere; }
+.sd-tab { overflow-x:auto; }
+.sd-tab table { width:100%; border-collapse:collapse; font-size:14px; }
+.sd-tab th, .sd-tab td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+.sd-tab small { display:block; color:var(--text-3); }
+.sd-det { margin:8px 0 14px; color:var(--text-2); }
+</style>
+<h1><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 7 0"/><path d="M5.5 11.5a9 9 0 0 1 13 0"/></svg> Saúde do robô</h1>
+<p class="sub">Como foi a última rodada do robô das 7h, o que ficou velho no cofre e quando foi o último backup. Cada rodada atualiza esta página sozinha.</p>
+<div class="panel" id="sd-gate">
+  <h2>Acesso restrito</h2>
+  <p class="sub" id="sd-msg" style="margin:4px 0 0" role="status" aria-live="polite">Verificando seu acesso…</p>
+</div><div id="sd-corpo" style="display:none"></div>
+<script>
+(function () {
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var msg = document.getElementById('sd-msg');
+  var gate = document.getElementById('sd-gate');
+  var corpo = document.getElementById('sd-corpo');
+  if (!WORKER) { msg.textContent = 'Página em configuração.'; return; }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function quando(iso) {
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d.getTime())) return { txt: '—', horas: null };
+    var h = (Date.now() - d.getTime()) / 3600000;
+    var ha = h < 1 ? 'há menos de 1 hora' : (h < 48 ? 'há ' + Math.floor(h) + ' h' : 'há ' + Math.floor(h / 24) + ' dias');
+    return { txt: d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' (' + ha + ')', horas: h };
+  }
+  var ROTULO = {
+    ok: ['Tudo certo', 'verde'], degradado: ['Terminou com aviso', 'amarelo'],
+    falhou: ['Falhou', 'vermelho'], nao_fechou: ['Não terminou a rodada', 'vermelho'],
+    sem_status: ['Sem status', 'vermelho']
+  };
+  function faixa(cor, titulo, texto) {
+    return '<div class="sd-faixa" style="border-color:var(--' + cor + (cor === 'vermelho' ? '' : '-borda') +
+      ');background:var(--' + cor + '-bg)"><b>' + esc(titulo) + '</b>' + (texto ? '<span>' + texto + '</span>' : '') + '</div>';
+  }
+  function lista(itens) {
+    return '<ul class="sd-lista">' + itens.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+  }
+  function desenha(S) {
+    var r = S.robo || {}, kv = S.kv || {}, dd = S.dados || {}, h = '';
+    var q = quando(r.quando);
+    var rot = ROTULO[r.estado] || [r.estado || 'desconhecido', 'amarelo'];
+    // 26 h: a rodada é diária às 7h; passou disso, a de hoje não aconteceu.
+    if (q.horas != null && q.horas > 26) {
+      h += faixa('vermelho', 'O robô não roda desde ' + q.txt,
+        'Sem rodada nova, nada abaixo foi atualizado. PC desligado, deslogado ou tarefa "Portal IZ - robo das 7h" parada no Agendador.');
+    }
+    h += faixa(rot[1], rot[0], 'Última rodada: ' + esc(q.txt) + (r.mensagem ? ' · ' + esc(r.mensagem) : ''));
+    if ((r.falhas_criticas || []).length) h += '<h3>Passos críticos que falharam</h3>' + lista(r.falhas_criticas);
+    if ((r.avisos || []).length) h += '<h3>Avisos da rodada</h3>' + lista(r.avisos);
+    h += '<h3>Cofre (KV)</h3><p class="sub">';
+    if (kv.total == null) h += 'Sem relatório do KV nesta rodada.';
+    else h += esc(kv.total) + ' chaves: ' + esc(kv.publicadas) + ' subiram, ' + esc(kv.iguais == null ? '—' : kv.iguais) +
+      ' iguais (puladas), em ' + esc(kv.chamadas_de_escrita == null ? '—' : kv.chamadas_de_escrita) + ' chamada(s).' +
+      (kv.falhas ? ' <b style="color:var(--vermelho)">' + esc(kv.falhas) + ' falha(s).</b>' : '') +
+      (kv.erro ? ' <b style="color:var(--vermelho)">Erro: ' + esc(kv.erro) + '</b>' : '');
+    h += '</p>';
+    var venc = dd.vencidos || [];
+    h += '<h3>Dados vencidos</h3>';
+    if (!venc.length) h += '<p class="sub">Nenhum payload passou do prazo.</p>';
+    else {
+      h += '<p class="sub">Payloads cuja data passou do limite de <code>config/validade_dados.json</code>. A tela que usa cada um mostra a data.</p>' +
+        '<div class="sd-tab"><table><thead><tr><th>Dado</th><th>Dados de</th><th>Idade</th><th>Limite</th></tr></thead><tbody>' +
+        venc.map(function (v) {
+          return '<tr><td>' + esc(v.nome || v.arquivo) + (v.nome ? '<small>' + esc(v.arquivo) + '</small>' : '') + '</td><td>' +
+            esc((v.dados_de || '').slice(8, 10) + '/' + (v.dados_de || '').slice(5, 7) + '/' + (v.dados_de || '').slice(0, 4)) +
+            '</td><td>' + esc(Math.floor(v.idade_dias)) + ' dias</td><td>' + esc(v.max_dias) + ' dias</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    if ((dd.sem_data || []).length) {
+      h += '<details class="sd-det"><summary>' + dd.sem_data.length + ' payload(s) sem data</summary>' +
+        '<p class="sub">Não dá para provar que são novos. Cada gerador ainda precisa gravar <code>gerado_em</code>.</p>' +
+        lista(dd.sem_data) + '</details>';
+    }
+    var b = S.backup;
+    h += '<h3>Backup</h3><p class="sub">';
+    if (!b) h += 'Nenhum backup registrado ainda.';
+    else {
+      var qb = quando(b.quando);
+      h += (b.ok ? 'Último backup completo: ' : '<b style="color:var(--vermelho)">Último backup com falha:</b> ') + esc(qb.txt) +
+        (qb.horas != null && qb.horas > 8 * 24 ? ' <b style="color:var(--vermelho)">Passou de uma semana.</b>' : '') +
+        ((b.falhas || []).length ? ' · falhou: ' + esc(b.falhas.join(', ')) : '');
+    }
+    h += '</p><p class="sub" style="margin-top:18px">Saúde publicada em ' + esc(quando(S.gerado_em).txt) + '.</p>';
+    corpo.innerHTML = h;
+  }
+  function busca(token) {
+    msg.textContent = 'Carregando…';
+    fetch(WORKER + '/api/saude', { headers: { 'X-Token': token }, cache: 'no-store' }).then(function (r) {
+      if (r.status === 404) { msg.textContent = 'A saúde ainda não foi publicada no cofre.'; return null; }
+      if (!r.ok) { msg.textContent = 'Erro ao carregar (' + r.status + '). Tente de novo.'; return null; }
+      return r.json();
+    }).then(function (S) {
+      if (!S) return;
+      gate.style.display = 'none';
+      corpo.style.display = 'block';
+      desenha(S);
+    }).catch(function () { msg.textContent = 'Falha de rede ao carregar.'; });
+  }
+  // Espelha SAUDE_NIVEIS do contagem-worker (handleSaude). Quem recusa é o Worker.
+  var r = window.exigirNivel(['coord'], 'saude.html');
+  if (r.ok) busca(r.sessao.token);
+  else if (!r.redirecionou) msg.innerHTML = window.msgAcessoNegado('a Saúde do robô');
+})();
+</script>
+
+
+<div class="sino-pop" id="sino-pop" role="dialog" aria-label="Notificações" hidden>
+  <div class="sino-cab">
+    <h3>Notificações</h3>
+    <button class="sino-lidas" id="sino-lidas" type="button">Marcar todas como lidas</button>
+  </div>
+  <div class="sino-abas">
+    <button class="sino-aba on" id="sino-aba-rec" data-aba="rec" type="button">Recebidas <span class="sino-n" id="sino-n-rec" hidden></span></button>
+    <button class="sino-aba" id="sino-aba-nov" data-aba="nov" type="button">Novidades do site <span class="sino-n" id="sino-n-nov" hidden></span></button>
+  </div>
+  <div class="sino-lista" id="sino-lista-rec"><div class="sino-vazio">Carregando…</div></div>
+  <div class="sino-lista" id="sino-lista-nov" hidden></div>
+</div>
+
+
+
+<button class="ia-aba" id="ia-aba" type="button" title="Pergunte ao assistente" aria-label="Abrir o assistente" aria-expanded="false" hidden><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg><span>Pergunte</span></button>
+<aside class="ia-painel" id="ia-painel" role="dialog" aria-labelledby="ia-tt" hidden><div class="ia-cab"><span class="ia-av"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></span><div class="ia-cab-t"><b id="ia-tt">Assistente do bar</b><small><span class="ia-on" aria-hidden="true"></span><span id="ia-sub">Cérebros do portal</span></small></div><button class="ia-ic" id="ia-nova" type="button" title="Nova conversa" aria-label="Nova conversa"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19 4 20z"/><path d="M13 7l4 4"/></svg></button><button class="ia-ic" id="ia-fecha" type="button" title="Fechar" aria-label="Fechar o assistente"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="ia-msgs" id="ia-msgs" aria-live="polite"></div><div class="ia-pe"><div class="ia-casa" id="ia-casa-box" hidden><label for="ia-casa">Casa</label><select id="ia-casa"></select></div><form class="ia-form" id="ia-form"><div class="ia-campo"><textarea id="ia-texto" rows="1" maxlength="1500" placeholder="Pergunte qualquer coisa do bar…" aria-label="Sua pergunta"></textarea><button class="ia-envia" type="submit" id="ia-envia" aria-label="Enviar" disabled><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button></div></form><div class="ia-rodape" id="ia-rodape">A IA pode errar: confira na fonte. Nada sai sem você autorizar.</div></div><template id="ia-ic-av"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9-1.9 5.1-1.9-5.1-5.1-1.9 5.1-1.9z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></template><template id="ia-ic-copia"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></template></aside>
+<details class="prompt-caixa" id="prompt-caixa" data-niveis="coord" style="display:none" data-arquivo="prompt-saude.md"><summary><span class="pc-ic"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg></span>Prompt de construção desta página<span class="pc-tam">52 linhas</span><span class="pc-seta"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></summary><div class="pc-corpo"><textarea class="pc-txt" id="prompt-txt" readonly spellcheck="false" aria-label="Prompt de construção desta página"></textarea><div class="pc-acoes"><button class="pc-bt pc-pri" id="prompt-copia" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9z"/><path d="M9 12h6M9 16h4"/></svg>Copiar</button><button class="pc-bt" id="prompt-baixa" type="button"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg>Baixar .md</button><span class="pc-nota">Sai do HTML que está no ar e se atualiza a cada publicação.</span></div></div></details>
+<p class="nota">Painel do bar · atualizado em 15/11/2026.
+Gerado automaticamente por portal_gen.py — não editar este arquivo à mão.</p>
+
+<script>
+(function () {
+  var LABEL = {"equipe": "Equipe de Bar", "chefe": "Chefe de Bar", "coord": "Coordenação", "rh": "RH", "controladoria": "Controladoria & Administração", "suprimentos": "Suprimentos", "treinador": "Treinador & Auditoria", "marketing": "Marketing"};
+  var ACESSOS_DONO = "Rodrigo Coelho Viana";
+  function nivelAtual() {
+    try { return localStorage.getItem('portal_nivel') || 'equipe'; } catch (e) { return 'equipe'; }
+  }
+  function aplica() {
+    var atual = nivelAtual();
+    // bartender (Escola de Bar, Fase 3) herda a superfície do aprendiz (equipe)
+    // no menu — o que muda pra ele é só o comportamento do Plano de treino.
+    if (atual === 'bartender') atual = 'equipe';
+    // data-niveis = lista de nomes de nível (separados por espaço) que podem
+    // ver aquele elemento — já vem pronta do Python (_niveis_permitidos),
+    // cobrindo tanto a escada (equipe/chefe/coord) quanto os acessos
+    // paralelos (rh/controladoria). Aqui é só checar se o nível atual está
+    // na lista — nada de comparação numérica.
+    document.querySelectorAll('[data-niveis]').forEach(function (el) {
+      var lista = el.dataset.niveis ? el.dataset.niveis.split(' ') : [];
+      el.style.display = lista.indexOf(atual) >= 0 ? '' : 'none';
+    });
+    var rotulo = LABEL[atual] || LABEL.equipe;
+    // Nome de quem logou (senha individual — Escola de Bar F7 / Missão 5).
+    // Sai de sessaoLer(), NUNCA de portal_nivel: são duas chaves diferentes
+    // do localStorage e podem discordar. sessaoLer() já devolve null em
+    // sessão expirada, então a pill larga o nome sozinha quando a sessão
+    // morre — que é o certo. Senha de tier compartilhada não tem pessoa e
+    // cai no ramo de sempre.
+    var s = window.sessaoLer && window.sessaoLer();
+    var pessoa = (s && s.pessoa) ? s.pessoa : null;
+    // Itens de menu marcados data-dono: só a pessoa dona vê. Precisa vir
+    // DEPOIS do laço de data-niveis acima, senão aquele reexibe o link ao
+    // reaplicar (os dois mexem no mesmo style.display).
+    document.querySelectorAll('[data-dono]').forEach(function (el) {
+      if (!pessoa || pessoa !== ACESSOS_DONO) el.style.display = 'none';
+    });
+    var txt = document.getElementById('nivel-pill-txt');
+    if (txt) txt.textContent = pessoa || rotulo;
+    var niv = document.getElementById('np-niv');
+    if (niv) niv.textContent = rotulo;   // CSS decide se aparece
+    // cor da pill acompanha o nível logado (CSS [data-nivel] em CSS_NIVEL)
+    var pill = document.getElementById('nivel-pill');
+    if (pill) {
+      pill.setAttribute('data-nivel', atual);
+      // remover, não só setar: aplica() roda de novo no login (definirNivel)
+      // e um data-tem-pessoa velho ficaria grudado numa sessão sem nome.
+      if (pessoa) pill.setAttribute('data-tem-pessoa', '1');
+      else pill.removeAttribute('data-tem-pessoa');
+    }
+  }
+  // Exposto porque a busca universal (JS_BUSCA_GLOBAL, roda depois deste
+  // bloco) precisa da MESMA régua de data-dono pra não oferecer "Vendas" a
+  // quem não é o dono. Não vaza nada novo: o valor já está interpolado no
+  // HTML de toda página, aqui só deixa de ficar preso ao IIFE.
+  window.ACESSOS_DONO = ACESSOS_DONO;
+  window.definirNivel = function (v) {
+    try { localStorage.setItem('portal_nivel', v); } catch (e) {}
+    aplica();
+    if (typeof window.onNivelDefinido === 'function') window.onNivelDefinido(v);
+  };
+  window.nivelAtual = nivelAtual;
+  aplica();
+})();
+</script>
+
+
+<script>
+(function () {
+  var grps = document.querySelectorAll('#nav-principal .grp');
+  grps.forEach(function (g) {
+    g.addEventListener('toggle', function () {
+      if (g.open) grps.forEach(function (o) { if (o !== g) o.open = false; });
+    });
+  });
+  // Botão "Menu" do celular (_nav_toggle): abre e fecha as pílulas das seções.
+  var nav = document.getElementById('nav-principal');
+  var tog = nav && nav.querySelector('.nav-tog');
+  function navAberto(sim) {
+    if (!tog) return;
+    nav.classList.toggle('aberto', sim);
+    tog.setAttribute('aria-expanded', sim ? 'true' : 'false');
+    if (!sim) grps.forEach(function (g) { g.open = false; });
+  }
+  if (tog) tog.addEventListener('click', function () { navAberto(!nav.classList.contains('aberto')); });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#nav-principal')) { grps.forEach(function (g) { g.open = false; }); navAberto(false); }
+  });
+})();
+</script>
+
+
+<script>
+(function () {
+  var g = document.getElementById('gaveta'), fundo = document.getElementById('gv-fundo');
+  var abre = document.getElementById('gv-abre'), fecha = document.getElementById('gv-fecha');
+  if (!g || !abre || !fundo) return;
+  function aberta() { return document.body.classList.contains('gv-aberta'); }
+  function estado(sim) {
+    if (sim) fundo.hidden = false;
+    document.body.classList.toggle('gv-aberta', sim);
+    g.setAttribute('aria-hidden', sim ? 'false' : 'true');
+    abre.setAttribute('aria-expanded', sim ? 'true' : 'false');
+    if (sim) {
+      // Setinha só onde o nível vê 2+ subpáginas (o JS_NIVEL já escondeu as outras).
+      g.querySelectorAll('.gv-sub-tog').forEach(function (t) {
+        var s = document.getElementById(t.getAttribute('aria-controls'));
+        var n = s ? [].filter.call(s.children, function (a) { return a.style.display !== 'none'; }).length : 0;
+        t.style.visibility = n >= 2 ? '' : 'hidden';
+        if (n < 2 && s) s.hidden = true;
+      });
+      var quem = document.getElementById('nivel-pill-txt'), d = document.getElementById('gv-quem');
+      if (quem && d) d.textContent = quem.textContent;
+      if (fecha) fecha.focus();
+    } else {
+      setTimeout(function () { if (!aberta()) fundo.hidden = true; }, 230);
+    }
+  }
+  abre.addEventListener('click', function () { estado(true); });
+  fundo.addEventListener('click', function () { estado(false); });
+  if (fecha) fecha.addEventListener('click', function () { estado(false); abre.focus(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && aberta()) { estado(false); abre.focus(); }
+  });
+  // Subpágina marcada: a aba aberta do hub (?tab= ou a lingueta acesa).
+  function marcaSub(t) {
+    g.querySelectorAll('.gv-sub[data-aqui]').forEach(function (a) { a.classList.toggle('on', a.dataset.tab === t); });
+  }
+  g.addEventListener('click', function (e) {
+    var cab = e.target.closest('.gv-sec-cab');
+    if (cab) {
+      var sec = cab.parentNode, ab = !sec.classList.contains('aberta');
+      sec.classList.toggle('aberta', ab);
+      cab.setAttribute('aria-expanded', ab ? 'true' : 'false');
+      return;
+    }
+    var tog = e.target.closest('.gv-sub-tog');
+    if (tog) {
+      var subs = document.getElementById(tog.getAttribute('aria-controls'));
+      var ab2 = tog.getAttribute('aria-expanded') !== 'true';
+      tog.setAttribute('aria-expanded', ab2 ? 'true' : 'false');
+      if (subs) subs.hidden = !ab2;
+      return;
+    }
+    var sub = e.target.closest('.gv-sub[data-aqui]');
+    if (sub) {
+      var lg = document.querySelector('.perf-tab[data-tab="' + sub.dataset.tab + '"]');
+      if (!lg) return;
+      e.preventDefault();
+      lg.click();
+      marcaSub(sub.dataset.tab);
+      try {
+        var u = new URL(location.href);
+        u.searchParams.set('tab', sub.dataset.tab);
+        history.replaceState(null, '', u.search + u.hash);
+      } catch (x) {}
+      estado(false);
+    }
+  });
+  document.addEventListener('click', function (e) {
+    var p = e.target.closest && e.target.closest('.perf-tab');
+    if (p && p.dataset.tab) marcaSub(p.dataset.tab);
+  });
+  var tab = null;
+  try { tab = new URLSearchParams(location.search).get('tab'); } catch (x) {}
+  if (!tab) { var on = document.querySelector('.perf-tab.on'); if (on) tab = on.dataset.tab; }
+  if (tab) marcaSub(tab);
+})();
+</script>
+
+<!-- cerca geográfica desligada em config/geofence.json (ativo=false) -->
+
+<script>
+(function () {
+  var COR = { iz: '#d0a352', '1929': '#c9705a', gra: '#8fd0a5', famu: '#a58fd0', fulles: '#6fa8dc', nip: '#d98fb0' };
+  var WORKER = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var TETO = { paginas: 6, receitas: 8, itens: 8 };
+  var btn = document.getElementById('lupa-busca');
+  var ov = document.getElementById('busca-global-ov');
+  var input = document.getElementById('bg-input');
+  var fechar = document.getElementById('bg-fechar');
+  var msg = document.getElementById('bg-msg');
+  var chips = document.getElementById('bg-chips');
+  var SEC = {
+    paginas: document.getElementById('bg-sec-paginas'),
+    receitas: document.getElementById('bg-sec-receitas'),
+    itens: document.getElementById('bg-sec-itens')
+  };
+  if (!btn || !ov) return;
+  var fonte = 'tudo';
+  // Cada fonte tem estado PRÓPRIO (dado, carregando, falhou): falha de uma
+  // nunca derruba as outras duas (4.3 do PLANO_BUSCA_UNIVERSAL.md).
+  var rec = { d: null, load: false, erro: false };
+  var pag = { d: null, load: false, erro: false };
+  var itn = { d: null, load: false, erro: false };
+
+  function semAcento(s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+
+  // Mesma régua de JS_NIVEL: o nível vem de portal_nivel (não da sessão) e
+  // bartender enxerga a superfície de equipe. Só decoração — quem recusa de
+  // verdade continua sendo o Worker e o exigirNivel() de cada página.
+  function nivelDaTela() {
+    var n;
+    try { n = localStorage.getItem('portal_nivel') || 'equipe'; } catch (e) { n = 'equipe'; }
+    return n === 'bartender' ? 'equipe' : n;
+  }
+  function sessao() {
+    try { return window.sessaoLer ? window.sessaoLer() : null; } catch (e) { return null; }
+  }
+  function ehDono() {
+    var s = sessao();
+    return !!(s && s.pessoa && window.ACESSOS_DONO && s.pessoa === window.ACESSOS_DONO);
+  }
+
+  function carregaRec() {
+    if (rec.d || rec.load || rec.erro) return;
+    rec.load = true;
+    fetch('receitas_idx.json').then(function (r) { return r.json(); })
+      .then(function (d) { rec.d = d || []; rec.load = false; aplica(); })
+      .catch(function () { rec.erro = true; rec.load = false; aplica(); });
+  }
+  function carregaPag() {
+    if (pag.d || pag.load || pag.erro) return;
+    pag.load = true;
+    fetch('paginas_idx.json').then(function (r) { return r.json(); })
+      .then(function (d) { pag.d = d || []; pag.load = false; aplica(); })
+      .catch(function () { pag.erro = true; pag.load = false; aplica(); });
+  }
+  // D3: 125 KB sob token — nada é buscado ao abrir a caixa. Dispara no
+  // primeiro termo com 2+ letras, uma vez por carga de página.
+  function carregaItens() {
+    if (itn.d || itn.load || itn.erro) return;
+    var s = sessao();
+    if (!WORKER || !s || !s.token) return;
+    itn.load = true;
+    fetch(WORKER + '/api/transferencias', { headers: { 'X-Token': s.token } })
+      .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
+      .then(function (d) { itn.d = d || {}; itn.load = false; aplica(); })
+      .catch(function () { itn.erro = true; itn.load = false; aplica(); });
+  }
+
+  // Realce por DOM (nunca innerHTML): parte do texto vem do Worker.
+  function marcaEl(nome, q) {
+    var f = document.createDocumentFragment();
+    var i = semAcento(nome).indexOf(q);
+    if (i < 0) { f.appendChild(document.createTextNode(nome)); return f; }
+    f.appendChild(document.createTextNode(nome.slice(0, i)));
+    var mk = document.createElement('mark');
+    mk.textContent = nome.slice(i, i + q.length);
+    f.appendChild(mk);
+    f.appendChild(document.createTextNode(nome.slice(i + q.length)));
+    return f;
+  }
+
+  function linha(href, classe) {
+    var a = document.createElement('a');
+    a.className = 'bg-item ' + classe;
+    a.href = href;
+    return a;
+  }
+  function nomeEm(a, nome, q) {
+    var sp = document.createElement('span');
+    sp.className = 'nome';
+    sp.appendChild(marcaEl(nome, q));
+    a.appendChild(sp);
+    return sp;
+  }
+
+  function pinta(chave, itens, monta, verHref, verTexto) {
+    var sec = SEC[chave];
+    if (!sec) return 0;
+    if (fonte !== 'tudo' && fonte !== chave) { sec.hidden = true; return 0; }
+    var lista = sec.querySelector('.bg-sec-lista');
+    lista.textContent = '';
+    var teto = TETO[chave];
+    itens.slice(0, teto).forEach(function (it) { lista.appendChild(monta(it)); });
+    if (itens.length > teto && verHref) {
+      var v = document.createElement('a');
+      v.className = 'bg-ver';
+      v.href = verHref;
+      v.textContent = verTexto;
+      lista.appendChild(v);
+    }
+    sec.hidden = !itens.length;
+    return itens.length;
+  }
+
+  function avisa(chave, texto) {
+    var sec = SEC[chave];
+    if (!sec) return;
+    if (fonte !== 'tudo' && fonte !== chave) { sec.hidden = true; return; }
+    var lista = sec.querySelector('.bg-sec-lista');
+    lista.textContent = '';
+    var p = document.createElement('p');
+    p.className = 'bg-aviso';
+    p.textContent = texto;
+    lista.appendChild(p);
+    sec.hidden = false;
+  }
+
+  function achaPaginas(q) {
+    if (!pag.d) return [];
+    var nivel = nivelDaTela(), dono = ehDono();
+    return pag.d.filter(function (p) {
+      var n = (p.n || '').split(' ');
+      if (n.indexOf(nivel) < 0) return false;
+      if (p.d && !dono) return false;
+      return semAcento(p.t).indexOf(q) >= 0 || semAcento(p.k || '').indexOf(q) >= 0;
+    });
+  }
+
+  function achaReceitas(q) {
+    if (!rec.d) return [];
+    return rec.d.filter(function (it) { return semAcento(it.n).indexOf(q) >= 0; });
+  }
+
+  // D2: "excedente" é lido como GUARDADO, nunca como folga acima do mínimo —
+  // 62% das entradas estão abaixo do mínimo e ordenar por folga poria no topo
+  // a casa de mínimo mais frouxo. Ordem: guardado total desc.
+  function achaItens(q) {
+    if (!itn.d || !itn.d.itens) return [];
+    var casas = itn.d.casas || {};
+    var out = [];
+    itn.d.itens.forEach(function (it) {
+      if (semAcento(it.nome || '').indexOf(q) < 0) return;
+      var tot = 0, onde = [];
+      Object.keys(it.casas || {}).forEach(function (slug) {
+        var g = (it.casas[slug] || {}).guardado || 0;
+        if (g > 0) { tot += g; onde.push({ casa: (casas[slug] || {}).nome || slug, qt: g }); }
+      });
+      if (!tot) return;
+      onde.sort(function (a, b) { return b.qt - a.qt; });
+      out.push({ nome: it.nome, tot: tot, onde: onde });
+    });
+    out.sort(function (a, b) { return b.tot - a.tot; });
+    return out;
+  }
+
+  function aplica() {
+    var termo = input.value.trim();
+    var q = semAcento(termo);
+    if (q.length < 2) {
+      msg.className = 'bg-dica';
+      msg.textContent = 'Digite ao menos 2 letras.';
+      msg.hidden = false;
+      SEC.paginas.hidden = SEC.receitas.hidden = SEC.itens.hidden = true;
+      return;
+    }
+    carregaPag(); carregaRec();
+    if (fonte === 'tudo' || fonte === 'itens') carregaItens();
+
+    var nP = pinta('paginas', achaPaginas(q), function (p) {
+      var a = linha(p.u, 'bg-item-pag');
+      nomeEm(a, p.t, q);
+      var g = document.createElement('span');
+      g.className = 'bg-grp';
+      g.textContent = p.g || '';
+      a.appendChild(g);
+      return a;
+    }, 'index.html', 'ver todas as áreas \u2192');
+
+    var nR = pinta('receitas', achaReceitas(q), function (it) {
+      var a = linha('cocktails.html#r-' + it.s, 'bg-item-rec');
+      nomeEm(a, it.n, q);
+      var c = document.createElement('span');
+      c.className = 'bg-casas';
+      (it.c || []).forEach(function (casa) {
+        var i = document.createElement('i');
+        i.style.background = COR[casa] || '#8f8672';
+        c.appendChild(i);
+      });
+      a.appendChild(c);
+      return a;
+    }, 'cocktails.html', 'ver todas as fichas \u2192');
+
+    var nI = 0;
+    var s = sessao();
+    if (fonte === 'tudo' || fonte === 'itens') {
+      if (!WORKER || !s || !s.token) {
+        if (fonte === 'itens') avisa('itens', 'Entre no portal para buscar itens no estoque das casas.');
+        else SEC.itens.hidden = true;
+      } else if (itn.erro) {
+        avisa('itens', 'Não deu para consultar o estoque das casas agora.');
+      } else if (itn.load || !itn.d) {
+        avisa('itens', 'Procurando nas casas\u2026');
+      } else {
+        nI = pinta('itens', achaItens(q), function (it) {
+          var a = linha('transferencias.html?q=' + encodeURIComponent(termo), 'bg-item-item');
+          nomeEm(a, it.nome, q);
+          var c = document.createElement('span');
+          c.className = 'bg-casa-qt';
+          it.onde.forEach(function (o, i) {
+            if (i) c.appendChild(document.createTextNode(' \u00b7 '));
+            c.appendChild(document.createTextNode(o.casa + ' '));
+            var b = document.createElement('b');
+            b.textContent = String(o.qt);
+            c.appendChild(b);
+          });
+          a.appendChild(c);
+          return a;
+        }, 'transferencias.html?q=' + encodeURIComponent(termo), 'ver no buscador entre casas \u2192');
+      }
+    } else {
+      SEC.itens.hidden = true;
+    }
+
+    // A mensagem geral só aparece quando NENHUMA seção está na tela — uma
+    // seção que mostra aviso próprio ("procurando nas casas", "não deu para
+    // consultar") já está falando por si, e um "nada com X" por cima dela se
+    // contradiz.
+    var algumaSecao = !SEC.paginas.hidden || !SEC.receitas.hidden || !SEC.itens.hidden;
+    if (nP + nR + nI > 0 || algumaSecao) { msg.hidden = true; return; }
+    // Nada em nenhuma fonte: uma mensagem só, com as duas saídas.
+    if (pag.load || rec.load || itn.load) {
+      msg.className = 'bg-dica';
+      msg.textContent = 'Carregando\u2026';
+      msg.hidden = false;
+      return;
+    }
+    msg.className = 'bg-vazio';
+    msg.textContent = '';
+    msg.appendChild(document.createTextNode('Nada com "' + termo + '" \u2014 '));
+    var l1 = document.createElement('a');
+    l1.href = 'cocktails.html'; l1.textContent = 'ver fichas';
+    var l2 = document.createElement('a');
+    l2.href = 'transferencias.html'; l2.textContent = 'buscar entre casas';
+    msg.appendChild(l1);
+    msg.appendChild(document.createTextNode(' ou '));
+    msg.appendChild(l2);
+    msg.appendChild(document.createTextNode('.'));
+    msg.hidden = false;
+  }
+
+  if (chips) {
+    chips.addEventListener('click', function (e) {
+      var c = e.target.closest ? e.target.closest('.bg-chip') : null;
+      if (!c) return;
+      fonte = c.dataset.fonte || 'tudo';
+      chips.querySelectorAll('.bg-chip').forEach(function (o) {
+        var on = o === c;
+        o.classList.toggle('ativo', on);
+        o.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      aplica();
+    });
+  }
+
+  function abre() {
+    ov.classList.add('aberto');
+    document.body.style.overflow = 'hidden';
+    // Páginas e receitas são arquivos estáticos leves — carregam no foco,
+    // como antes. Itens (125 KB sob token) só a partir de 2 letras (D3).
+    carregaPag(); carregaRec();
+    setTimeout(function () { input.focus(); }, 30);
+  }
+  function fecha() {
+    ov.classList.remove('aberto');
+    document.body.style.overflow = '';
+  }
+  btn.addEventListener('click', abre);
+  fechar.addEventListener('click', fecha);
+  ov.addEventListener('click', function (e) { if (e.target === ov) fecha(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && ov.style.display !== 'flex' && !ov.classList.contains('aberto') &&
+        document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault(); abre();
+    } else if (e.key === 'Escape' && ov.classList.contains('aberto')) {
+      fecha();
+    }
+  });
+  input.addEventListener('input', aplica);
+})();
+</script>
+
+<script>
+
+(function(){
+  var REG = "https://registro-bares.rodrigopcviana.workers.dev";
+  // Férias moram no OUTRO worker (contagem-bares) — o sino busca as duas
+  // fontes e junta no cliente. Alternativa seria dar acesso à base de
+  // Colaboradores ao registro-bares só pra isso; não vale o acoplamento.
+  var CTG = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var ACESSOS_DONO = "Rodrigo Coelho Viana";
+  var btn = document.getElementById('sino-btn');
+  var pop = document.getElementById('sino-pop');
+  if(!btn || !pop) return;
+  var s = (window.sessaoLer && window.sessaoLer()) || null;
+  if(!s) return;               // deslogado: sino fica escondido
+  btn.hidden = false;
+
+  var recebidas = [], novidades = [], carregou = false;
+
+  function esc(t){ var d=document.createElement('div'); d.textContent=(t==null?'':String(t)); return d.innerHTML; }
+  function idR(x){ return x.chave || (x.tipo+':'+(x.quando||'')); }
+  function idN(x){ return (x.data||'')+'|'+(x.titulo||''); }
+  function vKey(){ return 'sino_visto_'+(s.pessoa||s.nivel||'x'); }
+  function lerV(){ try{ return JSON.parse(localStorage.getItem(vKey())||'{}'); }catch(e){ return {}; } }
+  function salvarV(v){ try{ localStorage.setItem(vKey(), JSON.stringify(v)); }catch(e){} }
+
+  function tempo(iso){
+    if(!iso) return '';
+    var t = Date.parse(iso); if(isNaN(t)) return '';
+    var seg = Math.floor((Date.now()-t)/1000);
+    if(seg < 60) return 'agora';
+    if(seg < 3600) return 'há '+Math.floor(seg/60)+' min';
+    if(seg < 86400) return 'há '+Math.floor(seg/3600)+' h';
+    var dias = Math.floor(seg/86400);
+    if(dias === 1) return 'ontem';
+    if(dias < 7) return 'há '+dias+' dias';
+    return dataCurta(iso);
+  }
+  var MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  function dataCurta(iso){
+    var d = new Date(iso); if(isNaN(d.getTime())){ var m=String(iso).slice(0,10).split('-'); if(m.length===3) return (+m[2])+' '+MESES[(+m[1])-1]; return ''; }
+    return d.getDate()+' '+MESES[d.getMonth()];
+  }
+  function dataHoraCheia(iso){
+    if(!iso) return '';
+    var d = new Date(iso); if(isNaN(d.getTime())) return '';
+    return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  var ICO = {
+    demanda:'<path d="M5 4h14v16l-7-3-7 3z"/>',
+    resposta:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    aviso:'<path d="M3 11l18-7-7 18-2-8z"/>',
+    ferias:'<path d="M3 21h18"/><path d="M12 21V9"/><path d="M12 9a7 7 0 0 1 9 3"/><path d="M12 9a7 7 0 0 0-9 3"/>',
+    acesso:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M18 8v6M15 11h6"/>',
+    tarefa:'<path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="2.5"/>',
+    // Intercom (E5) — mesmo glifo do item "Intercom" no menu (ICONE_PATHS
+    // "megaphone"), pra o item do sino e a entrada do nav lerem como a mesma
+    // coisa.
+    voz:'<path d="M3 10v4h3l6 4V6l-6 4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/>'
+  };
+  function svg(tp){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICO[tp]||ICO.aviso)+'</svg>'; }
+  function tag(tp){
+    if(tp==='demanda') return 'Demanda';
+    if(tp==='resposta') return 'Resposta';
+    if(tp==='ferias') return 'Férias';
+    if(tp==='acesso') return 'Acesso';
+    if(tp==='tarefa') return 'Mesa';
+    if(tp==='voz') return 'Intercom';
+    return 'Aviso';
+  }
+
+  function renderRec(){
+    var wrap = document.getElementById('sino-lista-rec');
+    if(!recebidas.length){ wrap.innerHTML='<div class="sino-vazio">Nada por aqui ainda.</div>'; return; }
+    var v = lerV();
+    wrap.innerHTML = recebidas.map(function(x){
+      var novo = !v['r:'+idR(x)];
+      return '<a class="sino-item'+(novo?' novo':'')+' tp-'+esc(x.tipo)+'" href="'+esc(x.url||'#')+'">'
+        + '<span class="sino-ic">'+svg(x.tipo)+'</span>'
+        + '<span class="sino-tx">'
+        +   '<span class="sino-t"><span class="sino-tag">'+esc(tag(x.tipo))+'</span>'+esc(x.titulo)+'</span>'
+        +   '<span class="sino-d">'+esc(x.descricao)+'</span>'
+        // 2026-07-23: "há 3 dias"/"ontem" é calculado uma vez no render e nunca
+        // mais — o title carrega a data/hora exata pra nunca ficar só o relativo.
+        +   '<span class="sino-m" title="'+esc(dataHoraCheia(x.quando))+'">'+esc(tempo(x.quando))+'</span>'
+        + '</span></a>';
+    }).join('');
+  }
+  function renderNov(){
+    var wrap = document.getElementById('sino-lista-nov');
+    if(!novidades.length){ wrap.innerHTML='<div class="sino-vazio">Sem novidades por enquanto.</div>'; return; }
+    wrap.innerHTML = novidades.map(function(x){
+      return '<div class="sino-nov"><div class="sino-nc"><span class="sino-marco"></span>'
+        + '<h4>'+esc(x.titulo)+'</h4><span class="sino-data">'+esc(dataCurta(x.data))+'</span></div>'
+        + '<p>'+esc(x.descricao)+'</p></div>';
+    }).join('');
+  }
+  function chip(id, n){ var e=document.getElementById(id); if(!e) return; if(n>0){ e.textContent=(n>99?'99+':n); e.hidden=false; } else e.hidden=true; }
+  function atualiza(){
+    var v = lerV();
+    var nR = recebidas.filter(function(x){ return !v['r:'+idR(x)]; }).length;
+    var nN = novidades.filter(function(x){ return !v['n:'+idN(x)]; }).length;
+    var tot = nR + nN;
+    var b = document.getElementById('sino-badge');
+    if(tot>0){ b.textContent=(tot>99?'99+':tot); b.hidden=false; btn.classList.add('tem'); }
+    else { b.hidden=true; btn.classList.remove('tem'); }
+    chip('sino-n-rec', nR); chip('sino-n-nov', nN);
+  }
+
+  function visivel(niv){
+    // bartender herda a superfície de equipe no portal inteiro (JS_NIVEL faz
+    // o mesmo no menu). Sem esta linha, quem entra com senha individual de
+    // bartender não via NENHUMA novidade do site — as entradas listam
+    // 'equipe', nunca 'bartender'.
+    var meu = s.nivel === 'bartender' ? 'equipe' : s.nivel;
+    if(!niv || niv==='todos') return true;
+    if(Array.isArray(niv)) return niv.indexOf(meu)>=0 || niv.indexOf('todos')>=0;
+    return niv===meu;
+  }
+  // "Suas férias" — item derivado da própria ficha, sem caixa de entrada nova
+  // no servidor. A chave de lido (idR) inclui as datas, então cada mudança de
+  // período conta como não-lida uma vez; reeditar pro MESMO período não volta
+  // a piscar.
+  // NÃO usar dataCurta() aqui: ela faz new Date("2026-07-05"), que o
+  // navegador lê como meia-noite UTC e, em UTC-3, volta pro dia 4 — férias
+  // apareciam começando um dia antes. Uma data pura (sem hora) tem que ser
+  // fatiada como texto, nunca convertida pra Date.
+  function diaMesIso(iso){
+    var p = String(iso||'').split('-');
+    if(p.length !== 3) return String(iso||'');
+    return (+p[2]) + ' ' + MESES[(+p[1]) - 1];
+  }
+  function itemFerias(d){
+    if(!d || !d.eu || !d.eu.saida_ferias) return null;
+    var per = d.eu.ultimo_dia_ferias
+      ? diaMesIso(d.eu.saida_ferias)+' a '+diaMesIso(d.eu.ultimo_dia_ferias)
+      : 'a partir de '+diaMesIso(d.eu.saida_ferias);
+    return {
+      tipo:'ferias',
+      chave:'ferias:'+d.eu.saida_ferias+':'+(d.eu.ultimo_dia_ferias||''),
+      titulo:'Suas férias estão marcadas',
+      descricao:per,
+      quando:d.eu.atualizado_em || null,
+      url:'meu-perfil.html'
+    };
+  }
+  function juntaRec(base, extras){
+    recebidas = (extras||[]).filter(Boolean).concat(base);
+    renderRec(); atualiza();
+  }
+  // Pedidos de acesso esperando (PLANO_ACESSOS_AUTOSSERVICO.md). Só o dono
+  // busca — sem isso um pedido que não é de bartender ficaria parado até ele
+  // lembrar de abrir a página, e é justamente essa fila que faz a aprovação
+  // existir. Um item por pedido, não um resumo: a chave de lido é o id, então
+  // aprovar um não some com o aviso dos outros.
+  function itensAcessos(d){
+    if(!d || !d.itens || !d.itens.length) return [];
+    return d.itens.map(function(x){
+      return {
+        tipo:'acesso',
+        chave:'acesso:'+x.id,
+        titulo:'Pedido de acesso: '+x.nome,
+        descricao:'quer entrar no portal'+(x.cargo ? ' como '+x.cargo : ''),
+        quando:x.criado_em ? new Date(x.criado_em).toISOString() : null,
+        url:'acessos.html'
+      };
+    });
+  }
+  // Nutricook (PLANO_NUTRICOOK.md): apontamento sanitário crítico vira item do
+  // sino, derivado do MESMO payload que a página lê — sem caixa de entrada
+  // nova no servidor (mesma decisão do aviso de férias).
+  //
+  // Só chefe/coord/controladoria recebem, e o chefe só a própria casa: a
+  // página é aberta a todo mundo, mas notificar a equipe inteira sobre a nota
+  // de todas as casas seria ruído, não informação. Mesmo recorte de
+  // NIVEIS_PUSH no registro-bares.
+  function itensNutricook(d){
+    if(!d || !d.alertas || !d.alertas.length) return [];
+    if(['chefe','coord','controladoria'].indexOf(s.nivel) < 0) return [];
+    // O slug do token traz "gra-bistro"; o payload traz "gra".
+    var minha = s.casa === 'gra-bistro' ? 'gra' : s.casa;
+    return d.alertas.filter(function(a){
+      if(a.nivel !== 'critico') return false;
+      if(s.nivel === 'chefe' && minha && minha !== '*') return a.casa === minha;
+      return true;
+    }).map(function(a){
+      return {
+        tipo:'nutricook',
+        // Content-based: apontamento novo avisa, republicar o mesmo não.
+        chave:'nutricook:'+a.casa+':'+a.tipo+':'+a.data,
+        titulo:'Nutricook',
+        descricao:a.texto,
+        quando:null,
+        url:'nutricook.html'
+      };
+    });
+  }
+  // Transferência entre casas (PLANO_TRANSFERENCIAS.md, D3/P3). A chamada é
+  // CONDICIONADA aos níveis que recebem o aviso (chefe/coord/controladoria —
+  // P2), pra não custar um fetch a mais nas ~65 páginas de quem não é avisado.
+  // O Worker já recorta por casa pelo token: o chefe só recebe o que envolve a
+  // casa dele. Chave content-based, então reeditar não repisca.
+  function itensTransferencia(d){
+    if(!d || !d.itens || !d.itens.length) return [];
+    return d.itens.filter(function(t){
+      // Quem registrou não é avisado do próprio registro (mesma cortesia de
+      // quem fecha a própria demanda).
+      return !(s.pessoa && t.solicitante && t.solicitante === s.pessoa);
+    }).map(function(t){
+      var qt = (typeof t.quantidade === 'number') ? t.quantidade + '× ' : '';
+      return {
+        tipo:'transferencia',
+        chave:'transferencia:'+t.chave,
+        titulo:'Transferência entre casas',
+        descricao: qt + t.item + ': ' + t.origem + ' → ' + t.destino +
+                   (t.solicitante ? ' (' + t.solicitante + ')' : ''),
+        quando: t.registrado_em || null,
+        url:'transferencias.html'
+      };
+    });
+  }
+  function carregar(){
+    carregou = true;
+    var pTransf = (CTG && ['chefe','coord','controladoria'].indexOf(s.nivel) >= 0)
+      ? fetch(CTG+'/api/transferencias/recentes', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(itensTransferencia).catch(function(){ return []; })
+      : Promise.resolve([]);
+    var pNutri = CTG
+      ? fetch(CTG+'/api/nutricook', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(itensNutricook).catch(function(){ return []; })
+      : Promise.resolve([]);
+    var pFerias = (CTG && s.pessoa)
+      ? fetch(CTG+'/api/ferias-minhas', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(itemFerias).catch(function(){ return null; })
+      : Promise.resolve(null);
+    var pAcessos = (CTG && s.pessoa && s.pessoa === ACESSOS_DONO)
+      ? fetch(CTG+'/api/acessos/pendentes', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(itensAcessos).catch(function(){ return []; })
+      : Promise.resolve([]);
+    if(REG){
+      Promise.all([
+        fetch(REG+'/api/notificacoes', { headers:{ 'X-Token': s.token } })
+          .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
+          .then(function(d){ return (d&&d.itens)||[]; })
+          .catch(function(){ return []; }),
+        pFerias, pAcessos, pNutri, pTransf
+      ]).then(function(res){ juntaRec(res[0], (res[2]||[]).concat(res[3]||[], res[4]||[], [res[1]])); });
+    } else {
+      Promise.all([pFerias, pAcessos, pNutri, pTransf])
+        .then(function(res){ juntaRec([], (res[1]||[]).concat(res[2]||[], res[3]||[], [res[0]])); });
+    }
+    fetch('changelog.json', { cache:'no-cache' })
+      .then(function(r){ return r.ok ? r.json() : {itens:[]}; })
+      .then(function(d){ novidades = ((d&&d.itens)||[]).filter(function(x){ return visivel(x.niveis); }); renderNov(); atualiza(); })
+      .catch(function(){});
+  }
+
+  function troca(a){
+    document.getElementById('sino-aba-rec').classList.toggle('on', a==='rec');
+    document.getElementById('sino-aba-nov').classList.toggle('on', a==='nov');
+    document.getElementById('sino-lista-rec').hidden = (a!=='rec');
+    document.getElementById('sino-lista-nov').hidden = (a!=='nov');
+    var v = lerV();
+    if(a==='rec') recebidas.forEach(function(x){ v['r:'+idR(x)]=1; });
+    else novidades.forEach(function(x){ v['n:'+idN(x)]=1; });
+    salvarV(v);
+    setTimeout(function(){ if(a==='rec') renderRec(); atualiza(); }, 1400);
+  }
+  document.getElementById('sino-aba-rec').addEventListener('click', function(){ troca('rec'); });
+  document.getElementById('sino-aba-nov').addEventListener('click', function(){ troca('nov'); });
+  document.getElementById('sino-lidas').addEventListener('click', function(){
+    var v = lerV();
+    recebidas.forEach(function(x){ v['r:'+idR(x)]=1; });
+    novidades.forEach(function(x){ v['n:'+idN(x)]=1; });
+    salvarV(v); renderRec(); atualiza();
+  });
+
+  function abre(){ pop.hidden=false; btn.setAttribute('aria-expanded','true'); if(!carregou) carregar(); }
+  function fecha(){ pop.hidden=true; btn.setAttribute('aria-expanded','false'); }
+  btn.addEventListener('click', function(e){ e.stopPropagation(); if(pop.hidden) abre(); else fecha(); });
+  document.addEventListener('click', function(e){ if(!pop.hidden && !pop.contains(e.target) && !btn.contains(e.target)) fecha(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !pop.hidden) fecha(); });
+
+  carregar();  // carga silenciosa pra o badge aparecer sem abrir
+})();
+
+</script>
+<script>
+(function () {
+  var URL_CTG = "https://contagem-bares.rodrigopcviana.workers.dev";
+  var URL_LAB = "https://drinks-lab.rodrigopcviana.workers.dev";
+  var URL_IA = URL_CTG + '/api/ia';
+  var NIVEIS_IA = ['equipe', 'bartender', 'chefe', 'coord'];
+  var NIVEIS_CEREBRO = { numeros: ["chefe", "coord", "controladoria"], cardapio: ["chefe", "coord", "controladoria"], operacao: ["chefe", "coord", "rh"] };
+  var aba = document.getElementById('ia-aba');
+  var painel = document.getElementById('ia-painel');
+  if (!aba || !painel) return;
+  var s = (window.sessaoLer && window.sessaoLer()) || null;
+  // sem sessão, prévia da coordenação ou sem worker: o chat nem nasce
+  if (!s || s.previa || URL_CTG.indexOf('http') !== 0) return;
+  var comIA = NIVEIS_IA.indexOf(s.nivel) >= 0;
+  function pode(dom) { return dom === 'sabor' || (NIVEIS_CEREBRO[dom] || []).indexOf(s.nivel) >= 0; }
+  var cerebrosDoNivel = ['numeros', 'cardapio', 'operacao'].filter(pode);
+  if (!comIA && !cerebrosDoNivel.length) return;
+
+  var msgs = document.getElementById('ia-msgs');
+  var form = document.getElementById('ia-form');
+  var campo = document.getElementById('ia-texto');
+  var envia = document.getElementById('ia-envia');
+  var rodape = document.getElementById('ia-rodape');
+  var LS = 'ia_conversa_' + (s.pessoa || s.nivel || 'x');
+  var conv = [];
+  var ocupado = false;
+  var gatilho = null;
+  document.getElementById('ia-sub').textContent = comIA ? 'Cérebros do portal + Claude' : 'Cérebros do portal';
+
+  // ---- domínios: o MESMO classificador do pergunte.html ----
+  var PORTA_DOMINIOS = [
+    { id: 'cardapio', kw: [
+  "quantos itens", "quantidade ideal", "tamanho da carta", "enxugar a carta",
+  "reduzir a carta", "diminuir a carta", "o que sai da carta", "tirar da carta",
+  "cortar da carta", "sair da carta", "entrar na carta", "incluir na carta",
+  "desenho da carta", "desenhar a carta", "lacuna", "peso morto",
+  "engenharia de card", "clássicos ideais", "classicos ideais",
+  "sugestões ideais", "sugestoes ideais", "quantidade e sugest",
+] },
+    { id: 'sabor', kw: ['combina', 'harmoniza', 'acompanha', 'vai bem com',
+        'que prato', 'qual prato', 'indicar prato', 'sugerir prato',
+        'casa com', 'par do', 'pra comer com'] },
+    // operacao ANTES de numeros: "quanto custa a hora extra" tem 'custo', que
+    // é keyword de números — sem esta ordem a pergunta de banco de horas cairia
+    // no cérebro de vendas e responderia sobre CMV.
+    { id: 'operacao', kw: ['férias', 'ferias', 'banco de horas', 'hora extra',
+        'saldo de horas', 'limite legal', 'folga', 'escala', 'quem está devendo',
+        'quem esta devendo', 'horas a favor', 'afastamento'] },
+    // 'vende'/'venda' e NÃO 'vend': "devendo" contém "vend", então a keyword
+    // gulosa fazia "quem está devendo horas?" casar também em números e a porta
+    // perguntava "números ou gente e tempo?" à toa (pego por
+    // cerebros/teste_porta.mjs ao adicionar o domínio operacao).
+    { id: 'numeros', kw: ['margem', 'cmv', 'custo', 'receita', 'faturamento',
+        'vende', 'venda', 'preço', 'preco', 'caiu', 'subiu', 'queda', 'divergen',
+        'concilia', 'sem custo', 'sem ficha', 'pendência', 'pendencia',
+        'selo', 'treino', 'mais vendido', 'campeão', 'campeao'] },
+  ];
+  function classifica(q) {
+    var t = (q || '').toLowerCase();
+    var achou = [];
+    PORTA_DOMINIOS.forEach(function (d) {
+      if (d.kw.some(function (k) { return t.indexOf(k.toLowerCase()) >= 0; })) achou.push(d.id);
+    });
+    return achou;
+  }
+  var NOME = { numeros: 'Cérebro dos Números', cardapio: 'Cérebro do Cardápio', operacao: 'Cérebro de Operação', sabor: 'Harmonização do Lab' };
+  var CURTO = { numeros: 'Números', cardapio: 'Carta', operacao: 'Gente e tempo', sabor: 'Sabor' };
+  var VER = { numeros: 'pergunte.html?tab=numeros', cardapio: 'cerebro-cardapio.html', operacao: 'banco-horas.html', sabor: 'harmonizacao.html' };
+  var FONTE_IA = { eventos: ['Eventos', 'eventos.html'], estoque: ['Estoque', 'estoque.html'], transferencias: ['Transferências', 'transferencias.html'],
+    preparos: ['Preparos', 'preparos.html'], producao_interna: ['Produção interna', 'producao-interna.html'], nutricook: ['Nutricook', 'nutricook.html'],
+    regimento: ['Regimento', 'regimento.html'], operacao: ['Operação', 'banco-horas.html'] };
+  var SUG_NUMEROS = [
+  "por que a margem caiu?",
+  "que preço subiu e ninguém viu?",
+  "o que mais vende?",
+  "onde estou perdendo com CMV alto?",
+  "o que está caindo?",
+  "tem produto sem custo cadastrado?",
+];
+  var SUG_CARDAPIO = [
+  "quantos cocktails clássicos a carta deveria ter?",
+  "o que pode sair da carta?",
+  "o que vende bem e ninguém promove?",
+  "onde a margem está baixa e o volume alto?",
+  "a carta está completa em raízes e destilados?",
+  "o que vende e não está no cardápio?",
+];
+  var SUG_OPERACAO = [
+  "quanto vou pagar de hora extra?",
+  "quem está no limite de férias?",
+  "quem está acumulando hora a favor?",
+  "quem está devendo horas?",
+  "dá pra confiar nesses saldos?",
+];
+  // sugestão de cérebro já vai para ele: várias não batem nas palavras da
+  // porta ("quantos cocktails clássicos a carta deveria ter?")
+  function sug(lista, dom) { return lista.map(function (q) { return { q: q, rotulo: q, forca: dom }; }); }
+
+  // ---- casa: a do token manda; sem casa no token, a pessoa escolhe ----
+  var CASAS = [['iz', 'IZ Restaurante'], ['1929', '1929 Trattoria'], ['gra', 'Grá Bistrô'], ['famu', 'FAMU'], ['fulles', 'Fulles'], ['nip', 'NIP']];
+  var casaToken = s.casa && s.casa !== '*' ? (s.casa === 'gra-bistro' ? 'gra' : s.casa) : null;
+  var casaAtual = casaToken;
+  // o seletor só aparece para quem pergunta de assunto por casa (números,
+  // carta, sabor); o RH lê a operação consolidada e não precisa dele
+  if (!casaToken) casaAtual = 'iz';
+  if (!casaToken && (comIA || pode('numeros') || pode('cardapio'))) {
+    var sel = document.getElementById('ia-casa');
+    CASAS.forEach(function (c) { var o = document.createElement('option'); o.value = c[0]; o.textContent = c[1]; sel.appendChild(o); });
+    try { casaAtual = localStorage.getItem('ia_casa') || 'iz'; } catch (e) { casaAtual = 'iz'; }
+    sel.value = casaAtual;
+    sel.addEventListener('change', function () { casaAtual = sel.value; try { localStorage.setItem('ia_casa', casaAtual); } catch (e) {} });
+    document.getElementById('ia-casa-box').hidden = false;
+  }
+  function casaWorker() { return casaAtual === 'gra' ? 'gra-bistro' : casaAtual; }
+
+  // ---- utilidades de DOM (todo texto de fora entra por textContent) ----
+  function guarda() { try { sessionStorage.setItem(LS, JSON.stringify(conv.slice(-30))); } catch (e) {} }
+  function le() { try { return JSON.parse(sessionStorage.getItem(LS) || '[]') || []; } catch (e) { return []; } }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+  function icone(id) {
+    var t = document.getElementById(id);
+    return t && t.content && t.content.firstElementChild ? t.content.firstElementChild.cloneNode(true) : document.createTextNode('');
+  }
+  function rola() { msgs.scrollTop = msgs.scrollHeight; }
+  function emLinha(pai, txt) {
+    String(txt).split('**').forEach(function (p, i) {
+      if (p) pai.appendChild(i % 2 ? el('strong', null, p) : document.createTextNode(p));
+    });
+  }
+  // negrito e listas montados nó a nó: nunca innerHTML com texto de fora
+  function rico(texto) {
+    var box = el('div', 'ia-txt');
+    var lista = null, par = null;
+    String(texto || '').split('\n').forEach(function (ln) {
+      var t = ln.replace(/\s+$/, '');
+      var m = /^\s*(?:[-•*]|\d+[.)])\s+(.*)$/.exec(t);
+      if (m) {
+        if (!lista) { lista = el(/^\s*\d/.test(t) ? 'ol' : 'ul'); box.appendChild(lista); }
+        par = null;
+        var li = el('li'); emLinha(li, m[1]); lista.appendChild(li);
+        return;
+      }
+      lista = null;
+      if (!t.trim()) { par = null; return; }
+      if (par) par.appendChild(document.createElement('br'));
+      else { par = el('p'); box.appendChild(par); }
+      emLinha(par, t);
+    });
+    return box;
+  }
+  function linhaIA() {
+    var r = el('div', 'ia-r');
+    var av = el('span', 'ia-av');
+    av.appendChild(icone('ia-ic-av'));
+    r.appendChild(av);
+    var c = el('div', 'ia-c');
+    r.appendChild(c);
+    msgs.appendChild(r);
+    return c;
+  }
+  function chipsDePergunta(pai, lista, forca) {
+    if (!lista || !lista.length) return;
+    var box = el('div', 'ia-sug ia-seguir');
+    lista.forEach(function (it) {
+      var q = typeof it === 'string' ? it : it.q;
+      var b = el('button', null, typeof it === 'string' ? it : it.rotulo);
+      b.type = 'button';
+      b.addEventListener('click', function () { pergunta(q, typeof it === 'string' ? forca : it.forca); });
+      box.appendChild(b);
+    });
+    pai.appendChild(box);
+  }
+  function meta(pai, m) {
+    var box = el('div', 'ia-meta');
+    (m.tags || []).forEach(function (t) {
+      var a = t[1] ? el('a', 'ia-fonte', t[0]) : el('span', 'ia-fonte', t[0]);
+      if (t[1]) a.href = t[1];
+      box.appendChild(a);
+    });
+    if (m.nota) box.appendChild(el('small', null, m.nota));
+    var cp = el('button', 'ia-ic ia-copia');
+    cp.type = 'button'; cp.title = 'Copiar resposta'; cp.setAttribute('aria-label', 'Copiar resposta');
+    cp.appendChild(icone('ia-ic-copia'));
+    cp.addEventListener('click', function () {
+      var txt = m.content + ((m.itens || []).length ? '\n' + m.itens.map(function (i) { return '- ' + i.nome + (i.sub ? ': ' + i.sub : ''); }).join('\n') : '');
+      try { navigator.clipboard.writeText(txt); cp.title = 'Copiado'; } catch (e) {}
+    });
+    box.appendChild(cp);
+    pai.appendChild(box);
+  }
+
+  // ---- cartões de ação: a IA propõe, a pessoa autoriza ----
+  function enc(t) { return encodeURIComponent(t); }
+  function cartao(a, i, m) {
+    var c = el('div', 'ia-card');
+    var estado = (m.estados && m.estados[i]) || '';
+    var botoes = el('div', 'ia-card-bt');
+    function marca(novo) {
+      m.estados = m.estados || {};
+      m.estados[i] = novo;
+      guarda();
+      botoes.remove();
+      c.appendChild(el('div', 'ia-card-estado', novo === 'recusada' ? 'Recusada.' : 'Autorizada.'));
+    }
+    function bt(rot, ok, fn) {
+      var b = el('button', ok ? 'ok' : '', rot);
+      b.type = 'button';
+      b.addEventListener('click', fn);
+      botoes.appendChild(b);
+    }
+    if (a.tipo === 'mensagem') {
+      c.appendChild(el('div', 'ia-card-t', 'Mensagem pronta' + (a.para ? ' para ' + a.para : '')));
+      c.appendChild(el('div', 'ia-card-c', a.texto));
+      bt('Abrir no WhatsApp', true, function () { window.open('https://wa.me/?text=' + enc(a.texto), '_blank', 'noopener'); marca('autorizada'); });
+      bt('Copiar', false, function () {
+        try { navigator.clipboard.writeText(a.texto); this.textContent = 'Copiado'; } catch (e) { this.textContent = 'Não deu para copiar'; }
+      });
+    } else if (a.tipo === 'registro') {
+      c.appendChild(el('div', 'ia-card-t', (a.natureza === 'solicitacao' ? 'Solicitação' : 'Ocorrência') + ' para registrar'));
+      c.appendChild(el('div', 'ia-card-c', (a.titulo ? a.titulo + '\n' : '') + a.descricao));
+      bt('Abrir o Registro preenchido', true, function () {
+        var nota = (a.titulo ? a.titulo + '. ' : '') + a.descricao;
+        marca('autorizada');
+        location.href = 'registro.html?tipo=' + (a.natureza === 'solicitacao' ? 'solicitacao' : 'ocorrencia') + '&nota=' + enc(nota);
+      });
+    } else if (a.tipo === 'abrir') {
+      c.appendChild(el('div', 'ia-card-t', 'Abrir página'));
+      c.appendChild(el('div', 'ia-card-c', a.rotulo || a.pagina));
+      bt('Abrir', true, function () { marca('autorizada'); location.href = a.pagina; });
+    } else {
+      return null;
+    }
+    if (estado) {
+      c.appendChild(el('div', 'ia-card-estado', estado === 'recusada' ? 'Recusada.' : 'Autorizada.'));
+    } else {
+      bt('Recusar', false, function () { marca('recusada'); });
+      c.appendChild(botoes);
+    }
+    return c;
+  }
+
+  // ---- uma mensagem na tela ----
+  function desenha(m) {
+    if (m.role === 'user') { msgs.appendChild(el('div', 'ia-eu', m.content)); return; }
+    var c = linhaIA();
+    if (m.erro) { c.appendChild(el('div', 'ia-aviso', m.content)); return; }
+    if (m.tipo === 'escolha') {
+      c.appendChild(rico(m.content));
+      if (!m.feita) {
+        var box = el('div', 'ia-sug');
+        m.opcoes.forEach(function (dom) {
+          var b = el('button', null, NOME[dom] || dom);
+          b.type = 'button';
+          b.addEventListener('click', function () {
+            if (ocupado) return;
+            m.feita = dom; guarda(); box.remove();
+            despacha(dom, m.q);
+          });
+          box.appendChild(b);
+        });
+        c.appendChild(box);
+      }
+      return;
+    }
+    if (m.titulo) c.appendChild(el('div', 'ia-tit', m.titulo));
+    c.appendChild(rico(m.content));
+    if (m.tipo === 'cerebro' && ((m.chips || []).length || (m.itens || []).length)) {
+      var cb = el('div', 'ia-cb');
+      if ((m.chips || []).length) {
+        var ch = el('div', 'ia-chips');
+        m.chips.forEach(function (x) { var d = el('div', 'ia-chip'); d.appendChild(el('span', null, x.label)); d.appendChild(el('b', null, x.valor)); ch.appendChild(d); });
+        cb.appendChild(ch);
+      }
+      if ((m.itens || []).length) {
+        var its = el('div', 'ia-its');
+        m.itens.forEach(function (x) {
+          var d = el('div', 'ia-it');
+          var cab = el('div');
+          cab.appendChild(el('b', null, x.nome));
+          if (x.tag) cab.appendChild(el('em', null, x.tag));
+          d.appendChild(cab);
+          if (x.sub) d.appendChild(el('div', null, x.sub));
+          its.appendChild(d);
+        });
+        cb.appendChild(its);
+      }
+      c.appendChild(cb);
+    }
+    (m.acoes || []).forEach(function (a, i) {
+      var k = cartao(a, i, m);
+      if (k) c.appendChild(k);
+    });
+    meta(c, m);
+    if (!m.tocado) chipsDePergunta(c, m.seguir);
+  }
+
+  function boasVindas() {
+    var v = el('div', 'ia-vazio');
+    var av = el('span', 'ia-av');
+    av.appendChild(icone('ia-ic-av'));
+    v.appendChild(av);
+    var nome = String(s.pessoa || '').split(/[\s._-]+/)[0];
+    nome = nome ? nome.charAt(0).toUpperCase() + nome.slice(1) : '';
+    v.appendChild(el('h3', null, 'Oi' + (nome ? ', ' + nome : '') + '. Como posso ajudar?'));
+    var assuntos = { numeros: 'números da casa', cardapio: 'desenho da carta', operacao: 'banco de horas e férias' };
+    var dosCerebros = cerebrosDoNivel.map(function (d) { return assuntos[d]; }).join(', ').replace(/, ([^,]*)$/, ' e $1');
+    var txt = comIA
+      ? (dosCerebros
+        ? 'Pergunte do jeito que falaria no bar. ' + dosCerebros.charAt(0).toUpperCase() + dosCerebros.slice(1) + ' vêm dos cérebros do portal; o resto o Claude responde com o que o seu acesso vê.'
+        : 'Pergunte do jeito que falaria no bar: estoque, eventos, transferências, preparos, Nutricook e regimento. Eu só sugiro; quem autoriza é você.')
+      : 'Pergunte sobre ' + dosCerebros + '. Quem responde são os cérebros do portal.';
+    v.appendChild(el('p', null, txt));
+    var ia = function (q) { return { q: q }; };
+    var porNivel = {
+      bartender: [ia('Quanto tem de Heineken?'), ia('O que tem de evento nos próximos dias?'), ia('Qual a regra de atraso?'), ia('o que combina com o Negroni?')],
+      chefe: [sug(SUG_NUMEROS, 'numeros')[0], sug(SUG_CARDAPIO, 'cardapio')[1], ia('Quais alertas de operação a minha casa tem?'), ia('O que falta no estoque da minha casa?')],
+      coord: [sug(SUG_NUMEROS, 'numeros')[0], sug(SUG_CARDAPIO, 'cardapio')[0], sug(SUG_OPERACAO, 'operacao')[1], ia('O que tem de evento nos próximos dias?')],
+      controladoria: sug(SUG_NUMEROS, 'numeros').slice(0, 2).concat(sug(SUG_CARDAPIO, 'cardapio').slice(0, 2)),
+      rh: sug(SUG_OPERACAO, 'operacao').slice(0, 4)
+    };
+    porNivel.equipe = porNivel.bartender;
+    var grade = el('div', 'ia-grade');
+    (porNivel[s.nivel] || porNivel.bartender).filter(function (x) { return x && x.q; }).forEach(function (x) {
+      var dom = x.forca || classifica(x.q).filter(pode)[0];
+      var b = el('button');
+      b.type = 'button';
+      b.appendChild(el('small', null, dom ? CURTO[dom] : comIA ? 'IA' : 'Portal'));
+      b.appendChild(document.createTextNode(x.q.charAt(0).toUpperCase() + x.q.slice(1)));
+      b.addEventListener('click', function () { pergunta(x.q, x.forca); });
+      grade.appendChild(b);
+    });
+    v.appendChild(grade);
+    msgs.appendChild(v);
+  }
+
+  function redesenha() {
+    msgs.textContent = '';
+    if (!conv.length) { boasVindas(); return; }
+    conv.forEach(desenha);
+    rola();
+  }
+
+  // ---- ida e volta ----
+  var digitando = null;
+  function espera() {
+    ocupado = true;
+    envia.disabled = true;
+    var c = linhaIA();
+    var d = el('div', 'ia-dig');
+    d.setAttribute('aria-label', 'Pensando');
+    d.appendChild(el('i')); d.appendChild(el('i')); d.appendChild(el('i'));
+    c.appendChild(d);
+    digitando = c.parentNode;
+    rola();
+  }
+  function fim(m) {
+    if (digitando) { digitando.remove(); digitando = null; }
+    adiciona(m);
+    ocupado = false;
+    envia.disabled = !campo.value.trim();
+  }
+  function adiciona(m) {
+    var vazio = msgs.querySelector('.ia-vazio');
+    if (vazio) vazio.remove();
+    // a sugestão de seguir só vale enquanto for a última resposta
+    conv.forEach(function (x) { if (x.seguir) x.tocado = true; });
+    msgs.querySelectorAll('.ia-seguir').forEach(function (b) { b.remove(); });
+    conv.push(m);
+    desenha(m);
+    guarda();
+    rola();
+  }
+
+  function chamaIA(texto) {
+    espera();
+    var hist = conv.slice(0, -1).filter(function (m) { return !m.erro && m.tipo !== 'escolha'; }).slice(-6).map(function (m) {
+      if (m.role === 'user') return { role: 'user', content: m.content };
+      // resposta de cérebro não volta inteira: pode ter R$, e a IA não lê vendas
+      if (m.tipo === 'cerebro') return { role: 'assistant', content: '[Resposta do ' + (NOME[m.dominio] || 'cérebro do portal') + (m.titulo ? ': ' + m.titulo : '') + ']' };
+      return { role: 'assistant', content: m.content };
+    });
+    fetch(URL_IA, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      body: JSON.stringify({ pergunta: texto, historico: hist, extra: { tela: location.pathname.split('/').pop() } })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; });
+    }).then(function (x) {
+      if (x.status === 200 && x.d && x.d.texto) {
+        if (typeof x.d.restantes === 'number') rodape.textContent = 'Restam ' + x.d.restantes + ' perguntas à IA hoje. A IA pode errar: confira na fonte.';
+        fim({
+          role: 'assistant', content: x.d.texto, acoes: x.d.acoes || [],
+          tags: (x.d.fontes || []).map(function (f) { return FONTE_IA[f] || [f, null]; }),
+          nota: x.d.motor === 'claude' ? 'Claude' : x.d.motor === 'workers' ? 'IA de reserva' : ''
+        });
+        return;
+      }
+      // 401 aqui NÃO desloga: só avisa (sessaoLimpar() por causa da IA viraria loop de logout)
+      var msg = x.status === 401 ? 'Seu acesso não vale para o assistente, ou a sessão expirou. Entre de novo pelo menu, se precisar.'
+        : (x.status === 429 || x.status === 400) && x.d && x.d.erro ? x.d.erro
+        : x.status === 503 ? 'O assistente ainda não está ligado neste ambiente.'
+        : 'A IA não respondeu agora. Tente de novo em instantes.';
+      fim({ role: 'assistant', content: msg, erro: true });
+    }).catch(function () {
+      fim({ role: 'assistant', content: 'Sem conexão com o servidor agora. Tente de novo.', erro: true });
+    });
+  }
+
+  // Números, Carta e Gente e tempo: rotas do contagem-worker, com o X-Token.
+  // 401 com a sessão viva é falta de nível, não sessão vencida: só avisa.
+  function chamaCerebro(dom, q) {
+    if (dom === 'sabor') return chamaSabor(q);
+    espera();
+    var url = URL_CTG + '/api/cerebro/' + dom + '?q=' + encodeURIComponent(q);
+    if (casaWorker()) url += '&casa=' + encodeURIComponent(casaWorker());
+    fetch(url, { headers: { 'X-Token': s.token } }).then(function (r) {
+      if (r.status === 401) return { erro: 'Seu acesso não abre esse assunto, ou a sessão expirou. Você continua logado; se precisar, entre de novo pelo menu.' };
+      if (r.status === 400) return r.json().catch(function () { return {}; }).then(function (d) {
+        return { erro: d && d.precisa_casa ? 'Escolha a casa logo abaixo e pergunte de novo.' : (d && d.erro) || 'Pedido inválido.' };
+      });
+      if (r.status === 404) return { erro: 'O ' + NOME[dom] + ' ainda não foi publicado para esta casa.' };
+      if (!r.ok) return { erro: 'O ' + NOME[dom] + ' não respondeu agora (' + r.status + '). Tente de novo.' };
+      return r.json().then(function (d) { return { d: d || {} }; });
+    }).then(function (x) {
+      if (x.erro) { fim({ role: 'assistant', content: x.erro, erro: true }); return; }
+      var d = x.d;
+      var seguir = [];
+      if (d.encaminhar && d.encaminhar.cerebro === 'cardapio' && pode('cardapio')) seguir.push({ q: q, rotulo: 'Perguntar ao Cérebro do Cardápio', forca: 'cardapio' });
+      if (d.confianca === 'baixa') {
+        if (comIA) seguir.push({ q: q, rotulo: 'Perguntar à IA', forca: 'ia' });
+        (d.sugestoes || []).slice(0, 3).forEach(function (t) { seguir.push({ q: t, rotulo: t, forca: dom }); });
+      }
+      fim({
+        role: 'assistant', tipo: 'cerebro', dominio: dom, titulo: d.titulo || '', content: d.resposta || '',
+        chips: (d.chips || []).slice(0, 4), itens: (d.itens || []).slice(0, 6),
+        tags: [[NOME[dom], VER[dom]]].concat((d.fontes || []).slice(0, 3).map(function (f) { return [f, null]; })),
+        nota: d.nome ? d.nome : '', seguir: seguir
+      });
+    }).catch(function () { fim({ role: 'assistant', content: 'Sem conexão com o servidor agora. Tente de novo.', erro: true }); });
+  }
+
+  // Sabor: sessão PRÓPRIA do Lab (coord usa o token do portal, os outros o
+  // lab_sessao). Sem ela, um aviso honesto aponta a Harmonização.
+  function tokenLab() {
+    if (s.nivel === 'coord') return s.token;
+    try {
+      var l = JSON.parse(localStorage.getItem('lab_sessao') || 'null');
+      if (l && l.token && (!l.expira_em || Date.now() < l.expira_em)) return l.token;
+    } catch (e) {}
+    return null;
+  }
+  function chamaSabor(q) {
+    var tok = tokenLab();
+    var fechado = { role: 'assistant', tipo: 'cerebro', dominio: 'sabor', titulo: 'Harmonização mora no Lab de Drinks',
+      content: 'Essa área usa a senha do Lab de Drinks (por casa). Entre lá uma vez e volte a perguntar aqui.', tags: [[NOME.sabor, VER.sabor]] };
+    if (!tok || URL_LAB.indexOf('http') !== 0) { fim(fechado); return; }
+    espera();
+    fetch(URL_LAB + '/harmoniza/' + casaAtual, { headers: { Authorization: 'Bearer ' + tok } }).then(function (r) {
+      if (r.status === 401) return null;
+      if (!r.ok) return { erro: true };
+      return r.json();
+    }).then(function (p) {
+      if (!p) { fim(fechado); return; }
+      if (p.erro) { fim({ role: 'assistant', content: 'Sem harmonização publicada para esta casa.', erro: true }); return; }
+      var t = q.toLowerCase(), achou = null;
+      (p.lista || []).forEach(function (it) { if (!achou && it.nome && t.indexOf(it.nome.toLowerCase()) >= 0) achou = it; });
+      if (!achou) {
+        fim({ role: 'assistant', tipo: 'cerebro', dominio: 'sabor', titulo: 'Não achei esse drink na carta desta casa',
+          content: 'Alguns drinks com harmonização publicada aqui:', tags: [[NOME.sabor, VER.sabor]],
+          seguir: (p.lista || []).slice(0, 4).map(function (it) { return { q: 'o que combina com o ' + it.nome + '?', rotulo: it.nome, forca: 'sabor' }; }) });
+        return;
+      }
+      var d = (p.drinks || {})[achou.slug] || {};
+      var itens = (d.pratos || []).slice(0, 6).map(function (pr) {
+        return { nome: pr.nome, tag: pr.categoria || '', sub: (pr.pontes || []).map(function (pt) { return pt.de + ' + ' + pt.para + ': ' + pt.nota; }).join(' · ') };
+      });
+      fim({ role: 'assistant', tipo: 'cerebro', dominio: 'sabor', titulo: 'Com o que vai o ' + (d.nome || achou.nome),
+        content: itens.length ? (d.nome + ' tem notas de ' + (d.sabores || []).join(', ') + '. Estes pratos do cardápio fazem ponte de sabor:')
+          : (d.nome + ' ainda não tem prato casado no cardápio desta casa.'),
+        itens: itens, tags: [[NOME.sabor, VER.sabor], ['fichas do Lab', null]] });
+    }).catch(function () { fim({ role: 'assistant', content: 'Sem conexão com o Lab agora. Tente de novo.', erro: true }); });
+  }
+
+  function despacha(dom, q) {
+    if (dom === 'ia') return chamaIA(q);
+    return chamaCerebro(dom, q);
+  }
+
+  // A pergunta decide para onde vai: cérebro do assunto (se o nível abre),
+  // escolha quando bate em dois, IA para o resto.
+  function pergunta(texto, forca) {
+    texto = String(texto || '').trim();
+    if (!texto || ocupado) return;
+    adiciona({ role: 'user', content: texto });
+    if (forca) return despacha(forca, texto);
+    var achados = classifica(texto);
+    var abertos = achados.filter(pode);
+    if (abertos.length > 1) {
+      adiciona({ role: 'assistant', tipo: 'escolha', q: texto, opcoes: abertos, content: 'Isso pode ser mais de um assunto. De qual você fala?' });
+      return;
+    }
+    if (abertos.length === 1) return despacha(abertos[0], texto);
+    if (comIA) return chamaIA(texto);
+    adiciona({
+      role: 'assistant', tipo: 'cerebro', titulo: achados.length ? 'Esse assunto não abre no seu acesso' : 'Não entendi essa pergunta',
+      content: 'Por aqui eu respondo sobre ' + cerebrosDoNivel.map(function (d) { return CURTO[d].toLowerCase(); }).join(', ') + '. Tente uma destas:',
+      seguir: [].concat(pode('numeros') ? sug(SUG_NUMEROS, 'numeros').slice(0, 2) : [], pode('cardapio') ? sug(SUG_CARDAPIO, 'cardapio').slice(0, 2) : [],
+        pode('operacao') ? sug(SUG_OPERACAO, 'operacao').slice(0, 2) : [])
+    });
+  }
+
+  // ---- abrir e fechar ----
+  function abre(g) {
+    gatilho = g || aba;
+    painel.hidden = false;
+    aba.hidden = true;
+    if (gatilho) gatilho.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('ia-aberto');
+    rola();
+    if (window.matchMedia('(min-width: 760px)').matches) campo.focus();
+  }
+  function fecha() {
+    painel.hidden = true;
+    document.body.classList.remove('ia-aberto');
+    if (gatilho) { gatilho.setAttribute('aria-expanded', 'false'); gatilho.focus(); }
+    if (!gatilhos.length) aba.hidden = false;
+  }
+  // A porta normal é o "Pergunte" da barra (data-abre-ia); sem ela visível na
+  // página (o JS_NIVEL esconde o item para quem a página Pergunte não abre,
+  // como o RH), aparece o botão flutuante de reserva.
+  var gatilhos = Array.prototype.filter.call(document.querySelectorAll('[data-abre-ia]'), function (g) {
+    return g.getClientRects().length > 0;
+  });
+  gatilhos.forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (painel.hidden) abre(g); else fecha();
+    });
+  });
+  if (!gatilhos.length) aba.hidden = false;
+  aba.addEventListener('click', function () { abre(aba); });
+  document.getElementById('ia-fecha').addEventListener('click', fecha);
+  document.getElementById('ia-nova').addEventListener('click', function () {
+    if (ocupado) return;
+    conv = []; guarda(); redesenha(); campo.focus();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !painel.hidden) fecha(); });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var t = campo.value;
+    if (!t.trim() || ocupado) return;
+    campo.value = '';
+    campo.style.height = '';
+    envia.disabled = true;
+    pergunta(t);
+  });
+  campo.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+  campo.addEventListener('input', function () {
+    campo.style.height = 'auto';
+    campo.style.height = Math.min(140, campo.scrollHeight) + 'px';
+    envia.disabled = ocupado || !campo.value.trim();
+  });
+  // ?ia=1 abre o chat direto (link do pergunte.html e de avisos)
+  if (/[?&]ia=1\b/.test(location.search)) abre(gatilhos[0] || aba);
+
+  conv = le();
+  redesenha();
+})();
+</script>
+
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+
+
+<style>
+  /* var(--x, fallback) em tudo: este mesmo bloco é reusado nas subpastas
+     (Minha Central, Contador de Evento), que têm paleta própria — e a
+     ausência de uma variável não pode deixar o aviso ilegível. */
+  .ver-nova { position: fixed; left: 12px; right: 12px; top: calc(10px + env(safe-area-inset-top, 0px));
+    z-index: 96; margin: 0 auto; max-width: 460px; display: none;
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k)));
+    align-items: center; gap: 10px; }
+  .ver-nova.on { display: flex; }
+  .ver-nova svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  .vn-txt { flex: 1; font-size: 12.5px; color: var(--text-2, var(--c-c9cdd6)); line-height: 1.4; }
+  .vn-txt b { color: var(--text, var(--text)); }
+  .vn-ok { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
+    border-radius: 999px; cursor: pointer; background: var(--acc, var(--c-d8b26e)); border: none;
+    color: var(--acc-txt, var(--bg)); }
+  .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
+    font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
+</style>
+<div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
+  <svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3.5V9h-5.5"/></svg>
+  <div class="vn-txt"><b>Nova versão disponível.</b> Atualize pra ver o conteúdo mais recente.</div>
+  <button type="button" class="vn-ok" id="vn-ok">Atualizar</button>
+  <button type="button" class="vn-x" id="vn-x" aria-label="Dispensar">&times;</button>
+</div>
+<script>
+(function () {
+  var BUILD = '5f1eb965f613';
+  var ALVO = 'versao.json';
+  var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
+  // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
+  // reabrir pelo alternador não refaz navegação nenhuma — este aviso é o
+  // ÚNICO caminho de atualização daquele aparelho. Um "x" definitivo prendia
+  // o aparelho na versão velha pra sempre (aconteceu de verdade). Guardamos
+  // "<build>|<carimbo>" e o adiamento vence sozinho.
+  var ADIA_MS = 86400000;     // 24h
+  var ultimo = 0, mostrando = false;
+
+  // Dentro da casca de abas (abas.html, ver ABAS_JS) quem confere versão é a
+  // casca: um aviso por aba empilharia N avisos iguais, e o "Atualizar" de
+  // uma aba só recarregaria ela, deixando as outras no build velho. O botão
+  // manual de meu-perfil.html continua funcionando, repassado pra casca.
+  var casca = null;
+  try { if (window.top !== window.self && window.top.barizAbas) casca = window.top; } catch (e) {}
+  if (casca) {
+    window.barizAtualiza = function () { casca.barizAtualiza(); };
+    window.barizConfere = function () { casca.barizConfere(); };
+    return;
+  }
+
+  // Fail-open: qualquer dúvida (localStorage indisponível, valor estranho,
+  // formato legado só com o build) resulta em MOSTRAR o aviso.
+  function adiado(novo) {
+    try {
+      var v = localStorage.getItem('bariz_build_dispensado');
+      if (!v) return false;
+      var p = String(v).split('|');
+      if (p.length < 2) return false;        // legado: tratado como expirado
+      if (p[0] !== novo) return false;       // build diferente: aviso novo
+      var quando = parseInt(p[1], 10);
+      if (!quando) return false;
+      var dif = Date.now() - quando;
+      return dif >= 0 && dif < ADIA_MS;      // relógio pra trás: mostra
+    } catch (e) { return false; }
+  }
+
+  function mostra(novo) {
+    if (mostrando) return;
+    if (adiado(novo)) return;
+    var box = document.getElementById('ver-nova');
+    // a trava só liga DEPOIS de haver caixa: ligada antes, uma página sem o
+    // markup do aviso mataria toda conferência seguinte daquela carga.
+    if (!box) return;
+    mostrando = true;
+    box.classList.add('on');
+    document.getElementById('vn-x').onclick = function () {
+      try {
+        localStorage.setItem('bariz_build_dispensado', novo + '|' + Date.now());
+      } catch (e) {}
+      // solta a trava: quem silencia daqui pra frente é adiado(), com prazo.
+      // Sem isto, confere() (que começa em `if (mostrando) return`) morria no
+      // primeiro "x" e nem o intervalo de 10 min nem o visibilitychange
+      // voltavam — o adiamento nunca venceria num app standalone, que é
+      // justamente o aparelho que só tem este aviso como caminho.
+      mostrando = false;
+      box.classList.remove('on');
+    };
+    document.getElementById('vn-ok').onclick = atualiza;
+  }
+
+  // Limpa TODOS os caches do service worker e recarrega. Sem isso um reload
+  // comum ainda seria atendido pela casca cacheada (css/ícones).
+  function atualiza() {
+    var feito = false;
+    var recarrega = function () { if (feito) return; feito = true; location.reload(); };
+    setTimeout(recarrega, 2500);   // rede travada não pode prender o usuário
+    var t = [];
+    try {
+      if (window.caches && caches.keys) {
+        t.push(caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+        }));
+      }
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+        t.push(navigator.serviceWorker.getRegistration().then(function (r) { return r && r.update(); }));
+      }
+    } catch (e) {}
+    Promise.all(t).then(recarrega, recarrega);
+  }
+
+  function confere() {
+    if (mostrando) return;
+    var agora = Date.now();
+    if (agora - ultimo < MIN_ENTRE) return;
+    ultimo = agora;
+    fetch(ALVO + '?t=' + agora, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && d.build && d.build !== BUILD) mostra(d.build); })
+      .catch(function () {});
+  }
+
+  // Exposto pro botão manual "Buscar atualização" (meu-perfil.html).
+  window.barizAtualiza = atualiza;
+  window.barizConfere = function () { ultimo = 0; confere(); };
+
+  setTimeout(confere, 4000);                       // não competir com o render
+  setInterval(function () { if (!document.hidden) confere(); }, 600000);
+  document.addEventListener('visibilitychange', function () {
+    // o caso que só isto alcança: app em standalone voltando do alternador.
+    if (!document.hidden) confere();
+  });
+})();
+</script>
+
+
+<style>
+  /* bottom: acima do radio-mini/pomo-mini (pills fixas nos cantos, ~44px de
+     altura a partir de 14px do rodapé, z-index 94) — não competir por
+     z-index com eles, só não ocupar o mesmo espaço na tela. */
+  .atualiza-atalho { position: fixed; left: 12px; right: 12px;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px)); z-index: 40;
+    background: var(--card-2); border: 1px solid var(--acc); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); display: none; }
+  .atualiza-atalho.on { display: block; }
+  .aa-topo { display: flex; align-items: flex-start; gap: 10px; }
+  .aa-topo svg { flex: none; color: var(--acc); margin-top: 1px; }
+  .aa-txt { flex: 1; font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+  .aa-txt b { color: var(--text); }
+  .aa-botoes { display: flex; gap: 8px; margin-top: 10px; }
+  .aa-botoes button { flex: none; font-size: 12px; font-weight: 600; padding: 7px 12px;
+    border-radius: 999px; cursor: pointer; }
+  #aa-como { background: none; border: 1px solid var(--border); color: var(--text-2); }
+  #aa-ok { background: var(--acc); border: none; color: var(--acc-txt); }
+  .aa-passos { display: none; margin: 10px 0 0; padding-left: 18px; font-size: 12px;
+    color: var(--text-2); line-height: 1.6; }
+  .aa-passos.on { display: block; }
+</style>
+<div class="atualiza-atalho" id="atualiza-atalho">
+  <div class="aa-topo">
+    <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 15.5H3z"/><path d="M12 10v4M12 16.5h.01"/></svg>
+    <div class="aa-txt"><b>Atualizamos o ícone e o nome do app</b> (agora é Painel do bar). Seu atalho na
+    tela de início ficou com o visual antigo — o celular só atualiza isso se você reinstalar.</div>
+  </div>
+  <ol class="aa-passos" id="aa-passos"></ol>
+  <div class="aa-botoes">
+    <button type="button" id="aa-como">Como fazer</button>
+    <button type="button" id="aa-ok">Entendi</button>
+  </div>
+</div>
+<script>
+(function () {
+  var STANDALONE = window.navigator.standalone === true
+    || window.matchMedia('(display-mode: standalone)').matches;
+  if (!STANDALONE) return;
+  // dentro de uma aba da casca (abas.html) o aviso sai só uma vez, pela casca
+  try { if (window.top !== window.self && window.top.barizAbas) return; } catch (e) {}
+  var V = 'painel-1';
+  if (localStorage.getItem('atalho_icone_v') === V) return;
+  var box = document.getElementById('atualiza-atalho');
+  var passos = document.getElementById('aa-passos');
+  var ehIOS = window.navigator.standalone !== undefined;
+  var PASSOS_IOS = [
+    'Feche este app e volte pra tela de início.',
+    'Toque e segure o ícone antigo até aparecer o menu.',
+    '"Remover App" (ou "Excluir Atalho").',
+    'Abra o link do Painel do bar no Safari (não pelo atalho antigo).',
+    'Toque em Compartilhar e depois em "Adicionar à Tela de Início".',
+  ];
+  var PASSOS_ANDROID = [
+    'Toque e segure o ícone antigo até aparecer o menu.',
+    '"Remover" ou "Desinstalar".',
+    'Abra o link do Painel do bar no Chrome.',
+    'Menu (⋮) → "Adicionar à tela inicial" ou "Instalar app".',
+  ];
+  (ehIOS ? PASSOS_IOS : PASSOS_ANDROID).forEach(function (texto) {
+    var li = document.createElement('li');
+    li.textContent = texto;
+    passos.appendChild(li);
+  });
+  document.getElementById('aa-como').addEventListener('click', function () {
+    passos.classList.toggle('on');
+  });
+  document.getElementById('aa-ok').addEventListener('click', function () {
+    localStorage.setItem('atalho_icone_v', V);
+    box.classList.remove('on');
+  });
+  box.classList.add('on');
+})();
+</script>
+
+</body>
+</html>
