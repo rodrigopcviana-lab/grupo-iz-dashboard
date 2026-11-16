@@ -52,6 +52,6 @@ terminal, por arquivo, nem pelo contexto de um agente. Achar a referência certa
 ## Contexto geral (vault)
 
 Visão de negócio, pessoas, prazos e decisões com cliente deste projeto ficam em
-`C:\Users\Rodrigo\OneDrive\Documentos\Obsidian Vault\Profissional\Projetos\grupo-iz-dashboard.md`.
+`C:\Users\Rodrigo\Obsidian Vault\Profissional\Projetos\grupo-iz-dashboard.md`.
 Consulte quando a tarefa envolver cliente, prazo ou pessoa; registre lá o que for
 de negócio. Aqui fica só o técnico.
