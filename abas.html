@@ -76,8 +76,61 @@
       navigator.clipboard.writeText(txt).then(function () { aviso('Prompt da página copiado'); }, reserva);
     } else reserva();
   }
+  // --- Compartilhar o site (botão #comp-btn do topo) ---
+  var LINK_PARAMS_OK = ['tab', 'aba', 'atual', 'casa', 'semana', 'mes'];
+  function linkDaPagina() {
+    var q = new URLSearchParams(location.search), fica = new URLSearchParams();
+    LINK_PARAMS_OK.forEach(function (k) { if (q.has(k)) fica.set(k, q.get(k)); });
+    var h = location.hash;
+    if (/token|chave|senha|sess|key|code/i.test(h)) h = '';
+    var qs = fica.toString();
+    return location.origin + location.pathname + (qs ? '?' + qs : '') + h;
+  }
+  function abreCompartilhar() {
+    var d = document.getElementById('comp-dlg');
+    if (!d) {
+      d = document.createElement('dialog');
+      d.id = 'comp-dlg'; d.className = 'comp-dlg';
+      d.setAttribute('aria-labelledby', 'comp-tit');
+      d.innerHTML = '<div class="comp-cab"><h3 id="comp-tit">Compartilhar o site</h3>' +
+        '<button type="button" class="comp-x" data-comp="fechar" aria-label="Fechar">&times;</button></div>' +
+        '<p class="comp-txt">O link abre esta página. Quem receber precisa da própria senha do portal para entrar.</p>' +
+        '<input class="comp-link" id="comp-link" readonly aria-label="Link desta página">' +
+        '<div class="comp-acoes"><button type="button" class="comp-bt" data-comp="copiar">Copiar link</button>' +
+        '<button type="button" class="comp-bt comp-pri" data-comp="enviar" hidden>Compartilhar</button></div>';
+      document.body.appendChild(d);
+      d.addEventListener('click', function (ev) { if (ev.target === d) d.close(); });
+    }
+    d.querySelector('#comp-link').value = linkDaPagina();
+    d.querySelector('[data-comp="enviar"]').hidden = !navigator.share;
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  }
+  function fechaCompartilhar() { var d = document.getElementById('comp-dlg'); if (d) { if (d.close) d.close(); else d.removeAttribute('open'); } }
+  function copiaLink() {
+    var campo = document.getElementById('comp-link'), url = campo.value;
+    function feito() { fechaCompartilhar(); aviso('Link copiado'); }
+    function reserva() {
+      campo.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      if (ok) feito(); else { campo.focus(); campo.select(); aviso('Selecione e copie o link'); }
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(feito, reserva);
+    else reserva();
+  }
+  function enviaLink() {
+    navigator.share({ title: document.title, url: document.getElementById('comp-link').value })
+      .then(fechaCompartilhar, function () {});
+  }
   document.addEventListener('click', function (e) {
     if (!e.target.closest) return;
+    var c = e.target.closest('[data-comp]');
+    if (e.target.closest('#comp-btn')) { abreCompartilhar(); return; }
+    if (c) {
+      var a = c.getAttribute('data-comp');
+      if (a === 'copiar') copiaLink(); else if (a === 'enviar') enviaLink(); else fechaCompartilhar();
+      return;
+    }
     if (e.target.closest('#tema-btn')) window.temaAlterna();
     else if (e.target.closest('#prompt-copia')) copiaPrompt();
     else if (e.target.closest('#prompt-baixa')) baixaPrompt();
@@ -595,7 +648,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = 'a95d5b68153a';
+  var BUILD = '041f8e97a0fe';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
