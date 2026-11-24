@@ -166,7 +166,7 @@
       if (vistos[k] || n >= 5) return;
       vistos[k] = 1; n++;
       var pag = location.pathname.split('/').pop() || 'index.html';
-      var corpo = JSON.stringify({ tipo: 'erro_js', build: '6de92885bf98',
+      var corpo = JSON.stringify({ tipo: 'erro_js', build: 'b82ea36a4f35',
         ref: pag + ' ' + arq + ':' + (lin || 0) + ':' + (col || 0) + ' ' + msg });
       navigator.sendBeacon(URL_ERRO + '/api/evento', new Blob([corpo], { type: 'text/plain' }));
     } catch (e) {}
@@ -181,7 +181,7 @@
   });
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=6de92885bf98">
+<link rel="stylesheet" href="portal.css?v=b82ea36a4f35">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -3393,16 +3393,25 @@ if ('serviceWorker' in navigator) {
     color: var(--acc-txt, var(--bg)); }
   .vn-x { flex: none; background: none; border: none; color: var(--text-2, var(--c-c9cdd6));
     font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; }
+  .ver-feita { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%) translateY(16px); z-index: 96; max-width: calc(100% - 24px);
+    background: var(--card-2); border: 1px solid var(--acc, var(--c-d8b26e)); border-radius: 12px;
+    padding: 9px 14px; font-size: 12.5px; color: var(--text, var(--text)); display: flex; gap: 8px;
+    align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,calc(.45*var(--sombra-k))); opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s; }
+  .ver-feita.on { opacity: 1; transform: translateX(-50%); }
+  .ver-feita svg { flex: none; color: var(--acc, var(--c-d8b26e)); }
+  @media (prefers-reduced-motion: reduce) { .ver-feita { transition: none; } }
 </style>
 <div class="ver-nova" id="ver-nova" role="status" aria-live="polite">
   <svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3.5V9h-5.5"/></svg>
-  <div class="vn-txt"><b>Nova versão disponível.</b> Atualize pra ver o conteúdo mais recente.</div>
+  <div class="vn-txt" id="vn-txt"><b>Nova versão disponível.</b> Atualize pra ver o conteúdo mais recente.</div>
   <button type="button" class="vn-ok" id="vn-ok">Atualizar</button>
   <button type="button" class="vn-x" id="vn-x" aria-label="Dispensar">&times;</button>
 </div>
 <script>
 (function () {
-  var BUILD = '6de92885bf98';
+  var BUILD = 'b82ea36a4f35';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
@@ -3411,19 +3420,90 @@ if ('serviceWorker' in navigator) {
   // o aparelho na versão velha pra sempre (aconteceu de verdade). Guardamos
   // "<build>|<carimbo>" e o adiamento vence sozinho.
   var ADIA_MS = 86400000;     // 24h
-  var ultimo = 0, mostrando = false;
+  var PARADO = 30000;         // 30s sem tocar na tela = pode recarregar
+  var ultimo = 0, mostrando = false, pendente = null, espera = null;
+
+  // Atualização automática (2026-11-23, pedido do Rodrigo): achou build novo,
+  // a página recarrega sozinha e mostra "Página atualizada". Só NÃO recarrega
+  // quando a pessoa mexeu em algum campo da tela (o que ela digitou se
+  // perderia): aí fica o aviso com botão, como antes. Ler a tela não conta
+  // como "mexeu"; a recarga só espera 30s sem toque, para não puxar a página
+  // no meio de uma rolagem. Mesmo desenho do Portal do Bento.
+  var mexeu = false, ultToque = Date.now();
+  function campo(el) {
+    return el && el.closest && el.closest('input, textarea, select, [contenteditable="true"]') &&
+      !el.closest('#busca, [type="search"], .vn-ok, .vn-x');
+  }
+  document.addEventListener('input', function (e) { if (campo(e.target)) mexeu = true; }, true);
+  document.addEventListener('change', function (e) { if (campo(e.target)) mexeu = true; }, true);
+  ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) {
+    window.addEventListener(ev, function () { ultToque = Date.now(); }, { capture: true, passive: true });
+  });
+  document.addEventListener('reset', function () { mexeu = false; }, true);
 
   // Dentro da casca de abas (abas.html, ver ABAS_JS) quem confere versão é a
   // casca: um aviso por aba empilharia N avisos iguais, e o "Atualizar" de
   // uma aba só recarregaria ela, deixando as outras no build velho. O botão
   // manual de meu-perfil.html continua funcionando, repassado pra casca.
+  // A aba conta à casca se a pessoa mexeu num campo dela (barizEstado):
+  // evento de dentro do iframe não chega no documento da casca.
   var casca = null;
   try { if (window.top !== window.self && window.top.barizAbas) casca = window.top; } catch (e) {}
   if (casca) {
     window.barizAtualiza = function () { casca.barizAtualiza(); };
     window.barizConfere = function () { casca.barizConfere(); };
+    window.barizEstado = function () { return { mexeu: mexeu, toque: ultToque }; };
     return;
   }
+
+  // Estado somado da página e das abas abertas na casca (mesma origem).
+  function estado() {
+    var e = { mexeu: mexeu, toque: ultToque };
+    Array.prototype.forEach.call(document.querySelectorAll('iframe'), function (f) {
+      try {
+        var s = f.contentWindow && f.contentWindow.barizEstado && f.contentWindow.barizEstado();
+        if (s) { e.mexeu = e.mexeu || s.mexeu; e.toque = Math.max(e.toque, s.toque); }
+      } catch (x) {}
+    });
+    return e;
+  }
+
+  // Trava contra laço: o CDN do GitHub Pages pode servir o HTML velho por um
+  // minuto depois do push. Se a recarga já foi tentada para este build e a
+  // página voltou velha, não tenta de novo nesta aba: cai no aviso com botão.
+  var tentou = null;
+  try { tentou = sessionStorage.getItem('bariz_atualizou'); } catch (e) {}
+
+  function aplica(novo, voltou) {
+    pendente = novo;
+    var e = estado();
+    if (e.mexeu || tentou === novo) { mostra(novo, e.mexeu); return; }
+    if (!voltou && Date.now() - e.toque < PARADO) {
+      clearTimeout(espera);
+      espera = setTimeout(function () { aplica(novo, false); }, 5000);
+      return;
+    }
+    try { sessionStorage.setItem('bariz_atualizou', novo); } catch (x) {}
+    atualiza();
+  }
+
+  // Depois da recarga automática: o aviso curto de que a página mudou.
+  (function avisaFeita() {
+    if (!tentou || tentou !== BUILD) return;   // não tentou, ou voltou velha
+    try { sessionStorage.removeItem('bariz_atualizou'); } catch (e) {}
+    tentou = null;
+    var go = function () {
+      var t = document.createElement('div');
+      t.className = 'ver-feita';
+      t.setAttribute('role', 'status');
+      t.innerHTML = '<svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3.5V9h-5.5"/></svg><span>Página atualizada com a versão mais recente.</span>';
+      document.body.appendChild(t);
+      requestAnimationFrame(function () { t.classList.add('on'); });
+      setTimeout(function () { t.classList.remove('on'); }, 4500);
+      setTimeout(function () { t.remove(); }, 5000);
+    };
+    if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
+  })();
 
   // Fail-open: qualquer dúvida (localStorage indisponível, valor estranho,
   // formato legado só com o build) resulta em MOSTRAR o aviso.
@@ -3441,7 +3521,7 @@ if ('serviceWorker' in navigator) {
     } catch (e) { return false; }
   }
 
-  function mostra(novo) {
+  function mostra(novo, preenchido) {
     if (mostrando) return;
     if (adiado(novo)) return;
     var box = document.getElementById('ver-nova');
@@ -3449,6 +3529,8 @@ if ('serviceWorker' in navigator) {
     // markup do aviso mataria toda conferência seguinte daquela carga.
     if (!box) return;
     mostrando = true;
+    if (preenchido) document.getElementById('vn-txt').innerHTML =
+      '<b>Nova versão disponível.</b> Você tem algo preenchido nesta tela: termine e toque em Atualizar.';
     box.classList.add('on');
     document.getElementById('vn-x').onclick = function () {
       try {
@@ -3485,26 +3567,29 @@ if ('serviceWorker' in navigator) {
     Promise.all(t).then(recarrega, recarrega);
   }
 
-  function confere() {
+  // `voltou`: a pessoa acabou de abrir a página ou de voltar a ela pelo
+  // alternador. Nesse momento ela ainda não começou a ler: recarrega na hora.
+  function confere(voltou) {
     if (mostrando) return;
+    if (pendente) { aplica(pendente, voltou); return; }
     var agora = Date.now();
     if (agora - ultimo < MIN_ENTRE) return;
     ultimo = agora;
     fetch(ALVO + '?t=' + agora, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (d && d.build && d.build !== BUILD) mostra(d.build); })
+      .then(function (d) { if (d && d.build && d.build !== BUILD) aplica(d.build, voltou); })
       .catch(function () {});
   }
 
   // Exposto pro botão manual "Buscar atualização" (meu-perfil.html).
   window.barizAtualiza = atualiza;
-  window.barizConfere = function () { ultimo = 0; confere(); };
+  window.barizConfere = function () { ultimo = 0; confere(true); };
 
-  setTimeout(confere, 4000);                       // não competir com o render
-  setInterval(function () { if (!document.hidden) confere(); }, 600000);
+  setTimeout(function () { confere(true); }, 4000);   // não competir com o render
+  setInterval(function () { if (!document.hidden) confere(false); }, 600000);
   document.addEventListener('visibilitychange', function () {
     // o caso que só isto alcança: app em standalone voltando do alternador.
-    if (!document.hidden) confere();
+    if (!document.hidden) confere(true);
   });
 })();
 </script>
