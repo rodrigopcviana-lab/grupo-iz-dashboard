@@ -149,6 +149,19 @@ body.digitando .chat-campo{bottom:0}
 .chat-campo.modo-aviso .cc-env{background:var(--ambar)}
 .bolha.t-aviso{background:var(--ambar-bg);color:var(--ambar-tx)}
 .linha.hoje .t{font-weight:600;color:var(--verde-tx)}
+.turno-fr{display:block;width:100%;border:0;border-radius:14px;background:var(--bg);min-height:320px}
+.login{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px calc(32px + env(safe-area-inset-bottom));max-width:420px;margin:0 auto}
+.login h1{font-family:var(--serif);font-weight:600;font-size:34px;margin:0 0 6px}
+.login>p{margin:0 0 28px;color:var(--tx3)}
+.lg-campo{display:flex;align-items:center;border:1px solid var(--linha);background:var(--sup);border-radius:14px;padding:0 4px 0 16px}
+.lg-campo:focus-within{border-color:var(--verde)}
+.lg-campo input{flex:1;min-width:0;border:0;background:none;font:inherit;font-size:17px;color:var(--tx);padding:15px 0;outline:none}
+.lg-olho{width:46px;height:46px;display:flex;align-items:center;justify-content:center;color:var(--tx3);border-radius:10px}
+.lg-entrar{width:100%;margin-top:6px;padding:15px;border-radius:14px;background:var(--verde);color:#fff;font-weight:600;font-size:16px}
+:root.escuro .lg-entrar{color:#0F1713}
+.lg-entrar:disabled{opacity:.6}
+.lg-erro{min-height:22px;margin:8px 2px;font-size:14px;color:var(--terra-tx)}
+.lg-pedir{margin-top:24px;text-align:center;font-size:14px;color:var(--tx3)}
 @media (min-width:900px){
   .lado{display:flex;flex-direction:column;gap:4px;width:240px;flex-shrink:0;background:var(--sup);border-right:1px solid var(--linha);padding:22px 12px;position:sticky;top:0;height:100vh}
   .lado .marca{font-family:var(--serif);font-weight:600;font-size:22px;padding:0 10px 14px}
@@ -227,7 +240,58 @@ body.digitando .chat-campo{bottom:0}
     } catch (e) { return null; }
   }
   var S = sessao();
-  if (!S) { location.replace('index.html?volta=app.html#nivel'); return; }
+  if (!S) { telaLogin(); return; }
+
+  // Entrada própria do app: só a senha, com olho para ver o que foi digitado.
+  // Mesmo login do portal (POST /api/nivel) e mesma sessão (portal_sessao).
+  // O que pede a tela do portal (cadastro por e-mail, primeiro acesso,
+  // parceiro) segue para ela.
+  function telaLogin() {
+    var OLHO = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var OLHO_X = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+    document.body.innerHTML =
+      '<form class="login" id="lg">' +
+        '<h1>Bares IZ</h1><p>Entre com a sua senha.</p>' +
+        '<div class="lg-campo"><input id="lg-senha" type="password" name="password" autocomplete="current-password" placeholder="Sua senha" aria-label="Senha" autocapitalize="off" autocorrect="off" spellcheck="false">' +
+        '<button type="button" class="lg-olho" id="lg-olho" aria-label="Mostrar senha" aria-pressed="false">' + OLHO + '</button></div>' +
+        '<div class="lg-erro" id="lg-erro" role="alert"></div>' +
+        '<button class="lg-entrar" id="lg-ir" type="submit">Entrar</button>' +
+        '<div class="lg-pedir">Ainda não tem senha? <a href="pedir-acesso.html">Pedir acesso</a></div>' +
+      '</form>';
+    var inp = document.getElementById('lg-senha'), olho = document.getElementById('lg-olho');
+    var erro = document.getElementById('lg-erro'), ir = document.getElementById('lg-ir');
+    inp.focus();
+    olho.addEventListener('click', function () {
+      var ver = inp.type === 'password';
+      inp.type = ver ? 'text' : 'password';
+      olho.innerHTML = ver ? OLHO_X : OLHO;
+      olho.setAttribute('aria-pressed', String(ver));
+      olho.setAttribute('aria-label', ver ? 'Esconder senha' : 'Mostrar senha');
+      inp.focus();
+    });
+    function falha(msg) { erro.textContent = msg; ir.disabled = false; ir.textContent = 'Entrar'; inp.focus(); inp.select(); }
+    document.getElementById('lg').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var senha = inp.value.trim();
+      if (!senha) { falha('Digite a sua senha.'); return; }
+      ir.disabled = true; ir.textContent = 'Entrando…'; erro.textContent = '';
+      var dev = ls('portal_device');
+      if (!dev) { dev = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); ls('portal_device', dev); }
+      fetch(WORKER + '/api/nivel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+        body: JSON.stringify({ senha: senha, device: dev, pg: location.pathname }) })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { s: r.status, d: d }; }); })
+        .then(function (x) {
+          var d = x.d || {};
+          if (x.s === 200 && d.token && d.nivel !== 'parceiro') {
+            ls('portal_sessao', JSON.stringify({ nivel: d.nivel, token: d.token, exp: d.exp, casa: d.casa || null, pessoa: d.pessoa || null }));
+            location.reload();
+            return;
+          }
+          if (x.s === 200) { location.href = 'index.html?volta=app.html#nivel'; return; }
+          falha(x.s === 401 ? 'Senha não confere.' : x.s === 429 ? 'Muitas tentativas. Espere um minuto.' : 'Não deu para entrar agora. Tente de novo.');
+        }, function () { falha('Sem internet agora. Tente de novo quando tiver sinal.'); });
+    });
+  }
 
   var PERFIL = null;
   function casaAtual() { return PERFIL && PERFIL.casa_fixa ? PERFIL.casa : (ls('app_iz_casa') || ''); }
@@ -358,7 +422,7 @@ body.digitando .chat-campo{bottom:0}
   // ---------------------------------------------------------------- telas e menu
   var PAGINAS = [
     ['cocktails.html', 'Fichas técnicas (página completa)', 'ficha receita drink cocktail'],
-    ['turno.html', 'Turno', 'abertura fechamento relatorio turno'],
+    ['#/turno', 'Turno', 'abertura fechamento relatorio turno'],
     ['contagem.html', 'Contagem', 'contar estoque contagem semanal'],
     ['contagem-copos.html', 'Contagem de copos', 'copo vidraria quebra'],
     ['estoque.html', 'Estoque', 'estoque minimo falta'],
@@ -410,7 +474,7 @@ body.digitando .chat-campo{bottom:0}
       ['#/fichas', 'Fichas', 'fichas', 'fichas'],
       ['#/performance', 'Ranking', 'ranking', 'performance'],
       ['#/chat', 'Chat', 'chat', 'chat'],
-      ['turno.html', 'Turno', 'turno', ''],
+      ['#/turno', 'Turno', 'turno', 'turno'],
       ['#/mais', 'Mais', 'mais', 'mais']
     ];
     document.getElementById('barra-nav').innerHTML = itens.map(function (i) {
@@ -420,7 +484,7 @@ body.digitando .chat-campo{bottom:0}
     }).join('');
     var lado = [['#/chat', 'Chat do dia', 'chat', 'chat'], ['#/fichas', 'Fichas técnicas', 'fichas', 'fichas'], ['#/performance', 'Ranking', 'ranking', 'performance'], ['#/eventos', 'Eventos', 'cal', 'eventos']];
     if (temEscala()) lado.push(['#/escala', 'Minha escala', 'cal', 'escala']);
-    lado.push(['turno.html', 'Turno', 'turno', ''], ['#/mais', 'Mais', 'mais', 'mais']);
+    lado.push(['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
     document.getElementById('lado').innerHTML = '<div class="marca">Bares IZ</div>' +
       lado.map(function (i) { var on = i[3] === atual; return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2], 20) + i[1] + '</a>'; }).join('');
   }
@@ -582,7 +646,7 @@ body.digitando .chat-campo{bottom:0}
         '<button type="button" data-cc="solicitacao">' + ic('caixa') + '<span><b>Pedir algo</b><small>Solicitação para a Central de Demandas</small></span></button>' +
         '<a href="registro.html">' + ic('estrela') + '<span><b>Registrar com foto ou áudio</b><small>Abre o Registro Rápido</small></span></a>' +
         '<a href="contagem-copos.html">' + ic('copo') + '<span><b>Copos e quebras</b><small>Contagem de copos</small></span></a>' +
-        '<a href="turno.html">' + ic('turno') + '<span><b>Turno</b><small>Abertura e fechamento</small></span></a>' +
+        '<a href="#/turno">' + ic('turno') + '<span><b>Turno</b><small>Abertura e fechamento</small></span></a>' +
       '</div>' +
       '<div class="cc-aviso" id="cc-aviso" hidden></div>' +
       '<div class="chat-linha">' +
@@ -901,6 +965,30 @@ body.digitando .chat-campo{bottom:0}
     }, function () {});
   }
 
+  // Turno dentro do app: a página do portal numa moldura, sem o topo, a
+  // gaveta e a barra de baixo dela (mesma origem, então o app esconde).
+  function telaTurno() {
+    moldura('turno', '<iframe class="turno-fr" id="turno-fr" title="Turno" src="turno.html?solo=1"></iframe>');
+    var fr = document.getElementById('turno-fr');
+    function altura() {
+      if (!document.body.contains(fr)) { window.removeEventListener('resize', altura); return; }
+      var nav = document.getElementById('barra-nav');
+      var baixo = nav && nav.offsetHeight ? nav.offsetHeight : 0;
+      fr.style.height = Math.max(320, window.innerHeight - fr.getBoundingClientRect().top - baixo - 12) + 'px';
+    }
+    altura();
+    window.addEventListener('resize', altura);
+    fr.addEventListener('load', function () {
+      try {
+        var d = fr.contentDocument, st = d.createElement('style');
+        st.textContent = '.volta-mural,header.topo,.gv-fundo,#gaveta,.bx-wrap,#sino-pop,#ia-aba,#ia-painel,#prompt-caixa,p.nota,#atualiza-atalho,#ver-nova{display:none!important}' +
+          'body{padding-top:4px!important;padding-bottom:24px!important}';
+        d.head.appendChild(st);
+      } catch (e) {}
+      altura();
+    });
+  }
+
   // ---------------------------------------------------------------- rota
   function rota() {
     var h = location.hash.replace(/^#\/?/, '');
@@ -911,6 +999,7 @@ body.digitando .chat-campo{bottom:0}
     if (partes[0] === 'eventos') return telaEventos();
     if (partes[0] === 'escala') return telaEscala();
     if (partes[0] === 'mais') return telaMais();
+    if (partes[0] === 'turno') return telaTurno();
     return telaChat(partes[0] === 'chat' ? partes[1] || '' : '');
   }
 
