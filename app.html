@@ -74,6 +74,29 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .bl-sec li{padding:2px 0}
 .bl-sec li small{color:var(--tx3)}
 .bl-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.bl-retorno{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:9px;border-top:1px solid var(--linha)}
+.bl-retorno button{font-size:12.5px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid var(--linha);color:var(--tx2);background:none}
+.bl-retorno button:disabled{opacity:.6}
+.cer-chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-top:10px}
+.cer-chips span{background:var(--sup2);border-radius:12px;padding:7px 10px;font-weight:600;font-size:14px;min-width:0}
+.cer-chips small{display:block;font-weight:400;font-size:11.5px;color:var(--tx3)}
+.cer-itens{list-style:none;margin:10px 0 0;padding:0}
+.cer-itens li{padding:6px 0;border-top:1px solid var(--linha);font-size:14px}
+.cer-itens li:first-child{border-top:0}
+.cer-itens small{display:block;color:var(--tx3);font-size:12.5px}
+.cer-fontes{margin-top:8px;font-size:12px;color:var(--tx3)}
+.bolha.t-coord{background:var(--verde-bg);color:var(--verde-tx);border-color:transparent}
+.nota-sis{align-self:center;font-size:12.5px;color:var(--tx3);text-align:center;padding:2px 12px;max-width:90%}
+.selo{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--terra);color:#fff;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle}
+.cq{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
+.cq-quem{font-size:13.5px;color:var(--tx2)}
+.cq-quem small{display:block;color:var(--tx3);font-size:12px}
+.cq-p{margin:0;font-size:16px;font-weight:600}
+.cq-ia{font-size:13.5px;color:var(--tx2)}
+.cq-ia summary{cursor:pointer;color:var(--tx3)}
+.cq textarea{width:100%;border:1px solid var(--linha);border-radius:12px;background:var(--bg);color:var(--tx);font:inherit;padding:10px;resize:vertical}
+.cq-ens{font-size:13.5px;display:flex;gap:8px;align-items:center}
+.cq-bts{display:flex;gap:8px}
 .bl-links a,.bl-links button{font-size:13px;font-weight:600;padding:6px 11px;border-radius:999px;background:var(--sup2);color:var(--tx);text-decoration:none}
 .meta-barra{height:8px;border-radius:4px;background:var(--sup2);overflow:hidden;margin:6px 0 4px}
 .meta-barra i{display:block;height:100%;background:var(--verde);border-radius:4px}
@@ -124,6 +147,8 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .barra-nav a.centro{transform:translateY(-14px)}
 .barra-nav a.centro span.bola{width:54px;height:54px;border-radius:27px;background:var(--verde);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.18);border:4px solid var(--bg)}
 .barra-nav a.centro.on{color:var(--verde)}
+.barra-nav a{position:relative}
+.barra-nav a .selo{position:absolute;top:0;left:calc(50% + 6px);margin:0}
 body.digitando .barra-nav{display:none}
 body.digitando .chat-campo{bottom:0}
 .faixa-versao{position:fixed;top:0;left:0;right:0;z-index:30;background:var(--tx);color:var(--bg);display:flex;align-items:center;justify-content:center;gap:12px;padding:9px 12px;font-size:14px}
@@ -190,7 +215,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-25b';
+  var VERSAO = '2026-11-25c';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -480,13 +505,19 @@ body.digitando .chat-campo{bottom:0}
     document.getElementById('barra-nav').innerHTML = itens.map(function (i) {
       var on = i[3] === atual;
       if (i[2] === 'chat') return '<a href="' + i[0] + '" class="centro' + (on ? ' on' : '') + '"' + (on ? ' aria-current="page"' : '') + '><span class="bola">' + ic('chat', 24) + '</span>' + i[1] + '</a>';
-      return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2]) + i[1] + '</a>';
+      var sel = i[3] === 'mais' ? seloCoord() : '';
+      return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2]) + i[1] + sel + '</a>';
     }).join('');
     var lado = [['#/chat', 'Chat do dia', 'chat', 'chat'], ['#/fichas', 'Fichas técnicas', 'fichas', 'fichas'], ['#/performance', 'Ranking', 'ranking', 'performance'], ['#/eventos', 'Eventos', 'cal', 'eventos']];
     if (temEscala()) lado.push(['#/escala', 'Minha escala', 'cal', 'escala']);
+    if (PERFIL && PERFIL.nivel === 'coord') lado.push(['#/coord', 'Perguntas da equipe', 'chat', 'coord']);
     lado.push(['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
     document.getElementById('lado').innerHTML = '<div class="marca">Bares IZ</div>' +
-      lado.map(function (i) { var on = i[3] === atual; return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2], 20) + i[1] + '</a>'; }).join('');
+      lado.map(function (i) { var on = i[3] === atual; return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2], 20) + i[1] + (i[3] === 'coord' ? seloCoord() : '') + '</a>'; }).join('');
+  }
+  function seloCoord() {
+    var n = PERFIL && PERFIL.nivel === 'coord' ? PERFIL.coord_aguardando || 0 : 0;
+    return n ? '<span class="selo" aria-label="' + n + ' aguardando">' + (n > 9 ? '9+' : n) + '</span>' : '';
   }
 
   function moldura(atual, html) {
@@ -548,10 +579,34 @@ body.digitando .chat-campo{bottom:0}
   // ---------------------------------------------------------------- chat
   function textoBolha(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
 
-  function bolha(m) {
+  // Lista do dia: marca em cada resposta a pergunta dela, para saber o que já
+  // foi mandado à coordenação e não oferecer o botão de novo.
+  function pintaMsgs(msgs, hoje) {
+    var enviadas = {}, ultP = null;
+    msgs.forEach(function (m) {
+      if (m.tipo === 'encaminhada' && m.extra && m.extra.pergunta_id) enviadas[m.extra.pergunta_id] = 1;
+    });
+    return msgs.map(function (m) {
+      if (m.tipo === 'pergunta') ultP = m.id;
+      var podeCoord = hoje && m.id && m.tipo === 'resposta' && (m.autor === 'portal' || m.autor === 'cerebro') &&
+        !(m.extra && m.extra.encaminhada) && !(ultP && enviadas[ultP]);
+      return bolha(m, { coord: podeCoord, ok: podeCoord && !(m.extra && m.extra.erro) && !ls('app_iz_ok:' + m.id) });
+    }).join('');
+  }
+  var NOME_CEREBRO = { numeros: 'Cérebro dos números', cardapio: 'Cérebro do cardápio', operacao: 'Cérebro de operação' };
+
+  function bolha(m, ctx) {
+    if (!ctx || typeof ctx !== 'object') ctx = {};
+    if (m.tipo === 'encaminhada') return '<div class="nota-sis">' + esc(m.texto) + '</div>';
     var minha = m.autor === 'eu';
     var ex = m.extra || {};
     var h = '<div class="bl-tx">' + textoBolha(m.texto) + '</div>';
+    if (m.autor === 'cerebro') {
+      if (ex.chips && ex.chips.length) h += '<div class="cer-chips">' + ex.chips.map(function (c) { return '<span><small>' + esc(c.label) + '</small>' + esc(c.valor) + '</span>'; }).join('') + '</div>';
+      if (ex.itens && ex.itens.length) h += '<ul class="cer-itens">' + ex.itens.map(function (i) { return '<li><b>' + esc(i.nome) + '</b>' + (i.tag ? ' <span class="pill">' + esc(i.tag) + '</span>' : '') + (i.sub ? '<small>' + esc(i.sub) + '</small>' : '') + '</li>'; }).join('') + '</ul>';
+      if (ex.fontes && ex.fontes.length) h += '<div class="cer-fontes">Fontes: ' + ex.fontes.map(esc).join(' · ') + '</div>';
+      if (ex.sugestoes && ex.sugestoes.length && ctx.coord !== undefined) h += '<div class="bl-links">' + ex.sugestoes.map(function (s) { return '<button type="button" data-sug="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div>';
+    }
     if (m.tipo === 'bomdia') {
       if (ex.eventos && ex.eventos.length) h += '<div class="bl-sec"><b>Eventos</b><ul>' + ex.eventos.map(function (e) {
         return '<li>' + esc(e.dia) + ' · ' + esc(e.tipo) + (e.hora ? ' <small>· ' + esc(e.hora) + '</small>' : '') + (e.pax ? ' <small>· ' + esc(e.pax) + ' pessoas</small>' : '') + (PERFIL.casa_fixa || casaAtual() ? '' : ' <small>· ' + esc(e.casa) + '</small>') + '</li>';
@@ -572,12 +627,15 @@ body.digitando .chat-campo{bottom:0}
       });
       if (!ex.erro) fichasCitadas(m.texto).forEach(function (f) { bts.push('<a href="cocktails.html#r-' + esc(f.s) + '">Ficha: ' + esc(f.n) + '</a>'); });
       if (bts.length) h += '<div class="bl-links">' + bts.join('') + '</div>';
+      if (ctx.coord) h += '<div class="bl-retorno">' + (ctx.ok ? '<button type="button" data-ok="' + m.id + '">Resolveu</button>' : '') + '<button type="button" data-coord="' + m.id + '">Mandar para a coordenação</button></div>';
     }
     var tag = '';
-    if (m.tipo === 'aviso') tag = '<span class="bl-tag">' + esc(ex.tipo || 'Aviso') + ' enviada à Central' + (ex.setor ? ' · ' + esc(ex.setor) : '') + (ex.urgencia ? ' · ' + esc(ex.urgencia) : '') + '</span>';
+    if (m.autor === 'cerebro') tag = '<span class="bl-tag">' + esc(NOME_CEREBRO[ex.cerebro] || 'Cérebro') + '</span>';
+    else if (m.autor === 'coord') tag = '<span class="bl-tag">Resposta da coordenação' + (ex.coord ? ' · ' + esc(ex.coord) : '') + '</span>';
+    else if (m.tipo === 'aviso') tag = '<span class="bl-tag">' + esc(ex.tipo || 'Aviso') + ' enviada à Central' + (ex.setor ? ' · ' + esc(ex.setor) : '') + (ex.urgencia ? ' · ' + esc(ex.urgencia) : '') + '</span>';
     else if (ex.audio) tag = '<span class="bl-tag">Por áudio</span>';
     var ouvirBt = !minha ? '<button type="button" class="bt-ouvir" data-ouvir aria-label="Ouvir esta mensagem" title="Ouvir">' + ic('som', 16) + '</button>' : '';
-    var cls = 'bolha ' + (minha ? 'minha' : 'dele') + ' t-' + m.tipo + (m.guardado ? ' guardada' : '') + (ex.erro ? ' erro' : '');
+    var cls = 'bolha ' + (minha ? 'minha' : 'dele') + ' t-' + m.tipo + (m.autor === 'coord' ? ' t-coord' : '') + (m.guardado ? ' guardada' : '') + (ex.erro ? ' erro' : '');
     return '<div class="' + cls + '">' + tag + h + '<div class="bl-pe">' + (m.guardado ? 'Sem internet: sai quando a rede voltar' : horaMin(m.quando)) + ouvirBt + '</div></div>';
   }
 
@@ -603,7 +661,7 @@ body.digitando .chat-campo{bottom:0}
       var dias = [d.hoje].concat(d.dias || []);
       var c = moldura('chat',
         '<div class="chips" aria-label="Dias">' + dias.map(function (x) { return '<a class="chip" href="#/chat/' + (x === d.hoje ? '' : x) + '" aria-pressed="' + (x === d.dia) + '">' + (x === d.hoje ? 'Hoje' : dataCurta(x)) + '</a>'; }).join('') + '</div>' +
-        '<div class="chat-lista" id="chat-lista">' + d.mensagens.map(bolha).join('') + guardadas.map(bolha).join('') + (d.mensagens.length || guardadas.length ? '' : '<p class="vazio">' + (d.semRede ? 'Sem internet agora. Pode perguntar ou avisar: fica guardado no aparelho e sai quando a rede voltar.' : 'Nenhuma mensagem neste dia.') + '</p>') + '</div>' +
+        '<div class="chat-lista" id="chat-lista">' + pintaMsgs(d.mensagens, hoje) + guardadas.map(bolha).join('') + (d.mensagens.length || guardadas.length ? '' : '<p class="vazio">' + (d.semRede ? 'Sem internet agora. Pode perguntar ou avisar: fica guardado no aparelho e sai quando a rede voltar.' : 'Nenhuma mensagem neste dia.') + '</p>') + '</div>' +
         (hoje ? '<div class="chat-espaco"></div>' : '<p class="piloto">Conversa de ' + dataCurta(d.dia) + ', só leitura.</p>'));
       var lista = c.querySelector('#chat-lista');
       function desce() { window.scrollTo(0, document.documentElement.scrollHeight); }
@@ -612,6 +670,18 @@ body.digitando .chat-campo{bottom:0}
         if (b) { ouvir(b.closest('.bolha').querySelector('.bl-tx').innerText, b); return; }
         var av = e.target.closest('[data-aviso-ia]');
         if (av) { abreAviso(av.getAttribute('data-aviso-ia'), av.getAttribute('data-copia')); return; }
+        var sg = e.target.closest('[data-sug]');
+        if (sg) { var t = document.getElementById('cc-tx'); if (t) { t.value = sg.getAttribute('data-sug'); document.getElementById('chat-campo').requestSubmit(); } return; }
+        var okb = e.target.closest('[data-ok]');
+        if (okb) { ls('app_iz_ok:' + okb.getAttribute('data-ok'), '1'); okb.remove(); aviso('Que bom. Valeu por avisar.'); return; }
+        var cb = e.target.closest('[data-coord]');
+        if (cb) {
+          cb.disabled = true; cb.textContent = 'Mandando…';
+          api('/chat/coord', { method: 'POST', json: { mensagem_id: Number(cb.getAttribute('data-coord')) } }).then(function (r) {
+            lista.innerHTML = pintaMsgs(r.mensagens, true); desce();
+          }, function (er) { cb.disabled = false; cb.textContent = 'Mandar para a coordenação'; aviso(er.status === 0 ? 'Sem internet agora. Tente quando a rede voltar.' : er.message); });
+          return;
+        }
         var cp = e.target.closest('[data-copia]');
         if (cp && navigator.clipboard) { navigator.clipboard.writeText(cp.getAttribute('data-copia')).then(function () { aviso('Mensagem copiada.'); }); }
       });
@@ -699,7 +769,7 @@ body.digitando .chat-campo{bottom:0}
       lista.insertAdjacentHTML('beforeend', '<div class="bolha dele pensando"><div class="bl-tx"><span class="pontos"><i></i><i></i><i></i></span></div></div>');
       desce();
       api('/chat/pergunta', { method: 'POST', json: corpo }).then(function (d) {
-        lista.innerHTML = d.mensagens.map(bolha).join('');
+        lista.innerHTML = pintaMsgs(d.mensagens, true);
         desce();
       }, function (er) {
         var p = lista.querySelector('.pensando');
@@ -729,7 +799,7 @@ body.digitando .chat-campo{bottom:0}
       lista.insertAdjacentHTML('beforeend', bolha({ autor: 'eu', tipo: 'aviso', texto: t, quando: new Date().toISOString(), extra: { tipo: rotulo, setor: cat[1], urgencia: urg[1] } }));
       desce();
       enviaAviso(corpo, casa).then(function (d) {
-        lista.innerHTML = d.mensagens.map(bolha).join('');
+        lista.innerHTML = pintaMsgs(d.mensagens, true);
         lista.insertAdjacentHTML('beforeend', '<div class="bolha dele"><div class="bl-tx">Pronto, ' + (rotulo === 'Solicitação' ? 'o pedido foi' : 'o problema foi') + ' para a Central de Demandas (' + esc(cat[1]) + '). A coordenação acompanha por lá.' + (urg[0] === 'hoje' ? ' Se é para hoje, avise também quem está no comando do turno.' : '') + '</div></div>');
         desce();
       }, function (er) {
@@ -925,7 +995,7 @@ body.digitando .chat-campo{bottom:0}
         '<div id="qr-box"></div>' +
         '<a class="linha" href="index.html?trocar=1"><span class="t">Trocar acesso</span><span class="v">›</span></a>' +
       '</div>' +
-      '<div class="blk"><h2>Telas do app</h2><a class="linha" href="#/eventos"><span class="t">Eventos<small>Próximos 30 dias</small></span><span class="v">›</span></a>' + (temEscala() ? '<a class="linha" href="#/escala"><span class="t">Minha escala</span><span class="v">›</span></a>' : '') + '</div>' +
+      '<div class="blk"><h2>Telas do app</h2><a class="linha" href="#/eventos"><span class="t">Eventos<small>Próximos 30 dias</small></span><span class="v">›</span></a>' + (temEscala() ? '<a class="linha" href="#/escala"><span class="t">Minha escala</span><span class="v">›</span></a>' : '') + (PERFIL.nivel === 'coord' ? '<a class="linha" href="#/coord"><span class="t">Perguntas da equipe<small>O que o cérebro não soube</small></span><span class="v">' + seloCoord() + ' ›</span></a>' : '') + '</div>' +
       '<div class="blk"><h2>Páginas do portal</h2>' + PAGINAS.map(function (p) { return '<a class="linha" href="' + p[0] + '"><span class="t">' + esc(p[1]) + '</span><span class="v">›</span></a>'; }).join('') + '</div>' +
       '<p class="piloto">Versão piloto ' + VERSAO + '. O portal de sempre continua igual.</p>';
     var c = moldura('mais', html);
@@ -945,6 +1015,43 @@ body.digitando .chat-campo{bottom:0}
         box.innerHTML = '<div class="qr"><div class="q">' + q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }) + '</div><small>Aponte a câmera do celular para abrir o app.</small></div>';
       }, function () { box.innerHTML = '<p class="piloto">' + esc(url) + '</p>'; });
     });
+  }
+
+  // ---------------------------------------------------------------- coordenação
+  // Perguntas que a IA não soube ou que a pessoa mandou à coordenação. Responder
+  // põe a resposta no chat de quem perguntou; "Ensinar" guarda para a casa.
+  function telaCoord() {
+    if (!PERFIL || PERFIL.nivel !== 'coord') { location.hash = '#/chat'; return; }
+    var c = moldura('coord', '<div class="cab"><h1>Perguntas da equipe</h1><p>O que o cérebro não soube responder.</p></div><div id="cq"><p class="vazio">Carregando…</p></div>');
+    var quando = function (iso) { return iso ? dataCurta(iso.slice(0, 10)) + ' ' + horaMin(iso) : ''; };
+    api('/coord', { semCopia: true }).then(function (d) {
+      PERFIL.coord_aguardando = d.aguardando.length; desenhaNav('coord');
+      var niveis = { equipe: 'Equipe', bartender: 'Bartender', chefe: 'Chefe de bar', coord: 'Coordenação' };
+      var h = d.aguardando.length ? d.aguardando.map(function (q) {
+        return '<div class="blk cq" data-id="' + q.id + '">' +
+          '<div class="cq-quem"><b>' + esc(q.pessoa || 'Acesso compartilhado') + '</b> · ' + esc(niveis[q.nivel] || q.nivel) + (q.casa_nome ? ' · ' + esc(q.casa_nome) : '') + '<small>' + esc(quando(q.quando)) + '</small></div>' +
+          '<p class="cq-p">' + esc(q.pergunta) + '</p>' +
+          (q.resposta_ia ? '<details class="cq-ia"><summary>O que a IA respondeu</summary><div>' + textoBolha(q.resposta_ia) + '</div></details>' : '') +
+          '<textarea rows="3" maxlength="2000" placeholder="Sua resposta (vai para o chat da pessoa)"></textarea>' +
+          '<label class="cq-ens"><input type="checkbox" checked> Ensinar ao cérebro' + (q.casa_nome ? ' (' + esc(q.casa_nome) + ')' : '') + '</label>' +
+          '<div class="cq-bts"><button class="btn" data-acao="resp">Responder</button><button class="btn sec" data-acao="desc">Descartar</button></div></div>';
+      }).join('') : '<div class="blk"><p class="vazio">Nada aguardando. Quando a IA não souber, a pergunta aparece aqui.</p></div>';
+      if (d.respondidas.length) h += '<div class="blk"><h2>Respondidas</h2>' + d.respondidas.map(function (q) {
+        return '<div class="linha"><span class="t">' + esc(q.pergunta) + '<small>' + esc(q.pessoa || 'Acesso compartilhado') + (q.casa_nome ? ' · ' + esc(q.casa_nome) : '') + ' · ' + (q.status === 'descartada' ? 'descartada' : esc(q.resposta || '')) + (q.ensinado ? ' · ensinada' : '') + '</small></span></div>';
+      }).join('') + '</div>';
+      var box = c.querySelector('#cq'); box.innerHTML = h;
+      box.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-acao]'); if (!b) return;
+        var card = b.closest('.cq'), id = Number(card.getAttribute('data-id'));
+        var txt = card.querySelector('textarea').value.trim();
+        var desc = b.getAttribute('data-acao') === 'desc';
+        if (!desc && !txt) { aviso('Escreva a resposta antes.'); card.querySelector('textarea').focus(); return; }
+        b.disabled = true;
+        api('/coord/responder', { method: 'POST', json: desc ? { id: id, descartar: true } : { id: id, resposta: txt, ensinar: card.querySelector('.cq-ens input').checked } }).then(function () {
+          aviso(desc ? 'Descartada.' : 'Resposta enviada para o chat da pessoa.'); telaCoord();
+        }, function (er) { b.disabled = false; aviso(er.status === 409 ? 'Outra pessoa já respondeu.' : er.status === 0 ? 'Sem internet agora.' : er.message); if (er.status === 409) telaCoord(); });
+      });
+    }, function (er) { c.querySelector('#cq').innerHTML = '<div class="blk"><p class="vazio">' + esc(er.status === 0 ? 'Sem internet agora.' : er.message) + '</p></div>'; });
   }
 
   // ---------------------------------------------------------------- versão
@@ -1000,6 +1107,7 @@ body.digitando .chat-campo{bottom:0}
     if (partes[0] === 'escala') return telaEscala();
     if (partes[0] === 'mais') return telaMais();
     if (partes[0] === 'turno') return telaTurno();
+    if (partes[0] === 'coord') return telaCoord();
     return telaChat(partes[0] === 'chat' ? partes[1] || '' : '');
   }
 
