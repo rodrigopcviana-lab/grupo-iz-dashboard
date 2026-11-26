@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#F5F2EB">
+<meta name="theme-color" content="#FFFFFF" id="cor-tema">
 <title>Bares IZ</title>
 <!-- App piloto do Grupo IZ (PLANO_APP_PILOTO_IZ.md). Fonte: app_piloto/app.html no
      grupo-iz-portal-source. Casca sem dado: tudo vem de /api/app-iz sob token. -->
 <script>
 try { if (window.top !== window.self && window.top.location.origin === location.origin) window.top.location.replace(location.href); } catch (e) {}
 try { var t = localStorage.getItem('app_iz_tema'); if (t === 'escuro' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('escuro'); } catch (e) {}
+try { if (document.documentElement.classList.contains('escuro')) document.querySelector('meta[name=theme-color]').content = '#16140F'; } catch (e) {}
 </script>
 <link rel="manifest" href="app.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -20,8 +21,8 @@ try { var t = localStorage.getItem('app_iz_tema'); if (t === 'escuro' || (!t && 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500..700&family=Inter:wght@400;500;600&display=swap">
 <style>
-:root{--bg:#F5F2EB;--sup:#FBFAF6;--sup2:#EFEBE2;--linha:#DDD5C6;--tx:#17211D;--tx2:#4C5A54;--tx3:#6E7872;--verde:#1F6B52;--verde-bg:#D3E8DE;--verde-tx:#174F3D;--terra:#B5482F;--terra-bg:#F3DCD2;--terra-tx:#7E2F1C;--ambar:#B7791F;--ambar-bg:#F6E7C8;--ambar-tx:#6B4A0E;--minha:#1F6B52;--minha-tx:#fff;--serif:'Fraunces',Georgia,serif;--sans:'Inter',system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
-:root.escuro{--bg:#121A16;--sup:#1A241F;--sup2:#222E28;--linha:#33413A;--tx:#EDE8DD;--tx2:#B9C4BE;--tx3:#8E9993;--verde:#7CCBA9;--verde-bg:#1E3B30;--verde-tx:#A9E2C8;--terra:#EE9C86;--terra-bg:#45261D;--terra-tx:#F6C1B2;--ambar:#E0B062;--ambar-bg:#3D3020;--ambar-tx:#F1D49B;--minha:#2C7A60;--minha-tx:#fff}
+:root{--bg:#FFFFFF;--sup:#F5F5F3;--sup2:#ECECE9;--linha:#E2E2DE;--tx:#111111;--tx2:#3D3D3A;--tx3:#6B6B66;--verde:#111111;--verde-bg:#ECECE9;--verde-tx:#111111;--on-verde:#FFFFFF;--terra:#B5482F;--terra-bg:#F3DCD2;--terra-tx:#7E2F1C;--ambar:#B7791F;--ambar-bg:#F6E7C8;--ambar-tx:#6B4A0E;--minha:#111111;--minha-tx:#fff;--serif:'Fraunces',Georgia,serif;--sans:'Inter',system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
+:root.escuro{--bg:#16140F;--sup:#211E18;--sup2:#2A2620;--linha:#3A342A;--tx:#EFE8DA;--tx2:#CFC6B4;--tx3:#A39A88;--verde:#C9A15A;--verde-bg:#3A3020;--verde-tx:#E6C88E;--on-verde:#16140F;--terra:#EE9C86;--terra-bg:#45261D;--terra-tx:#F6C1B2;--ambar:#E0B062;--ambar-bg:#3D3020;--ambar-tx:#F1D49B;--minha:#C9A15A;--minha-tx:#16140F}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
@@ -53,7 +54,7 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex-shrink:0;text-decoration:none;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--linha);background:var(--sup);color:var(--tx2)}
 .chip[aria-pressed=true]{background:var(--tx);color:var(--bg);border-color:var(--tx)}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--verde);color:#fff;text-decoration:none;font-weight:600;font-size:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--verde);color:var(--on-verde);text-decoration:none;font-weight:600;font-size:14px}
 .btn.sec{background:var(--sup2);color:var(--tx)}
 .vazio{color:var(--tx3);text-align:center;padding:24px 8px}
 .esq{height:72px;border-radius:18px;background:var(--sup2);animation:pulsa 1.2s ease-in-out infinite}
@@ -112,7 +113,7 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .chat-linha{display:flex;align-items:flex-end;gap:6px;max-width:820px;margin:0 auto;background:var(--sup);border:1px solid var(--linha);border-radius:24px;padding:5px}
 .chat-linha textarea{flex:1;min-width:0;border:0;background:none;resize:none;font:inherit;color:var(--tx);padding:9px 4px;outline:none;max-height:140px}
 .cc-bt{width:38px;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
-.cc-env{background:var(--verde);color:#fff}
+.cc-env{background:var(--verde);color:var(--on-verde)}
 .cc-bt.gravando{background:var(--terra);color:#fff;animation:pulsa 1s infinite}
 .cc-menu{max-width:820px;margin:0 auto 8px;background:var(--sup);border:1px solid var(--linha);border-radius:18px;padding:6px;display:flex;flex-direction:column}
 .cc-menu a{display:flex;gap:12px;align-items:center;padding:10px;border-radius:12px;text-decoration:none}
@@ -143,12 +144,16 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .busca-res a{display:block;padding:10px;border-radius:10px;text-decoration:none}
 .busca-res a:hover,.busca-res a:focus{background:var(--sup2);outline:none}
 .busca-res small{display:block;color:var(--tx3);font-size:12.5px}
+.tema-flut{position:fixed;right:14px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:9;width:44px;height:44px;border-radius:22px;background:var(--sup);color:var(--tx);border:1px solid var(--linha);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.16)}
+body[data-tela=chat] .tema-flut{bottom:calc(150px + env(safe-area-inset-bottom))}
+body.sem-nav .tema-flut{bottom:calc(16px + env(safe-area-inset-bottom))}
+body.digitando .tema-flut{display:none}
 /* barra de baixo */
 .barra-nav{position:fixed;left:0;right:0;bottom:0;z-index:7;background:var(--sup);border-top:1px solid var(--linha);display:flex;justify-content:space-around;align-items:flex-end;padding:6px 4px calc(6px + env(safe-area-inset-bottom));height:calc(64px + env(safe-area-inset-bottom))}
 .barra-nav a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--tx3);padding:4px 6px;min-width:58px;text-decoration:none}
 .barra-nav a.on{color:var(--verde);font-weight:600}
 .barra-nav a.centro{transform:translateY(-14px)}
-.barra-nav a.centro span.bola{width:54px;height:54px;border-radius:27px;background:var(--verde);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.18);border:4px solid var(--bg)}
+.barra-nav a.centro span.bola{width:54px;height:54px;border-radius:27px;background:var(--verde);color:var(--on-verde);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.18);border:4px solid var(--bg)}
 .barra-nav a.centro.on{color:var(--verde)}
 .barra-nav a{position:relative}
 .barra-nav a .selo{position:absolute;top:0;left:calc(50% + 6px);margin:0}
@@ -185,8 +190,7 @@ body.digitando .chat-campo{bottom:0}
 .lg-campo:focus-within{border-color:var(--verde)}
 .lg-campo input{flex:1;min-width:0;border:0;background:none;font:inherit;font-size:17px;color:var(--tx);padding:15px 0;outline:none}
 .lg-olho{width:46px;height:46px;display:flex;align-items:center;justify-content:center;color:var(--tx3);border-radius:10px}
-.lg-entrar{width:100%;margin-top:6px;padding:15px;border-radius:14px;background:var(--verde);color:#fff;font-weight:600;font-size:16px}
-:root.escuro .lg-entrar{color:#0F1713}
+.lg-entrar{width:100%;margin-top:6px;padding:15px;border-radius:14px;background:var(--verde);color:var(--on-verde);font-weight:600;font-size:16px}
 .lg-entrar:disabled{opacity:.6}
 .lg-erro{min-height:22px;margin:8px 2px;font-size:14px;color:var(--terra-tx)}
 .lg-pedir{margin-top:24px;text-align:center;font-size:14px;color:var(--tx3)}
@@ -199,6 +203,8 @@ body.digitando .chat-campo{bottom:0}
   .barra-nav{display:none}
   .chat-campo{bottom:0;left:240px}
   .toast{bottom:100px}
+  .tema-flut{bottom:20px}
+  body[data-tela=chat] .tema-flut{bottom:96px}
 }
 @media (prefers-reduced-motion:reduce){.esq,.pensando .pontos i,.cc-bt.gravando{animation:none}}
 </style>
@@ -218,7 +224,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-26b';
+  var VERSAO = '2026-11-26c';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -267,8 +273,30 @@ body.digitando .chat-campo{bottom:0}
       return s;
     } catch (e) { return null; }
   }
+  // Tema (26/11/2026): claro é branco e preto, escuro é carvão e latão. Um botão
+  // flutuante no canto de baixo, à direita, troca na hora e fica guardado.
+  function poeTemaFlut() {
+    var b = document.getElementById('tema-flut');
+    if (!b) {
+      b = document.createElement('button');
+      b.type = 'button'; b.id = 'tema-flut'; b.className = 'tema-flut';
+      b.addEventListener('click', function () {
+        var on = document.documentElement.classList.toggle('escuro');
+        ls('app_iz_tema', on ? 'escuro' : 'claro');
+        poeTemaFlut();
+      });
+      document.body.appendChild(b);
+    }
+    var escuro = document.documentElement.classList.contains('escuro');
+    b.innerHTML = ic(escuro ? 'sol' : 'lua', 22);
+    b.setAttribute('aria-label', escuro ? 'Mudar para o modo claro' : 'Mudar para o modo escuro');
+    var m = document.getElementById('cor-tema');
+    if (m) m.content = escuro ? '#16140F' : '#FFFFFF';
+  }
+
   var S = sessao();
-  if (!S) { telaLogin(); return; }
+  if (!S) { telaLogin(); document.body.classList.add('sem-nav'); poeTemaFlut(); return; }
+  poeTemaFlut();
 
   // Entrada própria do app: só a senha, com olho para ver o que foi digitado.
   // Mesmo login do portal (POST /api/nivel) e mesma sessão (portal_sessao).
@@ -479,22 +507,15 @@ body.digitando .chat-campo{bottom:0}
       casaHtml = '<label class="casa-chip"><select id="sel-casa" aria-label="Casa"><option value="">Todas as casas</option>' +
         PERFIL.casas.map(function (c) { return '<option value="' + c.slug + '"' + (c.slug === atual ? ' selected' : '') + '>' + esc(c.nome) + '</option>'; }).join('') + '</select></label>';
     }
-    var escuro = document.documentElement.classList.contains('escuro');
     document.getElementById('topo').innerHTML =
       '<div class="quem"><div class="ola">' + saud() + (nomeCurto() ? ', ' + esc(nomeCurto()) : '') + '</div><div class="quem-l">' + casaHtml + '<span class="pill atencao" id="pill-off" hidden></span></div></div>' +
       '<button class="btn-ic" id="bt-busca" aria-label="Buscar">' + ic('busca', 20) + '</button>' +
       (temEscala() ? '<a class="btn-ic" href="#/escala" aria-label="Minha escala">' + ic('cal', 20) + '</a>' : '<a class="btn-ic" href="#/eventos" aria-label="Eventos">' + ic('cal', 20) + '</a>') +
-      '<button class="btn-ic" id="bt-tema" aria-label="' + (escuro ? 'Modo dia' : 'Modo noite') + '">' + ic(escuro ? 'sol' : 'lua', 20) + '</button>' +
       '<a class="btn-ic" href="#/mais" aria-label="Conta e mais opções">' + ic('conta', 20) + '</a>';
     pintaOff();
     var sel = document.getElementById('sel-casa');
     if (sel) sel.addEventListener('change', function () { ls('app_iz_casa', sel.value || null); rota(); });
     document.getElementById('bt-busca').addEventListener('click', abreBusca);
-    document.getElementById('bt-tema').addEventListener('click', function () {
-      var on = document.documentElement.classList.toggle('escuro');
-      ls('app_iz_tema', on ? 'escuro' : 'claro');
-      desenhaTopo();
-    });
   }
 
   function desenhaNav(atual) {
