@@ -1351,6 +1351,7 @@ existia nas senhas antigas.</p>
       '<div class="ac-bts">' +
       (a.status === 'ativo'
         ? '<button type="button" class="ac-bt" data-acao="nova_senha" data-id="' + esc(a.id) + '">Nova senha</button>' +
+          '<button type="button" class="ac-bt" data-acao="definir_senha" data-id="' + esc(a.id) + '" data-nome="' + esc(a.nome) + '">Definir senha</button>' +
           '<button type="button" class="ac-bt" data-acao="desativar" data-id="' + esc(a.id) + '">Desativar</button>'
         : (a.status === 'desativado'
             ? '<button type="button" class="ac-bt" data-acao="reativar" data-id="' + esc(a.id) + '">Reativar</button>'
@@ -1390,6 +1391,15 @@ existia nas senhas antigas.</p>
     if ((acao === 'desativar' || acao === 'recusar') &&
         !confirm('Confirma ' + acao + ' este acesso?')) return;
     var corpo = { id: id, acao: acao };
+    // Definir senha (26/11/2026): o dono digita a senha que quiser (4 a 60
+    // caracteres). O Worker recusa senha que já é de outro acesso.
+    if (acao === 'definir_senha') {
+      var escolhida = prompt('Senha para ' + (bt.dataset.nome || 'esta pessoa') + ' (de 4 a 60 caracteres):');
+      if (escolhida === null) return;
+      escolhida = escolhida.trim();
+      if (escolhida.length < 4 || escolhida.length > 60) { alert('A senha precisa ter de 4 a 60 caracteres.'); return; }
+      corpo.senha = escolhida;
+    }
     if (acao === 'aprovar' || acao === 'reativar') {
       var e = escolhas[id] || {};
       if (e.nivel) corpo.nivel = e.nivel;
@@ -1408,6 +1418,7 @@ existia nas senhas antigas.</p>
           var alvo = document.getElementById('ac-nova-' + id);
           if (!alvo) return;
           if (senhaNova) alvo.textContent = 'Senha desta pessoa: ' + senhaNova;
+          else if (acao === 'definir_senha') alvo.textContent = 'Senha definida. A sessão aberta com a senha antiga caiu.';
           else if (reaproveitou) alvo.textContent = 'Reativado — a senha anterior voltou a valer. Use "Mostrar senhas" pra vê-la, ou "Nova senha" pra trocar.';
         });
       })
