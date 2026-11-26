@@ -90,6 +90,18 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .nota-sis{align-self:center;font-size:12.5px;color:var(--tx3);text-align:center;padding:2px 12px;max-width:90%}
 .selo{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--terra);color:#fff;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle}
 .cn-per{margin:0 0 10px}
+.uz-conta{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.uz-cab{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+.uz-cab .t{min-width:0}
+.uz-cab small{display:block;color:var(--tx3);font-size:12.5px;font-weight:400}
+.uz-cab .v{text-align:right;white-space:nowrap;font-size:14px}
+.uz-num{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--tx2)}
+.uz-tira{display:grid;grid-template-columns:repeat(14,1fr);gap:3px}
+.uz-tira i{display:block;height:14px;border-radius:3px;background:var(--sup2)}
+.uz-tira i.n1{background:var(--verde);opacity:.3}
+.uz-tira i.n2{background:var(--verde);opacity:.55}
+.uz-tira i.n3{background:var(--verde);opacity:.8}
+.uz-tira i.n4{background:var(--verde)}
 .cn-nota{font-size:12.5px;color:var(--tx3);margin:8px 0 4px}
 #cn{margin-bottom:12px}
 .cq{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
@@ -224,7 +236,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-26c';
+  var VERSAO = '2026-11-26e';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -245,6 +257,7 @@ body.digitando .chat-campo{bottom:0}
     copo: '<path d="M6 3h12l-2 18H8z"/>',
     caixa: '<path d="M3 7h18v13H3z"/><path d="M3 7l3-4h12l3 4"/>',
     conta: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    relogio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     estrela: '<path d="m12 3 2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.4 6.6 19.4l1.2-6-4.5-4.1 6.1-.7z"/>',
     compartilhar: '<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/>',
@@ -284,6 +297,8 @@ body.digitando .chat-campo{bottom:0}
         var on = document.documentElement.classList.toggle('escuro');
         ls('app_iz_tema', on ? 'escuro' : 'claro');
         poeTemaFlut();
+        var fr = document.getElementById('turno-fr');
+        if (fr) temaTurno(fr);
       });
       document.body.appendChild(b);
     }
@@ -385,7 +400,7 @@ body.digitando .chat-campo{bottom:0}
     var metodo = opts.method || 'GET';
     var h = { 'X-Token': S.token };
     if (opts.json !== undefined) h['Content-Type'] = 'application/json';
-    return fetch(url, { method: metodo, headers: h, body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body, cache: 'no-store' })
+    return fetch(url, { method: metodo, headers: h, body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body, cache: 'no-store', keepalive: !!opts.keepalive })
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (d) {
           if (r.status === 401) { var e1 = new Error('Este acesso não abre o app piloto. Use o portal de sempre ou entre com outra senha.'); e1.status = 401; throw e1; }
@@ -534,7 +549,7 @@ body.digitando .chat-campo{bottom:0}
     }).join('');
     var lado = [['#/chat', 'Chat do dia', 'chat', 'chat'], ['#/fichas', 'Fichas técnicas', 'fichas', 'fichas'], ['#/performance', 'Ranking', 'ranking', 'performance'], ['#/eventos', 'Eventos', 'cal', 'eventos']];
     if (temEscala()) lado.push(['#/escala', 'Minha escala', 'cal', 'escala']);
-    if (PERFIL && PERFIL.nivel === 'coord') lado.push(['#/coord', 'Perguntas da equipe', 'chat', 'coord']);
+    if (PERFIL && PERFIL.nivel === 'coord') lado.push(['#/coord', 'Perguntas da equipe', 'chat', 'coord'], ['#/uso', 'Uso do app', 'relogio', 'uso']);
     lado.push(['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
     document.getElementById('lado').innerHTML = '<div class="marca">Bares IZ</div>' +
       lado.map(function (i) { var on = i[3] === atual; return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2], 20) + i[1] + (i[3] === 'coord' ? seloCoord() : '') + '</a>'; }).join('');
@@ -1033,7 +1048,7 @@ body.digitando .chat-campo{bottom:0}
         '<div id="qr-box"></div>' +
         '<a class="linha" href="index.html?trocar=1"><span class="t">Trocar acesso</span><span class="v">›</span></a>' +
       '</div>' +
-      '<div class="blk"><h2>Telas do app</h2><a class="linha" href="#/eventos"><span class="t">Eventos<small>Próximos 30 dias</small></span><span class="v">›</span></a>' + (temEscala() ? '<a class="linha" href="#/escala"><span class="t">Minha escala</span><span class="v">›</span></a>' : '') + (PERFIL.nivel === 'coord' ? '<a class="linha" href="#/coord"><span class="t">Perguntas da equipe<small>O que o cérebro não soube</small></span><span class="v">' + seloCoord() + ' ›</span></a>' : '') + '</div>' +
+      '<div class="blk"><h2>Telas do app</h2><a class="linha" href="#/eventos"><span class="t">Eventos<small>Próximos 30 dias</small></span><span class="v">›</span></a>' + (temEscala() ? '<a class="linha" href="#/escala"><span class="t">Minha escala</span><span class="v">›</span></a>' : '') + (PERFIL.nivel === 'coord' ? '<a class="linha" href="#/coord"><span class="t">Perguntas da equipe<small>O que o cérebro não soube</small></span><span class="v">' + seloCoord() + ' ›</span></a><a class="linha" href="#/uso"><span class="t">Uso do app<small>Quem abre, quando e por quanto tempo</small></span><span class="v">›</span></a>' : '') + '</div>' +
       '<div class="blk"><h2>Páginas do portal</h2>' + PAGINAS.map(function (p) { return '<a class="linha" href="' + p[0] + '"><span class="t">' + esc(p[1]) + '</span><span class="v">›</span></a>'; }).join('') + '</div>' +
       '<p class="piloto">Versão piloto ' + VERSAO + '. O portal de sempre continua igual.</p>';
     var c = moldura('mais', html);
@@ -1087,6 +1102,94 @@ body.digitando .chat-campo{bottom:0}
       el.innerHTML = h + '</div>';
       el.querySelectorAll('[data-dias]').forEach(function (b) { b.onclick = function () { ls('app_iz_num_dias', b.getAttribute('data-dias')); numerosCerebro(el, Number(b.getAttribute('data-dias'))); }; });
     }, function (er) { el.innerHTML = '<div class="blk"><h2>Como o cérebro está indo</h2><p class="vazio">' + esc(er.status === 0 ? 'Sem internet agora.' : er.message) + '</p></div>'; });
+  }
+
+  // ---------------------------------------------------------------- uso do app
+  // Sinal de uso: ao abrir, a cada minuto com a tela visível, ao trocar de
+  // tela e ao sair. O Worker junta os sinais em sessões (conta + aparelho).
+  function tipoAparelho() {
+    var u = navigator.userAgent;
+    if (/iPad/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1)) return 'iPad';
+    if (/iPhone|iPod/.test(u)) return 'iPhone';
+    if (/Android/.test(u)) return /Mobile/.test(u) ? 'Android' : 'Tablet Android';
+    if (/Windows/.test(u)) return 'Windows';
+    if (/Macintosh/.test(u)) return 'Mac';
+    return 'Outro';
+  }
+  function sinalUso(saindo) {
+    if (!PERFIL) return;
+    var dev = ls('portal_device');
+    if (!dev) { dev = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); ls('portal_device', dev); }
+    api('/uso', { method: 'POST', json: { device: dev, aparelho: tipoAparelho(), tela: document.body.dataset.tela || 'chat', saindo: !!saindo }, keepalive: !!saindo }).catch(function () {});
+  }
+  function iniciaUso() {
+    sinalUso();
+    setInterval(function () { if (!document.hidden) sinalUso(); }, 60 * 1000);
+    document.addEventListener('visibilitychange', function () { sinalUso(document.hidden); });
+    window.addEventListener('pagehide', function () { sinalUso(true); });
+    window.addEventListener('hashchange', function () { setTimeout(sinalUso, 300); });
+  }
+
+  function duracao(seg) {
+    seg = seg || 0;
+    if (seg < 60) return seg ? 'menos de 1 min' : 'só abriu';
+    var m = Math.round(seg / 60);
+    if (m < 60) return m + ' min';
+    var h = Math.floor(m / 60), r = m % 60;
+    return h + ' h' + (r ? ' ' + r + ' min' : '');
+  }
+  function diaLocal(iso) { var d = new Date(iso); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function quandoUso(iso) {
+    var d = new Date(iso), agora = new Date(), min = Math.round((agora - d) / 60000);
+    if (min < 3) return 'agora';
+    if (min < 60) return 'há ' + min + ' min';
+    var hoje = diaLocal(agora.toISOString()), dia = diaLocal(iso);
+    var ontem = diaLocal(new Date(agora.getTime() - 864e5).toISOString());
+    if (dia === hoje) return 'hoje, ' + horaMin(iso);
+    if (dia === ontem) return 'ontem, ' + horaMin(iso);
+    return dataCurta(dia) + ', ' + horaMin(iso);
+  }
+  var NOME_TELA = { chat: 'chat', fichas: 'fichas', performance: 'ranking', turno: 'turno', eventos: 'eventos', escala: 'escala', mais: 'mais', coord: 'perguntas', uso: 'uso', outra: 'outra' };
+  var NOME_NIVEL = { equipe: 'Equipe', bartender: 'Bartender', chefe: 'Chefe de bar', coord: 'Coordenação' };
+
+  function telaUso() {
+    if (!PERFIL || PERFIL.nivel !== 'coord') { location.hash = '#/chat'; return; }
+    var dias = Number(ls('app_iz_uso_dias')) || 30;
+    var c = moldura('uso', '<div class="cab"><h1>Uso do app</h1><p>Quem abre o app, quando e por quanto tempo.</p></div><div id="uz"><p class="vazio">Carregando…</p></div>');
+    api('/coord/uso?dias=' + dias, { semCopia: true }).then(function (d) {
+      var chips = '<div class="chips cn-per">' + [7, 30, 90].map(function (n) { return '<button class="chip" data-dias="' + n + '" aria-pressed="' + (n === d.dias) + '">' + n + ' dias</button>'; }).join('') + '</div>';
+      var ult14 = [];
+      for (var i = 13; i >= 0; i--) { var x = new Date(d.hoje + 'T12:00:00'); x.setDate(x.getDate() - i); ult14.push(diaLocal(x.toISOString())); }
+      var h = '<div class="blk">' + chips +
+        (d.contas.length ? '<div class="cer-chips"><span><small>Contas que usaram</small>' + d.total.contas + '</span><span><small>Sessões</small>' + d.total.sessoes + '</span><span><small>Tempo total</small>' + duracao(d.total.segundos) + '</span></div>' : '') +
+        '<p class="cn-nota">Conta o tempo com o app aberto na tela, por aparelho. Senha compartilhada aparece como uma conta só. A contagem começou em 26/11/2026.</p></div>';
+      if (!d.contas.length) h += '<div class="blk"><p class="vazio">Ninguém abriu o app nestes ' + d.dias + ' dias.</p></div>';
+      h += d.contas.map(function (k, idx) {
+        var nome = k.pessoa || 'Senha compartilhada';
+        var tira = '<div class="uz-tira" aria-label="Últimos 14 dias">' + ult14.map(function (dia) {
+          var sg = k.por_dia[dia] || 0, n = !(dia in k.por_dia) ? 0 : sg < 300 ? 1 : sg < 1200 ? 2 : sg < 3600 ? 3 : 4;
+          return '<i class="n' + n + '" title="' + dataCurta(dia) + ': ' + (dia in k.por_dia ? duracao(sg) : 'não abriu') + '"></i>';
+        }).join('') + '</div>';
+        return '<div class="blk uz-conta">' +
+          '<button class="uz-cab" data-abre="' + idx + '" aria-expanded="false"><span class="t"><b>' + esc(nome) + '</b>' +
+            '<small>' + esc(NOME_NIVEL[k.nivel] || k.nivel) + (k.casa_nome && k.nivel !== 'coord' ? ' · ' + esc(k.casa_nome) : '') + '</small></span>' +
+            '<span class="v"><b>' + esc(quandoUso(k.ultimo)) + '</b><small>último acesso</small></span></button>' +
+          '<div class="uz-num"><span>' + duracao(k.segundos) + ' no total</span><span>' + k.dias_ativos + (k.dias_ativos === 1 ? ' dia' : ' dias') + '</span><span>' + k.sessoes + (k.sessoes === 1 ? ' sessão' : ' sessões') + '</span><span>' + k.aparelhos + (k.aparelhos === 1 ? ' aparelho' : ' aparelhos') + '</span></div>' +
+          tira +
+          '<div class="uz-sess" id="uz-s' + idx + '" hidden><p class="cn-nota">Mais usado: ' + (k.telas.map(function (t) { return NOME_TELA[t] || t; }).join(', ') || '—') + '. Primeiro acesso no período: ' + esc(quandoUso(k.primeiro)) + '.</p>' +
+            k.recentes.map(function (r) {
+              return '<div class="linha"><span class="t">' + dataCurta(diaLocal(r.inicio)) + ' · ' + horaMin(r.inicio) + '–' + horaMin(r.fim) + '<small>' + esc(r.aparelho || 'aparelho') + (r.telas.length ? ' · ' + r.telas.map(function (t) { return NOME_TELA[t] || t; }).join(', ') : '') + '</small></span><span class="v">' + duracao(r.segundos) + '</span></div>';
+            }).join('') + '</div></div>';
+      }).join('');
+      var box = c.querySelector('#uz'); box.innerHTML = h;
+      box.querySelectorAll('[data-dias]').forEach(function (b) { b.onclick = function () { ls('app_iz_uso_dias', b.getAttribute('data-dias')); telaUso(); }; });
+      box.querySelectorAll('[data-abre]').forEach(function (b) {
+        b.onclick = function () {
+          var el = box.querySelector('#uz-s' + b.getAttribute('data-abre'));
+          el.hidden = !el.hidden; b.setAttribute('aria-expanded', String(!el.hidden));
+        };
+      });
+    }, function (er) { c.querySelector('#uz').innerHTML = '<div class="blk"><p class="vazio">' + esc(er.status === 0 ? 'Sem internet agora.' : er.message) + '</p></div>'; });
   }
 
   function telaCoord() {
@@ -1162,8 +1265,27 @@ body.digitando .chat-campo{bottom:0}
           'body{padding-top:4px!important;padding-bottom:24px!important}';
         d.head.appendChild(st);
       } catch (e) {}
+      temaTurno(fr);
       altura();
     });
+  }
+
+  // O Turno segue o modo do app (26/11/2026): liga ou desliga o modo escuro
+  // do portal só dentro da moldura, sem mexer no portal_tema (que é do
+  // portal), e troca as cores do portal pelas do app.
+  var TURNO_CORES = {
+    claro: '--bg:#FFFFFF;--card:#F5F5F3;--card-2:#ECECE9;--border:#E2E2DE;--border-2:#D0D0CB;--text:#111111;--text-2:#3D3D3A;--text-3:#6B6B66;--text-4:#9A9A94;--acc:#111111;--acc-txt:#FFFFFF',
+    escuro: '--bg:#16140F;--card:#211E18;--card-2:#2A2620;--border:#3A342A;--border-2:#4A4336;--text:#EFE8DA;--text-2:#CFC6B4;--text-3:#A39A88;--text-4:#7A7262;--acc:#C9A15A;--acc-txt:#16140F;--ouro:#C9A15A'
+  };
+  function temaTurno(fr) {
+    try {
+      var d = fr.contentDocument, r = d.documentElement;
+      var escuro = document.documentElement.classList.contains('escuro');
+      if (escuro) r.setAttribute('data-tema', 'escuro'); else r.removeAttribute('data-tema');
+      var st = d.getElementById('app-tema');
+      if (!st) { st = d.createElement('style'); st.id = 'app-tema'; d.head.appendChild(st); }
+      st.textContent = ':root:not([data-tema="escuro"]){' + TURNO_CORES.claro + '}:root[data-tema="escuro"]{' + TURNO_CORES.escuro + '}';
+    } catch (e) {}
   }
 
   // ---------------------------------------------------------------- rota
@@ -1178,6 +1300,7 @@ body.digitando .chat-campo{bottom:0}
     if (partes[0] === 'mais') return telaMais();
     if (partes[0] === 'turno') return telaTurno();
     if (partes[0] === 'coord') return telaCoord();
+    if (partes[0] === 'uso') return telaUso();
     return telaChat(partes[0] === 'chat' ? partes[1] || '' : '');
   }
 
@@ -1193,6 +1316,7 @@ body.digitando .chat-campo{bottom:0}
     desenhaTopo();
     window.addEventListener('hashchange', rota);
     rota();
+    iniciaUso();
     drena();
     carregaFichas();
     setTimeout(confereVersao, 4000);
