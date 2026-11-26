@@ -88,6 +88,9 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .bolha.t-coord{background:var(--verde-bg);color:var(--verde-tx);border-color:transparent}
 .nota-sis{align-self:center;font-size:12.5px;color:var(--tx3);text-align:center;padding:2px 12px;max-width:90%}
 .selo{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--terra);color:#fff;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle}
+.cn-per{margin:0 0 10px}
+.cn-nota{font-size:12.5px;color:var(--tx3);margin:8px 0 4px}
+#cn{margin-bottom:12px}
 .cq{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
 .cq-quem{font-size:13.5px;color:var(--tx2)}
 .cq-quem small{display:block;color:var(--tx3);font-size:12px}
@@ -215,7 +218,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-25c';
+  var VERSAO = '2026-11-26b';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -611,12 +614,21 @@ body.digitando .chat-campo{bottom:0}
       if (ex.eventos && ex.eventos.length) h += '<div class="bl-sec"><b>Eventos</b><ul>' + ex.eventos.map(function (e) {
         return '<li>' + esc(e.dia) + ' · ' + esc(e.tipo) + (e.hora ? ' <small>· ' + esc(e.hora) + '</small>' : '') + (e.pax ? ' <small>· ' + esc(e.pax) + ' pessoas</small>' : '') + (PERFIL.casa_fixa || casaAtual() ? '' : ' <small>· ' + esc(e.casa) + '</small>') + '</li>';
       }).join('') + '</ul><a href="#/eventos">Ver os próximos 30 dias</a></div>';
+      var pd = ex.pendencias;
+      if (pd && pd.falhou) h += '<div class="bl-sec"><b>Ficou de ontem</b>Não consegui ver as pendências da casa agora. <a href="#/turno">Abrir o turno</a></div>';
+      else if (pd && pd.n) {
+        var quandoP = function (d) { return d == null ? '' : d === 0 ? 'de hoje' : d === 1 ? 'há 1 dia' : 'há ' + d + ' dias'; };
+        h += '<div class="bl-sec"><b>Ficou de ontem · ' + pd.n + (pd.n === 1 ? ' pendência' : ' pendências') + '</b><ul>' + pd.itens.map(function (i) {
+          return '<li>' + esc(i.descricao) + ' <small>· ' + (i.persistente ? 'se repete · ' : '') + quandoP(i.dias) + '</small></li>';
+        }).join('') + '</ul>' + (pd.n > 3 ? '<small>e mais ' + (pd.n - 3) + '</small> ' : '') +
+          '<a href="#/turno">' + (pd.abertura_hoje ? 'Ver no turno (abertura feita' + (pd.abertura_hoje.responsavel ? ' por ' + esc(pd.abertura_hoje.responsavel) : '') + ')' : 'Resolver na abertura do turno') + '</a></div>';
+      }
       if (ex.meta && ex.meta.meta) {
         var pct = Math.min(100, Math.round(100 * ex.meta.vendidos / ex.meta.meta));
         h += '<div class="bl-sec"><b>Cocktails vendidos</b>' + num(ex.meta.vendidos) + ' em ' + esc(ex.meta.mes) + ' · meta de ' + esc(ex.meta.meta_mes || '') + ': ' + num(ex.meta.meta) +
           '<div class="meta-barra"><i style="width:' + pct + '%"></i></div><a href="#/performance">Ver o ranking</a></div>';
       }
-      if (ex.links && ex.links.length) h += '<div class="bl-links">' + ex.links.map(function (l) { return '<a href="' + esc(l[0] === 'cocktails.html' ? '#/fichas' : l[0]) + '">' + esc(l[1]) + '</a>'; }).join('') + '</div>';
+      if (ex.links && ex.links.length) h += '<div class="bl-links">' + ex.links.map(function (l) { return '<a href="' + esc(l[0] === 'cocktails.html' ? '#/fichas' : l[0] === 'turno.html' ? '#/turno' : l[0]) + '">' + esc(l[1]) + '</a>'; }).join('') + '</div>';
     }
     if (m.tipo === 'resposta') {
       var bts = [];
@@ -673,7 +685,12 @@ body.digitando .chat-campo{bottom:0}
         var sg = e.target.closest('[data-sug]');
         if (sg) { var t = document.getElementById('cc-tx'); if (t) { t.value = sg.getAttribute('data-sug'); document.getElementById('chat-campo').requestSubmit(); } return; }
         var okb = e.target.closest('[data-ok]');
-        if (okb) { ls('app_iz_ok:' + okb.getAttribute('data-ok'), '1'); okb.remove(); aviso('Que bom. Valeu por avisar.'); return; }
+        if (okb) {
+          var idOk = okb.getAttribute('data-ok');
+          ls('app_iz_ok:' + idOk, '1'); okb.remove(); aviso('Que bom. Valeu por avisar.');
+          api('/chat/ok', { method: 'POST', json: { mensagem_id: Number(idOk) } }).catch(function () {});
+          return;
+        }
         var cb = e.target.closest('[data-coord]');
         if (cb) {
           cb.disabled = true; cb.textContent = 'Mandando…';
@@ -1020,9 +1037,41 @@ body.digitando .chat-campo{bottom:0}
   // ---------------------------------------------------------------- coordenação
   // Perguntas que a IA não soube ou que a pessoa mandou à coordenação. Responder
   // põe a resposta no chat de quem perguntou; "Ensinar" guarda para a casa.
+  // Contador do cérebro: quanto ele responde, quanto a IA responde, quanto
+  // fica sem resposta e quanto a equipe marca "Resolveu", por casa.
+  function numerosCerebro(el, dias) {
+    var pct = function (a, b) { return b ? Math.round(100 * a / b) + '%' : '—'; };
+    var nCer = { numeros: 'números', cardapio: 'cardápio', operacao: 'operação' };
+    el.innerHTML = '<div class="blk"><h2>Como o cérebro está indo</h2><p class="vazio">Carregando…</p></div>';
+    api('/coord/numeros?dias=' + dias, { semCopia: true }).then(function (d) {
+      var t = d.total, resp = t.cerebro + t.ia;
+      var chips = '<div class="chips cn-per">' + [7, 30, 90].map(function (n) { return '<button class="chip" data-dias="' + n + '" aria-pressed="' + (n === d.dias) + '">' + n + ' dias</button>'; }).join('') + '</div>';
+      var h = '<div class="blk"><h2>Como o cérebro está indo</h2>' + chips;
+      if (!t.perguntas) h += '<p class="vazio">Nenhuma pergunta no chat nestes ' + d.dias + ' dias.</p>';
+      else {
+        h += '<div class="cer-chips">' +
+          '<span><small>Perguntas</small>' + t.perguntas + '</span>' +
+          '<span><small>Pessoas</small>' + t.pessoas + '</span>' +
+          '<span><small>Pelo cérebro</small>' + t.cerebro + '</span>' +
+          '<span><small>Pela IA</small>' + t.ia + '</span>' +
+          '<span><small>Sem resposta</small>' + (t.nao_sei + t.mandadas) + '</span>' +
+          '<span><small>Resolveu</small>' + pct(t.resolveu, resp) + '</span></div>' +
+          '<p class="cn-nota">"Sem resposta" soma o que a IA não soube e o que a pessoa mandou à coordenação. "Resolveu" é sobre as respostas do cérebro e da IA' + (t.ia_ensinada ? '; ' + t.ia_ensinada + (t.ia_ensinada === 1 ? ' usou' : ' usaram') + ' o que a coordenação ensinou' : '') + (t.erros ? '. A IA falhou ' + t.erros + (t.erros === 1 ? ' vez' : ' vezes') : '') + '.</p>';
+        h += d.casas.map(function (k) {
+          var pc = Object.keys(k.por_cerebro).map(function (x) { return (nCer[x] || x) + ' ' + k.por_cerebro[x]; }).join(', ');
+          return '<div class="linha"><span class="t"><b>' + esc(k.casa_nome) + '</b> · ' + k.perguntas + (k.perguntas === 1 ? ' pergunta' : ' perguntas') + ' · ' + k.pessoas + (k.pessoas === 1 ? ' pessoa' : ' pessoas') +
+            '<small>cérebro ' + k.cerebro + (pc ? ' (' + pc + ')' : '') + ' · IA ' + k.ia + ' · sem resposta ' + (k.nao_sei + k.mandadas) + ' · resolveu ' + pct(k.resolveu, k.cerebro + k.ia) + ' · coordenação respondeu ' + k.respondidas + (k.ensinadas ? ', ensinou ' + k.ensinadas : '') + '</small></span></div>';
+        }).join('');
+      }
+      el.innerHTML = h + '</div>';
+      el.querySelectorAll('[data-dias]').forEach(function (b) { b.onclick = function () { ls('app_iz_num_dias', b.getAttribute('data-dias')); numerosCerebro(el, Number(b.getAttribute('data-dias'))); }; });
+    }, function (er) { el.innerHTML = '<div class="blk"><h2>Como o cérebro está indo</h2><p class="vazio">' + esc(er.status === 0 ? 'Sem internet agora.' : er.message) + '</p></div>'; });
+  }
+
   function telaCoord() {
     if (!PERFIL || PERFIL.nivel !== 'coord') { location.hash = '#/chat'; return; }
-    var c = moldura('coord', '<div class="cab"><h1>Perguntas da equipe</h1><p>O que o cérebro não soube responder.</p></div><div id="cq"><p class="vazio">Carregando…</p></div>');
+    var c = moldura('coord', '<div class="cab"><h1>Perguntas da equipe</h1><p>O que o cérebro não soube responder.</p></div><div id="cn"></div><div id="cq"><p class="vazio">Carregando…</p></div>');
+    numerosCerebro(c.querySelector('#cn'), Number(ls('app_iz_num_dias')) || 30);
     var quando = function (iso) { return iso ? dataCurta(iso.slice(0, 10)) + ' ' + horaMin(iso) : ''; };
     api('/coord', { semCopia: true }).then(function (d) {
       PERFIL.coord_aguardando = d.aguardando.length; desenhaNav('coord');
