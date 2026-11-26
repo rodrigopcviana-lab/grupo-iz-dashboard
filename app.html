@@ -92,6 +92,7 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .cer-itens li:first-child{border-top:0}
 .cer-itens small{display:block;color:var(--tx3);font-size:12.5px}
 .cer-fontes{margin-top:8px;font-size:12px;color:var(--tx3)}
+.cer-fontes a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .bolha.t-coord{background:var(--verde-bg);color:var(--verde-tx);border-color:transparent}
 .nota-sis{align-self:center;font-size:12.5px;color:var(--tx3);text-align:center;padding:2px 12px;max-width:90%}
 .selo{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--terra);color:#fff;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle}
@@ -345,7 +346,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-26i';
+  var VERSAO = '2026-11-27a';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -918,6 +919,11 @@ body.digitando .chat-campo{bottom:0}
       });
       if (!ex.erro) fichasCitadas(m.texto).forEach(function (f) { bts.push('<a href="#/ficha/' + esc(f.s) + '">Ficha: ' + esc(f.n) + '</a>'); });
       if (bts.length) h += '<div class="bl-links">' + bts.join('') + '</div>';
+      // Fontes que a IA disse ter usado (27/11): nome + link para a tela ou página.
+      if (!ex.erro && !ex.encaminhada && ex.usadas && ex.usadas.length) h += '<div class="cer-fontes">Fonte: ' + ex.usadas.map(function (f) {
+        var l = String(f.link || '');
+        return /^(#\/[a-z-]+|[a-z0-9-]+\.html)$/.test(l) ? '<a href="' + esc(l) + '">' + esc(f.nome) + '</a>' : esc(f.nome);
+      }).join(' · ') + '</div>';
       if (ctx.coord) h += '<div class="bl-retorno">' + (ctx.ok ? '<button type="button" data-ok="' + m.id + '">Resolveu</button>' : '') + '<button type="button" data-coord="' + m.id + '">Mandar para a coordenação</button></div>';
     }
     var tag = '';
@@ -925,6 +931,7 @@ body.digitando .chat-campo{bottom:0}
     else if (m.autor === 'coord') tag = '<span class="bl-tag">Resposta da coordenação' + (ex.coord ? ' · ' + esc(ex.coord) : '') + '</span>';
     else if (m.tipo === 'aviso') tag = '<span class="bl-tag">' + esc(ex.tipo || 'Aviso') + ' enviada à Central' + (ex.setor ? ' · ' + esc(ex.setor) : '') + (ex.urgencia ? ' · ' + esc(ex.urgencia) : '') + '</span>';
     else if (ex.audio) tag = '<span class="bl-tag">Por áudio</span>';
+    else if (m.autor === 'portal' && m.tipo === 'resposta' && !ex.erro && !ex.encaminhada) tag = '<span class="bl-tag">Resposta automática</span>';
     var ouvirBt = !minha ? '<button type="button" class="bt-ouvir" data-ouvir aria-label="Ouvir esta mensagem" title="Ouvir">' + ic('som', 16) + '</button>' : '';
     var cls = 'bolha ' + (minha ? 'minha' : 'dele') + ' t-' + m.tipo + (m.autor === 'coord' ? ' t-coord' : '') + (m.guardado ? ' guardada' : '') + (ex.erro ? ' erro' : '');
     return '<div class="' + cls + '">' + tag + h + '<div class="bl-pe">' + (m.guardado ? 'Sem internet: sai quando a rede voltar' : horaMin(m.quando)) + ouvirBt + '</div></div>';
