@@ -236,7 +236,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-26e';
+  var VERSAO = '2026-11-26f';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -549,7 +549,8 @@ body.digitando .chat-campo{bottom:0}
     }).join('');
     var lado = [['#/chat', 'Chat do dia', 'chat', 'chat'], ['#/fichas', 'Fichas técnicas', 'fichas', 'fichas'], ['#/performance', 'Ranking', 'ranking', 'performance'], ['#/eventos', 'Eventos', 'cal', 'eventos']];
     if (temEscala()) lado.push(['#/escala', 'Minha escala', 'cal', 'escala']);
-    if (PERFIL && PERFIL.nivel === 'coord') lado.push(['#/coord', 'Perguntas da equipe', 'chat', 'coord'], ['#/uso', 'Uso do app', 'relogio', 'uso']);
+    if (PERFIL && PERFIL.nivel === 'coord') lado.push(['#/coord', 'Perguntas da equipe', 'chat', 'coord']);
+    if (PERFIL && PERFIL.dono) lado.push(['#/uso', 'Uso do app', 'relogio', 'uso']);
     lado.push(['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
     document.getElementById('lado').innerHTML = '<div class="marca">Bares IZ</div>' +
       lado.map(function (i) { var on = i[3] === atual; return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2], 20) + i[1] + (i[3] === 'coord' ? seloCoord() : '') + '</a>'; }).join('');
@@ -1048,7 +1049,7 @@ body.digitando .chat-campo{bottom:0}
         '<div id="qr-box"></div>' +
         '<a class="linha" href="index.html?trocar=1"><span class="t">Trocar acesso</span><span class="v">›</span></a>' +
       '</div>' +
-      '<div class="blk"><h2>Telas do app</h2><a class="linha" href="#/eventos"><span class="t">Eventos<small>Próximos 30 dias</small></span><span class="v">›</span></a>' + (temEscala() ? '<a class="linha" href="#/escala"><span class="t">Minha escala</span><span class="v">›</span></a>' : '') + (PERFIL.nivel === 'coord' ? '<a class="linha" href="#/coord"><span class="t">Perguntas da equipe<small>O que o cérebro não soube</small></span><span class="v">' + seloCoord() + ' ›</span></a><a class="linha" href="#/uso"><span class="t">Uso do app<small>Quem abre, quando e por quanto tempo</small></span><span class="v">›</span></a>' : '') + '</div>' +
+      '<div class="blk"><h2>Telas do app</h2><a class="linha" href="#/eventos"><span class="t">Eventos<small>Próximos 30 dias</small></span><span class="v">›</span></a>' + (temEscala() ? '<a class="linha" href="#/escala"><span class="t">Minha escala</span><span class="v">›</span></a>' : '') + (PERFIL.nivel === 'coord' ? '<a class="linha" href="#/coord"><span class="t">Perguntas da equipe<small>O que o cérebro não soube</small></span><span class="v">' + seloCoord() + ' ›</span></a>' : '') + (PERFIL.dono ? '<a class="linha" href="#/uso"><span class="t">Uso do app<small>Quem abre, quando e por quanto tempo</small></span><span class="v">›</span></a>' : '') + '</div>' +
       '<div class="blk"><h2>Páginas do portal</h2>' + PAGINAS.map(function (p) { return '<a class="linha" href="' + p[0] + '"><span class="t">' + esc(p[1]) + '</span><span class="v">›</span></a>'; }).join('') + '</div>' +
       '<p class="piloto">Versão piloto ' + VERSAO + '. O portal de sempre continua igual.</p>';
     var c = moldura('mais', html);
@@ -1153,7 +1154,7 @@ body.digitando .chat-campo{bottom:0}
   var NOME_NIVEL = { equipe: 'Equipe', bartender: 'Bartender', chefe: 'Chefe de bar', coord: 'Coordenação' };
 
   function telaUso() {
-    if (!PERFIL || PERFIL.nivel !== 'coord') { location.hash = '#/chat'; return; }
+    if (!PERFIL || !PERFIL.dono) { location.hash = '#/chat'; return; }
     var dias = Number(ls('app_iz_uso_dias')) || 30;
     var c = moldura('uso', '<div class="cab"><h1>Uso do app</h1><p>Quem abre o app, quando e por quanto tempo.</p></div><div id="uz"><p class="vazio">Carregando…</p></div>');
     api('/coord/uso?dias=' + dias, { semCopia: true }).then(function (d) {
