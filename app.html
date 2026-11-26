@@ -316,7 +316,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-26g';
+  var VERSAO = '2026-11-26h';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -489,24 +489,86 @@ body.digitando .chat-campo{bottom:0}
       if (casa) url += (url.indexOf('?') < 0 ? '?' : '&') + 'casa=' + encodeURIComponent(casa);
     }
     var metodo = opts.method || 'GET';
+    var guarda = metodo === 'GET' && !opts.semCopia;
+    // O sinal de uso (sinalUso) é POST mas não muda dado de tela: não conta como escrita.
+    if (metodo !== 'GET' && !opts.semEscrita) { FRESCO = {}; escritaEm = Date.now(); }
+    if (guarda && FRESCO[url] && Date.now() - FRESCO[url].em < 15000) return Promise.resolve(JSON.parse(FRESCO[url].s));
     var h = { 'X-Token': S.token };
     if (opts.json !== undefined) h['Content-Type'] = 'application/json';
-    return fetch(url, { method: metodo, headers: h, body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body, cache: 'no-store', keepalive: !!opts.keepalive })
+    var rede = fetch(url, { method: metodo, headers: h, body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body, cache: 'no-store', keepalive: !!opts.keepalive })
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (d) {
           if (r.status === 401) { var e1 = new Error('Este acesso não abre o app piloto. Use o portal de sempre ou entre com outra senha.'); e1.status = 401; throw e1; }
           if (!r.ok && !(d && d.mensagens)) { var e = new Error(d.erro || 'Erro ' + r.status); e.status = r.status; throw e; }
-          if (metodo === 'GET' && !opts.semCopia) { guardaCopia(url, d); if (offEm) { offEm = null; pintaOff(); } }
+          if (guarda) {
+            guardaCopia(url, d);
+            try { FRESCO[url] = { em: Date.now(), s: JSON.stringify(d) }; } catch (e2) {}
+            if (offEm) { offEm = null; pintaOff(); }
+          }
           d.__status = r.status;
           return d;
         });
-      }, function () {
-        if (metodo === 'GET' && !opts.semCopia) {
-          var c = leCopia(url);
-          if (c) { offEm = c.em; pintaOff(); return c.d; }
-        }
-        var e = new Error('Sem internet agora.'); e.status = 0; throw e;
       });
+    var c = guarda ? leCopia(url) : null;
+    // Falha de rede (sem status) cai na cópia; erro do servidor segue como erro.
+    var semRede = function (er) {
+      if (er && er.status !== undefined) throw er;
+      if (c) { offEm = c.em; pintaOff(); return c.d; }
+      var e = new Error('Sem internet agora.'); e.status = 0; throw e;
+    };
+    if (!c) return rede.catch(semRede);
+    // Troca de tela rápida (26/11/2026, mesma ideia do portal de Medellín):
+    // com cópia no aparelho, a rede tem LENTO_MS (5 s logo depois de gravar
+    // algo); passou disso, a tela abre com a cópia e se redesenha quando o
+    // dado novo chega diferente. Sem chamada a mais ao Worker.
+    var tela = document.body.dataset.tela, espera = Date.now() - escritaEm < 15000 ? 5000 : LENTO_MS;
+    return new Promise(function (pronto, falha) {
+      var feito = false;
+      var t = setTimeout(function () {
+        if (feito) return;
+        feito = true;
+        pronto(c.d);
+        rede.then(function (d) {
+          var mudou = false;
+          try { mudou = JSON.stringify(d) !== JSON.stringify(c.d); } catch (e3) {}
+          if (mudou) redesenhaSeguro(tela);
+        }, function (er) { if (!er || er.status === undefined) { offEm = c.em; pintaOff(); } });
+      }, espera);
+      rede.then(function (d) {
+        if (feito) return;
+        feito = true; clearTimeout(t); pronto(d);
+      }, function (er) {
+        if (feito) return;
+        feito = true; clearTimeout(t);
+        try { pronto(semRede(er)); } catch (x) { falha(x); }
+      });
+    });
+  }
+  var LENTO_MS = 700, FRESCO = {}, escritaEm = 0;
+  // Nada some debaixo do dedo: com janela aberta, campo em foco, texto ainda
+  // não enviado ou o Turno aberto (formulário numa moldura), o app não
+  // redesenha nem recarrega.
+  function momentoSeguro() {
+    if (document.body.dataset.tela === 'turno') return false;
+    if (document.querySelector('dialog[open], .folha-fundo')) return false;
+    var a = document.activeElement;
+    if (a && a.matches && a.matches('input, textarea, select, [contenteditable="true"]')) return false;
+    return !Array.prototype.some.call(document.querySelectorAll('#main input, #main textarea, #main select'), function (el) {
+      if (el.type === 'checkbox' || el.type === 'radio') return el.checked !== el.defaultChecked;
+      if (el.tagName === 'SELECT') return Array.prototype.some.call(el.options, function (o) { return o.selected !== o.defaultSelected; });
+      if (el.type === 'file') return !!el.value;
+      return el.value !== el.defaultValue;
+    });
+  }
+  var redesenhaT = null;
+  function redesenhaSeguro(tela) {
+    clearTimeout(redesenhaT);
+    redesenhaT = setTimeout(function () {
+      if (!PERFIL || document.body.dataset.tela !== tela || !momentoSeguro()) return;
+      var y = window.scrollY;
+      rota();
+      setTimeout(function () { window.scrollTo(0, y); }, 80);
+    }, 250);
   }
 
   // ---------------------------------------------------------------- fila de envios
@@ -1338,7 +1400,7 @@ body.digitando .chat-campo{bottom:0}
     if (!PERFIL) return;
     var dev = ls('portal_device');
     if (!dev) { dev = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); ls('portal_device', dev); }
-    api('/uso', { method: 'POST', json: { device: dev, aparelho: tipoAparelho(), tela: document.body.dataset.tela || 'chat', saindo: !!saindo }, keepalive: !!saindo }).catch(function () {});
+    api('/uso', { method: 'POST', json: { device: dev, aparelho: tipoAparelho(), tela: document.body.dataset.tela || 'chat', saindo: !!saindo }, keepalive: !!saindo, semEscrita: true }).catch(function () {});
   }
   function iniciaUso() {
     sinalUso();
@@ -1446,22 +1508,50 @@ body.digitando .chat-campo{bottom:0}
   }
 
   // ---------------------------------------------------------------- versão
+  // Versão nova (26/11/2026: sozinha, sem botão). A versão vem do mesmo
+  // GET /api/app-iz que o app já pede. Achou outra, baixa o app.html novo,
+  // confere que ele já é mesmo a versão anunciada (o Worker sobe antes do
+  // site, e o Pages leva até 1 min) e guarda na cópia do app-sw.js. Recarrega
+  // só num momento seguro: na próxima troca de tela, ao sair ou voltar para o
+  // app, ou depois de 1 min sem mexer. Volta para a mesma tela e rolagem.
+  var APP_CACHE = 'iz-app-v1', APP_URL = new URL('app.html', location.href).href, NV_TENT = 'app_iz_nv';
+  var versaoPronta = null, conferindo = false, ultimaAcao = Date.now(), mexeu = false;
+  ['pointerdown', 'keydown', 'scroll', 'input'].forEach(function (ev) {
+    document.addEventListener(ev, function () { ultimaAcao = Date.now(); mexeu = true; }, { capture: true, passive: true });
+  });
+  function ssLe(k) { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } }
   function confereVersao() {
+    if (versaoPronta || conferindo || navigator.onLine === false) return;
+    conferindo = true;
     api('', { semCopia: true }).then(function (p) {
-      if (p.versao && p.versao !== VERSAO && ls('app_iz_versao_dispensada') !== p.versao && !document.querySelector('.faixa-versao')) {
-        var f = document.createElement('div');
-        f.className = 'faixa-versao';
-        f.innerHTML = '<span>Nova versão do app disponível.</span><button id="fv-ok">Atualizar</button><button id="fv-x" aria-label="Dispensar">×</button>';
-        document.body.appendChild(f);
-        f.querySelector('#fv-ok').onclick = function () {
-          var fim = function () { location.reload(); };
-          if (window.caches) caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }).then(fim, fim); else fim();
-          setTimeout(fim, 2500);
-        };
-        f.querySelector('#fv-x').onclick = function () { ls('app_iz_versao_dispensada', p.versao); f.remove(); };
-      }
-    }, function () {});
+      if (!p.versao || p.versao === VERSAO) return;
+      var t = ssLe(NV_TENT);
+      if (t && t.v === p.versao && Date.now() - t.em < 10 * 60000) return;
+      return fetch(APP_URL, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : null; }).then(function (html) {
+        if (!html || html.indexOf("var VERSAO = '" + p.versao + "'") < 0) return;
+        var poe = window.caches ? caches.open(APP_CACHE).then(function (c) {
+          return c.put(APP_URL, new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+        }) : Promise.resolve();
+        return poe.then(function () { versaoPronta = p.versao; tentaAtualizar(); }, function () { versaoPronta = p.versao; });
+      });
+    }).catch(function () {}).then(function () { conferindo = false; });
   }
+  function tentaAtualizar(forca) {
+    if (!versaoPronta || !momentoSeguro()) return false;
+    // Recém-aberto e sem toque ainda: entra na hora. Mexendo: espera 1 min parado.
+    if (!forca && mexeu && document.visibilityState === 'visible' && Date.now() - ultimaAcao < 60000) return false;
+    try { sessionStorage.setItem(NV_TENT, JSON.stringify({ v: versaoPronta, em: Date.now(), y: window.scrollY })); } catch (e) {}
+    location.reload();
+    return true;
+  }
+  setInterval(function () { tentaAtualizar(); }, 15000);
+  document.addEventListener('visibilitychange', function () { tentaAtualizar(true); });
+  (function () {
+    var t = ssLe(NV_TENT);
+    if (!t || t.v !== VERSAO) return;
+    try { sessionStorage.removeItem(NV_TENT); } catch (e) {}
+    setTimeout(function () { if (t.y) window.scrollTo(0, t.y); aviso('App atualizado.'); }, 600);
+  })();
 
   // Turno dentro do app: a página do portal numa moldura, sem o topo, a
   // gaveta e a barra de baixo dela (mesma origem, então o app esconde).
@@ -1525,20 +1615,24 @@ body.digitando .chat-campo{bottom:0}
 
   // O app abre sem sinal pelo sw.js do site (mesma pasta), que guarda o HTML
   // visitado. Só em produção: no teste local a API é a mesma origem.
+  // Desde 26/11/2026 o app tem service worker PRÓPRIO (app-sw.js, scope
+  // app.html): cópia primeiro, então abre na hora com Wi-Fi ruim ou sem
+  // internet. O sw.js do site segue cuidando das outras páginas (o Turno).
   if ('serviceWorker' in navigator && /github\.io$/.test(location.hostname)) {
-    navigator.serviceWorker.register('sw.js').catch(function () {});
+    navigator.serviceWorker.register('app-sw.js', { scope: 'app.html' }).catch(function () {});
   }
 
   api('').then(function (p) {
     PERFIL = p;
     if (!p.casa_fixa && ls('app_iz_casa') && !p.casas.some(function (c) { return c.slug === ls('app_iz_casa'); })) ls('app_iz_casa', null);
     desenhaTopo();
-    window.addEventListener('hashchange', rota);
+    // Troca de tela é momento seguro para entrar a versão nova.
+    window.addEventListener('hashchange', function () { if (versaoPronta && tentaAtualizar(true)) return; rota(); });
     rota();
     iniciaUso();
     drena();
     carregaFichas();
-    setTimeout(confereVersao, 4000);
+    setTimeout(confereVersao, 1500);
     setInterval(function () { if (!document.hidden) confereVersao(); }, 10 * 60 * 1000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) confereVersao(); });
   }, function (e) {
