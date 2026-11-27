@@ -14,8 +14,14 @@
  *     revalidando por trás.
  *   - Vídeo e outros domínios (o Worker, fontes): direto, sem passar aqui.
  * Nenhuma chamada a mais ao Worker: dado do Worker não passa por este arquivo.
+ *
+ * v2 (27/11/2026): a casca anterior ao "?nv=" conferia a versão pedindo o
+ * app.html e recebia daqui a cópia velha, então nunca via a versão nova.
+ * Trocar o nome do cache faz o activate apagar o v1 e, só se havia cache
+ * velho, recarregar as telas abertas com a casca nova (guardada no install).
+ * Na primeira instalação não recarrega nada.
  */
-const CACHE = "iz-app-v1";
+const CACHE = "iz-app-v2";
 const PREFIXO = "iz-app-";
 const CASCA = self.registration.scope; // .../app.html
 const ATIVOS = ["app.webmanifest", "icon-192.png", "icon-512.png", "icon-512-maskable.png"];
@@ -24,6 +30,11 @@ function daRede(url) {
   return fetch(url, { cache: "no-store", credentials: "same-origin" }).then((res) =>
     res.redirected ? new Response(res.body, { status: res.status, statusText: res.statusText, headers: res.headers }) : res
   );
+}
+// Lê só do cache desta versão: caches.match() sem nome procura em todos, e um
+// iz-app-v1 recriado por uma casca velha devolveria a cópia antiga.
+function daCopia(chave) {
+  return caches.open(CACHE).then((c) => c.match(chave)).catch(() => undefined);
 }
 function guarda(chave, res) {
   if (res && res.ok) {
@@ -45,11 +56,22 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((ks) => Promise.all(ks.filter((k) => k.indexOf(PREFIXO) === 0 && k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const velhos = (await caches.keys()).filter((k) => k.indexOf(PREFIXO) === 0 && k !== CACHE);
+    await Promise.all(velhos.map((k) => caches.delete(k)));
+    await self.clients.claim();
+    if (!velhos.length) return;
+    // Recarrega a tela aberta com a casca nova. "?sw=" muda o endereço de
+    // propósito: navegar para o mesmo endereço com #hash só rola até o
+    // trecho e não recarrega. A casca nova tira o "?sw=" e fica no mesmo #hash.
+    const telas = await self.clients.matchAll({ type: "window" });
+    await Promise.all(telas.map((c) => {
+      const u = new URL(c.url);
+      if (u.href.split("?")[0].split("#")[0] !== CASCA || !c.navigate) return null;
+      u.searchParams.set("sw", CACHE);
+      return c.navigate(u.href).catch(() => {});
+    }));
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
@@ -72,7 +94,7 @@ self.addEventListener("fetch", (event) => {
   if (ehCasca) {
     event.respondWith((async () => {
       const rede = daRede(CASCA).then((r) => guarda(CASCA, r)).catch(() => null);
-      const copia = await caches.match(CASCA);
+      const copia = await daCopia(CASCA);
       if (copia) { event.waitUntil(rede); return copia; }
       return (await rede) || new Response("<p style=\"font:16px sans-serif;padding:24px\">Sem internet e sem cópia do app neste aparelho. Abra de novo quando a internet voltar.</p>",
         { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
@@ -80,11 +102,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (ext === "json") {
-    event.respondWith(daRede(req.url).then((r) => guarda(req, r)).catch(() => caches.match(req)));
+    event.respondWith(daRede(req.url).then((r) => guarda(req, r)).catch(() => daCopia(req)));
     return;
   }
   event.respondWith(
-    caches.match(req).then((copia) => {
+    daCopia(req).then((copia) => {
       const rede = daRede(req.url).then((r) => guarda(req, r)).catch(() => copia || Response.error());
       if (copia) { event.waitUntil(rede); return copia; }
       return rede;

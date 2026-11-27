@@ -214,6 +214,31 @@ body[data-tela=chat] main{padding-bottom:110px}
 .nov .btn{justify-content:center;min-height:46px;font-size:15px}
 .nov .nov-x{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
 .nov{position:relative}
+/* Escala (27/11/2026): Minha | Equipe */
+.es-troca{display:flex;gap:4px;padding:4px;background:var(--sup2);border-radius:999px;margin:0 0 14px}
+.es-troca button{flex:1;min-height:40px;border-radius:999px;font-size:14.5px;font-weight:600;color:var(--tx2)}
+.es-troca button[aria-pressed=true]{background:var(--sup);color:var(--tx);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.es-casa{font-size:13px;color:var(--tx3);margin:-6px 0 12px}
+.es-dia{padding:12px 0;border-top:1px solid var(--linha)}
+.blk > .es-dia:first-child{border-top:0;padding-top:2px}
+.es-dia h3{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 6px;font-size:15px;font-weight:600}
+.es-dia h3 small{font-size:13px;font-weight:500;color:var(--tx3)}
+.es-dia.hoje h3{color:var(--verde-tx)}
+.es-mi{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.es-mi .tu{font-size:15px;font-weight:600}
+.es-mi .ho{font-size:15px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.es-com{font-size:13.5px;color:var(--tx2);margin-top:3px;overflow-wrap:anywhere}
+.es-folga{display:inline-block;font-size:13.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--ambar-bg);color:var(--ambar-tx)}
+.es-sem{font-size:13.5px;color:var(--tx3)}
+.es-tu{padding:5px 0;font-size:14.5px}
+.es-tu > b{display:block;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
+.es-tu ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;min-width:0}
+.es-tu li{display:flex;justify-content:space-between;gap:8px;min-width:0}
+.es-tu li span{min-width:0;overflow-wrap:break-word}
+.es-tu li small{color:var(--tx3);white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px}
+.es-tu .eu{font-weight:700;color:var(--tx)}
+.es-tu.fo > b{color:var(--ambar-tx)}
+.es-tu.fo .nomes{color:var(--tx2);overflow-wrap:break-word}
 .folha .url{width:100%;font-size:13px;background:var(--sup);border:1px solid var(--linha);border-radius:12px;padding:10px 12px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 .folha .bts{display:flex;gap:8px;width:100%}
 /* Avisar erro (26/11/2026) */
@@ -475,7 +500,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27o';
+  var VERSAO = '2026-11-27q';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -819,7 +844,6 @@ body.digitando .chat-campo{bottom:0}
     ['regimento.html', 'Regimento', 'regra norma uniforme'],
     ['index.html', 'Portal completo', 'inicio portal home']
   ];
-  function temEscala() { return PERFIL && PERFIL.pessoa && (PERFIL.nivel === 'bartender' || PERFIL.nivel === 'chefe'); }
   function telasApp() {
     var t = [['#/chat', 'Chat do dia', 'chat pergunta ia conversa'], ['#/fichas', 'Fichas técnicas', 'ficha receita drink cocktail'], ['#/performance', 'Ranking', 'performance ranking vendas quantidade meta'], ['#/eventos', 'Eventos', 'evento reserva agenda festa'], ['#/conteudo', 'Conteúdo', 'conteúdo treinamento módulo escola aula glossário'], ['#/mais', 'Mais', 'conta tema sair trocar instalar']];
     if (temEscala()) t.push(['#/escala', 'Minha escala', 'escala folga turno horario']);
@@ -841,7 +865,7 @@ body.digitando .chat-campo{bottom:0}
       '<div class="topo-l1"><div class="quem-l">' + casaHtml + '<span class="pill atencao" id="pill-off" hidden></span></div>' +
       '<div class="ics"><button class="btn-ic" id="bt-busca" aria-label="Buscar" title="Buscar">' + ic('busca', 20) + '</button>' +
       '<button class="btn-ic" id="bt-qr" aria-label="Compartilhar o app (link e QR code)" title="Compartilhar">' + ic('qr', 20) + '</button>' +
-      (temEscala() ? '<a class="btn-ic" href="#/escala" aria-label="Minha escala" title="Minha escala">' + ic('cal', 20) + '</a>' : '<a class="btn-ic" href="#/eventos" aria-label="Eventos" title="Eventos">' + ic('cal', 20) + '</a>') +
+      (temEscala() ? '<a class="btn-ic" href="#/escala" aria-label="Escala" title="Escala">' + ic('cal', 20) + '</a>' : '<a class="btn-ic" href="#/eventos" aria-label="Eventos" title="Eventos">' + ic('cal', 20) + '</a>') +
       '<a class="btn-ic" href="#/mais" aria-label="Conta e mais opções" title="Conta">' + ic('conta', 20) + '</a></div></div>';
     pintaOff();
     var sel = document.getElementById('sel-casa');
@@ -956,7 +980,7 @@ body.digitando .chat-campo{bottom:0}
       return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2]) + i[1] + sel + '</a>';
     }).join('');
     var lado = [['#/chat', 'Chat do dia', 'chat', 'chat'], ['#/fichas', 'Fichas técnicas', 'fichas', 'fichas'], ['#/performance', 'Ranking', 'ranking', 'performance'], ['#/eventos', 'Eventos', 'cal', 'eventos']];
-    if (temEscala()) lado.push(['#/escala', 'Minha escala', 'cal', 'escala']);
+    if (temEscala()) lado.push(['#/escala', 'Escala', 'cal', 'escala']);
     if (PERFIL && PERFIL.nivel === 'coord') lado.push(['#/coord', 'Perguntas da equipe', 'chat', 'coord']);
     // Acessos (26/11/2026): a página do portal, só para o dono, mesma regra do Uso.
     if (PERFIL && PERFIL.dono) lado.push(['#/uso', 'Uso do app', 'relogio', 'uso'], ['#/correcoes', 'Avisos de erro', 'alerta', 'correcoes'], ['acessos.html', 'Acessos', 'conta', 'acessos']);
@@ -1749,6 +1773,7 @@ body.digitando .chat-campo{bottom:0}
   // id mais novo. Mais > Novidades do app reabre a lista inteira.
   // Nunca valor em reais nem telefone aqui.
   var NOVIDADES = [
+    { id: '2026-11-27q', i: 'cal', t: 'Escala no topo', x: 'O calendário no alto da tela abre a Escala dos próximos 7 dias: a sua, com turno, horário e com quem você trabalha, e a da equipe inteira.' },
     { id: '2026-11-27n', i: 'estrela', t: 'Novo nome: Site mobile Grupo IZ', x: 'O app novo deixou de ser piloto: agora é o Site mobile do Grupo IZ, a versão do site feita para o celular.' },
     { id: '2026-11-27m', i: 'baixar', t: 'Aviso de versão nova', x: 'Quando sair versão nova, aparece uma faixa no topo com o botão Atualizar agora. Também dá para conferir em Mais > Atualizar o app.' },
     { id: '2026-11-27l', i: 'estrela', t: 'Este aviso de novidades', x: 'Quando o app mudar, ele mostra aqui o que mudou. Para rever, toque em Mais e depois em Novidades do app.' },
@@ -1843,22 +1868,66 @@ body.digitando .chat-campo{bottom:0}
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
-  // ---------------------------------------------------------------- minha escala
+  // ---------------------------------------------------------------- escala
+  // Escala (27/11/2026, pedido do Rodrigo): o ícone do topo abre a escala dos
+  // próximos 7 dias pela versão oficial. "Minha" põe a da pessoa em evidência
+  // (turno, horário e com quem trabalha); "Equipe" mostra a casa inteira, uma
+  // linha por turno e a de folga. Quem vê a Equipe decide o Worker
+  // (ESCALA_EQUIPE_NIVEIS em app_iz.js). A escolha fica guardada na sessão.
+  var ES_ABA = 'app_iz_escala_aba';
+  function esAba(v) { try { if (v === undefined) return sessionStorage.getItem(ES_ABA); sessionStorage.setItem(ES_ABA, v); } catch (e) { return null; } }
+  function temEscala() { return !!PERFIL && (PERFIL.nivel === 'coord' || PERFIL.nivel === 'chefe' || PERFIL.nivel === 'bartender'); }
   function telaEscala() {
     if (!temEscala()) return telaChat('');
     carregando('escala');
-    api(WORKER + '/api/escala/minha').then(function (d) {
-      var hoje = new Date(); var hj = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
-      var dias = d.dias || [];
+    api('/escala').then(function (d) {
+      var cab = '<div class="cab"><h1>Escala</h1><p>Próximos 7 dias, pela escala oficial.</p></div>';
+      if (d.precisaCasa) { moldura('escala', cab + '<div class="blk"><p class="vazio">Escolha uma casa no topo para ver a escala.</p></div>'); return; }
+      if (d.semConfig) { moldura('escala', cab + '<div class="blk"><p class="vazio">A escala desta casa ainda não está no portal.</p></div>'); return; }
+      var temMinha = !!d.minha, temEquipe = !!d.equipe;
+      var aba = esAba() || 'minha';
+      if (aba === 'equipe' && !temEquipe) aba = 'minha';
+      if (aba === 'minha' && !temMinha && temEquipe) aba = 'equipe';
+      var hj = d.hoje;
+      function rotDia(data) {
+        return (data === hj ? 'Hoje' : data === somaDiasIso(hj, 1) ? 'Amanhã' : SEMANA_LONGA[new Date(data + 'T12:00:00').getDay()]);
+      }
+      function corpoMinha() {
+        return '<div class="blk">' + d.minha.map(function (x) {
+          var dir;
+          if (x.sem) dir = '<span class="es-sem">Fora da escala</span>';
+          else if (x.folga) dir = '<span class="es-folga">Folga</span>';
+          else dir = '<div class="es-mi"><span class="tu">' + esc(x.turno || 'Trabalho') + '</span><span class="ho">' + esc(x.horario) + '</span></div>' +
+            '<div class="es-com">' + (x.com.length ? 'Com ' + esc(x.com.join(', ')) : 'Sem mais ninguém no turno') + '</div>';
+          return '<div class="es-dia' + (x.data === hj ? ' hoje' : '') + '"><h3>' + rotDia(x.data) + '<small>' + dataCurta(x.data) + '</small></h3>' + dir + '</div>';
+        }).join('') + '</div>';
+      }
+      function corpoEquipe() {
+        return '<div class="blk">' + d.equipe.map(function (x) {
+          var linhas = x.turnos.map(function (t) {
+            return '<div class="es-tu"><b>' + esc(t.turno) + '</b><ul>' + t.pessoas.map(function (p) {
+              return '<li><span' + (p.eu ? ' class="eu"' : '') + '>' + esc(p.nome) + '</span><small>' + esc(p.horario) + '</small></li>';
+            }).join('') + '</ul></div>';
+          }).join('');
+          if (x.folga.length) linhas += '<div class="es-tu fo"><b>Folga</b><span class="nomes">' + x.folga.map(function (p) {
+            return p.eu ? '<b class="eu">' + esc(p.nome) + '</b>' : esc(p.nome);
+          }).join(', ') + '</span></div>';
+          if (!linhas) linhas = '<span class="es-sem">Sem escala lançada para este dia.</span>';
+          return '<div class="es-dia' + (x.data === hj ? ' hoje' : '') + '"><h3>' + rotDia(x.data) + '<small>' + dataCurta(x.data) + '</small></h3>' + linhas + '</div>';
+        }).join('') + '</div>';
+      }
+      var troca = temMinha && temEquipe
+        ? '<div class="es-troca" role="group" aria-label="Qual escala"><button type="button" data-es="minha" aria-pressed="' + (aba === 'minha') + '">Minha</button><button type="button" data-es="equipe" aria-pressed="' + (aba === 'equipe') + '">Equipe</button></div>'
+        : '';
+      var aviso = !temMinha && d.pessoa ? '<p class="es-casa">Não achei ' + esc(d.pessoa.split(' ')[0]) + ' na escala oficial destes dias. Confira com a chefia.</p>' : '';
       var corpo;
-      if (d.sem_config || d.sem_casa) corpo = '<p class="vazio">A escala desta casa ainda não está no portal.</p>';
-      else if (!dias.length) corpo = '<p class="vazio">Não achei você na escala oficial destas semanas. Confira com a chefia.</p>';
-      else corpo = '<div class="blk">' + dias.map(function (x) {
-        var folga = !x.entrada || /folga/i.test(x.turno || '');
-        var hor = folga ? 'Folga' : esc(x.entrada) + '–' + esc(x.saida || '') + (x.entrada2 ? ' e ' + esc(x.entrada2) + '–' + esc(x.saida2 || '') : '');
-        return '<div class="linha' + (x.data === hj ? ' hoje' : '') + '"><span class="t">' + (x.data === hj ? 'Hoje' : esc(x.diaSemana || diaSemana(x.data))) + ' · ' + dataCurta(x.data) + (x.turno && !folga ? '<small>' + esc(x.turno) + '</small>' : '') + '</span><span class="v">' + (folga ? '<span class="pill ok">Folga</span>' : hor) + '</span></div>';
-      }).join('') + '</div>';
-      moldura('escala', '<div class="cab"><h1>Minha escala</h1><p>Escala oficial desta semana e das próximas.</p></div>' + corpo);
+      if (aba === 'equipe') corpo = corpoEquipe();
+      else if (temMinha) corpo = corpoMinha();
+      else corpo = '<div class="blk"><p class="vazio">Não achei você na escala oficial destes dias. Confira com a chefia.</p></div>';
+      var c = moldura('escala', cab + troca + (aba === 'equipe' ? aviso : '') + corpo);
+      c.querySelectorAll('[data-es]').forEach(function (b) {
+        b.addEventListener('click', function () { esAba(b.dataset.es); telaEscala(); });
+      });
     }, function (e) { erroTela('escala', e); });
   }
 
@@ -2115,7 +2184,8 @@ body.digitando .chat-campo{bottom:0}
   // ao aviso do Claude") aparece uma faixa no topo com Atualizar agora; a
   // recarga sozinha só acontece na troca de tela e com o app escondido, num
   // momento seguro. Volta para a mesma tela e rolagem.
-  var APP_CACHE = 'iz-app-v1', APP_URL = new URL('app.html', location.href).href, NV_TENT = 'app_iz_nv';
+  var APP_CACHE = 'iz-app-v2',  // igual ao CACHE do app-sw.js
+      APP_URL = new URL('app.html', location.href).href, NV_TENT = 'app_iz_nv';
   var versaoPronta = null, conferindo = false, ultimaAcao = Date.now(), mexeu = false;
   ['pointerdown', 'keydown', 'scroll', 'input'].forEach(function (ev) {
     document.addEventListener(ev, function () { ultimaAcao = Date.now(); mexeu = true; }, { capture: true, passive: true });
@@ -2123,6 +2193,7 @@ body.digitando .chat-campo{bottom:0}
   function ssLe(k) { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } }
   function confereVersao() {
     if (versaoPronta || conferindo || navigator.onLine === false) return;
+    procuraSwNovo();
     conferindo = true;
     api('', { semCopia: true }).then(function (p) {
       if (!p.versao || p.versao === VERSAO) return;
@@ -2318,6 +2389,13 @@ body.digitando .chat-campo{bottom:0}
   // internet. O sw.js do site segue cuidando das outras páginas (o Turno).
   if ('serviceWorker' in navigator && /github\.io$/.test(location.hostname)) {
     navigator.serviceWorker.register('app-sw.js', { scope: 'app.html' }).catch(function () {});
+  }
+  // Volta da troca de cache do app-sw.js (?sw=iz-app-v2): tira o parâmetro e fica no mesmo #hash.
+  if (/[?&]sw=/.test(location.search)) { try { history.replaceState(history.state, '', location.pathname + location.hash); } catch (e) {} }
+  // Pede ao navegador que procure o app-sw.js novo agora. Sem isto ele só
+  // procura quando o app abre do zero, e voltar pelo alternador não conta.
+  function procuraSwNovo() {
+    try { if (navigator.serviceWorker) navigator.serviceWorker.getRegistration('app.html').then(function (r) { if (r) r.update().catch(function () {}); }, function () {}); } catch (e) {}
   }
 
   // Foto da ficha em tela cheia (26/11): fundo escuro, fecha com toque, Esc ou
