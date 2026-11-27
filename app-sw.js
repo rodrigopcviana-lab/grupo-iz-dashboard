@@ -64,6 +64,10 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(daRede(req.url));
     return;
   }
+  // app.html?nv=<versão> (27/11/2026): é a casca conferindo se a versão nova
+  // já está no site. Vai direto à rede; pela regra da casca abaixo voltaria a
+  // cópia velha e a versão nova só entrava ao fechar e abrir o app.
+  if (url.searchParams.has("nv")) return;
   const ehCasca = req.mode === "navigate" || url.href.split("?")[0].split("#")[0] === CASCA;
   if (ehCasca) {
     event.respondWith((async () => {

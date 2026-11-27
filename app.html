@@ -197,6 +197,20 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .qr .q svg{width:100%;height:100%;display:block}
 .qr .q svg path,.qr .q svg rect[fill="#000000"]{fill:#111}
 .qr small{color:var(--tx3);font-size:12.5px}
+/* Novidades (27/11/2026) */
+.nov{align-items:stretch;max-height:86vh;overflow-y:auto}
+.nov .pega{align-self:center}
+.nov h3{text-align:left}
+.nov .nov-sub{text-align:left;margin-top:-6px}
+.nov ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.nov li{display:flex;gap:12px;align-items:flex-start}
+.nov li .ati{width:36px;height:36px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--ambar-bg);color:var(--ambar-tx)}
+.nov li b{display:block;font-size:15px;font-weight:600}
+.nov li span.tx{display:block;font-size:14px;line-height:1.45;color:var(--tx2);margin-top:2px}
+.nov li small{display:block;font-size:12px;color:var(--tx3);margin-top:2px}
+.nov .btn{justify-content:center;min-height:46px;font-size:15px}
+.nov .nov-x{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
+.nov{position:relative}
 .folha .url{width:100%;font-size:13px;background:var(--sup);border:1px solid var(--linha);border-radius:12px;padding:10px 12px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 .folha .bts{display:flex;gap:8px;width:100%}
 /* Avisar erro (26/11/2026) */
@@ -447,7 +461,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27k';
+  var VERSAO = '2026-11-27l';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -1713,6 +1727,61 @@ body.digitando .chat-campo{bottom:0}
     pinta();
   }
 
+  // ---------------------------------------------------------------- novidades
+  // O que mudou no app (27/11/2026, pedido do Rodrigo: todos recebem o aviso e
+  // a explicação). A mais nova no topo; id = versão em que entrou, então dá
+  // para comparar como texto. "tela" limita a quem tem aquela tela. Ao abrir,
+  // mostra até 6 que a pessoa não viu; Entendi, X, toque fora ou Esc gravam o
+  // id mais novo. Mais > Novidades do app reabre a lista inteira.
+  // Nunca valor em reais nem telefone aqui.
+  var NOVIDADES = [
+    { id: '2026-11-27l', i: 'estrela', t: 'Este aviso de novidades', x: 'Quando o app mudar, ele mostra aqui o que mudou. Para rever, toque em Mais e depois em Novidades do app.' },
+    { id: '2026-11-27k', i: 'livro', t: 'Conteúdo na bola dourada', x: 'A bola dourada no canto de baixo, à esquerda, abre o Conteúdo: os módulos da Escola de Bar em partes curtas e o glossário do bar.' },
+    { id: '2026-11-27j', i: 'ranking', t: 'Ranking em pódio', x: 'Os 3 drinks que mais saem ficam no pódio. Na lista, a seta mostra quem subiu ou desceu em relação ao período anterior.', tela: 'performance' },
+    { id: '2026-11-27h', i: 'som', t: 'Ouvir com voz melhor', x: 'O botão Ouvir lê as respostas do chat com a voz em português mais natural que o seu celular tiver.' },
+    { id: '2026-11-27g', i: 'copo', t: 'Controle ao lado do Chat', x: 'Copos, insumos, equipamentos e patrimônio da casa ficam numa tela só, no botão Controle da barra de baixo.' },
+    { id: '2026-11-27e', i: 'chat', t: 'Chat no meio da barra', x: 'O Chat do dia voltou para o centro da barra de baixo, no botão elevado.' },
+    { id: '2026-11-27d', i: 'alerta', t: 'Avisar um erro', x: 'Achou algo errado numa ficha ou no app? Use "Achou um erro nesta ficha?" ou Mais > Avisar um erro no app. A coordenação confere antes de mudar.' },
+    { id: '2026-11-27c', i: 'fichas', t: 'Foto da ficha inteira', x: 'A foto da ficha aparece inteira. Toque nela para ver em tela cheia.', tela: 'fichas' },
+    { id: '2026-11-27a', i: 'chat', t: 'Respostas com a fonte', x: 'As respostas do chat mostram de onde veio a informação, com link, e sugerem a próxima pergunta.' },
+    { id: '2026-11-26h', i: 'baixar', t: 'Abre sem internet', x: 'O app abre mesmo sem sinal, com a última cópia, e se atualiza sozinho quando sai versão nova.' }
+  ];
+  var NOV_VISTO = 'app_iz_novidades_visto';
+  var TELAS_APP = ['chat', 'fichas', 'performance', 'eventos', 'controle', 'turno', 'mais', 'conteudo'];
+  function novidadesDoNivel() {
+    // Hoje todos os níveis do app têm Ranking e Fichas; 'tela' fica para quando não tiverem.
+    return NOVIDADES.filter(function (n) { return !n.tela || TELAS_APP.indexOf(n.tela) >= 0; });
+  }
+  function abreNovidades(todas) {
+    if (document.getElementById('nov-fundo')) return;
+    var lista = novidadesDoNivel(), visto = ls(NOV_VISTO);
+    if (!todas) lista = lista.filter(function (n) { return !visto || n.id > visto; }).slice(0, 6);
+    if (!lista.length) return;
+    var f = document.createElement('div');
+    f.className = 'folha-fundo'; f.id = 'nov-fundo';
+    f.innerHTML = '<div class="folha nov" role="dialog" aria-modal="true" aria-labelledby="nov-tit"><div class="pega"></div>' +
+      '<button type="button" class="nov-x" data-nov-x aria-label="Fechar">' + ic('x', 20) + '</button>' +
+      '<h3 id="nov-tit">O que mudou no app</h3><p class="nov-sub">' + (todas ? 'Tudo o que entrou nos últimos dias.' : 'Desde a última vez que você abriu.') + '</p>' +
+      '<ul>' + lista.map(function (n) {
+        return '<li><span class="ati">' + ic(n.i, 18) + '</span><span><b>' + esc(n.t) + '</b><span class="tx">' + esc(n.x) + '</span>' + '</span></li>';
+      }).join('') + '</ul>' +
+      '<button type="button" class="btn" data-nov-x>Entendi</button></div>';
+    document.body.appendChild(f);
+    function fecha() { ls(NOV_VISTO, NOVIDADES[0].id); f.remove(); document.removeEventListener('keydown', esc1); }
+    function esc1(e) { if (e.key === 'Escape') fecha(); }
+    document.addEventListener('keydown', esc1);
+    f.addEventListener('click', function (e) { if (e.target === f || (e.target.closest && e.target.closest('[data-nov-x]'))) fecha(); });
+    var ok = f.querySelector('.btn'); if (ok) setTimeout(function () { ok.focus(); }, 250);
+  }
+  // Ao abrir: espera a tela assentar e só aparece num momento seguro (sem
+  // campo em uso, sem outra janela, fora do Turno e do Controle).
+  function novidadesAoAbrir(tentativa) {
+    tentativa = tentativa || 0;
+    if (versaoPronta) return; // vai recarregar com a versão nova; mostra depois
+    if (!momentoSeguro()) { if (tentativa < 12) setTimeout(function () { novidadesAoAbrir(tentativa + 1); }, 5000); return; }
+    abreNovidades(false);
+  }
+
   // ---------------------------------------------------------------- eventos
   function telaEventos() {
     carregando('eventos');
@@ -1845,6 +1914,7 @@ body.digitando .chat-campo{bottom:0}
       '<div class="blk"><h2>Portal</h2><div class="grade-at">' + PAGINAS.filter(function (p) { return p[0].charAt(0) !== '#' && p[0] !== 'cocktails.html' && p[0] !== 'eventos.html'; }).map(function (p) { return tile(p[0], p[1].replace(/ \(página completa\)/, ''), ICP[p[0]] || 'portal'); }).join('') + '</div></div>' +
       '<div class="blk"><h2>App</h2>' +
         (instalado ? '' : '<button class="linha" id="bt-inst"><span class="t">Instalar na tela inicial<small>' + (ios ? 'No iPhone: Compartilhar, depois "Adicionar à Tela de Início"' : 'Abre como app, sem a barra do navegador') + '</small></span><span class="v">' + ic('baixar', 18) + '</span></button>') +
+        '<button class="linha" id="bt-nov"><span class="t">Novidades do app<small>O que mudou nos últimos dias</small></span><span class="v">' + ic('estrela', 18) + '</span></button>' +
         '<button class="linha" data-erro-app><span class="t">Avisar um erro no app<small>Ficha, ranking, evento ou qualquer coisa errada</small></span><span class="v">' + ic('alerta', 18) + '</span></button>' +
         '<button class="linha" id="bt-comp"><span class="t">Compartilhar o app<small>Link e QR code para abrir no celular</small></span><span class="v">' + ic('qr', 18) + '</span></button>' +
         '<a class="linha" href="index.html?trocar=1"><span class="t">Trocar acesso</span><span class="v">' + ic('sair', 18) + '</span></a>' +
@@ -1858,6 +1928,7 @@ body.digitando .chat-campo{bottom:0}
       else aviso(ios ? 'Toque em Compartilhar e depois em "Adicionar à Tela de Início".' : 'No menu do navegador, escolha "Instalar app" ou "Adicionar à tela inicial".');
     };
     c.querySelector('#bt-comp').addEventListener('click', abreCompartilhar);
+    c.querySelector('#bt-nov').addEventListener('click', function () { abreNovidades(true); });
   }
 
   // ---------------------------------------------------------------- coordenação
@@ -2037,7 +2108,8 @@ body.digitando .chat-campo{bottom:0}
       if (!p.versao || p.versao === VERSAO) return;
       var t = ssLe(NV_TENT);
       if (t && t.v === p.versao && Date.now() - t.em < 10 * 60000) return;
-      return fetch(APP_URL, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : null; }).then(function (html) {
+      // ?nv= vai direto à rede (app-sw.js): sem ele o service worker devolvia a cópia velha.
+      return fetch(APP_URL + '?nv=' + encodeURIComponent(p.versao), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : null; }).then(function (html) {
         if (!html || html.indexOf("var VERSAO = '" + p.versao + "'") < 0) return;
         var poe = window.caches ? caches.open(APP_CACHE).then(function (c) {
           return c.put(APP_URL, new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
@@ -2232,6 +2304,7 @@ body.digitando .chat-campo{bottom:0}
     drena();
     carregaFichas();
     setTimeout(confereVersao, 1500);
+    setTimeout(novidadesAoAbrir, 2500);
     setInterval(function () { if (!document.hidden) confereVersao(); }, 10 * 60 * 1000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) confereVersao(); });
   }, function (e) {
