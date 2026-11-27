@@ -318,6 +318,8 @@ body.digitando .chat-campo{bottom:0}
 .bolha.t-aviso{background:var(--ambar-bg);color:var(--ambar-tx)}
 .linha.hoje .t{font-weight:600;color:var(--verde-tx)}
 .turno-fr{display:block;width:100%;border:0;border-radius:14px;background:var(--bg);min-height:320px}
+/* Controle: as quatro partes cabem a 375px quebrando a linha, sem rolar de lado */
+.ctrl-partes{flex-wrap:wrap;overflow:visible;margin-bottom:6px}
 .login{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px calc(32px + env(safe-area-inset-bottom));max-width:420px;margin:0 auto}
 .login h1{font-family:var(--serif);font-weight:600;font-size:34px;margin:0 0 6px}
 .login>p{margin:0 0 28px;color:var(--tx3)}
@@ -360,7 +362,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27e';
+  var VERSAO = '2026-11-27f';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -434,8 +436,7 @@ body.digitando .chat-campo{bottom:0}
         var on = document.documentElement.classList.toggle('escuro');
         ls('app_iz_tema', on ? 'escuro' : 'claro');
         poeTemaFlut();
-        var fr = document.getElementById('turno-fr');
-        if (fr) temaTurno(fr);
+        ['turno-fr', 'ctrl-fr'].forEach(function (id) { var fr = document.getElementById(id); if (fr) temaTurno(fr); });
       });
       document.body.appendChild(b);
     }
@@ -592,10 +593,10 @@ body.digitando .chat-campo{bottom:0}
   }
   var LENTO_MS = 700, FRESCO = {}, escritaEm = 0;
   // Nada some debaixo do dedo: com janela aberta, campo em foco, texto ainda
-  // não enviado ou o Turno aberto (formulário numa moldura), o app não
+  // não enviado ou o Turno/Controle aberto (formulário numa moldura), o app não
   // redesenha nem recarrega.
   function momentoSeguro() {
-    if (document.body.dataset.tela === 'turno') return false;
+    if (document.body.dataset.tela === 'turno' || document.body.dataset.tela === 'controle') return false;
     if (document.querySelector('dialog[open], .folha-fundo, .fd-visor.aberto')) return false;
     var a = document.activeElement;
     if (a && a.matches && a.matches('input, textarea, select, [contenteditable="true"]')) return false;
@@ -693,8 +694,9 @@ body.digitando .chat-campo{bottom:0}
   var PAGINAS = [
     ['cocktails.html', 'Fichas técnicas (página completa)', 'ficha receita drink cocktail'],
     ['#/turno', 'Turno', 'abertura fechamento relatorio turno'],
-    ['contagem.html', 'Contagem', 'contar estoque contagem semanal'],
-    ['contagem-copos.html', 'Contagem de copos', 'copo vidraria quebra'],
+    ['#/controle', 'Controle', 'controle equipamentos patrimonio vidraria inventario'],
+    ['#/controle/insumos', 'Contagem de insumos', 'contar estoque contagem semanal insumo'],
+    ['#/controle/copos', 'Contagem de copos', 'copo vidraria quebra'],
     ['estoque.html', 'Estoque', 'estoque minimo falta'],
     ['transferencias.html', 'Transferências', 'transferir outra casa emprestar'],
     ['registro.html', 'Registrar com foto ou áudio', 'ocorrencia solicitacao pedido demanda problema foto audio'],
@@ -846,7 +848,7 @@ body.digitando .chat-campo{bottom:0}
     if (temEscala()) lado.push(['#/escala', 'Minha escala', 'cal', 'escala']);
     if (PERFIL && PERFIL.nivel === 'coord') lado.push(['#/coord', 'Perguntas da equipe', 'chat', 'coord']);
     if (PERFIL && PERFIL.dono) lado.push(['#/uso', 'Uso do app', 'relogio', 'uso'], ['#/correcoes', 'Avisos de erro', 'alerta', 'correcoes']);
-    lado.push(['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
+    lado.push(['#/controle', 'Controle', 'copo', 'controle'], ['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
     document.getElementById('lado').innerHTML = '<div class="marca">Bares IZ</div>' +
       lado.map(function (i) { var on = i[3] === atual; return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2], 20) + i[1] + (i[3] === 'coord' ? seloCoord() : '') + '</a>'; }).join('');
   }
@@ -1090,7 +1092,7 @@ body.digitando .chat-campo{bottom:0}
         '<button type="button" data-cc="ocorrencia">' + ic('alerta') + '<span><b>Avisar um problema</b><small>Ocorrência para a Central de Demandas</small></span></button>' +
         '<button type="button" data-cc="solicitacao">' + ic('caixa') + '<span><b>Pedir algo</b><small>Solicitação para a Central de Demandas</small></span></button>' +
         '<a href="registro.html">' + ic('estrela') + '<span><b>Registrar com foto ou áudio</b><small>Abre o Registro Rápido</small></span></a>' +
-        '<a href="contagem-copos.html">' + ic('copo') + '<span><b>Copos e quebras</b><small>Contagem de copos</small></span></a>' +
+        '<a href="#/controle/copos">' + ic('copo') + '<span><b>Copos e quebras</b><small>Contagem de copos no Controle</small></span></a>' +
         '<a href="#/turno">' + ic('turno') + '<span><b>Turno</b><small>Abertura e fechamento</small></span></a>' +
       '</div>' +
       '<div class="cc-aviso" id="cc-aviso" hidden></div>' +
@@ -1518,7 +1520,7 @@ body.digitando .chat-campo{bottom:0}
     var tile = function (href, rot, icn, extra) { return '<a href="' + href + '"><span class="ati">' + ic(icn, 20) + '</span>' + esc(rot) + (extra || '') + '</a>'; };
     var noApp = [tile('#/eventos', 'Eventos', 'cal')];
     if (temEscala()) noApp.push(tile('#/escala', 'Minha escala', 'relogio'));
-    noApp.push(tile('#/performance', 'Ranking', 'ranking'), tile('#/fichas', 'Fichas técnicas', 'fichas'), tile('#/turno', 'Turno', 'turno'));
+    noApp.push(tile('#/controle', 'Controle', 'copo'), tile('#/performance', 'Ranking', 'ranking'), tile('#/fichas', 'Fichas técnicas', 'fichas'), tile('#/turno', 'Turno', 'turno'));
     if (PERFIL.nivel === 'coord') noApp.push(tile('#/coord', 'Perguntas da equipe', 'chat', seloCoord()));
     if (PERFIL.dono) noApp.push(tile('#/uso', 'Uso do app', 'relogio'), tile('#/correcoes', 'Avisos de erro', 'alerta', PERFIL.correcoes_pendentes ? '<span class="selo">' + PERFIL.correcoes_pendentes + '</span>' : ''));
     var ICP = { 'contagem.html': 'caixa', 'contagem-copos.html': 'copo', 'estoque.html': 'caixa', 'transferencias.html': 'trocar', 'registro.html': 'camera', 'eventos.html': 'cal', 'treinamentos.html': 'livro', 'regimento.html': 'regra', 'index.html': 'portal', 'cocktails.html': 'fichas' };
@@ -1622,7 +1624,7 @@ body.digitando .chat-campo{bottom:0}
     if (dia === ontem) return 'ontem, ' + horaMin(iso);
     return dataCurta(dia) + ', ' + horaMin(iso);
   }
-  var NOME_TELA = { chat: 'chat', fichas: 'fichas', performance: 'ranking', turno: 'turno', eventos: 'eventos', escala: 'escala', mais: 'mais', coord: 'perguntas', uso: 'uso', correcoes: 'correcoes', outra: 'outra' };
+  var NOME_TELA = { chat: 'chat', fichas: 'fichas', performance: 'ranking', turno: 'turno', eventos: 'eventos', escala: 'escala', controle: 'controle', mais: 'mais', coord: 'perguntas', uso: 'uso', correcoes: 'correcoes', outra: 'outra' };
   var NOME_NIVEL = { equipe: 'Equipe', bartender: 'Bartender', chefe: 'Chefe de bar', coord: 'Coordenação' };
 
   function telaUso() {
@@ -1750,7 +1752,13 @@ body.digitando .chat-campo{bottom:0}
   // gaveta e a barra de baixo dela (mesma origem, então o app esconde).
   function telaTurno() {
     moldura('turno', '<iframe class="turno-fr" id="turno-fr" title="Turno" src="turno.html?solo=1"></iframe>');
-    var fr = document.getElementById('turno-fr');
+    portalNaMoldura(document.getElementById('turno-fr'), '');
+  }
+
+  // Página do portal dentro do app (Turno e Controle): esconde o topo, a
+  // gaveta e o chat do portal, ajusta a altura à tela e usa as cores do app.
+  // `css` acrescenta o que mais esconder naquela página.
+  function portalNaMoldura(fr, css) {
     function altura() {
       if (!document.body.contains(fr)) { window.removeEventListener('resize', altura); return; }
       var nav = document.getElementById('barra-nav');
@@ -1763,11 +1771,64 @@ body.digitando .chat-campo{bottom:0}
       try {
         var d = fr.contentDocument, st = d.createElement('style');
         st.textContent = '.volta-mural,header.topo,.gv-fundo,#gaveta,.bx-wrap,#sino-pop,#ia-aba,#ia-painel,#prompt-caixa,p.nota,#atualiza-atalho,#ver-nova{display:none!important}' +
-          'body{padding-top:4px!important;padding-bottom:24px!important}';
+          'body{padding-top:4px!important;padding-bottom:24px!important}' + css;
         d.head.appendChild(st);
       } catch (e) {}
       temaTurno(fr);
       altura();
+    });
+  }
+
+  // ---------------------------------------------------------------- controle
+  // Controle (26/11/2026, pedido do Rodrigo): copos, insumos e equipamentos
+  // num lugar só, como o Controle do Bento. Cada parte é a página que já
+  // existe no portal (Contagens e Inventário), aberta dentro do app como o
+  // Turno; as abas do portal viram os botões daqui. Equipamentos e
+  // Patrimônio: só chefe e coordenação, a mesma regra de inventario.html (o
+  // servidor confere de novo).
+  var CTRL_PARTES = [
+    ['copos', 'Copos', 'contagens.html?tab=copos', null],
+    ['insumos', 'Insumos', 'contagens.html?tab=insumos', null],
+    ['equipamentos', 'Equipamentos', 'inventario.html?tab=equipamentos', ['chefe', 'coord']],
+    ['patrimonio', 'Patrimônio', 'inventario.html?tab=patrimonio', ['chefe', 'coord']]
+  ];
+  function partesControle() { return CTRL_PARTES.filter(function (p) { return !p[3] || p[3].indexOf(PERFIL.nivel) >= 0; }); }
+  function telaControle(parte) {
+    var partes = partesControle();
+    var atual = partes.filter(function (p) { return p[0] === parte; })[0] || partes[0];
+    var casa = casaAtual();
+    var src = atual[2] + '&solo=1' + (casa ? '&casa=' + encodeURIComponent(casa) : '');
+    var c = moldura('controle',
+      '<div class="cab"><h1>Controle</h1><p>Copos, insumos e equipamentos da casa.</p></div>' +
+      (partes.length > 1 ? '<div class="chips ctrl-partes" role="tablist">' + partes.map(function (p) {
+        var on = p === atual;
+        return '<button type="button" class="chip" role="tab" data-ctrl="' + p[0] + '" aria-pressed="' + on + '" aria-selected="' + on + '">' + esc(p[1]) + '</button>';
+      }).join('') + '</div>' : '') +
+      '<iframe class="turno-fr" id="ctrl-fr" title="' + esc(atual[1]) + '" src="' + src + '"></iframe>');
+    c.querySelectorAll('[data-ctrl]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        // Trocar de parte não empilha histórico: o voltar sai do Controle.
+        history.replaceState(history.state, '', '#/controle/' + b.dataset.ctrl);
+        telaControle(b.dataset.ctrl);
+      });
+    });
+    var fr = document.getElementById('ctrl-fr');
+    portalNaMoldura(fr, 'body>h1,.perf-tabs{display:none!important}');
+    // A página do portal tem o próprio seletor de casa (eq-casa, pt-casa...):
+    // começa na casa escolhida no topo do app. Os de Patrimônio se enchem
+    // depois do servidor, por isso a segunda tentativa.
+    if (casa) fr.addEventListener('load', function () {
+      function poe() {
+        try {
+          fr.contentDocument.querySelectorAll('select[id$="-casa"]').forEach(function (sel) {
+            if (sel.value === casa || sel.dataset.appCasa) return;
+            if (![].some.call(sel.options, function (o) { return o.value === casa; })) return;
+            sel.value = casa; sel.dataset.appCasa = '1';
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          });
+        } catch (e) {}
+      }
+      poe(); setTimeout(poe, 1500);
     });
   }
 
@@ -1801,6 +1862,7 @@ body.digitando .chat-campo{bottom:0}
     if (partes[0] === 'escala') return telaEscala();
     if (partes[0] === 'mais') return telaMais();
     if (partes[0] === 'turno') return telaTurno();
+    if (partes[0] === 'controle') return telaControle(partes[1] || '');
     if (partes[0] === 'coord') return telaCoord();
     if (partes[0] === 'uso') return telaUso();
     if (partes[0] === 'correcoes') return telaCorrecoes();
