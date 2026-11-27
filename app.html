@@ -362,7 +362,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27f';
+  var VERSAO = '2026-11-27g';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -821,14 +821,11 @@ body.digitando .chat-campo{bottom:0}
     if (atual === 'ficha') atual = 'fichas';
     // Barra de baixo (26/11/2026): 3 + Chat + 3. O Chat volta ao meio, com a
     // bola acima da barra, porque é o ponto que fala com todos os dados (pedido
-    // do Rodrigo, depois de testar o botão flutuante). O botão à direita do
-    // Chat é o que cada nível mais usa: a escala de quem tem nome nela, as
-    // perguntas da equipe para a coordenação.
-    var dir = [];
-    if (temEscala()) dir.push(['#/escala', 'Escala', 'relogio', 'escala']);
-    else if (PERFIL && PERFIL.nivel === 'coord') dir.push(['#/coord', 'Perguntas', 'conta', 'coord']);
-    dir.push(['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
-    // Sem Escala nem Perguntas, o lado direito fica com 2 (Turno e Mais).
+    // do Rodrigo, depois de testar o botão flutuante). Ao lado do Chat fica o
+    // Controle, para todos (pedido do Rodrigo, 26/11: é página principal). A
+    // Escala e as Perguntas da equipe ficam no Mais (o selo das perguntas
+    // aguardando vai para o botão Mais).
+    var dir = [['#/controle', 'Controle', 'copo', 'controle'], ['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']];
     var esq = [
       ['#/fichas', 'Fichas', 'fichas', 'fichas'],
       ['#/performance', 'Ranking', 'ranking', 'performance'],
