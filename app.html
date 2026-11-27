@@ -362,7 +362,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27g';
+  var VERSAO = '2026-11-27h';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -898,16 +898,107 @@ body.digitando .chat-campo{bottom:0}
   function nomeCasaIdx(c) { return NOMES_IDX[c] || c; }
 
   // ---------------------------------------------------------------- voz
-  var VOZ = null;
-  function vozPt() { var vs = window.speechSynthesis ? speechSynthesis.getVoices() : []; return vs.filter(function (v) { return /pt[-_]BR/i.test(v.lang); })[0] || vs.filter(function (v) { return /^pt/i.test(v.lang); })[0] || null; }
-  if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = function () { VOZ = vozPt(); };
+  // Ouvir (26/11/2026, pedido do Rodrigo: menos robótico, sem servidor, sem
+  // chave, sem custo). Tudo no aparelho: escolhe a melhor voz pt-BR que o
+  // celular tem (não a primeira), passa o texto para a forma falada (valor,
+  // data, hora, unidade, abreviação) e fala frase por frase, com pausas
+  // naturais. Frases curtas também evitam o Chrome cortar leitura longa.
+  var VOZ = null, FALAS = [], BOTAO_FALA = null;
+  function notaVoz(v) {
+    var n = v.name || '', p = 0;
+    if (/pt[-_]BR/i.test(v.lang)) p += 50; else if (/^pt/i.test(v.lang)) p += 10; else return -1;
+    if (/natural|neural|online/i.test(n)) p += 40;
+    if (/premium|enhanced|aprimorad|melhorad/i.test(n)) p += 35;
+    if (/google/i.test(n)) p += 20;
+    if (v.localService === false) p += 5;
+    if (/compact|espeak|desktop/i.test(n)) p -= 30;
+    if (/bad news|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|albert|bahh|fred|junior|ralph|kathy|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley/i.test(n)) p -= 60;
+    return p;
+  }
+  function vozPt() {
+    var vs = window.speechSynthesis ? speechSynthesis.getVoices() : [], melhor = null, nm = -1;
+    vs.forEach(function (v) { var n = notaVoz(v); if (n > nm) { nm = n; melhor = v; } });
+    return nm >= 0 ? melhor : null;
+  }
+  if ('speechSynthesis' in window) {
+    VOZ = vozPt();
+    if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', function () { VOZ = vozPt(); });
+    else speechSynthesis.onvoiceschanged = function () { VOZ = vozPt(); };
+  }
+  var MESES_FALA = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  function textoFalado(t) {
+    var s = String(t || '');
+    s = s.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]/gu, '')
+      .replace(/[*_`#>~]+/g, '')
+      .replace(/\n\s*(?:[-•·]|\d+[.)])\s+/g, ', ')
+      .replace(/^\s*(?:[-•·]|\d+[.)])\s+/, '')
+      .replace(/\s*\n+\s*/g, '. ');
+    s = s.replace(/R\$\s?(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?/g, function (m, r, c) {
+      var reais = r.replace(/\./g, ''), cent = c ? String(Number((c + '0').slice(0, 2))) : '';
+      var fr = reais + (reais === '1' ? ' real' : ' reais');
+      if (cent && cent !== '0') fr += ' e ' + cent + (cent === '1' ? ' centavo' : ' centavos');
+      return fr;
+    });
+    s = s.replace(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/g, function (m, d, mm, a) {
+      var mi = Number(mm) - 1, di = Number(d);
+      if (mi < 0 || mi > 11 || di < 1 || di > 31) return m;
+      return (di === 1 ? 'primeiro' : di) + ' de ' + MESES_FALA[mi] + (a ? ' de ' + (a.length === 2 ? '20' + a : a) : '');
+    });
+    s = s.replace(/\b(\d{1,2})(?:h|:)(\d{2})\b/g, function (m, h, mi) { return Number(h) + (Number(h) === 1 ? ' hora' : ' horas') + (mi === '00' ? '' : ' e ' + Number(mi)); })
+      .replace(/\b(\d{1,2})h\b/g, function (m, h) { return Number(h) + (Number(h) === 1 ? ' hora' : ' horas'); });
+    var un = { ml: ' mililitros', kg: ' quilos', g: ' gramas', l: ' litros', min: ' minutos', cl: ' centilitros' };
+    s = s.replace(/\b(\d+(?:,\d+)?)\s?(ml|kg|g|l|min|cl)\b/gi, function (m, n, u) { return n + un[u.toLowerCase()]; })
+      .replace(/\b(\d+)\s?x\b/gi, '$1 vezes');
+    var ab = { vc: 'você', vcs: 'vocês', tb: 'também', tbm: 'também', pq: 'porque', obs: 'observação', qtd: 'quantidade', qtde: 'quantidade' };
+    s = s.replace(/\b(vcs?|tbm?|pq|obs|qtde?)\b\.?/gi, function (m, w) { return ab[w.toLowerCase()]; })
+      .replace(/\bn[º°]\s?/gi, 'número ');
+    return s.replace(/:\s*,\s*/g, ': ').replace(/\s+([,.;:!?])/g, '$1').replace(/([.,])\s*[.,]+/g, '$1').replace(/^[\s,.]+/, '').replace(/\s{2,}/g, ' ').trim();
+  }
+  // Frases de até ~220 caracteres: corta no fim da frase; frase longa demais
+  // corta na vírgula ou no espaço.
+  function frasesFala(t) {
+    var partes = textoFalado(t).match(/[^.!?;]+[.!?;]*/g) || [], out = [];
+    partes.forEach(function (p) {
+      p = p.trim();
+      while (p.length > 220) {
+        var corte = p.lastIndexOf(',', 220); if (corte < 80) corte = p.lastIndexOf(' ', 220); if (corte < 40) corte = 220;
+        out.push(p.slice(0, corte + 1).trim()); p = p.slice(corte + 1).trim();
+      }
+      if (p && /[\p{L}\p{N}]/u.test(p)) out.push(p);
+    });
+    return out;
+  }
+  function paraFala() {
+    FALAS = [];
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    if (BOTAO_FALA) BOTAO_FALA.classList.remove('on');
+    BOTAO_FALA = null;
+  }
   function ouvir(texto, botao) {
     if (!('speechSynthesis' in window)) return aviso('Este aparelho não lê em voz alta.');
-    if (speechSynthesis.speaking) { speechSynthesis.cancel(); document.querySelectorAll('.bt-ouvir.on').forEach(function (b) { b.classList.remove('on'); }); return; }
-    var u = new SpeechSynthesisUtterance(String(texto).replace(/\*\*/g, ''));
-    u.lang = 'pt-BR'; VOZ = VOZ || vozPt(); if (VOZ) u.voice = VOZ; u.rate = 1.05;
-    if (botao) { botao.classList.add('on'); u.onend = u.onerror = function () { botao.classList.remove('on'); }; }
-    speechSynthesis.speak(u);
+    // Tocar no mesmo botão para; tocar em outro troca para a mensagem nova.
+    var mesmo = botao && botao === BOTAO_FALA;
+    if (speechSynthesis.speaking || speechSynthesis.pending || BOTAO_FALA) { paraFala(); if (mesmo) return; }
+    var fr = frasesFala(texto);
+    if (!fr.length) return;
+    VOZ = VOZ || vozPt();
+    BOTAO_FALA = botao || null;
+    if (botao) botao.classList.add('on');
+    // Todas entram na fila já no toque: o iPhone só libera a voz dentro do
+    // gesto. FALAS guarda as referências, senão o Chrome perde o onend.
+    FALAS = fr.map(function (f, i) {
+      var u = new SpeechSynthesisUtterance(f);
+      u.lang = 'pt-BR'; if (VOZ) u.voice = VOZ; u.rate = 1; u.pitch = 1;
+      u.onend = function () { if (i === fr.length - 1 && BOTAO_FALA === botao) { if (botao) botao.classList.remove('on'); BOTAO_FALA = null; FALAS = []; } };
+      u.onerror = function (e) {
+        if (e && (e.error === 'interrupted' || e.error === 'canceled')) return;
+        if (BOTAO_FALA === botao) { if (botao) botao.classList.remove('on'); BOTAO_FALA = null; FALAS = []; }
+      };
+      return u;
+    });
+    FALAS.forEach(function (u) { speechSynthesis.speak(u); });
   }
 
   // ---------------------------------------------------------------- chat
