@@ -140,10 +140,10 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .cc-menu small{display:block;color:var(--tx3);font-size:12.5px}
 .chat-espaco{height:112px}
 /* atalhos do bom dia (27/11) */
-.atalhos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
-.atalhos a,.atalhos button{display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 4px 10px;border-radius:16px;background:var(--bg);border:1px solid var(--linha);text-decoration:none;font-size:12px;font-weight:600;line-height:1.2;text-align:center;color:var(--tx);transition:background .15s,transform .1s}
+.atalhos{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.atalhos a,.atalhos button{display:inline-flex;align-items:center;gap:6px;padding:5px 12px 5px 5px;border-radius:999px;background:var(--bg);border:1px solid var(--linha);text-decoration:none;font:inherit;font-size:13px;font-weight:600;line-height:1.2;color:var(--tx);cursor:pointer;transition:background .15s,transform .1s}
 .atalhos a:active,.atalhos button:active{transform:scale(.97);background:var(--sup2)}
-.atalhos .ati{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--verde-bg);color:var(--verde-tx)}
+.atalhos .ati{width:26px;height:26px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--verde-bg);color:var(--verde-tx)}
 .atalhos .ati.al{background:var(--terra-bg);color:var(--terra-tx)}
 .atalhos .ati.am{background:var(--ambar-bg);color:var(--ambar-tx)}
 .bolha.t-bomdia .bl-tx{font-size:15.5px}
@@ -346,7 +346,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27a';
+  var VERSAO = '2026-11-27b';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -857,18 +857,16 @@ body.digitando .chat-campo{bottom:0}
     }).join('');
   }
   // Atalhos do bom dia: [destino, rótulo, ícone, cor]. "aviso:x" abre o modo aviso do chat.
+  // 26/11 (pedido do Rodrigo): só o que não está na barra de baixo. Fichas,
+  // Ranking, Eventos, Escala e Turno já têm botão fixo lá; repetir aqui tirava
+  // a cara de chat. Viraram botões pequenos em linha, não quadrados.
   function atalhosBomDia() {
-    var l = [
-      ['#/turno', 'Turno', 'turno'],
-      ['contagem.html', 'Contagem', 'caixa'],
+    return [
       ['aviso:ocorrencia', 'Avisar problema', 'alerta', 'al'],
       ['aviso:solicitacao', 'Pedir algo', 'sacola', 'am'],
-      ['#/fichas', 'Fichas', 'fichas'],
-      ['contagem-copos.html', 'Copos', 'copo'],
-      ['#/eventos', 'Eventos', 'cal']
+      ['contagem.html', 'Contagem', 'caixa'],
+      ['contagem-copos.html', 'Copos', 'copo']
     ];
-    l.push(temEscala() ? ['#/escala', 'Minha escala', 'relogio'] : ['#/performance', 'Ranking', 'ranking']);
-    return l;
   }
   var NOME_CEREBRO = { numeros: 'Cérebro dos números', cardapio: 'Cérebro do cardápio', operacao: 'Cérebro de operação' };
 
@@ -906,7 +904,7 @@ body.digitando .chat-campo{bottom:0}
       // 27/11: os atalhos do bom dia viram uma grade com ícone (8 funções, em vez
       // dos 4 links do servidor). Avisar e Pedir abrem o modo aviso do próprio chat.
       if (hoje0) h += '<div class="atalhos">' + atalhosBomDia().map(function (a) {
-        var dentro = '<span class="ati' + (a[3] ? ' ' + a[3] : '') + '">' + ic(a[2], 22) + '</span>' + esc(a[1]);
+        var dentro = '<span class="ati' + (a[3] ? ' ' + a[3] : '') + '">' + ic(a[2], 15) + '</span>' + esc(a[1]);
         return a[0].indexOf('aviso:') === 0 ? '<button type="button" data-aviso-ia="' + a[0].slice(6) + '">' + dentro + '</button>' : '<a href="' + esc(a[0]) + '">' + dentro + '</a>';
       }).join('') + '</div>';
     }

@@ -166,7 +166,7 @@
       if (vistos[k] || n >= 5) return;
       vistos[k] = 1; n++;
       var pag = location.pathname.split('/').pop() || 'index.html';
-      var corpo = JSON.stringify({ tipo: 'erro_js', build: '575f2579a001',
+      var corpo = JSON.stringify({ tipo: 'erro_js', build: '4b443f7f04c8',
         ref: pag + ' ' + arq + ':' + (lin || 0) + ':' + (col || 0) + ' ' + msg });
       navigator.sendBeacon(URL_ERRO + '/api/evento', new Blob([corpo], { type: 'text/plain' }));
     } catch (e) {}
@@ -181,7 +181,7 @@
   });
 })();
 </script>
-<link rel="stylesheet" href="portal.css?v=575f2579a001">
+<link rel="stylesheet" href="portal.css?v=4b443f7f04c8">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Painel do bar">
 </head>
 <body>
@@ -664,10 +664,67 @@ window.loginSenha = function (worker, senha) {
                  marca: d.marca || null, pessoa: d.pessoa || null };
       }
       if (d.token) window.sessaoSalvar(d.nivel, d.token, d.exp, d.casa, d.pessoa);
+      // Entrou com a senha inicial (4 últimos números do WhatsApp): guarda o
+      // aviso para a tela oferecer criar uma senha própria.
+      try {
+        if (d.token && d.trocar_senha) localStorage.setItem('portal_trocar_senha', worker);
+        else localStorage.removeItem('portal_trocar_senha');
+      } catch (e) {}
+      setTimeout(window.portalOfereceTrocaSenha, 400);
       return { ok: true, nivel: d.nivel, casa: d.casa, pessoa: d.pessoa, token: d.token };
     });
   }).catch(function () { return { ok: false, status: 0 }; });
 };
+// Criar a própria senha (26/11/2026). Aparece depois do login com a senha
+// inicial; "Agora não" volta a perguntar no próximo login. A senha nova fica
+// no cadastro, e o dono a vê na página de Acessos como as outras.
+window.portalOfereceTrocaSenha = function () {
+  var worker = null;
+  try { worker = localStorage.getItem('portal_trocar_senha'); } catch (e) {}
+  var s = window.sessaoLer();
+  if (!worker || !s || !s.token || window.previaPortal() || document.getElementById('pts-fundo')) return;
+  var fundo = document.createElement('div');
+  fundo.id = 'pts-fundo';
+  fundo.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+  var campo = 'width:100%;box-sizing:border-box;padding:12px;margin:6px 0;border:1px solid var(--border);border-radius:10px;background:var(--card-2);color:var(--text);font:inherit;font-size:16px';
+  fundo.innerHTML =
+    '<div style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:20px;max-width:360px;width:100%;font-family:var(--sans);box-shadow:var(--sombra-card)">' +
+    '<h3 style="margin:0 0 6px;font-size:18px">Crie sua senha</h3>' +
+    '<p style="margin:0 0 10px;color:var(--text-2);font-size:14px">Você entrou com a senha inicial, os 4 últimos números do seu WhatsApp. Crie uma só sua para ninguém entrar no seu lugar.</p>' +
+    '<input id="pts-nova" type="password" autocomplete="new-password" placeholder="Senha nova (mínimo 4)" style="' + campo + '">' +
+    '<input id="pts-conf" type="password" autocomplete="new-password" placeholder="Repita a senha nova" style="' + campo + '">' +
+    '<p id="pts-msg" style="min-height:18px;margin:4px 0;font-size:13px;color:var(--vermelho)"></p>' +
+    '<div style="display:flex;gap:8px;margin-top:6px">' +
+    '<button id="pts-salvar" type="button" style="flex:1;padding:12px;border:0;border-radius:10px;background:var(--acc);color:var(--acc-txt);font:inherit;font-weight:600">Salvar</button>' +
+    '<button id="pts-depois" type="button" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font:inherit">Agora não</button>' +
+    '</div>' +
+    '<p style="margin:10px 0 0;color:var(--text-3);font-size:12px">Não use a senha do banco nem de outras contas.</p>' +
+    '</div>';
+  document.body.appendChild(fundo);
+  var msg = document.getElementById('pts-msg');
+  function fecha() { try { localStorage.removeItem('portal_trocar_senha'); } catch (e) {} fundo.remove(); }
+  document.getElementById('pts-depois').onclick = fecha;
+  document.getElementById('pts-salvar').onclick = function () {
+    var nova = document.getElementById('pts-nova').value.trim();
+    var conf = document.getElementById('pts-conf').value.trim();
+    if (nova.length < 4) { msg.textContent = 'A senha precisa ter pelo menos 4 caracteres.'; return; }
+    if (nova !== conf) { msg.textContent = 'As duas senhas não são iguais.'; return; }
+    var btn = this; btn.disabled = true; msg.textContent = '';
+    fetch(worker + '/api/acesso/minha-senha', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': s.token },
+      body: JSON.stringify({ nova: nova }),
+    }).then(function (r) { return r.json().catch(function () { return {}; }); }).then(function (d) {
+      btn.disabled = false;
+      if (!d || !d.ok) { msg.textContent = (d && d.mensagem) || 'Não deu para salvar. Tente de novo.'; return; }
+      window.sessaoSalvar(s.nivel, d.token, d.exp || s.exp, s.casa, s.pessoa);
+      msg.style.color = 'var(--verde-txt)';
+      msg.textContent = 'Pronto. Da próxima vez, entre com a senha nova.';
+      setTimeout(fecha, 1800);
+    }).catch(function () { btn.disabled = false; msg.textContent = 'Sem conexão. Tente de novo.'; });
+  };
+};
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.portalOfereceTrocaSenha(); });
+else setTimeout(window.portalOfereceTrocaSenha, 0);
 // Gate padrão das páginas protegidas (2026-07-09): a senha é digitada SÓ na
 // home. Sem sessão -> manda pra home logar, com volta automática pra cá.
 // Sessão de nível insuficiente -> NÃO redireciona (senão a home logada
@@ -2887,7 +2944,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <script>
 (function () {
-  var BUILD = '575f2579a001';
+  var BUILD = '4b443f7f04c8';
   var ALVO = 'versao.json';
   var MIN_ENTRE = 60000;      // não martelar a rede a cada troca de aba
   // Dispensar é ADIAR, nunca silenciar. Num app instalado (standalone),
