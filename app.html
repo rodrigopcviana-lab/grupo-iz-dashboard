@@ -259,7 +259,7 @@ body[data-tela=ficha] .tema-flut{display:none}
 body.sem-nav .tema-flut{bottom:calc(16px + env(safe-area-inset-bottom))}
 body.digitando .tema-flut{display:none}
 /* barra de baixo */
-/* 27/11: cinco colunas iguais, rótulos na mesma linha; só a bola do Chat sobe */
+/* 26/11: 3 + Chat + 3 colunas iguais, rótulos na mesma linha; só a bola do Chat sobe */
 .barra-nav{position:fixed;left:0;right:0;bottom:0;z-index:7;background:var(--sup);border-top:1px solid var(--linha);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:0 4px env(safe-area-inset-bottom);height:calc(64px + env(safe-area-inset-bottom))}
 @supports (backdrop-filter:blur(1px)){.barra-nav{background:color-mix(in srgb,var(--sup) 88%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}}
 .barra-nav a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:64px;padding-bottom:10px;font-size:11px;font-weight:500;letter-spacing:.01em;color:var(--tx3);text-decoration:none;-webkit-tap-highlight-color:transparent}
@@ -270,16 +270,9 @@ body.digitando .tema-flut{display:none}
 .barra-nav a.centro .bola svg{width:26px;height:26px}
 .barra-nav a.centro:active .bola{transform:translateX(-50%) scale(.94)}
 .barra-nav a.centro::before{display:none}
+/* com 7 botões (3 + Chat + 3) a coluna tem 52px a 375px: "Perguntas" só cabe em 10.5px */
+.barra-nav.sete a{font-size:10.5px;letter-spacing:0}
 .barra-nav a .selo{position:absolute;top:6px;left:calc(50% + 6px);margin:0}
-/* Chat flutuante (26/11/2026): saiu do meio da barra, que ficou com 3 + 3
-   botões; espelha a chave dia/noite no canto inferior esquerdo, na cor de
-   destaque. Some no próprio chat, na ficha aberta, ao digitar e no computador,
-   onde a coluna da esquerda já tem o Chat. */
-.chat-fl{position:fixed;left:14px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:9;width:52px;height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;background:var(--verde);color:var(--on-verde);border:0;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.24);-webkit-tap-highlight-color:transparent;transition:transform .12s}
-.chat-fl:active{transform:scale(.94)}
-.chat-fl svg{width:24px;height:24px}
-body[data-tela=chat] .chat-fl,body[data-tela=ficha] .chat-fl,body.digitando .chat-fl{display:none}
-body.sem-nav .chat-fl{bottom:calc(16px + env(safe-area-inset-bottom))}
 /* Eventos (26/11/2026): cartões por dia, hora em destaque. */
 .ev-resumo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .ev-resumo div{background:var(--sup);border:1px solid var(--linha);border-radius:16px;padding:12px 10px}
@@ -347,7 +340,6 @@ body.digitando .chat-campo{bottom:0}
   .chat-campo{bottom:0;left:240px}
   .toast{bottom:100px}
   .tema-flut{bottom:20px}
-  .chat-fl{display:none}
   body[data-tela=chat] .tema-flut{bottom:96px}
 }
 @media (prefers-reduced-motion:reduce){.esq,.pensando .pontos i,.cc-bt.gravando{animation:none}}
@@ -368,7 +360,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27d';
+  var VERSAO = '2026-11-27e';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -825,25 +817,31 @@ body.digitando .chat-campo{bottom:0}
 
   function desenhaNav(atual) {
     if (atual === 'ficha') atual = 'fichas';
-    // Barra de baixo (26/11/2026): 3 + 3. O Chat saiu do meio e virou botão
-    // flutuante no canto esquerdo. O quarto botão é o que cada nível mais usa:
-    // a escala de quem tem nome nela, as perguntas da equipe para a coordenação.
-    var itens = [
+    // Barra de baixo (26/11/2026): 3 + Chat + 3. O Chat volta ao meio, com a
+    // bola acima da barra, porque é o ponto que fala com todos os dados (pedido
+    // do Rodrigo, depois de testar o botão flutuante). O botão à direita do
+    // Chat é o que cada nível mais usa: a escala de quem tem nome nela, as
+    // perguntas da equipe para a coordenação.
+    var dir = [];
+    if (temEscala()) dir.push(['#/escala', 'Escala', 'relogio', 'escala']);
+    else if (PERFIL && PERFIL.nivel === 'coord') dir.push(['#/coord', 'Perguntas', 'conta', 'coord']);
+    dir.push(['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
+    // Sem Escala nem Perguntas, o lado direito fica com 2 (Turno e Mais).
+    var esq = [
       ['#/fichas', 'Fichas', 'fichas', 'fichas'],
       ['#/performance', 'Ranking', 'ranking', 'performance'],
       ['#/eventos', 'Eventos', 'cal', 'eventos']
     ];
-    if (temEscala()) itens.push(['#/escala', 'Escala', 'relogio', 'escala']);
-    else if (PERFIL && PERFIL.nivel === 'coord') itens.push(['#/coord', 'Perguntas', 'conta', 'coord']);
-    itens.push(['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
+    var itens = esq.concat([['#/chat', 'Chat', 'chat', 'chat']], dir);
     var bn = document.getElementById('barra-nav');
     bn.style.gridTemplateColumns = 'repeat(' + itens.length + ',minmax(0,1fr))';
+    bn.classList.toggle('sete', itens.length > 6);
     bn.innerHTML = itens.map(function (i) {
       var on = i[3] === atual;
+      if (i[3] === 'chat') return '<a href="' + i[0] + '" class="centro' + (on ? ' on' : '') + '"' + (on ? ' aria-current="page"' : '') + '><span class="bola">' + ic('chat', 24) + '</span>' + i[1] + '</a>';
       var sel = i[3] === 'coord' || (i[3] === 'mais' && !itens.some(function (x) { return x[3] === 'coord'; })) ? seloCoord() : '';
       return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2]) + i[1] + sel + '</a>';
     }).join('');
-    if (!document.getElementById('chat-fl')) document.body.insertAdjacentHTML('beforeend', '<a href="#/chat" id="chat-fl" class="chat-fl" aria-label="Chat do dia" title="Chat do dia">' + ic('chat', 24) + '</a>');
     var lado = [['#/chat', 'Chat do dia', 'chat', 'chat'], ['#/fichas', 'Fichas técnicas', 'fichas', 'fichas'], ['#/performance', 'Ranking', 'ranking', 'performance'], ['#/eventos', 'Eventos', 'cal', 'eventos']];
     if (temEscala()) lado.push(['#/escala', 'Minha escala', 'cal', 'escala']);
     if (PERFIL && PERFIL.nivel === 'coord') lado.push(['#/coord', 'Perguntas da equipe', 'chat', 'coord']);
