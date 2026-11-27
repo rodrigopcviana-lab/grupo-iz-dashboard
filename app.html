@@ -362,7 +362,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27h';
+  var VERSAO = '2026-11-27i';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -844,7 +844,8 @@ body.digitando .chat-campo{bottom:0}
     var lado = [['#/chat', 'Chat do dia', 'chat', 'chat'], ['#/fichas', 'Fichas técnicas', 'fichas', 'fichas'], ['#/performance', 'Ranking', 'ranking', 'performance'], ['#/eventos', 'Eventos', 'cal', 'eventos']];
     if (temEscala()) lado.push(['#/escala', 'Minha escala', 'cal', 'escala']);
     if (PERFIL && PERFIL.nivel === 'coord') lado.push(['#/coord', 'Perguntas da equipe', 'chat', 'coord']);
-    if (PERFIL && PERFIL.dono) lado.push(['#/uso', 'Uso do app', 'relogio', 'uso'], ['#/correcoes', 'Avisos de erro', 'alerta', 'correcoes']);
+    // Acessos (26/11/2026): a página do portal, só para o dono, mesma regra do Uso.
+    if (PERFIL && PERFIL.dono) lado.push(['#/uso', 'Uso do app', 'relogio', 'uso'], ['#/correcoes', 'Avisos de erro', 'alerta', 'correcoes'], ['acessos.html', 'Acessos', 'conta', 'acessos']);
     lado.push(['#/controle', 'Controle', 'copo', 'controle'], ['#/turno', 'Turno', 'turno', 'turno'], ['#/mais', 'Mais', 'mais', 'mais']);
     document.getElementById('lado').innerHTML = '<div class="marca">Bares IZ</div>' +
       lado.map(function (i) { var on = i[3] === atual; return '<a href="' + i[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + ic(i[2], 20) + i[1] + (i[3] === 'coord' ? seloCoord() : '') + '</a>'; }).join('');
@@ -1610,7 +1611,7 @@ body.digitando .chat-campo{bottom:0}
     if (temEscala()) noApp.push(tile('#/escala', 'Minha escala', 'relogio'));
     noApp.push(tile('#/controle', 'Controle', 'copo'), tile('#/performance', 'Ranking', 'ranking'), tile('#/fichas', 'Fichas técnicas', 'fichas'), tile('#/turno', 'Turno', 'turno'));
     if (PERFIL.nivel === 'coord') noApp.push(tile('#/coord', 'Perguntas da equipe', 'chat', seloCoord()));
-    if (PERFIL.dono) noApp.push(tile('#/uso', 'Uso do app', 'relogio'), tile('#/correcoes', 'Avisos de erro', 'alerta', PERFIL.correcoes_pendentes ? '<span class="selo">' + PERFIL.correcoes_pendentes + '</span>' : ''));
+    if (PERFIL.dono) noApp.push(tile('#/uso', 'Uso do app', 'relogio'), tile('#/correcoes', 'Avisos de erro', 'alerta', PERFIL.correcoes_pendentes ? '<span class="selo">' + PERFIL.correcoes_pendentes + '</span>' : ''), tile('acessos.html', 'Acessos', 'conta'));
     var ICP = { 'contagem.html': 'caixa', 'contagem-copos.html': 'copo', 'estoque.html': 'caixa', 'transferencias.html': 'trocar', 'registro.html': 'camera', 'eventos.html': 'cal', 'treinamentos.html': 'livro', 'regimento.html': 'regra', 'index.html': 'portal', 'cocktails.html': 'fichas' };
     var html = '<div class="blk perfil"><span class="av">' + esc(nomeP.charAt(0).toUpperCase()) + '</span><span><b>' + esc(nomeP) + '</b><small>' + esc(niveis[PERFIL.nivel] || PERFIL.nivel) + (PERFIL.casa_nome ? ' · ' + esc(PERFIL.casa_nome) : '') + '</small></span></div>' +
       (fila ? '<div class="blk"><div class="linha"><span class="t">' + fila + (fila === 1 ? ' envio guardado' : ' envios guardados') + '<small>Saem sozinhos quando a internet voltar.</small></span><button class="btn sec" id="bt-drena">Tentar agora</button></div></div>' : '') +
