@@ -244,6 +244,29 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .rk .q{text-align:right;font-weight:600}
 .rk .q small{display:block;font-weight:500;font-size:12px}
 .sobe{color:var(--verde)}.desce{color:var(--terra)}
+/* Ranking em pódio (27/11/2026, igual ao Bento) */
+.pf-pod{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr) minmax(0,1fr);gap:8px;align-items:end;margin:4px 0 14px}
+.pf-pod .pd{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:12px 6px 10px;border-radius:14px;background:var(--sup);border:1px solid var(--linha);min-width:0}
+.pf-pod .pd.p1{padding-top:18px;background:var(--ambar-bg);border-color:var(--ambar)}
+.pf-pod .md{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#2b2620;box-shadow:inset 0 -3px 0 rgba(0,0,0,.14)}
+.pf-pod .p1 .md{width:42px;height:42px;font-size:19px;background:#e3b341}.pf-pod .p2 .md{background:#c3c8ce}.pf-pod .p3 .md{background:#cf9461}
+.pf-pod .nm{font-size:13.5px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;min-height:2.5em}
+.pf-pod .p1 .nm{font-size:14.5px}
+.pf-pod .q{font-family:var(--serif);font-weight:600;font-size:20px;line-height:1}
+.pf-pod .p1 .q{font-size:25px}
+.pf-pod .sh{font-size:12px;color:var(--tx3)}
+.pf-mv{font-size:11.5px;font-weight:700;white-space:nowrap}
+.pf-mv.up{color:#2f7d4a}.pf-mv.dn{color:var(--terra)}.pf-mv.eq{color:var(--tx3);font-weight:600}
+:root.escuro .pf-mv.up{color:#8fd19e}
+.pf-it{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:3px 8px;align-items:center;padding:9px 0;border-top:1px solid var(--linha)}
+.pf-pod + .pf-it,.blk > .pf-it:first-child{border-top:0}
+.pf-it .pos{font-size:14px;font-weight:700;color:var(--tx2);text-align:center}
+.pf-it .meio{min-width:0;display:flex;align-items:baseline;gap:6px}
+.pf-it .nm{font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto}
+.pf-it .q{font-size:15px;font-weight:600;text-align:right;white-space:nowrap}
+.pf-it .q small{display:block;font-size:11.5px;font-weight:500;color:var(--tx3)}
+.pf-it .br{grid-column:2/4;height:6px;border-radius:999px;background:var(--sup2);overflow:hidden}
+.pf-it .br i{display:block;height:100%;background:var(--ambar);border-radius:999px}
 .casas-q .linha .v b{color:var(--tx)}
 /* busca */
 .busca-fundo{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.35);display:flex;align-items:flex-start;justify-content:center;padding:12px}
@@ -362,7 +385,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27i';
+  var VERSAO = '2026-11-27j';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -1435,7 +1458,7 @@ body.digitando .chat-campo{bottom:0}
   function telaPerformance() {
     carregando('performance');
     api('/performance').then(function (d) {
-      var html = '<div class="cab"><h1>Ranking</h1><p>Cocktails vendidos, em quantidade. Dados até ' + esc(d.mes_ref) + ', atualizados em ' + esc(d.gerado_em || '') + '.</p></div>';
+      var html = '<div class="cab"><h1>Ranking</h1><p>Os coquetéis que mais saem, em quantidade. Dados até ' + esc(d.mes_ref) + ', atualizados em ' + esc(d.gerado_em || '') + '.</p></div>';
       if (!d.casa) {
         var cs = (d.casas || []).filter(function (c) { return c.vendidos != null; }).sort(function (a, b) { return b.vendidos - a.vendidos; });
         html += '<div class="blk casas-q"><h2>Por casa em ' + esc(d.mes_ref) + '</h2>' + (cs.length ? cs.map(function (c) {
@@ -1475,12 +1498,38 @@ body.digitando .chat-campo{bottom:0}
       var cats = ['Todas'].concat(Array.from(new Set(k.itens.map(function (i) { return i.cat || 'Outros'; }))).sort());
       if (cats.indexOf(filtroCat) < 0) filtroCat = 'Todas';
       html += '<div class="chips" id="cats">' + cats.map(function (c) { return '<button class="chip" data-cat="' + esc(c) + '" aria-pressed="' + (c === filtroCat) + '">' + esc(c === 'Todas' ? 'Todas' : c.toLowerCase().replace(/^./, function (x) { return x.toUpperCase(); })) + '</button>'; }).join('') + '</div>';
-      var lista = itens.filter(function (x) { return filtroCat === 'Todas' || (x.i.cat || 'Outros') === filtroCat; }).sort(function (a, b) { return b.q - a.q; });
-      html += '<div class="blk">' + (lista.length ? lista.map(function (x, n) {
-        var dv = x.ant != null ? x.q - x.ant : null;
-        return '<div class="rk"><span class="pos">' + (n + 1) + '</span><span class="nm"><b>' + esc(x.i.nome) + '</b><small>' + esc((x.i.cat || '').toLowerCase()) + (x.i.recorde ? ' · recorde' : '') + '</small></span><span class="q">' + num(Math.round(x.q)) +
-          (dv != null ? '<small class="' + (dv >= 0 ? 'sobe' : 'desce') + '">' + (dv >= 0 ? '+' : '') + num(Math.round(dv)) + '</small>' : '') + '</span></div>';
-      }).join('') : '<p class="vazio">Nada nesta categoria.</p>') + '</div>';
+      var naCat = itens.filter(function (x) { return filtroCat === 'Todas' || (x.i.cat || 'Outros') === filtroCat; });
+      var lista = naCat.filter(function (x) { return x.q > 0; }).sort(function (a, b) { return b.q - a.q || a.i.nome.localeCompare(b.i.nome, 'pt-BR'); });
+      // Posição no período anterior, para mostrar quem subiu ou desceu (27/11/2026).
+      var temAnt = naCat.some(function (x) { return x.ant != null; }), posAnt = {};
+      if (temAnt) naCat.filter(function (x) { return x.ant > 0; }).sort(function (a, b) { return b.ant - a.ant || a.i.nome.localeCompare(b.i.nome, 'pt-BR'); })
+        .forEach(function (x, n) { posAnt[x.i.nome] = n + 1; });
+      var mov = function (x, n) {
+        if (!temAnt) return '';
+        var pa = posAnt[x.i.nome];
+        if (!pa) return '<span class="pf-mv up">novo</span>';
+        var dd = pa - (n + 1);
+        return dd > 0 ? '<span class="pf-mv up" title="subiu ' + dd + '">▲' + dd + '</span>'
+          : dd < 0 ? '<span class="pf-mv dn" title="desceu ' + (-dd) + '">▼' + (-dd) + '</span>'
+          : '<span class="pf-mv eq" title="mesma posição">=</span>';
+      };
+      var base = filtroCat === 'Todas' && total ? total : lista.reduce(function (t, x) { return t + x.q; }, 0);
+      var parte = function (q) { var pc = base ? q / base * 100 : 0; return (pc >= 10 ? Math.round(pc) : Math.round(pc * 10) / 10).toString().replace('.', ',') + '%'; };
+      var max = lista.length ? lista[0].q : 1;
+      var pod = lista.length >= 3 ? lista.slice(0, 3) : [];
+      html += '<div class="blk">';
+      if (pod.length) html += '<div class="pf-pod">' + [1, 0, 2].map(function (n) {
+        var x = pod[n];
+        return '<div class="pd p' + (n + 1) + '"><span class="md">' + (n + 1) + '</span><span class="nm">' + esc(x.i.nome) + '</span>' +
+          '<span class="q">' + num(Math.round(x.q)) + '</span><span class="sh">' + parte(x.q) + ' do total</span>' + mov(x, n) + '</div>';
+      }).join('') + '</div>';
+      var ini = pod.length;
+      html += lista.length ? lista.slice(ini).map(function (x, j) {
+        var n = j + ini;
+        return '<div class="pf-it"><span class="pos">' + (n + 1) + 'º</span><span class="meio"><span class="nm">' + esc(x.i.nome) + '</span>' + mov(x, n) + '</span>' +
+          '<span class="q">' + num(Math.round(x.q)) + '<small>' + parte(x.q) + '</small></span><span class="br"><i style="width:' + Math.max(2, Math.round(x.q / max * 100)) + '%"></i></span></div>';
+      }).join('') : '<p class="vazio">Nada nesta categoria.</p>';
+      html += '</div>';
       var c = moldura('performance', html);
       c.querySelectorAll('[data-cat]').forEach(function (b) { b.addEventListener('click', function () { filtroCat = b.dataset.cat; telaPerformance(); }); });
       c.querySelectorAll('[data-per]').forEach(function (b) { b.addEventListener('click', function () { periodo = Number(b.dataset.per); telaPerformance(); }); });
