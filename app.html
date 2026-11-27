@@ -163,8 +163,12 @@ main{flex:1;min-width:0;padding:0 16px 110px;max-width:100%}
 .f-txt small{display:block;margin-top:3px;color:var(--tx3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .f-cont{font-size:13px;color:var(--tx3);margin:-4px 2px 0}
 .fd-volta{display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:600;color:var(--tx2);text-decoration:none;padding:4px 0}
-.fd-hero{position:relative;border-radius:22px;overflow:hidden;background:var(--sup2);aspect-ratio:4/3;max-height:420px}
-.fd-hero img{width:100%;height:100%;object-fit:cover;display:block}
+/* 26/11: foto da ficha inteira (sem corte) e toque abre em tela cheia */
+.fd-hero{position:relative;border-radius:22px;overflow:hidden;background:var(--sup2)}
+.fd-hero img{width:100%;height:auto;max-height:60vh;object-fit:contain;display:block;cursor:zoom-in}
+.fd-visor{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center;padding:12px;background:rgba(0,0,0,.94);cursor:zoom-out}
+.fd-visor.aberto{display:flex}
+.fd-visor img{max-width:100%;max-height:100%;object-fit:contain}
 .fd-hero .f-sem b{font-size:46px}
 .fd-hero:has(.f-sem){aspect-ratio:16/8}
 .fd-nome{font-family:var(--serif);font-weight:600;font-size:30px;line-height:1.1;margin:16px 0 8px;letter-spacing:-.01em}
@@ -346,7 +350,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27b';
+  var VERSAO = '2026-11-27c';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -582,7 +586,7 @@ body.digitando .chat-campo{bottom:0}
   // redesenha nem recarrega.
   function momentoSeguro() {
     if (document.body.dataset.tela === 'turno') return false;
-    if (document.querySelector('dialog[open], .folha-fundo')) return false;
+    if (document.querySelector('dialog[open], .folha-fundo, .fd-visor.aberto')) return false;
     var a = document.activeElement;
     if (a && a.matches && a.matches('input, textarea, select, [contenteditable="true"]')) return false;
     return !Array.prototype.some.call(document.querySelectorAll('#main input, #main textarea, #main select'), function (el) {
@@ -1687,6 +1691,33 @@ body.digitando .chat-campo{bottom:0}
   if ('serviceWorker' in navigator && /github\.io$/.test(location.hostname)) {
     navigator.serviceWorker.register('app-sw.js', { scope: 'app.html' }).catch(function () {});
   }
+
+  // Foto da ficha em tela cheia (26/11): fundo escuro, fecha com toque, Esc ou
+  // o voltar do celular. O pushState não muda o hash, então o voltar fecha só a
+  // foto e não troca de tela.
+  (function () {
+    var visor = null;
+    function aberto() { return !!(visor && visor.classList.contains('aberto')); }
+    document.addEventListener('click', function (e) {
+      var img = e.target.closest && e.target.closest('.fd-hero img');
+      if (!img) return;
+      if (!visor) {
+        visor = document.createElement('div');
+        visor.className = 'fd-visor';
+        visor.setAttribute('role', 'dialog');
+        visor.setAttribute('aria-modal', 'true');
+        visor.innerHTML = '<img alt="">';
+        visor.addEventListener('click', function () { if (aberto()) history.back(); });
+        document.body.appendChild(visor);
+      }
+      visor.querySelector('img').src = img.src;
+      visor.querySelector('img').alt = img.alt || 'Foto do drink';
+      visor.classList.add('aberto');
+      history.pushState({ fdFoto: 1 }, '');
+    });
+    window.addEventListener('popstate', function () { if (aberto()) visor.classList.remove('aberto'); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && aberto()) history.back(); });
+  })();
 
   api('').then(function (p) {
     PERFIL = p;
