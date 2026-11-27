@@ -392,8 +392,17 @@ body.digitando .tema-flut{display:none}
 .ev-meta svg{width:13px;height:13px;flex-shrink:0}
 body.digitando .barra-nav{display:none}
 body.digitando .chat-campo{bottom:0}
-.faixa-versao{position:fixed;top:0;left:0;right:0;z-index:30;background:var(--tx);color:var(--bg);display:flex;align-items:center;justify-content:center;gap:12px;padding:9px 12px;font-size:14px}
-.faixa-versao button{font-weight:600;text-decoration:underline}
+/* Nova versão (27/11/2026): faixa no topo com Atualizar agora, no lugar da recarga sozinha com o app aberto */
+.nv-faixa{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(480px,calc(100% - 20px));z-index:30;display:flex;align-items:center;gap:10px;padding:10px 8px 10px 12px;background:var(--sup);color:var(--tx);border:1.5px solid var(--ambar);border-radius:16px;box-shadow:0 8px 26px rgba(0,0,0,.22);animation:nvDesce .25s ease-out}
+@keyframes nvDesce{from{transform:translate(-50%,-14px);opacity:0}}
+.nv-faixa .nv-ic{width:34px;height:34px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--ambar-bg);color:var(--ambar-tx)}
+.nv-faixa .nv-tx{flex:1;min-width:0;text-align:left;color:var(--tx)}
+.nv-faixa .nv-tx b{display:block;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-faixa .nv-tx small{display:block;font-size:12.5px;line-height:1.3;color:var(--tx3)}
+@media (max-width:400px){.nv-faixa .nv-ic{display:none}.nv-faixa{padding-left:14px}}
+.nv-faixa .btn{flex-shrink:0;min-height:38px;padding:0 12px;font-size:13.5px;white-space:nowrap}
+.nv-faixa .nv-x{flex-shrink:0;width:34px;height:34px;border-radius:17px;display:flex;align-items:center;justify-content:center;color:var(--tx3)}
+@media (prefers-reduced-motion:reduce){.nv-faixa{animation:none}}
 .toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%) translateY(20px);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 32px);text-align:center;z-index:40}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .piloto{font-size:12px;color:var(--tx3);text-align:center;margin-top:8px}
@@ -461,7 +470,7 @@ body.digitando .chat-campo{bottom:0}
   'use strict';
   var WORKER = 'https://contagem-bares.rodrigopcviana.workers.dev';
   var REGISTRO = 'https://registro-bares.rodrigopcviana.workers.dev';
-  var VERSAO = '2026-11-27l';
+  var VERSAO = '2026-11-27m';
   var FILA = 'app_iz_fila';
 
   // ---------------------------------------------------------------- ícones
@@ -1735,6 +1744,7 @@ body.digitando .chat-campo{bottom:0}
   // id mais novo. Mais > Novidades do app reabre a lista inteira.
   // Nunca valor em reais nem telefone aqui.
   var NOVIDADES = [
+    { id: '2026-11-27m', i: 'baixar', t: 'Aviso de versão nova', x: 'Quando sair versão nova, aparece uma faixa no topo com o botão Atualizar agora. Também dá para conferir em Mais > Atualizar o app.' },
     { id: '2026-11-27l', i: 'estrela', t: 'Este aviso de novidades', x: 'Quando o app mudar, ele mostra aqui o que mudou. Para rever, toque em Mais e depois em Novidades do app.' },
     { id: '2026-11-27k', i: 'livro', t: 'Conteúdo na bola dourada', x: 'A bola dourada no canto de baixo, à esquerda, abre o Conteúdo: os módulos da Escola de Bar em partes curtas e o glossário do bar.' },
     { id: '2026-11-27j', i: 'ranking', t: 'Ranking em pódio', x: 'Os 3 drinks que mais saem ficam no pódio. Na lista, a seta mostra quem subiu ou desceu em relação ao período anterior.', tela: 'performance' },
@@ -1746,7 +1756,8 @@ body.digitando .chat-campo{bottom:0}
     { id: '2026-11-27a', i: 'chat', t: 'Respostas com a fonte', x: 'As respostas do chat mostram de onde veio a informação, com link, e sugerem a próxima pergunta.' },
     { id: '2026-11-26h', i: 'baixar', t: 'Abre sem internet', x: 'O app abre mesmo sem sinal, com a última cópia, e se atualiza sozinho quando sai versão nova.' }
   ];
-  var NOV_VISTO = 'app_iz_novidades_visto';
+  // Visto por pessoa, não por aparelho: o celular do bar é dividido (27/11/2026).
+  function novVisto() { return 'app_iz_novidades_visto:' + ((PERFIL && (PERFIL.pessoa || PERFIL.nivel)) || (S && (S.pessoa || S.nivel)) || 'anon'); }
   var TELAS_APP = ['chat', 'fichas', 'performance', 'eventos', 'controle', 'turno', 'mais', 'conteudo'];
   function novidadesDoNivel() {
     // Hoje todos os níveis do app têm Ranking e Fichas; 'tela' fica para quando não tiverem.
@@ -1754,7 +1765,7 @@ body.digitando .chat-campo{bottom:0}
   }
   function abreNovidades(todas) {
     if (document.getElementById('nov-fundo')) return;
-    var lista = novidadesDoNivel(), visto = ls(NOV_VISTO);
+    var lista = novidadesDoNivel(), visto = ls(novVisto());
     if (!todas) lista = lista.filter(function (n) { return !visto || n.id > visto; }).slice(0, 6);
     if (!lista.length) return;
     var f = document.createElement('div');
@@ -1767,7 +1778,7 @@ body.digitando .chat-campo{bottom:0}
       }).join('') + '</ul>' +
       '<button type="button" class="btn" data-nov-x>Entendi</button></div>';
     document.body.appendChild(f);
-    function fecha() { ls(NOV_VISTO, NOVIDADES[0].id); f.remove(); document.removeEventListener('keydown', esc1); }
+    function fecha() { ls(novVisto(), NOVIDADES[0].id); f.remove(); document.removeEventListener('keydown', esc1); }
     function esc1(e) { if (e.key === 'Escape') fecha(); }
     document.addEventListener('keydown', esc1);
     f.addEventListener('click', function (e) { if (e.target === f || (e.target.closest && e.target.closest('[data-nov-x]'))) fecha(); });
@@ -1914,6 +1925,7 @@ body.digitando .chat-campo{bottom:0}
       '<div class="blk"><h2>Portal</h2><div class="grade-at">' + PAGINAS.filter(function (p) { return p[0].charAt(0) !== '#' && p[0] !== 'cocktails.html' && p[0] !== 'eventos.html'; }).map(function (p) { return tile(p[0], p[1].replace(/ \(página completa\)/, ''), ICP[p[0]] || 'portal'); }).join('') + '</div></div>' +
       '<div class="blk"><h2>App</h2>' +
         (instalado ? '' : '<button class="linha" id="bt-inst"><span class="t">Instalar na tela inicial<small>' + (ios ? 'No iPhone: Compartilhar, depois "Adicionar à Tela de Início"' : 'Abre como app, sem a barra do navegador') + '</small></span><span class="v">' + ic('baixar', 18) + '</span></button>') +
+        '<button class="linha" id="bt-atu"><span class="t">Atualizar o app<small>Confere se há versão nova agora</small></span><span class="v">' + ic('baixar', 18) + '</span></button>' +
         '<button class="linha" id="bt-nov"><span class="t">Novidades do app<small>O que mudou nos últimos dias</small></span><span class="v">' + ic('estrela', 18) + '</span></button>' +
         '<button class="linha" data-erro-app><span class="t">Avisar um erro no app<small>Ficha, ranking, evento ou qualquer coisa errada</small></span><span class="v">' + ic('alerta', 18) + '</span></button>' +
         '<button class="linha" id="bt-comp"><span class="t">Compartilhar o app<small>Link e QR code para abrir no celular</small></span><span class="v">' + ic('qr', 18) + '</span></button>' +
@@ -1929,6 +1941,7 @@ body.digitando .chat-campo{bottom:0}
     };
     c.querySelector('#bt-comp').addEventListener('click', abreCompartilhar);
     c.querySelector('#bt-nov').addEventListener('click', function () { abreNovidades(true); });
+    c.querySelector('#bt-atu').addEventListener('click', function () { atualizaAgora(this); });
   }
 
   // ---------------------------------------------------------------- coordenação
@@ -2089,12 +2102,13 @@ body.digitando .chat-campo{bottom:0}
   }
 
   // ---------------------------------------------------------------- versão
-  // Versão nova (26/11/2026: sozinha, sem botão). A versão vem do mesmo
-  // GET /api/app-iz que o app já pede. Achou outra, baixa o app.html novo,
-  // confere que ele já é mesmo a versão anunciada (o Worker sobe antes do
-  // site, e o Pages leva até 1 min) e guarda na cópia do app-sw.js. Recarrega
-  // só num momento seguro: na próxima troca de tela, ao sair ou voltar para o
-  // app, ou depois de 1 min sem mexer. Volta para a mesma tela e rolagem.
+  // Versão nova. A versão vem do mesmo GET /api/app-iz que o app já pede.
+  // Achou outra, baixa o app.html novo, confere que ele já é mesmo a versão
+  // anunciada (o Worker sobe antes do site, e o Pages leva até 1 min) e
+  // guarda na cópia do app-sw.js. Desde 27/11/2026 (pedido do Rodrigo, "igual
+  // ao aviso do Claude") aparece uma faixa no topo com Atualizar agora; a
+  // recarga sozinha só acontece na troca de tela e com o app escondido, num
+  // momento seguro. Volta para a mesma tela e rolagem.
   var APP_CACHE = 'iz-app-v1', APP_URL = new URL('app.html', location.href).href, NV_TENT = 'app_iz_nv';
   var versaoPronta = null, conferindo = false, ultimaAcao = Date.now(), mexeu = false;
   ['pointerdown', 'keydown', 'scroll', 'input'].forEach(function (ev) {
@@ -2114,20 +2128,54 @@ body.digitando .chat-campo{bottom:0}
         var poe = window.caches ? caches.open(APP_CACHE).then(function (c) {
           return c.put(APP_URL, new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
         }) : Promise.resolve();
-        return poe.then(function () { versaoPronta = p.versao; tentaAtualizar(); }, function () { versaoPronta = p.versao; });
+        return poe.then(function () { versaoPronta = p.versao; mostraFaixaVersao(); }, function () { versaoPronta = p.versao; mostraFaixaVersao(); });
       });
     }).catch(function () {}).then(function () { conferindo = false; });
   }
   function tentaAtualizar(forca) {
     if (!versaoPronta || !momentoSeguro()) return false;
-    // Recém-aberto e sem toque ainda: entra na hora. Mexendo: espera 1 min parado.
     if (!forca && mexeu && document.visibilityState === 'visible' && Date.now() - ultimaAcao < 60000) return false;
     try { sessionStorage.setItem(NV_TENT, JSON.stringify({ v: versaoPronta, em: Date.now(), y: window.scrollY })); } catch (e) {}
     location.reload();
     return true;
   }
-  setInterval(function () { tentaAtualizar(); }, 15000);
-  document.addEventListener('visibilitychange', function () { tentaAtualizar(true); });
+  // Com o app escondido ninguém está olhando: entra a versão nova ali.
+  document.addEventListener('visibilitychange', function () { if (document.hidden) tentaAtualizar(true); });
+  var NV_FECHOU = 'app_iz_nv_fechou';
+  function mostraFaixaVersao() {
+    if (!versaoPronta || document.getElementById('nv-faixa')) return;
+    try { if (sessionStorage.getItem(NV_FECHOU) === versaoPronta) return; } catch (e) {}
+    var f = document.createElement('div');
+    f.id = 'nv-faixa'; f.className = 'nv-faixa'; f.setAttribute('role', 'status');
+    f.innerHTML = '<span class="nv-ic">' + ic('estrela', 18) + '</span>' +
+      '<button type="button" class="nv-tx" data-nv-ok><b>Nova versão do app</b><small>Toque para ver o que mudou.</small></button>' +
+      '<button type="button" class="btn" data-nv-ok>Atualizar agora</button>' +
+      '<button type="button" class="nv-x" data-nv-x aria-label="Agora não">' + ic('x', 18) + '</button>';
+    document.body.appendChild(f);
+    f.addEventListener('click', function (e) {
+      if (e.target.closest('[data-nv-x]')) {
+        try { sessionStorage.setItem(NV_FECHOU, versaoPronta); } catch (e2) {}
+        f.remove(); return;
+      }
+      if (!e.target.closest('[data-nv-ok]')) return;
+      if (!tentaAtualizar(true)) aviso(document.body.dataset.tela === 'turno' || document.body.dataset.tela === 'controle'
+        ? 'Termine o que está fazendo nesta tela, troque de tela e toque de novo.'
+        : 'Envie ou apague o texto que está escrevendo e toque de novo.');
+    });
+  }
+  // Mais > Atualizar o app: confere a versão na hora.
+  function atualizaAgora(bt) {
+    if (bt) bt.disabled = true;
+    api('', { semCopia: true }).then(function (p) {
+      if (bt) bt.disabled = false;
+      if (!p.versao || p.versao === VERSAO) { aviso('O app já está na versão mais nova.'); return; }
+      var limpa = window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k.indexOf('iz-app-') === 0; }).map(function (k) { return caches.delete(k); })); }) : Promise.resolve();
+      limpa.catch(function () {}).then(function () {
+        try { sessionStorage.setItem(NV_TENT, JSON.stringify({ v: p.versao, em: Date.now(), y: 0 })); } catch (e) {}
+        location.reload();
+      });
+    }, function (e) { if (bt) bt.disabled = false; aviso(e.status === 0 || navigator.onLine === false ? 'Sem conexão agora. Tente quando tiver sinal.' : e.message); });
+  }
   (function () {
     var t = ssLe(NV_TENT);
     if (!t || t.v !== VERSAO) return;
